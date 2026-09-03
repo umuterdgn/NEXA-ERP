@@ -70,7 +70,7 @@ async function main() {
     create: {
       email: "patron@mahirbakay.com",
       password: hashedPassword,
-      name: "Mahir Bakay",
+      name: "Demo Admin",
       role: UserRole.SUPER_ADMIN,
       permissions: ["dashboard", "cms", "archive", "finance", "stock", "staff", "users", "admin"]
     }
@@ -175,7 +175,7 @@ async function main() {
       yibfNo: "YIBF-2024-001",
       address: "Kadıköy, Caferağa Mah. Moda Cad. No:123, İstanbul",
       ownerName: "Aile Konut Yapı A.Ş.",
-      contractorName: "Mahir Bakay Mühendislik",
+      contractorName: "Nexa ERP Demo Firması",
       totalArea: 2500.0,
       floors: 8,
       status: "ACTIVE",
@@ -191,7 +191,7 @@ async function main() {
       yibfNo: "YIBF-2024-002",
       address: "Çankaya, Kızılay Mah. Atatürk Bulvarı No:456, Ankara",
       ownerName: "Başkent İnşaat Ltd. Şti.",
-      contractorName: "Mahir Bakay Mühendislik",
+      contractorName: "Nexa ERP Demo Firması",
       totalArea: 4200.0,
       floors: 12,
       status: "ACTIVE",
@@ -207,7 +207,7 @@ async function main() {
       yibfNo: "YIBF-2024-003",
       address: "Antakya, Kurtuluş Mah. Cumhuriyet Cad. No:789, Hatay",
       ownerName: "Deprem Konut Yapı Kooperatifi",
-      contractorName: "Mahir Bakay Mühendislik",
+      contractorName: "Nexa ERP Demo Firması",
       totalArea: 5800.0,
       floors: 15,
       status: "ACTIVE",
@@ -454,7 +454,7 @@ async function main() {
     create: {
       id: "default",
       title: "Hakkımızda",
-      content: "Mahir Bakay Mühendislik olarak 20 yılı aşkın tecrübemizle inşaat sektöründe yenilikçi ve sürdürülebilir çözümler sunuyoruz. Kalite ve güvenilirlik ilkesiyle projelerimize hayat veriyoruz. Yapı denetim, statik hesap, mimari tasarım ve proje yönetimi alanlarında uzman kadromuzla hizmet veriyoruz.",
+      content: "Nexa ERP olarak inşaat ve yapı denetim sektöründe yenilikçi ve sürdürülebilir çözümler sunuyoruz. Kalite ve güvenilirlik ilkesiyle projelerimize hayat veriyoruz. Yapı denetim, statik hesap, mimari tasarım ve proje yönetimi alanlarında uzman kadromuzla hizmet veriyoruz.",
       videoUrl: "/about-video.mp4"
     }
   })

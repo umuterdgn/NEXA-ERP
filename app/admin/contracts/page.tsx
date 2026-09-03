@@ -151,7 +151,7 @@ export default function ContractsPage() {
         "{{KIMLIK_NO}}": worker ? worker.username || "" : "",
         "{{BAŞLANGIÇ_TARİHİ}}": project.startDate ? new Date(project.startDate).toLocaleDateString("tr-TR") : "",
         "{{BİTİŞ_TARİHİ}}": project.endDate ? new Date(project.endDate).toLocaleDateString("tr-TR") : "",
-        "{{FİRMA_ADI}}": "Mahir Bakay Mühendislik",
+        "{{FİRMA_ADI}}": "Nexa ERP",
         "{{ADI_SOYADI}}": worker ? `${worker.firstName} ${worker.lastName}` : "",
       }
 
@@ -189,8 +189,8 @@ export default function ContractsPage() {
       element.innerHTML = `
         <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; background: white;">
           <div style="text-align: center; margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px;">
-            <h1 style="margin: 0; color: #333; font-size: 24px;">MAHIR BAKAY MÜHENDİSLİK</h1>
-            <p style="margin: 5px 0; color: #666; font-size: 14px;">İnşaat ve Mühendislik Hizmetleri</p>
+            <h1 style="margin: 0; color: #333; font-size: 24px;">NEXA ERP</h1>
+            <p style="margin: 5px 0; color: #666; font-size: 14px;">Şantiye & Denetim Asistanı</p>
           </div>
           
           <div style="margin-bottom: 30px;">

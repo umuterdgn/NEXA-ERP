@@ -23,6 +23,9 @@ model User {
   role          UserRole     @default(ADMIN)
   permissions   String[]     @default([]) // Modül yetkileri
   profileImage  String?
+  companyType   CompanyType? @default(MAIN_CONTRACTOR) // SaaS: Firma türü
+  tenantId      String?      // SaaS: Kiracı ID
+  tenant        Tenant?      @relation("UserTenant", fields: [tenantId], references: [id], onDelete: SetNull)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   managedProjects Project[]  @relation("ProjectManager")
@@ -67,6 +70,7 @@ model Tenant {
   id        String   @id @default(cuid())
   name      String   // Şirket adı
   domain    String?  // Özel domain (opsiyonel)
+  type      CompanyType @default(MAIN_CONTRACTOR) // Firma türü
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,8 +82,10 @@ model Tenant {
   droneMedia DroneMedia[]
   chatThreads ChatThread[]
   systemLogs SystemLog[]
+  users     User[] @relation("UserTenant")
 
   @@index([isActive])
+  @@index([type])
 }
 
 // ============================================================================
@@ -2272,6 +2278,7 @@ model Document {
   uploadedBy        User     @relation(fields: [uploadedById], references: [id])
   status            String   @default("ACTIVE") // ACTIVE, OBSOLETE, DELETED
   notes             String?  @db.Text
+  tenantId          String?  // SaaS: Kiracı ID
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -2280,6 +2287,7 @@ model Document {
   @@index([version])
   @@index([uploadedById])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================

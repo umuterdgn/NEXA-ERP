@@ -17,10 +17,10 @@ export async function GET() {
 
     // 0. Create default users
     await prisma.user.upsert({
-      where: { email: "admin@mahirbakay.com" },
+      where: { email: "admin@nexa-erp.com" },
       update: {},
       create: {
-        email: "admin@mahirbakay.com",
+        email: "admin@nexa-erp.com",
         password: hashedPassword,
         name: "OS Admin",
         role: "ADMIN",
@@ -29,10 +29,10 @@ export async function GET() {
     });
 
     await prisma.user.upsert({
-      where: { email: "personel@mahirbakay.com" },
+      where: { email: "personel@nexa-erp.com" },
       update: {},
       create: {
-        email: "personel@mahirbakay.com",
+        email: "personel@nexa-erp.com",
         password: hashedPassword,
         name: "OS Personel",
         role: "STAFF",

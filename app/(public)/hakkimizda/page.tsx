@@ -18,7 +18,7 @@ async function getAboutContent() {
     // Return fallback data if database fails
     return {
       title: "Hakkımızda",
-      content: "Mahir Bakay Mühendislik olarak 20 yılı aşkın tecrübemizle inşaat sektöründe yenilikçi ve sürdürülebilir çözümler sunuyoruz."
+      content: "Nexa ERP olarak şantiye ve denetim süreçlerinde yenilikçi ve sürdürülebilir çözümler sunuyoruz."
     }
   }
 }
@@ -29,7 +29,7 @@ export default async function HakkimizdaPage() {
   return (
     <AboutClient 
       title={about?.title || "Hakkımızda"}
-      content={about?.content || "Mahir Bakay Mühendislik olarak 20 yılı aşkın tecrübemizle inşaat sektöründe yenilikçi ve sürdürülebilir çözümler sunuyoruz."}
+      content={about?.content || "Nexa ERP olarak şantiye ve denetim süreçlerinde yenilikçi ve sürdürülebilir çözümler sunuyoruz."}
     />
   )
 }

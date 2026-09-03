@@ -124,7 +124,7 @@ export default function HomeClient({ featuredServices, featuredProjects }: HomeC
             transition={{ duration: 0.8, delay: 0.6 }}
             className="text-xl md:text-2xl text-slate-300 mb-8"
           >
-            Mahir Bakay Mühendislik
+            Nexa ERP
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}

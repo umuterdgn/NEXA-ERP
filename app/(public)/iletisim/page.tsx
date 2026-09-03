@@ -138,8 +138,8 @@ export default function IletisimPage() {
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-white mb-2">E-posta</h3>
-                  <p className="text-slate-400">info@mahirbakay.com</p>
-                  <p className="text-slate-400">proje@mahirbakay.com</p>
+                  <p className="text-slate-400">info@nexa-erp.com</p>
+                  <p className="text-slate-400">destek@nexa-erp.com</p>
                 </motion.div>
 
                 <motion.div

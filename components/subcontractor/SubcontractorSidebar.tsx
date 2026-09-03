@@ -78,7 +78,7 @@ export default function SubcontractorSidebar({
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-slate-900 dark:text-white">Taşeron Portalı</h1>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">Mahir Bakay Mühendislik</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">Nexa ERP</p>
                 </div>
               </div>
             )}

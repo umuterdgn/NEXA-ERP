@@ -22,7 +22,7 @@ export default function YibfDetailPage({ params }: { params: Promise<{ id: strin
     yibfNo: "2024-001",
     address: "Atatürk Mah. Cumhuriyet Cad. No:123 Kadıköy/İstanbul",
     ownerName: "Ahmet Yılmaz",
-    contractorName: "Mahir Bakay Mühendislik",
+    contractorName: "Örnek İnşaat A.Ş.",
     totalArea: 1250.5,
     floors: 8,
     status: "ACTIVE",

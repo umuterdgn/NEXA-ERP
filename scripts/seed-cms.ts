@@ -80,7 +80,7 @@ async function main() {
     await prisma.about.create({
       data: {
         title: 'Hakkımızda',
-        content: 'Mahir Bakay Mühendislik olarak 20 yılı aşkın tecrübemizle inşaat sektöründe yenilikçi ve sürdürülebilir çözümler sunuyoruz.'
+        content: 'Nexa ERP olarak inşaat ve yapı denetim sektöründe yenilikçi ve sürdürülebilir çözümler sunuyoruz.'
       }
     })
     console.log('✓ About content seeded')

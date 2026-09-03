@@ -104,7 +104,7 @@ export default function LoginPage() {
               Nexa ERP
             </h1>
             <p className="text-slate-300 text-lg">
-              Mahir Bakay Mühendislik Yönetim Sistemi
+              Şantiye & Denetim Asistanı
             </p>
           </div>
 

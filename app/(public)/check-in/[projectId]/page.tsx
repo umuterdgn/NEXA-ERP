@@ -461,7 +461,7 @@ export default function CheckInPage() {
 
         {/* Footer */}
         <div className="text-center mt-8 text-slate-500 text-sm">
-          <p>Mahir Bakay Mühendislik</p>
+          <p>Nexa ERP</p>
         </div>
       </div>
     </div>

@@ -14,7 +14,7 @@ async function seedContractTemplates() {
       name: 'İş Güvenliği Taahhütnamesi',
       content: `İŞ GÜVENLİĞİ TAAHHÜTNAMESİ
 
-Ben, {{PERSONEL_ADI}}, Mahir Bakay Mühendislik'in {{PROJE_ADI}} projesinde çalışırken aşağıdaki taahhütleri kabul ediyorum:
+Ben, {{PERSONEL_ADI}}, {{FIRMA_ADI}} firmasının {{PROJE_ADI}} projesinde çalışırken aşağıdaki taahhütleri kabul ediyorum:
 
 1. KİŞİSEL KORUNUM
 - İş güvenliği ekipmanlarını (kask, ayakkabı, yelek vb.) her zaman kullanacağım.
@@ -45,7 +45,7 @@ Tarih: {{TARİH}}
       name: 'Standart Taşeron Sözleşmesi',
       content: `STANDART TAŞERON SÖZLEŞMESİ
 
-Bu sözleşme, Mahir Bakay Mühendislik (İşveren) ile aşağıda imzası bulunan Taşeron (Yüklenici) arasında aşağıda belirtilen şartlarda düzenlenmiştir.
+Bu sözleşme, {{FIRMA_ADI}} (İşveren) ile aşağıda imzası bulunan Taşeron (Yüklenici) arasında aşağıda belirtilen şartlarda düzenlenmiştir.
 
 MADDE 1: İŞİN KONUSU
 Taşeron, İşveren'in {{PROJE_ADI}} projesinde aşağıda belirtilen işleri yerine getirmeyi kabul eder.
@@ -74,7 +74,7 @@ Bu sözleşme {{TARİH}} tarihinde düzenlenmiş ve taraflarca imzalanmıştır.
       name: 'Malzeme Teslim Sözleşmesi',
       content: `MALZEME TESLİM SÖZLEŞMESİ
 
-Bu sözleşme, Mahir Bakay Mühendislik (Alıcı) ile [FİRMA ADI] (Satıcı) arasında aşağıda belirtilen şartlarda düzenlenmiştir.
+Bu sözleşme, {{FIRMA_ADI}} (Alıcı) ile [TEDARIKÇI ADI] (Satıcı) arasında aşağıda belirtilen şartlarda düzenlenmiştir.
 
 MADDE 1: MALZEMENİN CİNSİ VE MİKTARI
 Satıcı, Alıcı'ya aşağıda belirtilen malzemeleri teslim edecektir:

@@ -7,7 +7,7 @@
 import CryptoJS from "crypto-js"
 
 // Client-side'da çalışabilmesi için NEXT_PUBLIC_ kullanıldı veya fallback atandı.
-const SECRET_KEY = process.env.NEXT_PUBLIC_NFC_SECRET_KEY || "mahirbakay-erp-super-secret-key-2026";
+const SECRET_KEY = process.env.NEXT_PUBLIC_NFC_SECRET_KEY || "nexa-erp-super-secret-key-2026";
 
 export interface NfcPayload {
   id: string
@@ -68,7 +68,7 @@ export function createPersonnelNfcPayload(personnelId: string): string {
   const payload: NfcPayload = {
     id: personnelId,
     timestamp: Date.now(),
-    company: "MahirBakay"
+    company: "NexaERP"
   }
   return encryptNfcData(payload)
 }

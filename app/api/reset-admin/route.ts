@@ -15,13 +15,13 @@ export async function GET() {
 
     // Upsert the admin user (update if exists, create if not)
     const updatedUser = await prisma.user.upsert({
-      where: { email: 'admin@mahirbakay.com' },
+      where: { email: 'admin@nexa-erp.com' },
       update: { 
         password: hashedPassword,
         role: 'ADMIN'
       },
       create: {
-        email: 'admin@mahirbakay.com',
+        email: 'admin@nexa-erp.com',
         name: 'Sistem Yöneticisi',
         password: hashedPassword,
         role: 'ADMIN'

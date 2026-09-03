@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     await sendEmail({
-      to: "info@mahirbakay.com",
+      to: "info@nexa-erp.com",
       subject: `İletişim Formu: ${subject}`,
       text: `
 Ad: ${name}

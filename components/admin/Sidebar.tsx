@@ -99,71 +99,84 @@ export default function AdminSidebar({
   const isPersonnel = session?.user?.role === "STAFF"
   const isSubcontractor = (session?.user?.role as string) === "SUBCONTRACTOR"
   const isClient = (session?.user?.role as string) === "CLIENT"
+  const isInspector = session?.user?.role === "INSPECTOR" || session?.user?.role === "AUDITOR"
   const userPermissions = session?.user?.permissions || []
+  
+  // Company type from session (will be set during login/tenant setup)
+  // @ts-ignore - companyType field exists in schema but TypeScript needs regeneration
+  const companyType = session?.user?.companyType || "MAIN_CONTRACTOR" // Default to construction
 
   const allNavItems = [
-    { href: "/admin", label: "Dashboard", requiredPermission: "DASHBOARD", icon: LayoutDashboard, category: "ANA MENÜ", adminOnly: true },
-    { href: "/admin/map", label: "Şantiye Haritası", requiredPermission: null, icon: Map, category: "ANA MENÜ", adminOnly: true },
-    { href: "/admin/personnel", label: "Personel Takibi", requiredPermission: null, icon: Users, category: "İNSAN KAYNAKLARI" },
-    { href: "/admin/payroll", label: "Puantaj & Bordro", requiredPermission: null, icon: CalendarDays, category: "İNSAN KAYNAKLARI" },
-    { href: "/admin/shifts", label: "Vardiya Planlaması", requiredPermission: null, icon: Clock, category: "İNSAN KAYNAKLARI" },
-    { href: "/admin/audits", label: "Taşeron Denetimleri", requiredPermission: null, icon: ShieldAlert, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
-    { href: "/admin/billing", label: "Hakediş Yönetimi", requiredPermission: null, icon: Wallet, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
-    { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", requiredPermission: null, icon: FileSignature, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
-    { href: "/admin/subcontractors/documents", label: "İSG ve Evrak Takibi", requiredPermission: null, icon: ShieldCheck, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
-    { href: "/admin/subcontractors/deductions", label: "Kesintiler ve Cezalar", requiredPermission: null, icon: TrendingDown, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
-    { href: "/admin/personel", label: "Personeller", requiredPermission: "PERSONNEL", icon: Users, category: "İNSAN KAYNAKLARI", contractorOnly: true },
-    { href: "/admin/attendance", label: "Puantaj & Mesai", requiredPermission: "ATTENDANCE", icon: UserCheck, category: "İNSAN KAYNAKLARI", contractorOnly: true },
-    { href: "/admin/approvals", label: "Onay Bekleyenler", requiredPermission: null, icon: ClipboardCheck, category: "İNSAN KAYNAKLARI", contractorOnly: true },
-    { href: "/admin/food-menu", label: "Yemek Menüsü", requiredPermission: null, icon: Utensils, category: "İNSAN KAYNAKLARI", contractorOnly: true },
-    { href: "/admin/finance", label: "Kasa & Finans", requiredPermission: "FINANCE", icon: DollarSign, category: "FİNANS & TEDARİK", adminOnly: true },
-    { href: "/admin/inventory", label: "Ambar & Karekod", requiredPermission: "INVENTORY", icon: PackageSearch, category: "FİNANS & TEDARİK", adminOnly: true },
-    { href: "/admin/equipments", label: "Demirbaş", requiredPermission: null, icon: Wrench, category: "FİNANS & TEDARİK", adminOnly: true },
-    { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature, category: "FİNANS & TEDARİK", adminOnly: true },
-    { href: "/admin/progress-payments", label: "Hakediş ve Metraj", requiredPermission: null, icon: Calculator, category: "FİNANS & TEDARİK", subcontractorAllowed: true, adminOnly: true },
-    { href: "/admin/procurement", label: "Satınalma & Talepler", requiredPermission: null, icon: ShoppingCart, category: "FİNANS & TEDARİK", adminOnly: true },
-    { href: "/admin/collection-risk", label: "Tahsilat Risk AI", requiredPermission: null, icon: PieChart, category: "FİNANS & TEDARİK", adminOnly: true },
-    { href: "/admin/projects", label: "Projeler", requiredPermission: "PROJECTS", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
-    { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "PROJE YÖNETİMİ", adminOnly: true },
-    { href: "/admin/bim", label: "BIM & 3D Modeller", requiredPermission: null, icon: Box, category: "PROJE YÖNETİMİ", adminOnly: true },
-    { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", requiredPermission: null, icon: FileSearch, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/inspection", label: "Numune & Karot Takip", requiredPermission: null, icon: TestTube, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", requiredPermission: null, icon: Hammer, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/inspection/attachment", label: "Ataşman & Delil", requiredPermission: null, icon: FileCheck, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", requiredPermission: null, icon: Archive, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/documents", label: "Dijital Evrak Arşivi", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", requiredPermission: null, icon: ScanText, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/reports", label: "Saha Raporları", requiredPermission: null, icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/ai-assistant", label: "AI Asistan", requiredPermission: null, icon: Bot, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/ai-vision", label: "AI Görsel Analiz", requiredPermission: null, icon: Scan, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/revisions", label: "Proje Revizyonları", requiredPermission: null, icon: GitCompare, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/routes", label: "Rota Optimizasyonu", requiredPermission: null, icon: Route, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/drone-maps", label: "Hava & Drone Gözlem", requiredPermission: null, icon: Plane, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckCircle, category: "YAPI DENETİM & KALİTE" },
-    { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", requiredPermission: null, icon: AlertOctagon, category: "YAPI DENETİM & KALİTE" },
-    { href: "/admin/inspections", label: "Denetim Kayıtları", requiredPermission: null, icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/deficiencies", label: "Saha Eksiklikleri", requiredPermission: null, icon: AlertTriangle, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/isg", label: "İSG Dashboard & Analiz", requiredPermission: null, icon: MapPin, category: "İSG & Risk Yönetimi" },
-    { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", requiredPermission: null, icon: Map, category: "İSG & Risk Yönetimi" },
-    { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", requiredPermission: null, icon: FileText, category: "İSG & Risk Yönetimi" },
-    { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", requiredPermission: null, icon: AlertTriangle, category: "İSG & Risk Yönetimi" },
-    { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", requiredPermission: null, icon: Shield, category: "İSG & Risk Yönetimi" },
-    { href: "/admin/cms", label: "İçerik Yönetimi", requiredPermission: null, icon: FileText, category: "İLETİŞİM & OPERASYON" },
-    { href: "/admin/tasks", label: "Görevler & Takvim", requiredPermission: null, icon: Calendar, category: "İLETİŞİM & OPERASYON" },
-    { href: "/admin/work-orders", label: "İş Emirleri (Kanban)", requiredPermission: null, icon: ClipboardList, category: "İLETİŞİM & OPERASYON" },
-    { href: "/admin/communication/chat", label: "İç Haberleşme", requiredPermission: null, icon: MessageSquare, category: "İLETİŞİM & OPERASYON" },
-    { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", requiredPermission: null, icon: Truck, category: "İLETİŞİM & OPERASYON" },
-    { href: "/admin/users", label: "Kullanıcılar", requiredPermission: null, icon: Users, category: "İLETİŞİM & SİSTEM", adminOnly: true },
-    { href: "/admin/logs", label: "Sistem Logları", requiredPermission: null, icon: FileLogIcon, category: "İLETİŞİM & SİSTEM", adminOnly: true },
-    { href: "/admin/audit-logs", label: "İşlem Geçmişi", requiredPermission: null, icon: History, category: "İLETİŞİM & SİSTEM", adminOnly: true },
-    { href: "/admin/notifications", label: "Bildirimler", requiredPermission: null, icon: Bell, category: "İLETİŞİM & SİSTEM" },
-    { href: "/admin/announcements", label: "Duyuru Yönetimi", requiredPermission: null, icon: Megaphone, category: "İLETİŞİM & SİSTEM" },
-    { href: "/admin/ayarlar", label: "Ayarlar", requiredPermission: null, icon: Settings, category: "İLETİŞİM & SİSTEM" },
-    { href: "/admin/my-tasks", label: "Görevlerim", requiredPermission: null, icon: CheckSquare, personnelOnly: true, category: "PERSONEL" },
-    { href: "/admin/my-salary", label: "Maaş/Avans", requiredPermission: null, icon: Wallet, personnelOnly: true, category: "PERSONEL" },
-    { href: "/admin/my-attendance", label: "Mesai Geçmişim", requiredPermission: null, icon: Clock, personnelOnly: true, category: "PERSONEL" },
+    // === MÜTEAHHİT / İNŞAAT YÖNETİMİ ===
+    { href: "/admin", label: "Dashboard", requiredPermission: "DASHBOARD", icon: LayoutDashboard, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/map", label: "Şantiye Haritası", requiredPermission: null, icon: Map, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/personnel", label: "Personel Takibi", requiredPermission: null, icon: Users, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", moduleType: "construction" },
+    { href: "/admin/payroll", label: "Puantaj & Bordro", requiredPermission: null, icon: CalendarDays, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", moduleType: "construction" },
+    { href: "/admin/shifts", label: "Vardiya Planlaması", requiredPermission: null, icon: Clock, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", moduleType: "construction" },
+    { href: "/admin/audits", label: "Taşeron Denetimleri", requiredPermission: null, icon: ShieldAlert, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
+    { href: "/admin/billing", label: "Hakediş Yönetimi", requiredPermission: null, icon: Wallet, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
+    { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", requiredPermission: null, icon: FileSignature, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
+    { href: "/admin/subcontractors/documents", label: "İSG ve Evrak Takibi", requiredPermission: null, icon: ShieldCheck, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
+    { href: "/admin/subcontractors/deductions", label: "Kesintiler ve Cezalar", requiredPermission: null, icon: TrendingDown, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
+    { href: "/admin/attendance", label: "Puantaj & Mesai", requiredPermission: "ATTENDANCE", icon: UserCheck, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
+    { href: "/admin/approvals", label: "Onay Bekleyenler", requiredPermission: null, icon: ClipboardCheck, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
+    { href: "/admin/food-menu", label: "Yemek Menüsü", requiredPermission: null, icon: Utensils, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
+    { href: "/admin/finance", label: "Kasa & Finans", requiredPermission: "FINANCE", icon: DollarSign, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/inventory", label: "Ambar & Karekod", requiredPermission: "INVENTORY", icon: PackageSearch, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/equipments", label: "Demirbaş", requiredPermission: null, icon: Wrench, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/progress-payments", label: "Hakediş ve Metraj", requiredPermission: null, icon: Calculator, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", subcontractorAllowed: true, adminOnly: true, moduleType: "construction" },
+    { href: "/admin/procurement", label: "Satınalma & Talepler", requiredPermission: null, icon: ShoppingCart, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/collection-risk", label: "Tahsilat Risk AI", requiredPermission: null, icon: PieChart, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    { href: "/admin/bim", label: "BIM & 3D Modeller", requiredPermission: null, icon: Box, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    
+    // === YAPI DENETİM YÖNETİMİ ===
+    { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", requiredPermission: null, icon: FileSearch, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/inspection", label: "Numune & Karot Takip", requiredPermission: null, icon: TestTube, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", requiredPermission: null, icon: Hammer, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/inspection/attachment", label: "Ataşman & Delil", requiredPermission: null, icon: FileCheck, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", requiredPermission: null, icon: Archive, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/documents", label: "Dijital Evrak Arşivi", requiredPermission: null, icon: FileText, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", requiredPermission: null, icon: ScanText, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/reports", label: "Saha Raporları", requiredPermission: null, icon: ClipboardList, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/ai-assistant", label: "AI Asistan", requiredPermission: null, icon: Bot, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/ai-vision", label: "AI Görsel Analiz", requiredPermission: null, icon: Scan, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/revisions", label: "Proje Revizyonları", requiredPermission: null, icon: GitCompare, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/routes", label: "Rota Optimizasyonu", requiredPermission: null, icon: Route, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/drone-maps", label: "Hava & Drone Gözlem", requiredPermission: null, icon: Plane, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: FileText, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckCircle, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", requiredPermission: null, icon: AlertOctagon, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/inspections", label: "Denetim Kayıtları", requiredPermission: null, icon: ClipboardCheck, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/deficiencies", label: "Saha Eksiklikleri", requiredPermission: null, icon: AlertTriangle, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg", label: "İSG Dashboard & Analiz", requiredPermission: null, icon: MapPin, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", requiredPermission: null, icon: Map, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", requiredPermission: null, icon: FileText, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", requiredPermission: null, icon: AlertTriangle, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", requiredPermission: null, icon: Shield, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    
+    // === ORTAK MODÜLLER ===
+    { href: "/admin/projects", label: "Projeler", requiredPermission: "PROJECTS", icon: FolderKanban, category: "ORTAK MODÜLLER", moduleType: "shared" },
+    { href: "/admin/cms", label: "İçerik Yönetimi", requiredPermission: null, icon: FileText, category: "ORTAK MODÜLLER", moduleType: "shared" },
+    { href: "/admin/tasks", label: "Görevler & Takvim", requiredPermission: null, icon: Calendar, category: "ORTAK MODÜLLER", moduleType: "shared" },
+    { href: "/admin/work-orders", label: "İş Emirleri (Kanban)", requiredPermission: null, icon: ClipboardList, category: "ORTAK MODÜLLER", moduleType: "shared" },
+    { href: "/admin/communication/chat", label: "İç Haberleşme", requiredPermission: null, icon: MessageSquare, category: "ORTAK MODÜLLER", moduleType: "shared" },
+    { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", requiredPermission: null, icon: Truck, category: "ORTAK MODÜLLER", moduleType: "shared" },
+    
+    // === SİSTEM & AYARLAR ===
+    { href: "/admin/users", label: "Kullanıcılar", requiredPermission: null, icon: Users, category: "SİSTEM & AYARLAR", adminOnly: true, moduleType: "shared" },
+    { href: "/admin/logs", label: "Sistem Logları", requiredPermission: null, icon: FileLogIcon, category: "SİSTEM & AYARLAR", adminOnly: true, moduleType: "shared" },
+    { href: "/admin/audit-logs", label: "İşlem Geçmişi", requiredPermission: null, icon: History, category: "SİSTEM & AYARLAR", adminOnly: true, moduleType: "shared" },
+    { href: "/admin/notifications", label: "Bildirimler", requiredPermission: null, icon: Bell, category: "SİSTEM & AYARLAR", moduleType: "shared" },
+    { href: "/admin/announcements", label: "Duyuru Yönetimi", requiredPermission: null, icon: Megaphone, category: "SİSTEM & AYARLAR", moduleType: "shared" },
+    { href: "/admin/ayarlar", label: "Ayarlar", requiredPermission: null, icon: Settings, category: "SİSTEM & AYARLAR", moduleType: "shared" },
+    
+    // === PERSONEL ===
+    { href: "/admin/my-tasks", label: "Görevlerim", requiredPermission: null, icon: CheckSquare, personnelOnly: true, category: "PERSONEL", moduleType: "shared" },
+    { href: "/admin/my-salary", label: "Maaş/Avans", requiredPermission: null, icon: Wallet, personnelOnly: true, category: "PERSONEL", moduleType: "shared" },
+    { href: "/admin/my-attendance", label: "Mesai Geçmişim", requiredPermission: null, icon: Clock, personnelOnly: true, category: "PERSONEL", moduleType: "shared" },
   ]
 
   // Yetki bazlı menü filtreleme
@@ -176,6 +189,21 @@ export default function AdminSidebar({
     // Admin ve Super Admin personnelOnly menüleri görmemeli
     if (item.personnelOnly === true) {
       return false
+    }
+    
+    // Company type based filtering for SaaS multi-tenancy
+    // Construction companies (MAIN_CONTRACTOR) should not see inspection-only modules
+    // Inspection companies (INSPECTION) should not see construction-only modules
+    if (item.moduleType === "construction" && companyType === "INSPECTION") {
+      return false // Inspection firms don't see construction modules
+    }
+    if (item.moduleType === "inspection" && companyType === "MAIN_CONTRACTOR") {
+      return false // Construction firms don't see inspection modules
+    }
+    
+    // Inspector role specific filtering
+    if (isInspector && item.moduleType === "construction") {
+      return false // Inspectors don't see construction modules
     }
     
     // Contractor-only menüler (Taşeron Yönetimi, İnsan Kaynakları, Finans & Tedarık, Proje Yönetimi)
@@ -271,7 +299,7 @@ export default function AdminSidebar({
               {!isCollapsed && (
                 <div>
                   <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">Şantiye Asistanı</h1>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Mahir Bakay Mühendislik</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Nexa ERP</p>
                 </div>
               )}
               <div className="flex items-center gap-3">

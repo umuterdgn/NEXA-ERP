@@ -69,7 +69,7 @@ export default function SmartDocumentsPage() {
         YAPI RUHSATI
         Ruhsat No: 2024/1234
         Ruhsat Tarihi: 15.08.2024
-        Yapı Sahibi: Mahir Bakay Mühendislik A.Ş.
+        Yapı Sahibi: Örnek İnşaat A.Ş.
         Ada: 1234 Parsel: 56
         İlçe: İskenderun
         İl: Hatay
@@ -91,7 +91,7 @@ export default function SmartDocumentsPage() {
 
       const ocrResult: OCRResult = {
         documentType: data.documentType || "Yapı Ruhsatı",
-        relatedPerson: data.relatedPerson || "Mahir Bakay Mühendislik A.Ş.",
+        relatedPerson: data.relatedPerson || "Örnek İnşaat A.Ş.",
         validityDate: data.validityDate || "20.08.2024",
         status: data.status || "Geçerli - Sisteme işlendi."
       }

@@ -589,7 +589,7 @@ export function PersonnelPortal({ data }: PersonnelPortalProps) {
           <div className="flex items-center gap-3">
             <Building className="w-6 h-6 text-blue-400" />
             <div>
-              <p className="text-white font-semibold">Mahir Bakay Mühendislik</p>
+              <p className="text-white font-semibold">Nexa ERP</p>
               <p className="text-slate-400 text-sm">Yapı & İnşaat Sektörü</p>
             </div>
           </div>

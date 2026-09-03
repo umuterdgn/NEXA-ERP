@@ -147,7 +147,7 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">Yapı Denetim Yönetim Raporu</h1>
-                <p className="text-slate-600 mt-1">Mahir Bakay Mühendislik Yapı Denetim OS</p>
+                <p className="text-slate-600 mt-1">Nexa ERP Yapı Denetim OS</p>
               </div>
               <div className="text-right">
                 <p className="text-slate-600 text-sm">
@@ -283,7 +283,7 @@ export default function ReportsPage() {
           <div className="border-t-2 border-slate-300 pt-6 mt-8">
             <div className="flex items-center justify-between text-sm text-slate-600">
               <div>
-                <p>Mahir Bakay Mühendislik Yapı Denetim OS</p>
+                <p>Nexa ERP Yapı Denetim OS</p>
                 <p className="mt-1">Bu rapor otomatik olarak oluşturulmuştur.</p>
               </div>
               <div className="text-right">

@@ -98,7 +98,7 @@ export default function AboutClient({ title, content }: AboutClientProps) {
               <div className="relative aspect-square rounded-3xl overflow-hidden shadow-[0_0_40px_rgba(59,130,246,0.3)]">
                 <Image
                   src="/about-placeholder.png"
-                  alt="Mahir Bakay Mühendislik"
+                  alt="Nexa ERP"
                   fill
                   className="object-cover"
                   priority

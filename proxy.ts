@@ -71,8 +71,8 @@ export default NextAuth(authConfig).auth((req) => {
   const isVercelDomain = cleanHostname.endsWith(".vercel.app")
 
   // Custom domain tanımları
-  const isCustomDomain = cleanHostname === "mahirbakaymuhendislik.com" || 
-                         cleanHostname === "www.mahirbakaymuhendislik.com"
+  const isCustomDomain = cleanHostname === "nexa-erp.com" || 
+                         cleanHostname === "www.nexa-erp.com"
 
   // Eğer ana domain, localhost, Vercel test domaini veya custom domain ise, normal rotalara devam et
   if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST) || isVercelDomain || isCustomDomain) {

@@ -1,6 +1,6 @@
-# Mahir Bakay Mühendislik - Web Sitesi ve ERP Sistemi
+# Nexa ERP - Şantiye & Denetim Asistanı
 
-Mahir Bakay Mühendislik için geliştirilmiş tam kapsamlı, fütüristik web sitesi ve gelişmiş ERP/Yönetim paneli.
+Nexa ERP - İnşaat ve Yapı Denetim firmaları için geliştirilmiş tam kapsamlı, fütüristik SaaS platformu ve gelişmiş ERP/Yönetim paneli.
 
 ## 🚀 Teknoloji Yığını
 

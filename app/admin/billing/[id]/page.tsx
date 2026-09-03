@@ -87,7 +87,7 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
         <div className="grid grid-cols-2 gap-8 mb-6">
           <div>
             <h3 className="font-semibold text-slate-700 mb-2">Ana Firma</h3>
-            <p className="text-slate-600 font-medium">Mahir Bakay Mühendislik</p>
+            <p className="text-slate-600 font-medium">Nexa ERP</p>
             <p className="text-slate-500 text-sm mt-1">İnşaat ve Mühendislik Hizmetleri</p>
           </div>
           <div>
@@ -230,7 +230,7 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
 
         {/* Alt Bilgi - Sadece yazdırmada görünsün */}
         <div className="mt-8 pt-4 border-t border-slate-200 text-center text-slate-500 text-sm print:block hidden">
-          <p>Bu belge Mahir Bakay Mühendislik tarafından otomatik olarak oluşturulmuştur.</p>
+          <p>Bu belge Nexa ERP tarafından otomatik olarak oluşturulmuştur.</p>
           <p className="mt-1">Belge No: {billing.id} | Tarih: {new Date(billing.createdAt).toLocaleString("tr-TR")}</p>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Mahir Bakay ERP',
+    name: 'Nexa ERP',
     short_name: 'Şantiye',
     description: 'Dijital Şantiye Asistanı',
     start_url: '/admin',
