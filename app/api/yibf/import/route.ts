@@ -15,15 +15,12 @@ export async function POST(request: NextRequest) {
       yibfNo,
       projectName,
       contractor,
-      area,
       status,
       startDate,
       endDate,
       location,
       description,
-      buildingType,
-      floorCount,
-      totalArea
+      buildingType
     } = body
 
     // Validate required fields
@@ -47,32 +44,28 @@ export async function POST(request: NextRequest) {
         yibfNo: yibfNo
       },
       update: {
+        title: projectName,
         name: projectName,
-        contractorName: contractor || null,
-        area: area || null,
+        clientName: contractor || null,
         status: status || 'AKTIF',
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
         location: location || null,
         description: description || null,
-        buildingType: buildingType || null,
-        floorCount: floorCount || null,
-        totalArea: totalArea || null,
+        category: buildingType || null,
         updatedAt: new Date()
       },
       create: {
+        title: projectName,
         name: projectName,
         yibfNo: yibfNo,
-        contractorName: contractor || null,
-        area: area || null,
+        clientName: contractor || null,
         status: status || 'AKTIF',
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
         location: location || null,
         description: description || null,
-        buildingType: buildingType || null,
-        floorCount: floorCount || null,
-        totalArea: totalArea || null
+        category: buildingType || null
       }
     })
 
