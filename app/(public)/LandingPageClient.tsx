@@ -82,6 +82,17 @@ interface ModulePreview {
   features: string[]
   icon: any
   category: "construction" | "inspection" | "shared"
+  stats?: {
+    value1: string
+    label1: string
+    value2: string
+    label2: string
+    value3: string
+    label3: string
+  }
+  activities?: string[]
+  tasks?: Array<{ label: string; count: string; color: string }>
+  chartData?: number[]
 }
 
 const modulePreviews: Record<string, ModulePreview> = {
@@ -90,34 +101,160 @@ const modulePreviews: Record<string, ModulePreview> = {
     description: "Tüm projelerinizi tek ekrandan yönetin. KPI'lar, grafikler ve özet istatistiklerle anlık durum takibi.",
     features: ["Gerçek zamanlı KPI göstergeleri", "Proje ilerleme grafikleri", "Personel özet istatistikleri", "Finansal özetler"],
     icon: LayoutDashboard,
-    category: "shared"
+    category: "shared",
+    stats: {
+      value1: "24",
+      label1: "Aktif Proje",
+      value2: "156",
+      label2: "Personel",
+      value3: "89%",
+      label3: "Verimlilik"
+    },
+    activities: ["Proje oluşturuldu", "Personel atandı", "Rapor tamamlandı"],
+    tasks: [
+      { label: "Onay bekleyen", count: "5", color: "text-orange-400" },
+      { label: "Süre aşan", count: "2", color: "text-red-400" },
+      { label: "Tamamlanan", count: "23", color: "text-green-400" }
+    ],
+    chartData: [40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95]
   },
-  "/admin/routes": {
-    title: "Rota Optimizasyonu",
-    description: "Yapı denetim rotalarını AI ile optimize edin. En kısa ve en verimli denetim rotalarını otomatik hesaplayın.",
-    features: ["AI tabanlı rota hesaplama", "Yakıt tasarrufu analizi", "Zaman yönetimi optimizasyonu", "GPS takip entegrasyonu"],
-    icon: Route,
-    category: "inspection"
+  "/admin/ai-assistant": {
+    title: "AI Asistan & AI Görsel Analiz",
+    description: "Yapay zeka ile projelerinizi analiz edin. Görsel tespit, risk tahminleme ve otomatik raporlama.",
+    features: ["Doğal dil sorguları", "Görsel hasar tespiti", "Risk tahminleme", "Otomatik rapor oluşturma"],
+    icon: Bot,
+    category: "inspection",
+    stats: {
+      value1: "1,247",
+      label1: "AI Analizi",
+      value2: "98.5%",
+      label2: "Doğruluk",
+      value3: "45",
+      label3: "Risk Tespiti"
+    },
+    activities: ["AI tespit tamamlandı", "Risk analizi yapıldı", "Otomatik rapor"],
+    tasks: [
+      { label: "Bekleyen analiz", count: "12", color: "text-orange-400" },
+      { label: "Yüksek risk", count: "3", color: "text-red-400" },
+      { label: "Çözülen", count: "89", color: "text-green-400" }
+    ],
+    chartData: [60, 75, 85, 90, 80, 95, 88, 92, 78, 85, 90, 95]
+  },
+  "/admin/drone-maps": {
+    title: "Hava & Drone Gözlem",
+    description: "Drone ile şantiyeleri havadan izleyin. 360° görüntü, ilerleme takibi ve harita entegrasyonu.",
+    features: ["360° havadan görüntü", "İlerleme takibi", "GPS harita entegrasyonu", "Otomatik fotoğraf çekimi"],
+    icon: Plane,
+    category: "inspection",
+    stats: {
+      value1: "47",
+      label1: "Uçuş",
+      value2: "12.5km²",
+      label2: "Tarım Alanı",
+      value3: "2,340",
+      label3: "Fotoğraf"
+    },
+    activities: ["Drone uçuşu tamamlandı", "Harita güncellendi", "İlerleme raporu"],
+    tasks: [
+      { label: "Planlanan uçuş", count: "8", color: "text-orange-400" },
+      { label: "İptal edilen", count: "1", color: "text-red-400" },
+      { label: "Tamamlanan", count: "39", color: "text-green-400" }
+    ],
+    chartData: [30, 45, 60, 75, 80, 85, 90, 88, 92, 95, 90, 85]
   },
   "/admin/smart-documents": {
     title: "Akıllı Evrak Denetimi (OCR)",
     description: "Kağıt evrakları dijitalleştirin. OCR teknolojisi ile belgeleri otomatik okuyun ve arşivleyin.",
     features: ["OCR ile otomatik metin okuma", "Akıllı belge sınıflandırma", "Arama ve filtreleme", "Bulut depolama entegrasyonu"],
     icon: ScanText,
-    category: "shared"
+    category: "shared",
+    stats: {
+      value1: "3,456",
+      label1: "Belge",
+      value2: "99.2%",
+      label2: "OCR Başarı",
+      value3: "892",
+      label3: "Arşivlenen"
+    },
+    activities: ["Belge tarandı", "OCR tamamlandı", "Arşivlendi"],
+    tasks: [
+      { label: "Bekleyen tarama", count: "45", color: "text-orange-400" },
+      { label: "Hatalı OCR", count: "8", color: "text-red-400" },
+      { label: "Onaylanan", count: "3,403", color: "text-green-400" }
+    ],
+    chartData: [50, 60, 70, 80, 85, 90, 88, 92, 94, 96, 98, 99]
+  },
+  "/admin/isg": {
+    title: "İSG Dashboard & Analiz",
+    description: "İş sağlığı ve güvenliğini yönetin. Risk analizi, kaza önleme ve KKD takibi.",
+    features: ["Risk analizi dashboard", "Kaza önleme önerileri", "KKD zimmet takibi", "Ramak kala bildirimi"],
+    icon: MapPin,
+    category: "inspection",
+    stats: {
+      value1: "0",
+      label1: "Kaza",
+      value2: "23",
+      label2: "Ramak Kala",
+      value3: "156",
+      label3: "KKD Zimmet"
+    },
+    activities: ["Risk analizi yapıldı", "KKD dağıtıldı", "Eğitim tamamlandı"],
+    tasks: [
+      { label: "Yüksek risk", count: "5", color: "text-red-400" },
+      { label: "Orta risk", count: "12", color: "text-orange-400" },
+      { label: "Düşük risk", count: "45", color: "text-green-400" }
+    ],
+    chartData: [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25]
+  },
+  "/admin/payroll": {
+    title: "Puantaj & Bordro",
+    description: "Personel puantajını ve bordrosunu yönetin. Otomatik hesaplama, mesai takibi ve maaş ödemeleri.",
+    features: ["Otomatik puantaj hesaplama", "Mesai takibi", "Maaş hesaplama", "Bordro raporları"],
+    icon: CalendarDays,
+    category: "construction",
+    stats: {
+      value1: "156",
+      label1: "Personel",
+      value2: "2,450",
+      label2: "Saat",
+      value3: "₺1.2M",
+      label3: "Toplam Ödeme"
+    },
+    activities: ["Puantaj girildi", "Mesai hesaplandı", "Bordro onaylandı"],
+    tasks: [
+      { label: "Onay bekleyen", count: "23", color: "text-orange-400" },
+      { label: "Eksik puantaj", count: "8", color: "text-red-400" },
+      { label: "Ödenen", count: "125", color: "text-green-400" }
+    ],
+    chartData: [70, 75, 80, 85, 90, 88, 92, 94, 90, 85, 80, 75]
+  },
+  "/admin/routes": {
+    title: "Rota Optimizasyonu",
+    description: "Yapı denetim rotalarını AI ile optimize edin. En kısa ve en verimli denetim rotalarını otomatik hesaplayın.",
+    features: ["AI tabanlı rota hesaplama", "Yakıt tasarrufu analizi", "Zaman yönetimi optimizasyonu", "GPS takip entegrasyonu"],
+    icon: Route,
+    category: "inspection",
+    stats: {
+      value1: "89",
+      label1: "Rota",
+      value2: "23%",
+      label2: "Yakıt Tasarrufu",
+      value3: "156h",
+      label3: "Zaman Kazancı"
+    },
+    activities: ["Rota hesaplandı", "Optimizasyon yapıldı", "GPS takip"],
+    tasks: [
+      { label: "Planlanan rota", count: "12", color: "text-orange-400" },
+      { label: "İptal edilen", count: "2", color: "text-red-400" },
+      { label: "Tamamlanan", count: "75", color: "text-green-400" }
+    ],
+    chartData: [50, 55, 60, 65, 70, 75, 80, 85, 90, 88, 92, 95]
   },
   "/admin/isg/near-miss": {
     title: "Ramak Kala Bildirimi",
     description: "İş kazalarını önleyin. Ramak kala olayları anlık bildirin ve analiz edin.",
     features: ["Anlık olay bildirimi", "Fotoğraf ve kanıt ekleme", "AI tabanlı risk analizi", "Önleyici eylem önerileri"],
     icon: AlertTriangle,
-    category: "shared"
-  },
-  "/admin/ai-assistant": {
-    title: "AI Asistan",
-    description: "Yapay zeka ile projelerinizi analiz edin. Sorularınızı yanıtlayın ve öneriler alın.",
-    features: ["Doğal dil sorguları", "Proje analizi", "Risk tahminleme", "Otomatik rapor oluşturma"],
-    icon: Bot,
     category: "shared"
   },
   "/admin/billing": {
@@ -575,16 +712,16 @@ export default function LandingPageClient() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-blue-600/20 rounded-lg p-3 border border-blue-500/30">
-                        <div className="text-2xl font-bold text-blue-400 mb-1">24</div>
-                        <div className="text-xs text-slate-400">Aktif Proje</div>
+                        <div className="text-2xl font-bold text-blue-400 mb-1">{currentPreview.stats?.value1 || "24"}</div>
+                        <div className="text-xs text-slate-400">{currentPreview.stats?.label1 || "Aktif Proje"}</div>
                       </div>
                       <div className="bg-purple-600/20 rounded-lg p-3 border border-purple-500/30">
-                        <div className="text-2xl font-bold text-purple-400 mb-1">156</div>
-                        <div className="text-xs text-slate-400">Personel</div>
+                        <div className="text-2xl font-bold text-purple-400 mb-1">{currentPreview.stats?.value2 || "156"}</div>
+                        <div className="text-xs text-slate-400">{currentPreview.stats?.label2 || "Personel"}</div>
                       </div>
                       <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
-                        <div className="text-2xl font-bold text-green-400 mb-1">89%</div>
-                        <div className="text-xs text-slate-400">Verimlilik</div>
+                        <div className="text-2xl font-bold text-green-400 mb-1">{currentPreview.stats?.value3 || "89%"}</div>
+                        <div className="text-xs text-slate-400">{currentPreview.stats?.label3 || "Verimlilik"}</div>
                       </div>
                     </div>
                     
@@ -594,7 +731,7 @@ export default function LandingPageClient() {
                         <span className="text-xs text-green-400">+12%</span>
                       </div>
                       <div className="flex gap-1 h-8">
-                        {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95].map((height, i) => (
+                        {(currentPreview.chartData || [40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95]).map((height, i) => (
                           <motion.div
                             key={i}
                             initial={{ height: 0 }}
@@ -611,35 +748,27 @@ export default function LandingPageClient() {
                       <div className="bg-slate-800 rounded-lg p-3">
                         <div className="text-xs text-slate-400 mb-2">Son Aktiviteler</div>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-green-500" />
-                            <span className="text-xs text-slate-300">Proje oluşturuldu</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                            <span className="text-xs text-slate-300">Personel atandı</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-purple-500" />
-                            <span className="text-xs text-slate-300">Rapor tamamlandı</span>
-                          </div>
+                          {(currentPreview.activities || ["Proje oluşturuldu", "Personel atandı", "Rapor tamamlandı"]).map((activity, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${i === 0 ? "bg-green-500" : i === 1 ? "bg-blue-500" : "bg-purple-500"}`} />
+                              <span className="text-xs text-slate-300">{activity}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                       <div className="bg-slate-800 rounded-lg p-3">
                         <div className="text-xs text-slate-400 mb-2">Bekleyen Görevler</div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-slate-300">Onay bekleyen</span>
-                            <span className="text-xs text-orange-400">5</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-slate-300">Süre aşan</span>
-                            <span className="text-xs text-red-400">2</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-slate-300">Tamamlanan</span>
-                            <span className="text-xs text-green-400">23</span>
-                          </div>
+                          {(currentPreview.tasks || [
+                            { label: "Onay bekleyen", count: "5", color: "text-orange-400" },
+                            { label: "Süre aşan", count: "2", color: "text-red-400" },
+                            { label: "Tamamlanan", count: "23", color: "text-green-400" }
+                          ]).map((task, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <span className="text-xs text-slate-300">{task.label}</span>
+                              <span className={`text-xs ${task.color}`}>{task.count}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>

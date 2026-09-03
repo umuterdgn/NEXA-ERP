@@ -10,7 +10,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
-import { useTheme } from "next-themes"
+import { motion, AnimatePresence } from "framer-motion"
 import NotificationBell from "@/components/NotificationBell"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { 
@@ -47,8 +47,6 @@ import {
   Wallet,
   Clock,
   Bot,
-  Sun,
-  Moon,
   Search,
   Calendar,
   ShieldAlert,
@@ -70,7 +68,21 @@ import {
   BarChart,
   ChevronLeft,
   ChevronRight,
-  Download
+  Download,
+  ChevronDown,
+  ChevronUp,
+  LogOut,
+  Layers,
+  Briefcase,
+  HardHat,
+  Building,
+  Eye,
+  Camera,
+  Zap,
+  FileWarning,
+  ClipboardCopy,
+  Network,
+  FileDigit
 } from "lucide-react"
 
 export default function AdminSidebar({
@@ -83,17 +95,29 @@ export default function AdminSidebar({
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [mounted, setMounted] = useState(false)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const pathname = usePathname()
   const sessionContext = useSession()
   const session = sessionContext?.data
   const status = sessionContext?.status
-  const { theme, setTheme } = useTheme()
   const { isInstallable, promptInstall } = usePwaInstall()
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setMounted(true))
     return () => window.cancelAnimationFrame(frame)
   }, [])
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(category)) {
+        newSet.delete(category)
+      } else {
+        newSet.add(category)
+      }
+      return newSet
+    })
+  }
 
   const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
   const isPersonnel = session?.user?.role === "STAFF"
@@ -107,76 +131,78 @@ export default function AdminSidebar({
   const companyType = session?.user?.companyType || "MAIN_CONTRACTOR" // Default to construction
 
   const allNavItems = [
-    // === MÜTEAHHİT / İNŞAAT YÖNETİMİ ===
-    { href: "/admin", label: "Dashboard", requiredPermission: "DASHBOARD", icon: LayoutDashboard, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/map", label: "Şantiye Haritası", requiredPermission: null, icon: Map, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/personnel", label: "Personel Takibi", requiredPermission: null, icon: Users, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", moduleType: "construction" },
-    { href: "/admin/payroll", label: "Puantaj & Bordro", requiredPermission: null, icon: CalendarDays, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", moduleType: "construction" },
-    { href: "/admin/shifts", label: "Vardiya Planlaması", requiredPermission: null, icon: Clock, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", moduleType: "construction" },
-    { href: "/admin/audits", label: "Taşeron Denetimleri", requiredPermission: null, icon: ShieldAlert, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
-    { href: "/admin/billing", label: "Hakediş Yönetimi", requiredPermission: null, icon: Wallet, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
-    { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", requiredPermission: null, icon: FileSignature, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
-    { href: "/admin/subcontractors/documents", label: "İSG ve Evrak Takibi", requiredPermission: null, icon: ShieldCheck, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
-    { href: "/admin/subcontractors/deductions", label: "Kesintiler ve Cezalar", requiredPermission: null, icon: TrendingDown, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
-    { href: "/admin/attendance", label: "Puantaj & Mesai", requiredPermission: "ATTENDANCE", icon: UserCheck, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
-    { href: "/admin/approvals", label: "Onay Bekleyenler", requiredPermission: null, icon: ClipboardCheck, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
-    { href: "/admin/food-menu", label: "Yemek Menüsü", requiredPermission: null, icon: Utensils, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", contractorOnly: true, moduleType: "construction" },
-    { href: "/admin/finance", label: "Kasa & Finans", requiredPermission: "FINANCE", icon: DollarSign, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/inventory", label: "Ambar & Karekod", requiredPermission: "INVENTORY", icon: PackageSearch, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/equipments", label: "Demirbaş", requiredPermission: null, icon: Wrench, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/progress-payments", label: "Hakediş ve Metraj", requiredPermission: null, icon: Calculator, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", subcontractorAllowed: true, adminOnly: true, moduleType: "construction" },
-    { href: "/admin/procurement", label: "Satınalma & Talepler", requiredPermission: null, icon: ShoppingCart, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/collection-risk", label: "Tahsilat Risk AI", requiredPermission: null, icon: PieChart, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
-    { href: "/admin/bim", label: "BIM & 3D Modeller", requiredPermission: null, icon: Box, category: "MÜTEAHHİT / İNŞAAT YÖNETİMİ", adminOnly: true, moduleType: "construction" },
+    // === 📊 ANA MENÜ ===
+    { href: "/admin", label: "Dashboard", requiredPermission: null, icon: LayoutDashboard, category: "📊 ANA MENÜ", moduleType: "shared" },
+    { href: "/admin/map", label: "Şantiye Haritası", requiredPermission: null, icon: Map, category: "📊 ANA MENÜ", moduleType: "shared" },
     
-    // === YAPI DENETİM YÖNETİMİ ===
-    { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", requiredPermission: null, icon: FileSearch, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/inspection", label: "Numune & Karot Takip", requiredPermission: null, icon: TestTube, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", requiredPermission: null, icon: Hammer, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/inspection/attachment", label: "Ataşman & Delil", requiredPermission: null, icon: FileCheck, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", requiredPermission: null, icon: Archive, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/documents", label: "Dijital Evrak Arşivi", requiredPermission: null, icon: FileText, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", requiredPermission: null, icon: ScanText, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/reports", label: "Saha Raporları", requiredPermission: null, icon: ClipboardList, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/ai-assistant", label: "AI Asistan", requiredPermission: null, icon: Bot, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/ai-vision", label: "AI Görsel Analiz", requiredPermission: null, icon: Scan, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/revisions", label: "Proje Revizyonları", requiredPermission: null, icon: GitCompare, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/routes", label: "Rota Optimizasyonu", requiredPermission: null, icon: Route, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/drone-maps", label: "Hava & Drone Gözlem", requiredPermission: null, icon: Plane, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: FileText, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckCircle, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", requiredPermission: null, icon: AlertOctagon, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/inspections", label: "Denetim Kayıtları", requiredPermission: null, icon: ClipboardCheck, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/deficiencies", label: "Saha Eksiklikleri", requiredPermission: null, icon: AlertTriangle, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg", label: "İSG Dashboard & Analiz", requiredPermission: null, icon: MapPin, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", requiredPermission: null, icon: Map, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", requiredPermission: null, icon: FileText, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", requiredPermission: null, icon: AlertTriangle, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", requiredPermission: null, icon: Shield, category: "YAPI DENETİM YÖNETİMİ", moduleType: "inspection" },
+    // === 👷 İNSAN KAYNAKLARI ===
+    { href: "/admin/personnel", label: "Personeller / Personel Takibi", requiredPermission: null, icon: Users, category: "👷 İNSAN KAYNAKLARI", moduleType: "construction" },
+    { href: "/admin/payroll", label: "Puantaj, Mesai & Bordro", requiredPermission: null, icon: CalendarDays, category: "👷 İNSAN KAYNAKLARI", moduleType: "construction" },
+    { href: "/admin/shifts", label: "Vardiya Planlaması", requiredPermission: null, icon: Clock, category: "👷 İNSAN KAYNAKLARI", moduleType: "construction" },
+    { href: "/admin/approvals", label: "Onay Bekleyenler", requiredPermission: null, icon: ClipboardCheck, category: "👷 İNSAN KAYNAKLARI", moduleType: "construction" },
+    { href: "/admin/food-menu", label: "Yemek Menüsü", requiredPermission: null, icon: Utensils, category: "👷 İNSAN KAYNAKLARI", moduleType: "construction" },
     
-    // === ORTAK MODÜLLER ===
-    { href: "/admin/projects", label: "Projeler", requiredPermission: "PROJECTS", icon: FolderKanban, category: "ORTAK MODÜLLER", moduleType: "shared" },
-    { href: "/admin/cms", label: "İçerik Yönetimi", requiredPermission: null, icon: FileText, category: "ORTAK MODÜLLER", moduleType: "shared" },
-    { href: "/admin/tasks", label: "Görevler & Takvim", requiredPermission: null, icon: Calendar, category: "ORTAK MODÜLLER", moduleType: "shared" },
-    { href: "/admin/work-orders", label: "İş Emirleri (Kanban)", requiredPermission: null, icon: ClipboardList, category: "ORTAK MODÜLLER", moduleType: "shared" },
-    { href: "/admin/communication/chat", label: "İç Haberleşme", requiredPermission: null, icon: MessageSquare, category: "ORTAK MODÜLLER", moduleType: "shared" },
-    { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", requiredPermission: null, icon: Truck, category: "ORTAK MODÜLLER", moduleType: "shared" },
+    // === 🏗️ TAŞERON YÖNETİMİ ===
+    { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", requiredPermission: null, icon: FileSignature, category: "🏗️ TAŞERON YÖNETİMİ", moduleType: "construction" },
+    { href: "/admin/audits", label: "Taşeron Denetimleri", requiredPermission: null, icon: ShieldAlert, category: "🏗️ TAŞERON YÖNETİMİ", moduleType: "construction" },
+    { href: "/admin/billing", label: "Hakediş Yönetimi", requiredPermission: null, icon: Wallet, category: "🏗️ TAŞERON YÖNETİMİ", moduleType: "construction" },
+    { href: "/admin/subcontractors/documents", label: "İSG ve Evrak Takibi", requiredPermission: null, icon: ShieldCheck, category: "🏗️ TAŞERON YÖNETİMİ", moduleType: "construction" },
+    { href: "/admin/subcontractors/deductions", label: "Kesintiler ve Cezalar", requiredPermission: null, icon: TrendingDown, category: "🏗️ TAŞERON YÖNETİMİ", moduleType: "construction" },
     
-    // === SİSTEM & AYARLAR ===
-    { href: "/admin/users", label: "Kullanıcılar", requiredPermission: null, icon: Users, category: "SİSTEM & AYARLAR", adminOnly: true, moduleType: "shared" },
-    { href: "/admin/logs", label: "Sistem Logları", requiredPermission: null, icon: FileLogIcon, category: "SİSTEM & AYARLAR", adminOnly: true, moduleType: "shared" },
-    { href: "/admin/audit-logs", label: "İşlem Geçmişi", requiredPermission: null, icon: History, category: "SİSTEM & AYARLAR", adminOnly: true, moduleType: "shared" },
-    { href: "/admin/notifications", label: "Bildirimler", requiredPermission: null, icon: Bell, category: "SİSTEM & AYARLAR", moduleType: "shared" },
-    { href: "/admin/announcements", label: "Duyuru Yönetimi", requiredPermission: null, icon: Megaphone, category: "SİSTEM & AYARLAR", moduleType: "shared" },
-    { href: "/admin/ayarlar", label: "Ayarlar", requiredPermission: null, icon: Settings, category: "SİSTEM & AYARLAR", moduleType: "shared" },
+    // === 💰 FİNANS & TEDARİK ===
+    { href: "/admin/finance", label: "Kasa & Finans", requiredPermission: null, icon: DollarSign, category: "💰 FİNANS & TEDARİK", moduleType: "construction" },
+    { href: "/admin/inventory", label: "Ambar & Karekod", requiredPermission: null, icon: PackageSearch, category: "💰 FİNANS & TEDARİK", moduleType: "construction" },
+    { href: "/admin/equipments", label: "Demirbaş", requiredPermission: null, icon: Wrench, category: "💰 FİNANS & TEDARİK", moduleType: "construction" },
+    { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature, category: "💰 FİNANS & TEDARİK", moduleType: "construction" },
+    { href: "/admin/progress-payments", label: "Hakediş ve Metraj", requiredPermission: null, icon: Calculator, category: "💰 FİNANS & TEDARİK", moduleType: "construction" },
+    { href: "/admin/procurement", label: "Satınalma & Talepler", requiredPermission: null, icon: ShoppingCart, category: "💰 FİNANS & TEDARİK", moduleType: "construction" },
+    { href: "/admin/collection-risk", label: "Tahsilat Risk AI", requiredPermission: null, icon: PieChart, category: "💰 FİNANS & TEDARİK", moduleType: "construction" },
+    
+    // === 📈 PROJE YÖNETİMİ ===
+    { href: "/admin/projects", label: "Projeler", requiredPermission: null, icon: FolderKanban, category: "📈 PROJE YÖNETİMİ", moduleType: "shared" },
+    { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "📈 PROJE YÖNETİMİ", moduleType: "construction" },
+    { href: "/admin/bim", label: "BIM & 3D Modeller", requiredPermission: null, icon: Box, category: "📈 PROJE YÖNETİMİ", moduleType: "construction" },
+    
+    // === ⚖️ YAPI DENETİM & KONTROL ===
+    { href: "/admin/ai-assistant", label: "AI Asistan & AI Görsel Analiz", requiredPermission: null, icon: Bot, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", requiredPermission: null, icon: ScanText, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/drone-maps", label: "Hava & Drone Gözlem", requiredPermission: null, icon: Plane, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/routes", label: "Rota Optimizasyonu", requiredPermission: null, icon: Route, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", requiredPermission: null, icon: FileSearch, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/inspection", label: "Numune & Karot Takip", requiredPermission: null, icon: TestTube, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", requiredPermission: null, icon: Hammer, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/inspection/attachment", label: "Ataşman & Delil", requiredPermission: null, icon: FileCheck, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: FileText, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/inspection/documents", label: "Ruhsat & Dijital Evrak Arşivi", requiredPermission: null, icon: Archive, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/reports", label: "Saha Raporları & Eksiklikleri", requiredPermission: null, icon: ClipboardList, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/revisions", label: "Proje Revizyonları & Denetim Kayıtları", requiredPermission: null, icon: GitCompare, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/qa-qc/materials", label: "Malzeme Onayları & Uygunsuzluk (DÖF)", requiredPermission: null, icon: AlertOctagon, category: "⚖️ YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    
+    // === 🛡️ İSG & RİSK YÖNETİMİ ===
+    { href: "/admin/isg", label: "İSG Dashboard & Analiz", requiredPermission: null, icon: MapPin, category: "🛡️ İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", requiredPermission: null, icon: Map, category: "🛡️ İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", requiredPermission: null, icon: FileText, category: "🛡️ İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", requiredPermission: null, icon: AlertTriangle, category: "🛡️ İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", requiredPermission: null, icon: Shield, category: "🛡️ İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    
+    // === 🤝 İLETİŞİM & OPERASYON ===
+    { href: "/admin/cms", label: "İçerik Yönetimi", requiredPermission: null, icon: FileText, category: "🤝 İLETİŞİM & OPERASYON", moduleType: "shared" },
+    { href: "/admin/tasks", label: "Görevler & Takvim", requiredPermission: null, icon: Calendar, category: "🤝 İLETİŞİM & OPERASYON", moduleType: "shared" },
+    { href: "/admin/work-orders", label: "İş Emirleri (Kanban)", requiredPermission: null, icon: ClipboardList, category: "🤝 İLETİŞİM & OPERASYON", moduleType: "shared" },
+    { href: "/admin/communication/chat", label: "İç Haberleşme", requiredPermission: null, icon: MessageSquare, category: "🤝 İLETİŞİM & OPERASYON", moduleType: "shared" },
+    { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", requiredPermission: null, icon: Truck, category: "🤝 İLETİŞİM & OPERASYON", moduleType: "shared" },
+    
+    // === ⚙️ SİSTEM & AYARLAR ===
+    { href: "/admin/users", label: "Kullanıcılar", requiredPermission: null, icon: Users, category: "⚙️ SİSTEM & AYARLAR", adminOnly: true, moduleType: "shared" },
+    { href: "/admin/logs", label: "Sistem Logları & İşlem Geçmişi", requiredPermission: null, icon: FileLogIcon, category: "⚙️ SİSTEM & AYARLAR", adminOnly: true, moduleType: "shared" },
+    { href: "/admin/notifications", label: "Bildirimler & Duyuru Yönetimi", requiredPermission: null, icon: Bell, category: "⚙️ SİSTEM & AYARLAR", moduleType: "shared" },
+    { href: "/admin/ayarlar", label: "Ayarlar", requiredPermission: null, icon: Settings, category: "⚙️ SİSTEM & AYARLAR", moduleType: "shared" },
     
     // === PERSONEL ===
-    { href: "/admin/my-tasks", label: "Görevlerim", requiredPermission: null, icon: CheckSquare, personnelOnly: true, category: "PERSONEL", moduleType: "shared" },
-    { href: "/admin/my-salary", label: "Maaş/Avans", requiredPermission: null, icon: Wallet, personnelOnly: true, category: "PERSONEL", moduleType: "shared" },
-    { href: "/admin/my-attendance", label: "Mesai Geçmişim", requiredPermission: null, icon: Clock, personnelOnly: true, category: "PERSONEL", moduleType: "shared" },
+    { href: "/admin/my-tasks", label: "Görevlerim", requiredPermission: null, icon: CheckSquare, personnelOnly: true, category: "👤 PERSONEL", moduleType: "shared" },
+    { href: "/admin/my-salary", label: "Maaş/Avans", requiredPermission: null, icon: Wallet, personnelOnly: true, category: "👤 PERSONEL", moduleType: "shared" },
+    { href: "/admin/my-attendance", label: "Mesai Geçmişim", requiredPermission: null, icon: Clock, personnelOnly: true, category: "👤 PERSONEL", moduleType: "shared" },
   ]
 
   // Yetki bazlı menü filtreleme
@@ -273,7 +299,7 @@ export default function AdminSidebar({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="font-semibold text-white">Şantiye Asistanı</h1>
+          <h1 className="font-semibold text-white">Nexa ERP</h1>
           <div className="w-11" aria-hidden="true" />
         </div>
       </div>
@@ -298,22 +324,12 @@ export default function AdminSidebar({
             <div className={`mb-4 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
               {!isCollapsed && (
                 <div>
-                  <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">Şantiye Asistanı</h1>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Nexa ERP</p>
+                  <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">Nexa ERP</h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Şantiye & Denetim Asistanı</p>
                 </div>
               )}
               <div className="flex items-center gap-3">
-                {!isCollapsed && mounted && (
-                  <button
-                    type="button"
-                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-slate-100 p-2 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
-                    title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
-                  >
-                    {mounted ? (theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />) : <div className="h-5 w-5" />}
-                  </button>
-                )}
-                {!isCollapsed && <NotificationBell />}
+                {!isCollapsed && <NotificationBell />
                 <button
                   type="button"
                   onClick={() => setIsCollapsed(!isCollapsed)}
@@ -340,37 +356,73 @@ export default function AdminSidebar({
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden">
-            {Object.entries(groupedNavItems).map(([category, items]) => (
-              <div key={category}>
-                {!isCollapsed && (
-                  <h3 className="mb-2 mt-6 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">
-                    {category}
-                  </h3>
-                )}
-                {isCollapsed && <div className="mb-2 h-4" aria-hidden="true" />}
-                {items.map((item) => {
-                  const isActive = pathname === item.href
-                  const Icon = item.icon
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className={`flex min-h-[44px] items-center rounded-lg transition-colors ${
-                        isActive
-                          ? "bg-blue-50 font-medium text-blue-600 dark:bg-slate-800 dark:text-white"
-                          : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                      } ${isCollapsed ? "justify-center px-0" : "justify-start gap-3 px-4"}`}
-                      title={isCollapsed ? item.label : undefined}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" />
-                      <span className={`${isCollapsed ? "hidden" : "truncate"}`}>{item.label}</span>
-                    </Link>
-                  )
-                })}
-              </div>
-            ))}
+          <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden pr-2">
+            {Object.entries(groupedNavItems).map(([category, items]) => {
+              const isExpanded = expandedCategories.has(category)
+              const hasActiveItem = items.some(item => pathname === item.href)
+              
+              return (
+                <div key={category}>
+                  <button
+                    onClick={() => !isCollapsed && toggleCategory(category)}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
+                      hasActiveItem || isExpanded
+                        ? "bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400"
+                        : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                    } ${isCollapsed ? "justify-center px-0" : ""}`}
+                    title={isCollapsed ? category : undefined}
+                  >
+                    <div className="flex items-center gap-3">
+                      {!isCollapsed && (
+                        <span className="text-sm font-semibold">{category}</span>
+                      )}
+                    </div>
+                    {!isCollapsed && (
+                      <motion.div
+                        animate={{ rotate: isExpanded ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </motion.div>
+                    )}
+                  </button>
+                  
+                  <AnimatePresence>
+                    {(!isCollapsed && isExpanded) && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-1 space-y-1 pl-2">
+                          {items.map((item) => {
+                            const isActive = pathname === item.href
+                            const Icon = item.icon
+                            return (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setIsOpen(false)}
+                                className={`flex min-h-[40px] items-center rounded-lg transition-colors ${
+                                  isActive
+                                    ? "bg-blue-100 font-medium text-blue-600 dark:bg-slate-700 dark:text-blue-400"
+                                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                                } gap-3 px-3 py-2`}
+                              >
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span className="text-sm">{item.label}</span>
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )
+            })}
           </nav>
 
           {/* Footer */}
@@ -396,9 +448,7 @@ export default function AdminSidebar({
               }`}
               title={isCollapsed ? "Çıkış Yap" : undefined}
             >
-              <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              <LogOut className="h-5 w-5 shrink-0" />
               {!isCollapsed && <span>Çıkış Yap</span>}
             </button>
           </div>
