@@ -84,6 +84,17 @@ export default function LoginPage() {
     setWorkerFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  const handleDemoLogin = (role: "contractor" | "inspection" | "personnel") => {
+    setActiveTab("admin")
+    if (role === "contractor") {
+      setAdminFormData({ email: "admin@nexa.com", password: "123456" })
+    } else if (role === "inspection") {
+      setAdminFormData({ email: "denetim@nexa.com", password: "123456" })
+    } else if (role === "personnel") {
+      setAdminFormData({ email: "personel@nexa.com", password: "123456" })
+    }
+  }
+
   if (!selectedType) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4 relative overflow-hidden">
@@ -253,6 +264,51 @@ export default function LoginPage() {
               Personel Girişi
             </button>
           </div>
+
+          {/* Quick Demo Login Buttons */}
+          {activeTab === "admin" && (
+            <div className="mb-6">
+              <p className="text-xs text-slate-500 mb-3 text-center font-medium">Hızlı Demo Girişi</p>
+              <div className="grid grid-cols-3 gap-2">
+                <motion.button
+                  type="button"
+                  onClick={() => handleDemoLogin("contractor")}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex flex-col items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all"
+                >
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <Wrench className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-blue-700">Müteahhit</span>
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => handleDemoLogin("inspection")}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex flex-col items-center gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-all"
+                >
+                  <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                    <ShieldCheck className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-purple-700">Denetim</span>
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => handleDemoLogin("personnel")}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex flex-col items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-all"
+                >
+                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-green-700">Personel</span>
+                </motion.button>
+              </div>
+            </div>
+          )}
 
           {/* Admin Form */}
           {activeTab === "admin" && (

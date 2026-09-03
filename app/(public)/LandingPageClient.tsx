@@ -258,10 +258,10 @@ export default function LandingPageClient() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-slate-800">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-cyan-600/10" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -272,33 +272,111 @@ export default function LandingPageClient() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-4 py-2 mb-6"
+              className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-4 py-2 mb-8"
             >
               <Zap className="w-4 h-4 text-blue-400" />
               <span className="text-blue-300 text-sm font-medium">Yapay Zeka Destekli Şantiye Yönetimi</span>
             </motion.div>
             
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400">
-                Nexa ERP
+                Şantiyenizi Geleceğe Taşıyın
               </span>
             </h1>
-            <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-3xl mx-auto">
-              Şantiye & Denetim Asistanı - İnşaat ve Yapı Denetim firmaları için tüm operasyonlarınızı tek platformda yönetin
+            <p className="text-xl md:text-2xl text-slate-300 mb-4 max-w-3xl mx-auto">
+              İnşaat ve Yapı Denetim firmaları için tüm operasyonlarınızı tek platformda yönetin
+            </p>
+            <p className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto">
+              Müteahhitler için personel, finans ve taşeron yönetimi. Yapı denetim firmaları için YİBF, numune ve denetim kayıtları.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-blue-500 hover:to-cyan-500 transition-all duration-300 shadow-lg hover:shadow-blue-500/25"
               >
-                Demo Başlat
+                Ücretsiz Demo Başlat
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <div className="flex items-center gap-2 text-slate-400">
-                <Star className="w-5 h-5 text-yellow-400" />
-                <span className="text-sm">20+ Modül • AI Destekli • Mobil Uyumlu</span>
+              <div className="flex items-center gap-6 text-slate-400 text-sm">
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-yellow-400" />
+                  <span>20+ Modül</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-purple-400" />
+                  <span>AI Destekli</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-green-400" />
+                  <span>Mobil Uyumlu</span>
+                </div>
               </div>
+            </div>
+
+            {/* Feature Cards for Construction vs Inspection */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="bg-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30 hover:border-blue-400/50 transition-all"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center">
+                    <Building className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-semibold text-white">Müteahhit Yönetimi</h3>
+                    <p className="text-slate-400 text-sm">İnşaat firmaları için</p>
+                  </div>
+                </div>
+                <ul className="text-left text-slate-300 text-sm space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-blue-400" />
+                    <span>Personel Takibi & Puantaj</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-blue-400" />
+                    <span>Taşeron & Hakediş Yönetimi</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-blue-400" />
+                    <span>Ambar & Finans Takibi</span>
+                  </li>
+                </ul>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="bg-purple-600/10 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30 hover:border-purple-400/50 transition-all"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
+                    <ShieldCheckIcon className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-semibold text-white">Yapı Denetim Yönetimi</h3>
+                    <p className="text-slate-400 text-sm">Denetim firmaları için</p>
+                  </div>
+                </div>
+                <ul className="text-left text-slate-300 text-sm space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-purple-400" />
+                    <span>YİBF & Numune Takibi</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-purple-400" />
+                    <span>Demir & Kalıp Kontrol</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-purple-400" />
+                    <span>Rota Optimizasyonu & AI</span>
+                  </li>
+                </ul>
+              </motion.div>
             </div>
           </motion.div>
         </div>
@@ -423,13 +501,37 @@ export default function LandingPageClient() {
             {/* Module Preview */}
             <div className="lg:col-span-2 bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
               <div className="p-6 border-b border-slate-800">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl flex items-center justify-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-start gap-4"
+                >
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-16 h-16 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl flex items-center justify-center"
+                  >
                     <currentPreview.icon className="w-8 h-8 text-blue-400" />
-                  </div>
+                  </motion.div>
                   <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-white mb-2">{currentPreview.title}</h3>
-                    <p className="text-slate-400">{currentPreview.description}</p>
+                    <motion.h3
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-2xl font-bold text-white mb-2"
+                    >
+                      {currentPreview.title}
+                    </motion.h3>
+                    <motion.p
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                      className="text-slate-400"
+                    >
+                      {currentPreview.description}
+                    </motion.p>
                   </div>
                   <div className="flex gap-2">
                     {currentPreview.category === "construction" && (
@@ -448,10 +550,102 @@ export default function LandingPageClient() {
                       </span>
                     )}
                   </div>
-                </div>
+                </motion.div>
               </div>
 
-              <div className="p-6">
+              {/* Dashboard Mockup Preview */}
+              <div className="p-6 bg-slate-800/30">
+                <motion.div
+                  key={selectedModule}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="bg-slate-900 rounded-xl border border-slate-700 p-4 mb-6"
+                >
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-700">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                    <div className="flex-1 bg-slate-800 rounded-lg px-3 py-1 ml-4">
+                      <span className="text-xs text-slate-400">nexa-erp.com/{currentPreview.title.toLowerCase().replace(/ /g, '-')}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Mockup Content */}
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-blue-600/20 rounded-lg p-3 border border-blue-500/30">
+                        <div className="text-2xl font-bold text-blue-400 mb-1">24</div>
+                        <div className="text-xs text-slate-400">Aktif Proje</div>
+                      </div>
+                      <div className="bg-purple-600/20 rounded-lg p-3 border border-purple-500/30">
+                        <div className="text-2xl font-bold text-purple-400 mb-1">156</div>
+                        <div className="text-xs text-slate-400">Personel</div>
+                      </div>
+                      <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
+                        <div className="text-2xl font-bold text-green-400 mb-1">89%</div>
+                        <div className="text-xs text-slate-400">Verimlilik</div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-slate-800 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-slate-400">İlerleme Grafiği</span>
+                        <span className="text-xs text-green-400">+12%</span>
+                      </div>
+                      <div className="flex gap-1 h-8">
+                        {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95].map((height, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ height: 0 }}
+                            animate={{ height: `${height}%` }}
+                            transition={{ duration: 0.5, delay: i * 0.05 }}
+                            className="flex-1 bg-gradient-to-t from-blue-600 to-cyan-400 rounded-sm"
+                            style={{ height: `${height}%` }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-800 rounded-lg p-3">
+                        <div className="text-xs text-slate-400 mb-2">Son Aktiviteler</div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="text-xs text-slate-300">Proje oluşturuldu</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            <span className="text-xs text-slate-300">Personel atandı</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-purple-500" />
+                            <span className="text-xs text-slate-300">Rapor tamamlandı</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-slate-800 rounded-lg p-3">
+                        <div className="text-xs text-slate-400 mb-2">Bekleyen Görevler</div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-300">Onay bekleyen</span>
+                            <span className="text-xs text-orange-400">5</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-300">Süre aşan</span>
+                            <span className="text-xs text-red-400">2</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-300">Tamamlanan</span>
+                            <span className="text-xs text-green-400">23</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
                 <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Target className="w-5 h-5 text-blue-400" />
                   Öne Çıkan Özellikler
