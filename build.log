@@ -1,0 +1,42 @@
+
+> mahir-bakay-muhendislik@0.1.0 prebuild
+> node -e "const fs=require('fs'); try { fs.rmSync('.next', { recursive: true, force: true }); } catch(e) { }"
+
+
+> mahir-bakay-muhendislik@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.2.12 (webpack)
+- Environments: .env
+
+  Creating an optimized production build ...
+> [PWA] Compile server
+> [PWA] Compile server
+> [PWA] Compile client (static)
+> [PWA] Auto register service worker with: C:\Users\Umut\OneDrive\Masaüstü\mahir-bakay-erp\mahir-bakay-erp\mahir-bakay-erp\node_modules\next-pwa\register.js
+> [PWA] Service worker: C:\Users\Umut\OneDrive\Masaüstü\mahir-bakay-erp\mahir-bakay-erp\mahir-bakay-erp\public\sw.js
+> [PWA]   url: /sw.js
+> [PWA]   scope: /
+⚠ Production code optimization has been disabled in your project. Read more: https://nextjs.org/docs/messages/minification-disabled
+⚠ Compiled with warnings in 2.2min
+
+/_next/static/chunks/82eeef11.5e5438bede095a20.js is 4.76 MB, and won't be precached. Configure maximumFileSizeToCacheInBytes to change this limit.
+
+/_next/static/chunks/7ff01bbe.aa35fd64c16b1f53.js is 4.76 MB, and won't be precached. Configure maximumFileSizeToCacheInBytes to change this limit.
+
+/_next/static/chunks/8957.776c9dec1b2b804c.js is 3.76 MB, and won't be precached. Configure maximumFileSizeToCacheInBytes to change this limit.
+
+  Running TypeScript ...
+Failed to type check.
+
+./app/admin/projects/[id]/page.tsx:199:15
+Type error: Type 'unknown' is not assignable to type 'ReactNode'.
+
+  [90m197 |[0m                 {project.name || project.title}
+  [90m198 |[0m               </h1>
+[31m[1m>[0m [90m199 |[0m               {project.yibfNo && (
+  [90m    |[0m               [31m[1m^[0m
+  [90m200 |[0m                 <span className=[32m"px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 ...[0m
+  [90m201 |[0m                   [33mYİBF[0m: {project.yibfNo}
+  [90m202 |[0m                 </span>
+Next.js build worker exited with code: 1 and signal: null

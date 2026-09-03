@@ -1,0 +1,8 @@
+
+> mahir-bakay-muhendislik@0.1.0 prebuild
+> node -e "const fs=require('fs'); try { fs.rmSync('.next', { recursive: true, force: true }); } catch(e) { }"
+
+
+> mahir-bakay-muhendislik@0.1.0 build
+> next build --webpack ; echo 9009
+

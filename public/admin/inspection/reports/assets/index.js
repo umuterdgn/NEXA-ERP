@@ -1,0 +1,31866 @@
+import * as I from "three";
+import { BufferGeometry as Ao, BufferAttribute as Oo, ShapePath as Ji, ShapeUtils as Qi, Shape as Lo, LineCurve as $n, QuadraticBezierCurve as fs, CubicBezierCurve as ps, EllipseCurve as ds } from "three";
+class gs {
+  constructor() {
+    this.listeners = [];
+  }
+  /**
+   * Add the event listener
+   * @param listener Input listener to be added
+   */
+  addEventListener(e) {
+    this.listeners.push(e);
+  }
+  /**
+   * Remove the listener
+   * @param listener Input listener to be removed
+   */
+  removeEventListener(e) {
+    this.listeners = this.listeners.filter((n) => n !== e);
+  }
+  /**
+   * Remove all listeners bound to the target and add one new listener
+   * @param listener Input listener to be added
+   */
+  replaceEventListener(e) {
+    this.removeEventListener(e), this.addEventListener(e);
+  }
+  /**
+   * Notify all listeners
+   * @param payload Input payload passed to listener
+   */
+  dispatch(e, ...n) {
+    for (const r of this.listeners)
+      r.call(null, e, ...n);
+  }
+}
+const Io = (t) => t.substring(t.lastIndexOf(".") + 1), ea = (t) => t.split("/").pop(), lt = (t) => {
+  const e = ea(t);
+  if (e) {
+    const n = e.lastIndexOf(".");
+    return n === -1 ? e : e.substring(0, n);
+  }
+  return t;
+}, Ro = [
+  0,
+  16711680,
+  16776960,
+  65280,
+  65535,
+  255,
+  16711935,
+  16777215,
+  8421504,
+  12632256,
+  16711680,
+  16744319,
+  13369344,
+  13395558,
+  10027008,
+  10046540,
+  8323072,
+  8339263,
+  4980736,
+  4990502,
+  16727808,
+  16752511,
+  13382400,
+  13401958,
+  10036736,
+  10051404,
+  8331008,
+  8343359,
+  4985600,
+  4992806,
+  16744192,
+  16760703,
+  13395456,
+  13408614,
+  10046464,
+  10056268,
+  8339200,
+  8347455,
+  4990464,
+  4995366,
+  16760576,
+  16768895,
+  13408512,
+  13415014,
+  10056192,
+  10061132,
+  8347392,
+  8351551,
+  4995328,
+  4997670,
+  16776960,
+  16777087,
+  13421568,
+  13421670,
+  10000384,
+  10000460,
+  8355584,
+  8355647,
+  5000192,
+  5000230,
+  12582656,
+  14679935,
+  10079232,
+  11717734,
+  7510016,
+  8755276,
+  6258432,
+  7307071,
+  3755008,
+  4344870,
+  8388352,
+  12582783,
+  6736896,
+  10079334,
+  5019648,
+  7510092,
+  4161280,
+  6258495,
+  2509824,
+  3755046,
+  4194048,
+  10485631,
+  3394560,
+  8375398,
+  2529280,
+  6264908,
+  2064128,
+  5209919,
+  1264640,
+  3099686,
+  65280,
+  8388479,
+  52224,
+  6736998,
+  38912,
+  5019724,
+  32512,
+  4161343,
+  19456,
+  2509862,
+  65343,
+  8388511,
+  52275,
+  6737023,
+  38950,
+  5019743,
+  32543,
+  4161359,
+  19475,
+  2509871,
+  65407,
+  8388543,
+  52326,
+  6737049,
+  38988,
+  5019762,
+  32575,
+  4161375,
+  19494,
+  2509881,
+  65471,
+  8388575,
+  52377,
+  6737074,
+  39026,
+  5019781,
+  32607,
+  4161391,
+  19513,
+  2509890,
+  65535,
+  8388607,
+  52428,
+  6737100,
+  39064,
+  5019800,
+  32639,
+  4161407,
+  19532,
+  2509900,
+  49151,
+  8380415,
+  39372,
+  6730444,
+  29336,
+  5014936,
+  24447,
+  4157311,
+  14668,
+  2507340,
+  32767,
+  8372223,
+  26316,
+  6724044,
+  19608,
+  5010072,
+  16255,
+  4153215,
+  9804,
+  2505036,
+  16383,
+  8364031,
+  13260,
+  6717388,
+  9880,
+  5005208,
+  8063,
+  4149119,
+  4940,
+  2502476,
+  255,
+  8355839,
+  204,
+  6710988,
+  152,
+  5000344,
+  127,
+  4145023,
+  76,
+  2500172,
+  4129023,
+  10452991,
+  3342540,
+  8349388,
+  2490520,
+  6245528,
+  2031743,
+  5193599,
+  1245260,
+  3089996,
+  8323327,
+  12550143,
+  6684876,
+  10053324,
+  4980888,
+  7490712,
+  4128895,
+  6242175,
+  2490444,
+  3745356,
+  12517631,
+  14647295,
+  10027212,
+  11691724,
+  7471256,
+  8735896,
+  6226047,
+  7290751,
+  3735628,
+  4335180,
+  16711935,
+  16744447,
+  13369548,
+  13395660,
+  9961624,
+  9981080,
+  8323199,
+  8339327,
+  4980812,
+  4990540,
+  16711871,
+  16744415,
+  13369497,
+  13395634,
+  9961586,
+  9981061,
+  8323167,
+  8339311,
+  4980793,
+  4990530,
+  16711807,
+  16744383,
+  13369446,
+  13395609,
+  9961548,
+  9981042,
+  8323135,
+  8339295,
+  4980774,
+  4990521,
+  16711743,
+  16744351,
+  13369395,
+  13395583,
+  9961510,
+  9981023,
+  8323103,
+  8339279,
+  4980755,
+  4990511,
+  3355443,
+  5987163,
+  8684676,
+  11382189,
+  14079702,
+  16777215,
+  0
+], ta = (t) => Ro[t];
+function na(t) {
+  var r, s, i;
+  if (!t || Bo(t))
+    return 0;
+  let e = 0;
+  const { attributes: n } = t;
+  for (const a of Object.keys(n)) {
+    const o = n[a];
+    ((r = o == null ? void 0 : o.array) == null ? void 0 : r.byteLength) != null && (e += o.array.byteLength);
+  }
+  return ((i = (s = t.index) == null ? void 0 : s.array) == null ? void 0 : i.byteLength) != null && (e += t.index.array.byteLength), e;
+}
+function Bo(t) {
+  return t.disposed === !0 ? !0 : Object.keys(t.attributes).length === 0 && t.index == null;
+}
+function Do(t) {
+  return t ? t.length * 2 : 0;
+}
+function ra(t) {
+  return t instanceof ArrayBuffer || ArrayBuffer.isView(t) ? t.byteLength : 0;
+}
+function Le(t) {
+  if (!Number.isFinite(t) || t < 0)
+    return "0 B";
+  if (t < 1024)
+    return `${Math.round(t)} B`;
+  const e = ["KB", "MB", "GB"];
+  let n = t / 1024, r = 0;
+  for (; n >= 1024 && r < e.length - 1; )
+    n /= 1024, r++;
+  const s = Number.isInteger(n) || n >= 10 ? 0 : 1;
+  return `${n.toFixed(s)} ${e[r]}`;
+}
+class zr {
+  /**
+   * Creates an LRU cache with the given capacity and optional eviction handler.
+   *
+   * @param maxSize - Maximum number of entries to retain. Defaults to 4096.
+   * @param onEvict - Optional callback invoked for each evicted or replaced value.
+   */
+  constructor(e = 4096, n) {
+    this.map = /* @__PURE__ */ new Map(), this.maxSize = e, this.onEvict = n;
+  }
+  /**
+   * Returns the value for `key` and marks it as most recently used.
+   *
+   * @param key - The cache key to look up.
+   * @returns The cached value, or `undefined` if the key is not present.
+   */
+  get(e) {
+    const n = this.map.get(e);
+    return n !== void 0 && (this.map.delete(e), this.map.set(e, n)), n;
+  }
+  /**
+   * Stores `value` under `key` and marks it as most recently used.
+   *
+   * If the key already exists, its previous value is passed to {@link onEvict}
+   * when the new value differs. If the cache is at capacity, the least recently
+   * used entry is evicted before the new entry is inserted.
+   *
+   * @param key - The cache key to set.
+   * @param value - The value to store.
+   */
+  set(e, n) {
+    var r, s;
+    if (this.map.has(e)) {
+      const i = this.map.get(e);
+      this.map.delete(e), i !== n && ((r = this.onEvict) == null || r.call(this, e, i));
+    } else if (this.map.size >= this.maxSize) {
+      const i = this.map.keys().next().value;
+      if (i !== void 0) {
+        const a = this.map.get(i);
+        this.map.delete(i), (s = this.onEvict) == null || s.call(this, i, a);
+      }
+    }
+    this.map.set(e, n);
+  }
+  /**
+   * Returns whether `key` exists in the cache without updating its recency.
+   *
+   * @param key - The cache key to test.
+   * @returns True if the key is present; otherwise, false.
+   */
+  has(e) {
+    return this.map.has(e);
+  }
+  /**
+   * Number of entries currently stored in the cache.
+   */
+  get size() {
+    return this.map.size;
+  }
+  /**
+   * Maximum number of entries this cache may retain.
+   */
+  get capacity() {
+    return this.maxSize;
+  }
+  /**
+   * Iterates over cached values without updating recency order.
+   */
+  values() {
+    return this.map.values();
+  }
+  /**
+   * Removes all entries from the cache.
+   *
+   * If an {@link onEvict} handler was provided, it is invoked once per entry
+   * before the internal map is cleared.
+   */
+  clear() {
+    if (this.onEvict)
+      for (const [e, n] of this.map)
+        this.onEvict(e, n);
+    this.map.clear();
+  }
+}
+const Mo = 4096;
+class _o {
+  constructor(e = Mo) {
+    this.maxSize = e, this.cache = new zr(e, (n, r) => {
+      r.dispose();
+    });
+  }
+  /**
+   * Returns true if the geometry of the specified character code exists in the cache.
+   * Otherwise, returns false.
+   * @param code One character code.
+   * @param size The font size.
+   * @returns True if the geometry of the specified character code exists in the cache.
+   * Otherwise, returns false.
+   */
+  hasGeometry(e, n) {
+    const r = this.generateKey(e, n);
+    return this.cache.has(r);
+  }
+  /**
+   * Get the geometry for a single character from cache if available.
+   * The cache key includes both character codeand size.
+   * @param code The character code to get geometry from cache.
+   * @param size The font size.
+   * @returns The geometry for a single character from cache if avaiable.
+   * Return undefined if the character not found in cache.
+   */
+  getGeometry(e, n) {
+    const r = this.generateKey(e, n);
+    return this.cache.get(r);
+  }
+  /**
+   * Set the geometry to cache for a single character.
+   * @param char The character to set geometry for.
+   * @param size The font size.
+   * @param geometry The geometry to set.
+   */
+  setGeometry(e, n, r) {
+    const s = this.generateKey(e, n);
+    this.cache.set(s, r);
+  }
+  /**
+   * Estimates memory used by cached BufferGeometry attribute/index buffers.
+   */
+  getStats() {
+    let e = 0;
+    for (const n of this.cache.values())
+      e += na(n);
+    return {
+      entries: this.cache.size,
+      maxEntries: this.maxSize,
+      estimatedBytes: e
+    };
+  }
+  /**
+   * Dispose all cached geometries.
+   */
+  dispose() {
+    this.cache.clear();
+  }
+  /**
+   * Generates cache key by character and font size.
+   * @param char One character code.
+   * @param size The font size.
+   */
+  generateKey(e, n) {
+    return `${e}_${n}`;
+  }
+}
+class sa {
+  constructor(e) {
+    this.names = /* @__PURE__ */ new Set(), this.unsupportedChars = {}, this.encoding = e.encoding, e.alias.forEach((n) => this.names.add(n)), this.sourceByteLength = ra(e.data), this.cache = new _o();
+  }
+  /**
+   * Releases cache resources held by this font so they are eligible for GC
+   * and no longer appear in {@link estimateMemoryUsage}.
+   */
+  dispose() {
+    this.cache.dispose();
+  }
+  /**
+   * Gets a named SHX shape glyph when supported by the font implementation.
+   */
+  getShapeByName(e, n) {
+  }
+  /**
+   * Records an unsupported character in the font.
+   * Increments the count for the given character in unsupportedChars.
+   * @param char - The unsupported character to record
+   */
+  addUnsupportedChar(e) {
+    this.unsupportedChars[e] || (this.unsupportedChars[e] = 0), this.unsupportedChars[e]++;
+  }
+}
+class ia extends I.Shape {
+  constructor() {
+    super(...arguments), this.width = 0;
+  }
+  /**
+   * Whether the shape has drawable stroke or mesh geometry (not advance-only).
+   */
+  hasStrokeGeometry() {
+    return this.width > 0;
+  }
+}
+const Cr = (t, e) => e.some((n) => t instanceof n);
+let ms, ys;
+function Uo() {
+  return ms || (ms = [
+    IDBDatabase,
+    IDBObjectStore,
+    IDBIndex,
+    IDBCursor,
+    IDBTransaction
+  ]);
+}
+function Po() {
+  return ys || (ys = [
+    IDBCursor.prototype.advance,
+    IDBCursor.prototype.continue,
+    IDBCursor.prototype.continuePrimaryKey
+  ]);
+}
+const Tr = /* @__PURE__ */ new WeakMap(), Yn = /* @__PURE__ */ new WeakMap(), Nn = /* @__PURE__ */ new WeakMap();
+function No(t) {
+  const e = new Promise((n, r) => {
+    const s = () => {
+      t.removeEventListener("success", i), t.removeEventListener("error", a);
+    }, i = () => {
+      n(Tt(t.result)), s();
+    }, a = () => {
+      r(t.error), s();
+    };
+    t.addEventListener("success", i), t.addEventListener("error", a);
+  });
+  return Nn.set(e, t), e;
+}
+function Go(t) {
+  if (Tr.has(t))
+    return;
+  const e = new Promise((n, r) => {
+    const s = () => {
+      t.removeEventListener("complete", i), t.removeEventListener("error", a), t.removeEventListener("abort", a);
+    }, i = () => {
+      n(), s();
+    }, a = () => {
+      r(t.error || new DOMException("AbortError", "AbortError")), s();
+    };
+    t.addEventListener("complete", i), t.addEventListener("error", a), t.addEventListener("abort", a);
+  });
+  Tr.set(t, e);
+}
+let kr = {
+  get(t, e, n) {
+    if (t instanceof IDBTransaction) {
+      if (e === "done")
+        return Tr.get(t);
+      if (e === "store")
+        return n.objectStoreNames[1] ? void 0 : n.objectStore(n.objectStoreNames[0]);
+    }
+    return Tt(t[e]);
+  },
+  set(t, e, n) {
+    return t[e] = n, !0;
+  },
+  has(t, e) {
+    return t instanceof IDBTransaction && (e === "done" || e === "store") ? !0 : e in t;
+  }
+};
+function aa(t) {
+  kr = t(kr);
+}
+function Ho(t) {
+  return Po().includes(t) ? function(...e) {
+    return t.apply(Fr(this), e), Tt(this.request);
+  } : function(...e) {
+    return Tt(t.apply(Fr(this), e));
+  };
+}
+function zo(t) {
+  return typeof t == "function" ? Ho(t) : (t instanceof IDBTransaction && Go(t), Cr(t, Uo()) ? new Proxy(t, kr) : t);
+}
+function Tt(t) {
+  if (t instanceof IDBRequest)
+    return No(t);
+  if (Yn.has(t))
+    return Yn.get(t);
+  const e = zo(t);
+  return e !== t && (Yn.set(t, e), Nn.set(e, t)), e;
+}
+const Fr = (t) => Nn.get(t);
+function Wo(t, e, { blocked: n, upgrade: r, blocking: s, terminated: i } = {}) {
+  const a = indexedDB.open(t, e), o = Tt(a);
+  return r && a.addEventListener("upgradeneeded", (c) => {
+    r(Tt(a.result), c.oldVersion, c.newVersion, Tt(a.transaction), c);
+  }), n && a.addEventListener("blocked", (c) => n(
+    // Casting due to https://github.com/microsoft/TypeScript-DOM-lib-generator/pull/1405
+    c.oldVersion,
+    c.newVersion,
+    c
+  )), o.then((c) => {
+    i && c.addEventListener("close", () => i()), s && c.addEventListener("versionchange", (l) => s(l.oldVersion, l.newVersion, l));
+  }).catch(() => {
+  }), o;
+}
+const Vo = ["get", "getKey", "getAll", "getAllKeys", "count"], qo = ["put", "add", "delete", "clear"], Xn = /* @__PURE__ */ new Map();
+function bs(t, e) {
+  if (!(t instanceof IDBDatabase && !(e in t) && typeof e == "string"))
+    return;
+  if (Xn.get(e))
+    return Xn.get(e);
+  const n = e.replace(/FromIndex$/, ""), r = e !== n, s = qo.includes(n);
+  if (
+    // Bail if the target doesn't exist on the target. Eg, getAll isn't in Edge.
+    !(n in (r ? IDBIndex : IDBObjectStore).prototype) || !(s || Vo.includes(n))
+  )
+    return;
+  const i = async function(a, ...o) {
+    const c = this.transaction(a, s ? "readwrite" : "readonly");
+    let l = c.store;
+    return r && (l = l.index(o.shift())), (await Promise.all([
+      l[n](...o),
+      s && c.done
+    ]))[0];
+  };
+  return Xn.set(e, i), i;
+}
+aa((t) => ({
+  ...t,
+  get: (e, n, r) => bs(e, n) || t.get(e, n, r),
+  has: (e, n) => !!bs(e, n) || t.has(e, n)
+}));
+const jo = ["continue", "continuePrimaryKey", "advance"], xs = {}, Er = /* @__PURE__ */ new WeakMap(), oa = /* @__PURE__ */ new WeakMap(), $o = {
+  get(t, e) {
+    if (!jo.includes(e))
+      return t[e];
+    let n = xs[e];
+    return n || (n = xs[e] = function(...r) {
+      Er.set(this, oa.get(this)[e](...r));
+    }), n;
+  }
+};
+async function* Yo(...t) {
+  let e = this;
+  if (e instanceof IDBCursor || (e = await e.openCursor(...t)), !e)
+    return;
+  e = e;
+  const n = new Proxy(e, $o);
+  for (oa.set(n, e), Nn.set(n, Fr(e)); e; )
+    yield n, e = await (Er.get(n) || e.continue()), Er.delete(n);
+}
+function vs(t, e) {
+  return e === Symbol.asyncIterator && Cr(t, [IDBIndex, IDBObjectStore, IDBCursor]) || e === "iterate" && Cr(t, [IDBIndex, IDBObjectStore]);
+}
+aa((t) => ({
+  ...t,
+  get(e, n, r) {
+    return vs(e, n) ? Yo : t.get(e, n, r);
+  },
+  has(e, n) {
+    return vs(e, n) || t.has(e, n);
+  }
+}));
+const St = {
+  fonts: "fonts"
+}, Kn = [
+  {
+    version: 1,
+    stores: [
+      {
+        name: St.fonts,
+        keyPath: "name"
+      }
+    ]
+  },
+  {
+    version: 2,
+    stores: [
+      {
+        name: St.fonts,
+        keyPath: "name"
+      }
+    ]
+  }
+], Be = class Be {
+  constructor() {
+    this.isClosing = !1, typeof window < "u" && window.addEventListener("unload", () => {
+      this.close();
+    });
+  }
+  /**
+   * Returns the singleton instance of the FontCacheManager
+   */
+  static get instance() {
+    return Be._instance || (Be._instance = new Be()), Be._instance;
+  }
+  /**
+   * Sets a font in the cache
+   * @param fileName The font file name (key)
+   * @param fontData The font data to store
+   */
+  async set(e, n) {
+    await (await this.getDatabase()).put(St.fonts, { ...n, name: e });
+  }
+  /**
+   * Gets a font from the cache
+   * @param fileName The font file name (key)
+   * @returns The font data if found, undefined otherwise
+   */
+  async get(e) {
+    return await (await this.getDatabase()).get(St.fonts, e);
+  }
+  /**
+   * Finds a font in the cache by primary name or alias.
+   * Font names may include or omit a file extension (e.g. `romans` or `romans.shx`).
+   * @param fontName The font name or alias to look up
+   * @returns The font data if found, undefined otherwise
+   */
+  async find(e) {
+    const n = lt(e).toLowerCase(), r = await this.get(n);
+    return r || (await this.getAll()).find(
+      (i) => {
+        var a;
+        return i.name === n || ((a = i.alias) == null ? void 0 : a.some((o) => o.toLowerCase() === n));
+      }
+    );
+  }
+  /**
+   * Deletes a font from the cache
+   * @param fileName The font file name (key)
+   */
+  async delete(e) {
+    await (await this.getDatabase()).delete(St.fonts, e);
+  }
+  /**
+   * Gets all fonts from the cache
+   * @returns An array of all font data in the cache
+   */
+  async getAll() {
+    return await (await this.getDatabase()).getAll(St.fonts);
+  }
+  /**
+   * Estimates IndexedDB font-blob storage size.
+   *
+   * @remarks
+   * This loads all cached font payloads into the JS heap temporarily via
+   * {@link getAll}, then measures each `data` ArrayBuffer.
+   */
+  async getStorageStats() {
+    const n = (await this.getAll()).map((s) => ({
+      name: s.name,
+      type: s.type,
+      bytes: ra(s.data)
+    })), r = n.reduce((s, i) => s + i.bytes, 0);
+    return {
+      fontCount: n.length,
+      totalBytes: r,
+      fonts: n
+    };
+  }
+  /**
+   * Clears all fonts from the cache
+   */
+  async clear() {
+    await (await this.getDatabase()).clear(St.fonts);
+  }
+  /**
+   * Checks if a font exists in the cache
+   * @param fileName The font file name (key)
+   */
+  async has(e) {
+    return await this.get(e) !== void 0;
+  }
+  /**
+   * Closes the database connection and cleans up resources.
+   * After calling this, any further operations will require reopening the database.
+   */
+  close() {
+    if (!this.isClosing) {
+      this.isClosing = !0;
+      try {
+        this.db && (this.db.close(), this.db = void 0);
+      } finally {
+        this.isClosing = !1;
+      }
+    }
+  }
+  /**
+   * Destroys the database instance and deletes all data.
+   * Use with caution as this operation cannot be undone.
+   */
+  async destroy() {
+    this.close(), await indexedDB.deleteDatabase(Be.DATABASE_NAME), Be._instance = void 0;
+  }
+  // Private methods for database management
+  async getDatabase() {
+    if (this.isClosing)
+      throw new Error("Cannot perform operation while database is closing");
+    return this.db ? this.db : (this.db = await Wo(
+      Be.DATABASE_NAME,
+      Be.DATABASE_VERSION,
+      {
+        upgrade: (e, n, r) => this.handleUpgrade(e, n, r),
+        blocked() {
+          console.warn(
+            "Database upgrade blocked - please close other tabs using the application"
+          );
+        },
+        blocking() {
+          console.warn("Database blocking newer version - closing connection"), Be.instance.close();
+        }
+      }
+    ), this.db);
+  }
+  /**
+   * Applies all schema versions that are greater than the old version and less than or equal to the new version
+   * @param db The database instance
+   * @param oldVersion The old version of the database
+   * @param newVersion The new version of the database
+   */
+  handleUpgrade(e, n, r) {
+    const s = Kn.filter(
+      (i) => i.version > n && (!r || i.version <= r)
+    );
+    for (const i of s)
+      this.applySchemaVersion(e, i);
+  }
+  /**
+   * Applies a single schema version's changes to the database
+   * @param db The database instance
+   * @param schema The schema version to apply
+   */
+  applySchemaVersion(e, n) {
+    for (const r of n.stores)
+      e.objectStoreNames.contains(r.name) || e.createObjectStore(r.name, { keyPath: r.keyPath });
+  }
+};
+Be.DATABASE_NAME = "mlightcad", Be.DATABASE_VERSION = Kn[Kn.length - 1].version;
+let st = Be;
+const Xo = 512;
+function Ko(t, e) {
+  return (t + e) * Xo;
+}
+const Zo = 2.5, Jo = 1.5;
+function ca() {
+  return {
+    meshCount: 0,
+    lineCount: 0,
+    estimatedBytes: 0
+  };
+}
+const Ar = {
+  minimal: ["txt", "simsun"],
+  r12r14: ["txt", "simplex", "romans", "gbcbig", "simsun"],
+  modern: ["hztxt", "simsun"],
+  international: ["txt", "simplex", "romans", "simsun"],
+  cjk: ["gbcbig", "hztxt", "simsun"]
+}, Zn = {
+  minimal: ["simplex", "amgdt"],
+  r12r14: ["simplex", "amgdt"],
+  modern: ["simplex", "amgdt"],
+  international: ["simplex", "amgdt"],
+  cjk: ["simplex", "amgdt"]
+};
+function Ss(t) {
+  return Object.prototype.hasOwnProperty.call(Ar, t);
+}
+var Wr = 0, la = -3;
+function Zt() {
+  this.table = new Uint16Array(16), this.trans = new Uint16Array(288);
+}
+function Qo(t, e) {
+  this.source = t, this.sourceIndex = 0, this.tag = 0, this.bitcount = 0, this.dest = e, this.destLen = 0, this.ltree = new Zt(), this.dtree = new Zt();
+}
+var ua = new Zt(), ha = new Zt(), Vr = new Uint8Array(30), qr = new Uint16Array(30), fa = new Uint8Array(30), pa = new Uint16Array(30), ec = new Uint8Array([
+  16,
+  17,
+  18,
+  0,
+  8,
+  7,
+  9,
+  6,
+  10,
+  5,
+  11,
+  4,
+  12,
+  3,
+  13,
+  2,
+  14,
+  1,
+  15
+]), ws = new Zt(), je = new Uint8Array(320);
+function da(t, e, n, r) {
+  var s, i;
+  for (s = 0; s < n; ++s) t[s] = 0;
+  for (s = 0; s < 30 - n; ++s) t[s + n] = s / n | 0;
+  for (i = r, s = 0; s < 30; ++s)
+    e[s] = i, i += 1 << t[s];
+}
+function tc(t, e) {
+  var n;
+  for (n = 0; n < 7; ++n) t.table[n] = 0;
+  for (t.table[7] = 24, t.table[8] = 152, t.table[9] = 112, n = 0; n < 24; ++n) t.trans[n] = 256 + n;
+  for (n = 0; n < 144; ++n) t.trans[24 + n] = n;
+  for (n = 0; n < 8; ++n) t.trans[168 + n] = 280 + n;
+  for (n = 0; n < 112; ++n) t.trans[176 + n] = 144 + n;
+  for (n = 0; n < 5; ++n) e.table[n] = 0;
+  for (e.table[5] = 32, n = 0; n < 32; ++n) e.trans[n] = n;
+}
+var Cs = new Uint16Array(16);
+function Jn(t, e, n, r) {
+  var s, i;
+  for (s = 0; s < 16; ++s) t.table[s] = 0;
+  for (s = 0; s < r; ++s) t.table[e[n + s]]++;
+  for (t.table[0] = 0, i = 0, s = 0; s < 16; ++s)
+    Cs[s] = i, i += t.table[s];
+  for (s = 0; s < r; ++s)
+    e[n + s] && (t.trans[Cs[e[n + s]]++] = s);
+}
+function nc(t) {
+  t.bitcount-- || (t.tag = t.source[t.sourceIndex++], t.bitcount = 7);
+  var e = t.tag & 1;
+  return t.tag >>>= 1, e;
+}
+function Ye(t, e, n) {
+  if (!e)
+    return n;
+  for (; t.bitcount < 24; )
+    t.tag |= t.source[t.sourceIndex++] << t.bitcount, t.bitcount += 8;
+  var r = t.tag & 65535 >>> 16 - e;
+  return t.tag >>>= e, t.bitcount -= e, r + n;
+}
+function Or(t, e) {
+  for (; t.bitcount < 24; )
+    t.tag |= t.source[t.sourceIndex++] << t.bitcount, t.bitcount += 8;
+  var n = 0, r = 0, s = 0, i = t.tag;
+  do
+    r = 2 * r + (i & 1), i >>>= 1, ++s, n += e.table[s], r -= e.table[s];
+  while (r >= 0);
+  return t.tag = i, t.bitcount -= s, e.trans[n + r];
+}
+function rc(t, e, n) {
+  var r, s, i, a, o, c;
+  for (r = Ye(t, 5, 257), s = Ye(t, 5, 1), i = Ye(t, 4, 4), a = 0; a < 19; ++a) je[a] = 0;
+  for (a = 0; a < i; ++a) {
+    var l = Ye(t, 3, 0);
+    je[ec[a]] = l;
+  }
+  for (Jn(ws, je, 0, 19), o = 0; o < r + s; ) {
+    var u = Or(t, ws);
+    switch (u) {
+      case 16:
+        var f = je[o - 1];
+        for (c = Ye(t, 2, 3); c; --c)
+          je[o++] = f;
+        break;
+      case 17:
+        for (c = Ye(t, 3, 3); c; --c)
+          je[o++] = 0;
+        break;
+      case 18:
+        for (c = Ye(t, 7, 11); c; --c)
+          je[o++] = 0;
+        break;
+      default:
+        je[o++] = u;
+        break;
+    }
+  }
+  Jn(e, je, 0, r), Jn(n, je, r, s);
+}
+function Ts(t, e, n) {
+  for (; ; ) {
+    var r = Or(t, e);
+    if (r === 256)
+      return Wr;
+    if (r < 256)
+      t.dest[t.destLen++] = r;
+    else {
+      var s, i, a, o;
+      for (r -= 257, s = Ye(t, Vr[r], qr[r]), i = Or(t, n), a = t.destLen - Ye(t, fa[i], pa[i]), o = a; o < a + s; ++o)
+        t.dest[t.destLen++] = t.dest[o];
+    }
+  }
+}
+function sc(t) {
+  for (var e, n, r; t.bitcount > 8; )
+    t.sourceIndex--, t.bitcount -= 8;
+  if (e = t.source[t.sourceIndex + 1], e = 256 * e + t.source[t.sourceIndex], n = t.source[t.sourceIndex + 3], n = 256 * n + t.source[t.sourceIndex + 2], e !== (~n & 65535))
+    return la;
+  for (t.sourceIndex += 4, r = e; r; --r)
+    t.dest[t.destLen++] = t.source[t.sourceIndex++];
+  return t.bitcount = 0, Wr;
+}
+function ga(t, e) {
+  var n = new Qo(t, e), r, s, i;
+  do {
+    switch (r = nc(n), s = Ye(n, 2, 0), s) {
+      case 0:
+        i = sc(n);
+        break;
+      case 1:
+        i = Ts(n, ua, ha);
+        break;
+      case 2:
+        rc(n, n.ltree, n.dtree), i = Ts(n, n.ltree, n.dtree);
+        break;
+      default:
+        i = la;
+    }
+    if (i !== Wr)
+      throw new Error("Data error");
+  } while (!r);
+  return n.destLen < n.dest.length ? typeof n.dest.slice == "function" ? n.dest.slice(0, n.destLen) : n.dest.subarray(0, n.destLen) : n.dest;
+}
+tc(ua, ha);
+da(Vr, qr, 4, 3);
+da(fa, pa, 2, 1);
+Vr[28] = 0;
+qr[28] = 258;
+function Ot(t, e, n, r, s) {
+  return Math.pow(1 - s, 3) * t + 3 * Math.pow(1 - s, 2) * s * e + 3 * (1 - s) * Math.pow(s, 2) * n + Math.pow(s, 3) * r;
+}
+function Ft() {
+  this.x1 = Number.NaN, this.y1 = Number.NaN, this.x2 = Number.NaN, this.y2 = Number.NaN;
+}
+Ft.prototype.isEmpty = function() {
+  return isNaN(this.x1) || isNaN(this.y1) || isNaN(this.x2) || isNaN(this.y2);
+};
+Ft.prototype.addPoint = function(t, e) {
+  typeof t == "number" && ((isNaN(this.x1) || isNaN(this.x2)) && (this.x1 = t, this.x2 = t), t < this.x1 && (this.x1 = t), t > this.x2 && (this.x2 = t)), typeof e == "number" && ((isNaN(this.y1) || isNaN(this.y2)) && (this.y1 = e, this.y2 = e), e < this.y1 && (this.y1 = e), e > this.y2 && (this.y2 = e));
+};
+Ft.prototype.addX = function(t) {
+  this.addPoint(t, null);
+};
+Ft.prototype.addY = function(t) {
+  this.addPoint(null, t);
+};
+Ft.prototype.addBezier = function(t, e, n, r, s, i, a, o) {
+  const c = [t, e], l = [n, r], u = [s, i], f = [a, o];
+  this.addPoint(t, e), this.addPoint(a, o);
+  for (let h = 0; h <= 1; h++) {
+    const p = 6 * c[h] - 12 * l[h] + 6 * u[h], y = -3 * c[h] + 9 * l[h] - 9 * u[h] + 3 * f[h], g = 3 * l[h] - 3 * c[h];
+    if (y === 0) {
+      if (p === 0) continue;
+      const C = -g / p;
+      0 < C && C < 1 && (h === 0 && this.addX(Ot(c[h], l[h], u[h], f[h], C)), h === 1 && this.addY(Ot(c[h], l[h], u[h], f[h], C)));
+      continue;
+    }
+    const b = Math.pow(p, 2) - 4 * g * y;
+    if (b < 0) continue;
+    const v = (-p + Math.sqrt(b)) / (2 * y);
+    0 < v && v < 1 && (h === 0 && this.addX(Ot(c[h], l[h], u[h], f[h], v)), h === 1 && this.addY(Ot(c[h], l[h], u[h], f[h], v)));
+    const w = (-p - Math.sqrt(b)) / (2 * y);
+    0 < w && w < 1 && (h === 0 && this.addX(Ot(c[h], l[h], u[h], f[h], w)), h === 1 && this.addY(Ot(c[h], l[h], u[h], f[h], w)));
+  }
+};
+Ft.prototype.addQuad = function(t, e, n, r, s, i) {
+  const a = t + 0.6666666666666666 * (n - t), o = e + 2 / 3 * (r - e), c = a + 1 / 3 * (s - t), l = o + 1 / 3 * (i - e);
+  this.addBezier(t, e, a, o, c, l, s, i);
+};
+var ma = Ft;
+function ge() {
+  this.commands = [], this.fill = "black", this.stroke = null, this.strokeWidth = 1;
+}
+var Vt = {};
+function ya(t, e) {
+  const n = Math.floor(t), r = t - n;
+  if (Vt[e] || (Vt[e] = {}), Vt[e][r] !== void 0) {
+    const i = Vt[e][r];
+    return n + i;
+  }
+  const s = +(Math.round(r + "e+" + e) + "e-" + e);
+  return Vt[e][r] = s, n + s;
+}
+function ba(t) {
+  let e = [[]], n = 0, r = 0;
+  for (let s = 0; s < t.length; s += 1) {
+    const i = e[e.length - 1], a = t[s], o = i[0], c = i[1], l = i[i.length - 1], u = t[s + 1];
+    i.push(a), a.type === "M" ? (n = a.x, r = a.y) : a.type === "L" && (!u || u.type === "Z") ? Math.abs(a.x - n) > 1 || Math.abs(a.y - r) > 1 || i.pop() : a.type === "L" && l && l.x === a.x && l.y === a.y ? i.pop() : a.type === "Z" && (o && c && l && o.type === "M" && c.type === "L" && l.type === "L" && l.x === o.x && l.y === o.y && (i.shift(), i[0].type = "M"), s + 1 < t.length && e.push([]));
+  }
+  return t = [].concat.apply([], e), t;
+}
+function ic(t) {
+  return Object.assign({}, {
+    decimalPlaces: 2,
+    optimize: !0,
+    flipY: !0,
+    flipYBase: void 0,
+    scale: 1,
+    x: 0,
+    y: 0
+  }, t);
+}
+function ac(t) {
+  return parseInt(t) === t && (t = { decimalPlaces: t, flipY: !1 }), Object.assign({}, {
+    decimalPlaces: 2,
+    optimize: !0,
+    flipY: !0,
+    flipYBase: void 0
+  }, t);
+}
+ge.prototype.fromSVG = function(t, e = {}) {
+  typeof SVGPathElement < "u" && t instanceof SVGPathElement && (t = t.getAttribute("d")), e = ic(e), this.commands = [];
+  const n = "0123456789", r = "MmLlQqCcZzHhVv", s = "SsTtAa", i = "-+";
+  let a = {}, o = [""], c = !1;
+  function l(y) {
+    return y.filter((g) => g.length).map((g) => {
+      let b = parseFloat(g);
+      return (e.decimalPlaces || e.decimalPlaces === 0) && (b = ya(b, e.decimalPlaces)), b;
+    });
+  }
+  function u(y) {
+    if (!this.commands.length)
+      return y;
+    const g = this.commands[this.commands.length - 1];
+    for (let b = 0; b < y.length; b++)
+      y[b] += g[b & 1 ? "y" : "x"];
+    return y;
+  }
+  function f() {
+    if (a.type === void 0)
+      return;
+    const y = a.type.toUpperCase(), g = y !== "Z" && a.type.toUpperCase() !== a.type;
+    let b = l(o);
+    if (o = [""], !b.length && y !== "Z")
+      return;
+    g && y !== "H" && y !== "V" && (b = u.apply(this, [b]));
+    const v = this.commands.length && this.commands[this.commands.length - 1].x || 0, w = this.commands.length && this.commands[this.commands.length - 1].y || 0;
+    switch (y) {
+      case "M":
+        this.moveTo(...b);
+        break;
+      case "L":
+        this.lineTo(...b);
+        break;
+      case "V":
+        for (let C = 0; C < b.length; C++) {
+          let T = 0;
+          g && (T = this.commands.length && this.commands[this.commands.length - 1].y || 0), this.lineTo(v, b[C] + T);
+        }
+        break;
+      case "H":
+        for (let C = 0; C < b.length; C++) {
+          let T = 0;
+          g && (T = this.commands.length && this.commands[this.commands.length - 1].x || 0), this.lineTo(b[C] + T, w);
+        }
+        break;
+      case "C":
+        this.bezierCurveTo(...b);
+        break;
+      case "Q":
+        this.quadraticCurveTo(...b);
+        break;
+      case "Z":
+        (this.commands.length < 1 || this.commands[this.commands.length - 1].type !== "Z") && this.close();
+        break;
+    }
+    if (this.commands.length)
+      for (const C in this.commands[this.commands.length - 1])
+        this.commands[this.commands.length - 1][C] === void 0 && (this.commands[this.commands.length - 1][C] = 0);
+  }
+  for (let y = 0; y < t.length; y++) {
+    const g = t.charAt(y), b = o[o.length - 1];
+    if (n.indexOf(g) > -1)
+      o[o.length - 1] += g;
+    else if (i.indexOf(g) > -1)
+      if (!a.type && !this.commands.length && (a.type = "L"), g === "-")
+        !a.type || b.indexOf("-") > 0 ? c = !0 : b.length ? o.push("-") : o[o.length - 1] = g;
+      else if (!a.type || b.length > 0)
+        c = !0;
+      else
+        continue;
+    else if (r.indexOf(g) > -1)
+      a.type ? (f.apply(this), a = { type: g }) : a.type = g;
+    else {
+      if (s.indexOf(g) > -1)
+        throw new Error("Unsupported path command: " + g + ". Currently supported commands are " + r.split("").join(", ") + ".");
+      ` ,	
+\r\f\v`.indexOf(g) > -1 ? o.push("") : g === "." ? !a.type || b.indexOf(g) > -1 ? c = !0 : o[o.length - 1] += g : c = !0;
+    }
+    if (c)
+      throw new Error("Unexpected character: " + g + " at offset " + y);
+  }
+  f.apply(this), e.optimize && (this.commands = ba(this.commands));
+  const h = e.flipY;
+  let p = e.flipYBase;
+  if (h === !0 && e.flipYBase === void 0) {
+    const y = this.getBoundingBox();
+    p = y.y1 + y.y2;
+  }
+  for (const y in this.commands) {
+    const g = this.commands[y];
+    for (const b in g)
+      ["x", "x1", "x2"].includes(b) ? this.commands[y][b] = e.x + g[b] * e.scale : ["y", "y1", "y2"].includes(b) && (this.commands[y][b] = e.y + (h ? p - g[b] : g[b]) * e.scale);
+  }
+  return this;
+};
+ge.fromSVG = function(t, e) {
+  return new ge().fromSVG(t, e);
+};
+ge.prototype.moveTo = function(t, e) {
+  this.commands.push({
+    type: "M",
+    x: t,
+    y: e
+  });
+};
+ge.prototype.lineTo = function(t, e) {
+  this.commands.push({
+    type: "L",
+    x: t,
+    y: e
+  });
+};
+ge.prototype.curveTo = ge.prototype.bezierCurveTo = function(t, e, n, r, s, i) {
+  this.commands.push({
+    type: "C",
+    x1: t,
+    y1: e,
+    x2: n,
+    y2: r,
+    x: s,
+    y: i
+  });
+};
+ge.prototype.quadTo = ge.prototype.quadraticCurveTo = function(t, e, n, r) {
+  this.commands.push({
+    type: "Q",
+    x1: t,
+    y1: e,
+    x: n,
+    y: r
+  });
+};
+ge.prototype.close = ge.prototype.closePath = function() {
+  this.commands.push({
+    type: "Z"
+  });
+};
+ge.prototype.extend = function(t) {
+  if (t.commands)
+    t = t.commands;
+  else if (t instanceof ma) {
+    const e = t;
+    this.moveTo(e.x1, e.y1), this.lineTo(e.x2, e.y1), this.lineTo(e.x2, e.y2), this.lineTo(e.x1, e.y2), this.close();
+    return;
+  }
+  Array.prototype.push.apply(this.commands, t);
+};
+ge.prototype.getBoundingBox = function() {
+  const t = new ma();
+  let e = 0, n = 0, r = 0, s = 0;
+  for (let i = 0; i < this.commands.length; i++) {
+    const a = this.commands[i];
+    switch (a.type) {
+      case "M":
+        t.addPoint(a.x, a.y), e = r = a.x, n = s = a.y;
+        break;
+      case "L":
+        t.addPoint(a.x, a.y), r = a.x, s = a.y;
+        break;
+      case "Q":
+        t.addQuad(r, s, a.x1, a.y1, a.x, a.y), r = a.x, s = a.y;
+        break;
+      case "C":
+        t.addBezier(r, s, a.x1, a.y1, a.x2, a.y2, a.x, a.y), r = a.x, s = a.y;
+        break;
+      case "Z":
+        r = e, s = n;
+        break;
+      default:
+        throw new Error("Unexpected path command " + a.type);
+    }
+  }
+  return t.isEmpty() && t.addPoint(0, 0), t;
+};
+ge.prototype.draw = function(t) {
+  const e = this._layers;
+  if (e && e.length) {
+    for (let r = 0; r < e.length; r++)
+      this.draw.call(e[r], t);
+    return;
+  }
+  const n = this._image;
+  if (n) {
+    t.drawImage(n.image, n.x, n.y, n.width, n.height);
+    return;
+  }
+  t.beginPath();
+  for (let r = 0; r < this.commands.length; r += 1) {
+    const s = this.commands[r];
+    s.type === "M" ? t.moveTo(s.x, s.y) : s.type === "L" ? t.lineTo(s.x, s.y) : s.type === "C" ? t.bezierCurveTo(s.x1, s.y1, s.x2, s.y2, s.x, s.y) : s.type === "Q" ? t.quadraticCurveTo(s.x1, s.y1, s.x, s.y) : s.type === "Z" && this.stroke && this.strokeWidth && t.closePath();
+  }
+  this.fill && (t.fillStyle = this.fill, t.fill()), this.stroke && (t.strokeStyle = this.stroke, t.lineWidth = this.strokeWidth, t.stroke());
+};
+ge.prototype.toPathData = function(t) {
+  t = ac(t);
+  function e(o) {
+    const c = ya(o, t.decimalPlaces);
+    return Math.round(o) === c ? "" + c : c.toFixed(t.decimalPlaces);
+  }
+  function n() {
+    let o = "";
+    for (let c = 0; c < arguments.length; c += 1) {
+      const l = arguments[c];
+      l >= 0 && c > 0 && (o += " "), o += e(l);
+    }
+    return o;
+  }
+  let r = this.commands;
+  t.optimize && (r = JSON.parse(JSON.stringify(this.commands)), r = ba(r));
+  const s = t.flipY;
+  let i = t.flipYBase;
+  if (s === !0 && i === void 0) {
+    const o = new ge();
+    o.extend(r);
+    const c = o.getBoundingBox();
+    i = c.y1 + c.y2;
+  }
+  let a = "";
+  for (let o = 0; o < r.length; o += 1) {
+    const c = r[o];
+    c.type === "M" ? a += "M" + n(
+      c.x,
+      s ? i - c.y : c.y
+    ) : c.type === "L" ? a += "L" + n(
+      c.x,
+      s ? i - c.y : c.y
+    ) : c.type === "C" ? a += "C" + n(
+      c.x1,
+      s ? i - c.y1 : c.y1,
+      c.x2,
+      s ? i - c.y2 : c.y2,
+      c.x,
+      s ? i - c.y : c.y
+    ) : c.type === "Q" ? a += "Q" + n(
+      c.x1,
+      s ? i - c.y1 : c.y1,
+      c.x,
+      s ? i - c.y : c.y
+    ) : c.type === "Z" && (a += "Z");
+  }
+  return a;
+};
+ge.prototype.toSVG = function(t, e) {
+  this._layers && this._layers.length && console.warn("toSVG() does not support colr font layers yet"), this._image && console.warn("toSVG() does not support SVG glyphs yet"), e || (e = this.toPathData(t));
+  let n = '<path d="';
+  return n += e, n += '"', this.fill !== void 0 && this.fill !== "black" && (this.fill === null ? n += ' fill="none"' : n += ' fill="' + this.fill + '"'), this.stroke && (n += ' stroke="' + this.stroke + '" stroke-width="' + this.strokeWidth + '"'), n += "/>", n;
+};
+ge.prototype.toDOMElement = function(t, e) {
+  this._layers && this._layers.length && console.warn("toDOMElement() does not support colr font layers yet"), e || (e = this.toPathData(t));
+  const n = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  return n.setAttribute("d", e), this.fill !== void 0 && this.fill !== "black" && (this.fill === null ? n.setAttribute("fill", "none") : n.setAttribute("fill", this.fill)), this.stroke && (n.setAttribute("stroke", this.stroke), n.setAttribute("stroke-width", this.strokeWidth)), n;
+};
+var Ut = ge;
+function xa(t) {
+  throw new Error(t);
+}
+function ks(t, e) {
+  t || xa(e);
+}
+var H = { fail: xa, argument: ks, assert: ks }, Fs = 32768, Es = 2147483648, oc = -32768, cc = 32767 + 1 / 65536, Pt = {}, B = {}, z = {};
+function qe(t) {
+  return function() {
+    return t;
+  };
+}
+B.BYTE = function(t) {
+  return H.argument(t >= 0 && t <= 255, "Byte value should be between 0 and 255."), [t];
+};
+z.BYTE = qe(1);
+B.CHAR = function(t) {
+  return [t.charCodeAt(0)];
+};
+z.CHAR = qe(1);
+B.CHARARRAY = function(t) {
+  (t === null || typeof t > "u") && (t = "", console.warn("CHARARRAY with undefined or null value encountered and treated as an empty string. This is probably caused by a missing glyph name."));
+  const e = [];
+  for (let n = 0; n < t.length; n += 1)
+    e[n] = t.charCodeAt(n);
+  return e;
+};
+z.CHARARRAY = function(t) {
+  return typeof t > "u" ? 0 : t.length;
+};
+B.USHORT = function(t) {
+  return [t >> 8 & 255, t & 255];
+};
+z.USHORT = qe(2);
+B.SHORT = function(t) {
+  return t >= Fs && (t = -(2 * Fs - t)), [t >> 8 & 255, t & 255];
+};
+z.SHORT = qe(2);
+B.UINT24 = function(t) {
+  return [t >> 16 & 255, t >> 8 & 255, t & 255];
+};
+z.UINT24 = qe(3);
+B.ULONG = function(t) {
+  return [t >> 24 & 255, t >> 16 & 255, t >> 8 & 255, t & 255];
+};
+z.ULONG = qe(4);
+B.LONG = function(t) {
+  return t >= Es && (t = -(2 * Es - t)), [t >> 24 & 255, t >> 16 & 255, t >> 8 & 255, t & 255];
+};
+z.LONG = qe(4);
+B.FLOAT = function(t) {
+  if (t > cc || t < oc)
+    throw new Error(`Value ${t} is outside the range of representable values in 16.16 format`);
+  const e = Math.round(t * 65536) << 0;
+  return B.ULONG(e);
+};
+z.FLOAT = z.ULONG;
+B.FIXED = B.ULONG;
+z.FIXED = z.ULONG;
+B.FWORD = B.SHORT;
+z.FWORD = z.SHORT;
+B.UFWORD = B.USHORT;
+z.UFWORD = z.USHORT;
+B.F2DOT14 = function(t) {
+  return B.USHORT(t * 16384);
+};
+z.F2DOT14 = z.USHORT;
+B.LONGDATETIME = function(t) {
+  return [0, 0, 0, 0, t >> 24 & 255, t >> 16 & 255, t >> 8 & 255, t & 255];
+};
+z.LONGDATETIME = qe(8);
+B.TAG = function(t) {
+  return H.argument(t.length === 4, "Tag should be exactly 4 ASCII characters."), [
+    t.charCodeAt(0),
+    t.charCodeAt(1),
+    t.charCodeAt(2),
+    t.charCodeAt(3)
+  ];
+};
+z.TAG = qe(4);
+B.Card8 = B.BYTE;
+z.Card8 = z.BYTE;
+B.Card16 = B.USHORT;
+z.Card16 = z.USHORT;
+B.OffSize = B.BYTE;
+z.OffSize = z.BYTE;
+B.SID = B.USHORT;
+z.SID = z.USHORT;
+B.NUMBER = function(t) {
+  return t >= -107 && t <= 107 ? [t + 139] : t >= 108 && t <= 1131 ? (t = t - 108, [(t >> 8) + 247, t & 255]) : t >= -1131 && t <= -108 ? (t = -t - 108, [(t >> 8) + 251, t & 255]) : t >= -32768 && t <= 32767 ? B.NUMBER16(t) : B.NUMBER32(t);
+};
+z.NUMBER = function(t) {
+  return B.NUMBER(t).length;
+};
+B.NUMBER16 = function(t) {
+  return [28, t >> 8 & 255, t & 255];
+};
+z.NUMBER16 = qe(3);
+B.NUMBER32 = function(t) {
+  return [29, t >> 24 & 255, t >> 16 & 255, t >> 8 & 255, t & 255];
+};
+z.NUMBER32 = qe(5);
+B.REAL = function(t) {
+  let e = t.toString();
+  const n = /\.(\d*?)(?:9{5,20}|0{5,20})\d{0,2}(?:e(.+)|$)/.exec(e);
+  if (n) {
+    const i = parseFloat("1e" + ((n[2] ? +n[2] : 0) + n[1].length));
+    e = (Math.round(t * i) / i).toString();
+  }
+  let r = "";
+  for (let i = 0, a = e.length; i < a; i += 1) {
+    const o = e[i];
+    o === "e" ? r += e[++i] === "-" ? "c" : "b" : o === "." ? r += "a" : o === "-" ? r += "e" : r += o;
+  }
+  r += r.length & 1 ? "f" : "ff";
+  const s = [30];
+  for (let i = 0, a = r.length; i < a; i += 2)
+    s.push(parseInt(r.substr(i, 2), 16));
+  return s;
+};
+z.REAL = function(t) {
+  return B.REAL(t).length;
+};
+B.NAME = B.CHARARRAY;
+z.NAME = z.CHARARRAY;
+B.STRING = B.CHARARRAY;
+z.STRING = z.CHARARRAY;
+Pt.UTF8 = function(t, e, n) {
+  const r = [], s = n;
+  for (let i = 0; i < s; i++, e += 1)
+    r[i] = t.getUint8(e);
+  return String.fromCharCode.apply(null, r);
+};
+Pt.UTF16 = function(t, e, n) {
+  const r = [], s = n / 2;
+  for (let i = 0; i < s; i++, e += 2)
+    r[i] = t.getUint16(e);
+  return String.fromCharCode.apply(null, r);
+};
+B.UTF16 = function(t) {
+  const e = [];
+  for (let n = 0; n < t.length; n += 1) {
+    const r = t.charCodeAt(n);
+    e[e.length] = r >> 8 & 255, e[e.length] = r & 255;
+  }
+  return e;
+};
+z.UTF16 = function(t) {
+  return t.length * 2;
+};
+var kn = {
+  "x-mac-croatian": (
+    // Python: 'mac_croatian'
+    "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®Š™´¨≠ŽØ∞±≤≥∆µ∂∑∏š∫ªºΩžø¿¡¬√ƒ≈Ć«Č… ÀÃÕŒœĐ—“”‘’÷◊©⁄€‹›Æ»–·‚„‰ÂćÁčÈÍÎÏÌÓÔđÒÚÛÙıˆ˜¯πË˚¸Êæˇ"
+  ),
+  "x-mac-cyrillic": (
+    // Python: 'mac_cyrillic'
+    "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ†°Ґ£§•¶І®©™Ђђ≠Ѓѓ∞±≤≥іµґЈЄєЇїЉљЊњјЅ¬√ƒ≈∆«»… ЋћЌќѕ–—“”‘’÷„ЎўЏџ№Ёёяабвгдежзийклмнопрстуфхцчшщъыьэю"
+  ),
+  "x-mac-gaelic": (
+    // http://unicode.org/Public/MAPPINGS/VENDORS/APPLE/GAELIC.TXT
+    "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØḂ±≤≥ḃĊċḊḋḞḟĠġṀæøṁṖṗɼƒſṠ«»… ÀÃÕŒœ–—“”‘’ṡẛÿŸṪ€‹›Ŷŷṫ·Ỳỳ⁊ÂÊÁËÈÍÎÏÌÓÔ♣ÒÚÛÙıÝýŴŵẄẅẀẁẂẃ"
+  ),
+  "x-mac-greek": (
+    // Python: 'mac_greek'
+    "Ä¹²É³ÖÜ΅àâä΄¨çéèêë£™îï•½‰ôö¦€ùûü†ΓΔΘΛΞΠß®©ΣΪ§≠°·Α±≤≥¥ΒΕΖΗΙΚΜΦΫΨΩάΝ¬ΟΡ≈Τ«»… ΥΧΆΈœ–―“”‘’÷ΉΊΌΎέήίόΏύαβψδεφγηιξκλμνοπώρστθωςχυζϊϋΐΰ­"
+  ),
+  "x-mac-icelandic": (
+    // Python: 'mac_iceland'
+    "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûüÝ°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€ÐðÞþý·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"
+  ),
+  "x-mac-inuit": (
+    // http://unicode.org/Public/MAPPINGS/VENDORS/APPLE/INUIT.TXT
+    "ᐃᐄᐅᐆᐊᐋᐱᐲᐳᐴᐸᐹᑉᑎᑏᑐᑑᑕᑖᑦᑭᑮᑯᑰᑲᑳᒃᒋᒌᒍᒎᒐᒑ°ᒡᒥᒦ•¶ᒧ®©™ᒨᒪᒫᒻᓂᓃᓄᓅᓇᓈᓐᓯᓰᓱᓲᓴᓵᔅᓕᓖᓗᓘᓚᓛᓪᔨᔩᔪᔫᔭ… ᔮᔾᕕᕖᕗ–—“”‘’ᕘᕙᕚᕝᕆᕇᕈᕉᕋᕌᕐᕿᖀᖁᖂᖃᖄᖅᖏᖐᖑᖒᖓᖔᖕᙱᙲᙳᙴᙵᙶᖖᖠᖡᖢᖣᖤᖥᖦᕼŁł"
+  ),
+  "x-mac-ce": (
+    // Python: 'mac_latin2'
+    "ÄĀāÉĄÖÜáąČäčĆćéŹźĎíďĒēĖóėôöõúĚěü†°Ę£§•¶ß®©™ę¨≠ģĮįĪ≤≥īĶ∂∑łĻļĽľĹĺŅņŃ¬√ńŇ∆«»… ňŐÕőŌ–—“”‘’÷◊ōŔŕŘ‹›řŖŗŠ‚„šŚśÁŤťÍŽžŪÓÔūŮÚůŰűŲųÝýķŻŁżĢˇ"
+  ),
+  macintosh: (
+    // Python: 'mac_roman'
+    "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"
+  ),
+  "x-mac-romanian": (
+    // Python: 'mac_romanian'
+    "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ĂȘ∞±≤≥¥µ∂∑∏π∫ªºΩăș¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›Țț‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"
+  ),
+  "x-mac-turkish": (
+    // Python: 'mac_turkish'
+    "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸĞğİıŞş‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙˆ˜¯˘˙˚¸˝˛ˇ"
+  )
+};
+Pt.MACSTRING = function(t, e, n, r) {
+  const s = kn[r];
+  if (s === void 0)
+    return;
+  let i = "";
+  for (let a = 0; a < n; a++) {
+    const o = t.getUint8(e + a);
+    o <= 127 ? i += String.fromCharCode(o) : i += s[o & 127];
+  }
+  return i;
+};
+var hn = typeof WeakMap == "function" && /* @__PURE__ */ new WeakMap(), fn, lc = function(t) {
+  if (!fn) {
+    fn = {};
+    for (let s in kn)
+      fn[s] = new String(s);
+  }
+  const e = fn[t];
+  if (e === void 0)
+    return;
+  if (hn) {
+    const s = hn.get(e);
+    if (s !== void 0)
+      return s;
+  }
+  const n = kn[t];
+  if (n === void 0)
+    return;
+  const r = {};
+  for (let s = 0; s < n.length; s++)
+    r[n.charCodeAt(s)] = s + 128;
+  return hn && hn.set(e, r), r;
+};
+B.MACSTRING = function(t, e) {
+  const n = lc(e);
+  if (n === void 0)
+    return;
+  const r = [];
+  for (let s = 0; s < t.length; s++) {
+    let i = t.charCodeAt(s);
+    if (i >= 128 && (i = n[i], i === void 0))
+      return;
+    r[s] = i;
+  }
+  return r;
+};
+z.MACSTRING = function(t, e) {
+  const n = B.MACSTRING(t, e);
+  return n !== void 0 ? n.length : 0;
+};
+function Lr(t) {
+  return t >= -128 && t <= 127;
+}
+function uc(t, e, n) {
+  let r = 0;
+  const s = t.length;
+  for (; e < s && r < 64 && t[e] === 0; )
+    ++e, ++r;
+  return n.push(128 | r - 1), e;
+}
+function hc(t, e, n) {
+  let r = 0;
+  const s = t.length;
+  let i = e;
+  for (; i < s && r < 64; ) {
+    const a = t[i];
+    if (!Lr(a) || a === 0 && i + 1 < s && t[i + 1] === 0)
+      break;
+    ++i, ++r;
+  }
+  n.push(r - 1);
+  for (let a = e; a < i; ++a)
+    n.push(t[a] + 256 & 255);
+  return i;
+}
+function fc(t, e, n) {
+  let r = 0;
+  const s = t.length;
+  let i = e;
+  for (; i < s && r < 64; ) {
+    const a = t[i];
+    if (a === 0 || Lr(a) && i + 1 < s && Lr(t[i + 1]))
+      break;
+    ++i, ++r;
+  }
+  n.push(64 | r - 1);
+  for (let a = e; a < i; ++a) {
+    const o = t[a];
+    n.push(o + 65536 >> 8 & 255, o + 256 & 255);
+  }
+  return i;
+}
+B.VARDELTAS = function(t) {
+  let e = 0;
+  const n = [];
+  for (; e < t.length; ) {
+    const r = t[e];
+    r === 0 ? e = uc(t, e, n) : r >= -128 && r <= 127 ? e = hc(t, e, n) : e = fc(t, e, n);
+  }
+  return n;
+};
+B.INDEX = function(t) {
+  let e = 1;
+  const n = [e], r = [];
+  for (let o = 0; o < t.length; o += 1) {
+    const c = B.OBJECT(t[o]);
+    Array.prototype.push.apply(r, c), e += c.length, n.push(e);
+  }
+  if (r.length === 0)
+    return [0, 0];
+  const s = [], i = 1 + Math.floor(Math.log(e) / Math.log(2)) / 8 | 0, a = [void 0, B.BYTE, B.USHORT, B.UINT24, B.ULONG][i];
+  for (let o = 0; o < n.length; o += 1) {
+    const c = a(n[o]);
+    Array.prototype.push.apply(s, c);
+  }
+  return Array.prototype.concat(
+    B.Card16(t.length),
+    B.OffSize(i),
+    s,
+    r
+  );
+};
+z.INDEX = function(t) {
+  return B.INDEX(t).length;
+};
+B.DICT = function(t) {
+  let e = [];
+  const n = Object.keys(t), r = n.length;
+  for (let s = 0; s < r; s += 1) {
+    const i = parseInt(n[s], 0), a = t[i], o = B.OPERAND(a.value, a.type), c = B.OPERATOR(i);
+    for (let l = 0; l < o.length; l++)
+      e.push(o[l]);
+    for (let l = 0; l < c.length; l++)
+      e.push(c[l]);
+  }
+  return e;
+};
+z.DICT = function(t) {
+  return B.DICT(t).length;
+};
+B.OPERATOR = function(t) {
+  return t < 1200 ? [t] : [12, t - 1200];
+};
+B.OPERAND = function(t, e) {
+  let n = [];
+  if (Array.isArray(e))
+    for (let r = 0; r < e.length; r += 1) {
+      H.argument(t.length === e.length, "Not enough arguments given for type" + e);
+      const s = B.OPERAND(t[r], e[r]);
+      for (let i = 0; i < s.length; i++)
+        n.push(s[i]);
+    }
+  else if (e === "SID") {
+    const r = B.NUMBER(t);
+    for (let s = 0; s < r.length; s++)
+      n.push(r[s]);
+  } else if (e === "offset") {
+    const r = B.NUMBER32(t);
+    for (let s = 0; s < r.length; s++)
+      n.push(r[s]);
+  } else if (e === "number") {
+    const r = B.NUMBER(t);
+    for (let s = 0; s < r.length; s++)
+      n.push(r[s]);
+  } else if (e === "real") {
+    const r = B.REAL(t);
+    for (let s = 0; s < r.length; s++)
+      n.push(r[s]);
+  } else
+    throw new Error("Unknown operand type " + e);
+  return n;
+};
+B.OP = B.BYTE;
+z.OP = z.BYTE;
+var pn = typeof WeakMap == "function" && /* @__PURE__ */ new WeakMap();
+B.CHARSTRING = function(t) {
+  if (pn) {
+    const r = pn.get(t);
+    if (r !== void 0)
+      return r;
+  }
+  let e = [];
+  const n = t.length;
+  for (let r = 0; r < n; r += 1) {
+    const s = t[r], i = B[s.type](s.value);
+    for (let a = 0; a < i.length; a++)
+      e.push(i[a]);
+  }
+  return pn && pn.set(t, e), e;
+};
+z.CHARSTRING = function(t) {
+  return B.CHARSTRING(t).length;
+};
+B.OBJECT = function(t) {
+  const e = B[t.type];
+  return H.argument(e !== void 0, "No encoding function for type " + t.type), e(t.value);
+};
+z.OBJECT = function(t) {
+  const e = z[t.type];
+  return H.argument(e !== void 0, "No sizeOf function for type " + t.type), e(t.value);
+};
+B.TABLE = function(t) {
+  let e = [];
+  const n = (t.fields || []).length, r = [], s = [];
+  for (let i = 0; i < n; i += 1) {
+    const a = t.fields[i], o = B[a.type];
+    H.argument(o !== void 0, "No encoding function for field type " + a.type + " (" + a.name + ")");
+    let c = t[a.name];
+    c === void 0 && (c = a.value);
+    const l = o(c);
+    if (a.type === "TABLE")
+      c.fields !== null && (s.push(e.length), r.push(l)), e.push(0, 0);
+    else
+      for (let u = 0; u < l.length; u++)
+        e.push(l[u]);
+  }
+  for (let i = 0; i < r.length; i += 1) {
+    const a = s[i], o = e.length;
+    H.argument(o < 65536, "Table " + t.tableName + " too big."), e[a] = o >> 8, e[a + 1] = o & 255;
+    for (let c = 0; c < r[i].length; c++)
+      e.push(r[i][c]);
+  }
+  return e;
+};
+z.TABLE = function(t) {
+  let e = 0;
+  const n = (t.fields || []).length;
+  for (let r = 0; r < n; r += 1) {
+    const s = t.fields[r], i = z[s.type];
+    H.argument(i !== void 0, "No sizeOf function for field type " + s.type + " (" + s.name + ")");
+    let a = t[s.name];
+    a === void 0 && (a = s.value), e += i(a), s.type === "TABLE" && (e += 2);
+  }
+  return e;
+};
+B.RECORD = B.TABLE;
+z.RECORD = z.TABLE;
+B.LITERAL = function(t) {
+  return t;
+};
+z.LITERAL = function(t) {
+  return t.length;
+};
+function pe(t, e, n) {
+  if (e && e.length)
+    for (let r = 0; r < e.length; r += 1) {
+      const s = e[r];
+      this[s.name] = s.value;
+    }
+  if (this.tableName = t, this.fields = e, n) {
+    const r = Object.keys(n);
+    for (let s = 0; s < r.length; s += 1) {
+      const i = r[s], a = n[i];
+      this[i] !== void 0 && (this[i] = a);
+    }
+  }
+}
+pe.prototype.encode = function() {
+  return B.TABLE(this);
+};
+pe.prototype.sizeOf = function() {
+  return z.TABLE(this);
+};
+function Nt(t, e, n) {
+  n === void 0 && (n = e.length);
+  const r = new Array(e.length + 1);
+  r[0] = { name: t + "Count", type: "USHORT", value: n };
+  for (let s = 0; s < e.length; s++)
+    r[s + 1] = { name: t + s, type: "USHORT", value: e[s] };
+  return r;
+}
+function Ir(t, e, n) {
+  const r = e.length, s = new Array(r + 1);
+  s[0] = { name: t + "Count", type: "USHORT", value: r };
+  for (let i = 0; i < r; i++)
+    s[i + 1] = { name: t + i, type: "TABLE", value: n(e[i], i) };
+  return s;
+}
+function Gt(t, e, n) {
+  const r = e.length;
+  let s = [];
+  s[0] = { name: t + "Count", type: "USHORT", value: r };
+  for (let i = 0; i < r; i++)
+    s = s.concat(n(e[i], i));
+  return s;
+}
+function Fn(t) {
+  t.format === 1 ? pe.call(
+    this,
+    "coverageTable",
+    [{ name: "coverageFormat", type: "USHORT", value: 1 }].concat(Nt("glyph", t.glyphs))
+  ) : t.format === 2 ? pe.call(
+    this,
+    "coverageTable",
+    [{ name: "coverageFormat", type: "USHORT", value: 2 }].concat(Gt("rangeRecord", t.ranges, function(e, n) {
+      return [
+        { name: "startGlyphID" + n, type: "USHORT", value: e.start },
+        { name: "endGlyphID" + n, type: "USHORT", value: e.end },
+        { name: "startCoverageIndex" + n, type: "USHORT", value: e.index }
+      ];
+    }))
+  ) : H.assert(!1, "Coverage format must be 1 or 2.");
+}
+Fn.prototype = Object.create(pe.prototype);
+Fn.prototype.constructor = Fn;
+function En(t) {
+  pe.call(
+    this,
+    "scriptListTable",
+    Gt("scriptRecord", t, function(e, n) {
+      const r = e.script;
+      let s = r.defaultLangSys;
+      return H.assert(!!s, "Unable to write GSUB: script " + e.tag + " has no default language system."), [
+        { name: "scriptTag" + n, type: "TAG", value: e.tag },
+        { name: "script" + n, type: "TABLE", value: new pe("scriptTable", [
+          { name: "defaultLangSys", type: "TABLE", value: new pe("defaultLangSys", [
+            { name: "lookupOrder", type: "USHORT", value: 0 },
+            { name: "reqFeatureIndex", type: "USHORT", value: s.reqFeatureIndex }
+          ].concat(Nt("featureIndex", s.featureIndexes))) }
+        ].concat(Gt("langSys", r.langSysRecords, function(i, a) {
+          const o = i.langSys;
+          return [
+            { name: "langSysTag" + a, type: "TAG", value: i.tag },
+            { name: "langSys" + a, type: "TABLE", value: new pe("langSys", [
+              { name: "lookupOrder", type: "USHORT", value: 0 },
+              { name: "reqFeatureIndex", type: "USHORT", value: o.reqFeatureIndex }
+            ].concat(Nt("featureIndex", o.featureIndexes))) }
+          ];
+        }))) }
+      ];
+    })
+  );
+}
+En.prototype = Object.create(pe.prototype);
+En.prototype.constructor = En;
+function An(t) {
+  pe.call(
+    this,
+    "featureListTable",
+    Gt("featureRecord", t, function(e, n) {
+      const r = e.feature;
+      return [
+        { name: "featureTag" + n, type: "TAG", value: e.tag },
+        { name: "feature" + n, type: "TABLE", value: new pe("featureTable", [
+          { name: "featureParams", type: "USHORT", value: r.featureParams }
+        ].concat(Nt("lookupListIndex", r.lookupListIndexes))) }
+      ];
+    })
+  );
+}
+An.prototype = Object.create(pe.prototype);
+An.prototype.constructor = An;
+function On(t, e) {
+  pe.call(this, "lookupListTable", Ir("lookup", t, function(n) {
+    let r = e[n.lookupType];
+    return H.assert(!!r, "Unable to write GSUB lookup type " + n.lookupType + " tables."), new pe("lookupTable", [
+      { name: "lookupType", type: "USHORT", value: n.lookupType },
+      { name: "lookupFlag", type: "USHORT", value: n.lookupFlag }
+    ].concat(Ir("subtable", n.subtables, r)));
+  }));
+}
+On.prototype = Object.create(pe.prototype);
+On.prototype.constructor = On;
+function Ln(t) {
+  t.format === 1 ? pe.call(
+    this,
+    "classDefTable",
+    [
+      { name: "classFormat", type: "USHORT", value: 1 },
+      { name: "startGlyphID", type: "USHORT", value: t.startGlyph }
+    ].concat(Nt("glyph", t.classes))
+  ) : t.format === 2 ? pe.call(
+    this,
+    "classDefTable",
+    [{ name: "classFormat", type: "USHORT", value: 2 }].concat(Gt("rangeRecord", t.ranges, function(e, n) {
+      return [
+        { name: "startGlyphID" + n, type: "USHORT", value: e.start },
+        { name: "endGlyphID" + n, type: "USHORT", value: e.end },
+        { name: "class" + n, type: "USHORT", value: e.classId }
+      ];
+    }))
+  ) : H.assert(!1, "Class format must be 1 or 2.");
+}
+Ln.prototype = Object.create(pe.prototype);
+Ln.prototype.constructor = Ln;
+var O = {
+  Table: pe,
+  Record: pe,
+  Coverage: Fn,
+  ClassDef: Ln,
+  ScriptList: En,
+  FeatureList: An,
+  LookupList: On,
+  ushortList: Nt,
+  tableList: Ir,
+  recordList: Gt
+};
+function As(t, e) {
+  return t.getUint8(e);
+}
+function In(t, e) {
+  return t.getUint16(e, !1);
+}
+function pc(t, e) {
+  return t.getInt16(e, !1);
+}
+function va(t, e) {
+  return (t.getUint16(e) << 8) + t.getUint8(e + 2);
+}
+function jr(t, e) {
+  return t.getUint32(e, !1);
+}
+function dc(t, e) {
+  return t.getInt32(e, !1);
+}
+function Sa(t, e) {
+  const n = t.getInt16(e, !1), r = t.getUint16(e + 2, !1);
+  return n + r / 65535;
+}
+function gc(t, e) {
+  let n = "";
+  for (let r = e; r < e + 4; r += 1)
+    n += String.fromCharCode(t.getInt8(r));
+  return n;
+}
+function mc(t, e, n) {
+  let r = 0;
+  for (let s = 0; s < n; s += 1)
+    r <<= 8, r += t.getUint8(e + s);
+  return r;
+}
+function yc(t, e, n) {
+  const r = [];
+  for (let s = e; s < n; s += 1)
+    r.push(t.getUint8(s));
+  return r;
+}
+function bc(t) {
+  let e = "";
+  for (let n = 0; n < t.length; n += 1)
+    e += String.fromCharCode(t[n]);
+  return e;
+}
+var xc = {
+  byte: 1,
+  uShort: 2,
+  f2dot14: 2,
+  short: 2,
+  uInt24: 3,
+  uLong: 4,
+  fixed: 4,
+  longDateTime: 8,
+  tag: 4
+}, we = {
+  LONG_WORDS: 32768,
+  WORD_DELTA_COUNT_MASK: 32767,
+  SHARED_POINT_NUMBERS: 32768,
+  COUNT_MASK: 4095,
+  EMBEDDED_PEAK_TUPLE: 32768,
+  INTERMEDIATE_REGION: 16384,
+  PRIVATE_POINT_NUMBERS: 8192,
+  TUPLE_INDEX_MASK: 4095,
+  POINTS_ARE_WORDS: 128,
+  POINT_RUN_COUNT_MASK: 127,
+  DELTAS_ARE_ZERO: 128,
+  DELTAS_ARE_WORDS: 64,
+  DELTA_RUN_COUNT_MASK: 63,
+  INNER_INDEX_BIT_COUNT_MASK: 15,
+  MAP_ENTRY_SIZE_MASK: 48
+};
+function k(t, e) {
+  this.data = t, this.offset = e, this.relativeOffset = 0;
+}
+k.prototype.parseByte = function() {
+  const t = this.data.getUint8(this.offset + this.relativeOffset);
+  return this.relativeOffset += 1, t;
+};
+k.prototype.parseChar = function() {
+  const t = this.data.getInt8(this.offset + this.relativeOffset);
+  return this.relativeOffset += 1, t;
+};
+k.prototype.parseCard8 = k.prototype.parseByte;
+k.prototype.parseUShort = function() {
+  const t = this.data.getUint16(this.offset + this.relativeOffset);
+  return this.relativeOffset += 2, t;
+};
+k.prototype.parseCard16 = k.prototype.parseUShort;
+k.prototype.parseSID = k.prototype.parseUShort;
+k.prototype.parseOffset16 = k.prototype.parseUShort;
+k.prototype.parseShort = function() {
+  const t = this.data.getInt16(this.offset + this.relativeOffset);
+  return this.relativeOffset += 2, t;
+};
+k.prototype.parseF2Dot14 = function() {
+  const t = this.data.getInt16(this.offset + this.relativeOffset) / 16384;
+  return this.relativeOffset += 2, t;
+};
+k.prototype.parseUInt24 = function() {
+  const t = va(this.data, this.offset + this.relativeOffset);
+  return this.relativeOffset += 3, t;
+};
+k.prototype.parseULong = function() {
+  const t = jr(this.data, this.offset + this.relativeOffset);
+  return this.relativeOffset += 4, t;
+};
+k.prototype.parseLong = function() {
+  const t = dc(this.data, this.offset + this.relativeOffset);
+  return this.relativeOffset += 4, t;
+};
+k.prototype.parseOffset32 = k.prototype.parseULong;
+k.prototype.parseFixed = function() {
+  const t = Sa(this.data, this.offset + this.relativeOffset);
+  return this.relativeOffset += 4, t;
+};
+k.prototype.parseString = function(t) {
+  const e = this.data, n = this.offset + this.relativeOffset;
+  let r = "";
+  this.relativeOffset += t;
+  for (let s = 0; s < t; s++)
+    r += String.fromCharCode(e.getUint8(n + s));
+  return r;
+};
+k.prototype.parseTag = function() {
+  return this.parseString(4);
+};
+k.prototype.parseLongDateTime = function() {
+  let t = jr(this.data, this.offset + this.relativeOffset + 4);
+  return t -= 2082844800, this.relativeOffset += 8, t;
+};
+k.prototype.parseVersion = function(t) {
+  const e = In(this.data, this.offset + this.relativeOffset), n = In(this.data, this.offset + this.relativeOffset + 2);
+  return this.relativeOffset += 4, t === void 0 && (t = 4096), e + n / t / 10;
+};
+k.prototype.skip = function(t, e) {
+  e === void 0 && (e = 1), this.relativeOffset += xc[t] * e;
+};
+k.prototype.parseULongList = function(t) {
+  t === void 0 && (t = this.parseULong());
+  const e = new Array(t), n = this.data;
+  let r = this.offset + this.relativeOffset;
+  for (let s = 0; s < t; s++)
+    e[s] = n.getUint32(r), r += 4;
+  return this.relativeOffset += t * 4, e;
+};
+k.prototype.parseOffset16List = k.prototype.parseUShortList = function(t) {
+  t === void 0 && (t = this.parseUShort());
+  const e = new Array(t), n = this.data;
+  let r = this.offset + this.relativeOffset;
+  for (let s = 0; s < t; s++)
+    e[s] = n.getUint16(r), r += 2;
+  return this.relativeOffset += t * 2, e;
+};
+k.prototype.parseShortList = function(t) {
+  const e = new Array(t), n = this.data;
+  let r = this.offset + this.relativeOffset;
+  for (let s = 0; s < t; s++)
+    e[s] = n.getInt16(r), r += 2;
+  return this.relativeOffset += t * 2, e;
+};
+k.prototype.parseByteList = function(t) {
+  const e = new Array(t), n = this.data;
+  let r = this.offset + this.relativeOffset;
+  for (let s = 0; s < t; s++)
+    e[s] = n.getUint8(r++);
+  return this.relativeOffset += t, e;
+};
+k.prototype.parseList = function(t, e) {
+  e || (e = t, t = this.parseUShort());
+  const n = new Array(t);
+  for (let r = 0; r < t; r++)
+    n[r] = e.call(this);
+  return n;
+};
+k.prototype.parseList32 = function(t, e) {
+  e || (e = t, t = this.parseULong());
+  const n = new Array(t);
+  for (let r = 0; r < t; r++)
+    n[r] = e.call(this);
+  return n;
+};
+k.prototype.parseRecordList = function(t, e) {
+  e || (e = t, t = this.parseUShort());
+  const n = new Array(t), r = Object.keys(e);
+  for (let s = 0; s < t; s++) {
+    const i = {};
+    for (let a = 0; a < r.length; a++) {
+      const o = r[a], c = e[o];
+      i[o] = c.call(this);
+    }
+    n[s] = i;
+  }
+  return n;
+};
+k.prototype.parseRecordList32 = function(t, e) {
+  e || (e = t, t = this.parseULong());
+  const n = new Array(t), r = Object.keys(e);
+  for (let s = 0; s < t; s++) {
+    const i = {};
+    for (let a = 0; a < r.length; a++) {
+      const o = r[a], c = e[o];
+      i[o] = c.call(this);
+    }
+    n[s] = i;
+  }
+  return n;
+};
+k.prototype.parseTupleRecords = function(t, e) {
+  let n = [];
+  for (let r = 0; r < t; r++) {
+    let s = [];
+    for (let i = 0; i < e; i++)
+      s.push(this.parseF2Dot14());
+    n.push(s);
+  }
+  return n;
+};
+k.prototype.parseStruct = function(t) {
+  if (typeof t == "function")
+    return t.call(this);
+  {
+    const e = Object.keys(t), n = {};
+    for (let r = 0; r < e.length; r++) {
+      const s = e[r], i = t[s];
+      n[s] = i.call(this);
+    }
+    return n;
+  }
+};
+k.prototype.parseValueRecord = function(t) {
+  if (t === void 0 && (t = this.parseUShort()), t === 0)
+    return;
+  const e = {};
+  return t & 1 && (e.xPlacement = this.parseShort()), t & 2 && (e.yPlacement = this.parseShort()), t & 4 && (e.xAdvance = this.parseShort()), t & 8 && (e.yAdvance = this.parseShort()), t & 16 && (e.xPlaDevice = void 0, this.parseShort()), t & 32 && (e.yPlaDevice = void 0, this.parseShort()), t & 64 && (e.xAdvDevice = void 0, this.parseShort()), t & 128 && (e.yAdvDevice = void 0, this.parseShort()), e;
+};
+k.prototype.parseValueRecordList = function() {
+  const t = this.parseUShort(), e = this.parseUShort(), n = new Array(e);
+  for (let r = 0; r < e; r++)
+    n[r] = this.parseValueRecord(t);
+  return n;
+};
+k.prototype.parsePointer = function(t) {
+  const e = this.parseOffset16();
+  if (e > 0)
+    return new k(this.data, this.offset + e).parseStruct(t);
+};
+k.prototype.parsePointer32 = function(t) {
+  const e = this.parseOffset32();
+  if (e > 0)
+    return new k(this.data, this.offset + e).parseStruct(t);
+};
+k.prototype.parseListOfLists = function(t) {
+  const e = this.parseOffset16List(), n = e.length, r = this.relativeOffset, s = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = e[i];
+    if (a === 0) {
+      s[i] = void 0;
+      continue;
+    }
+    if (this.relativeOffset = a, t) {
+      const o = this.parseOffset16List(), c = new Array(o.length);
+      for (let l = 0; l < o.length; l++)
+        this.relativeOffset = a + o[l], c[l] = t.call(this);
+      s[i] = c;
+    } else
+      s[i] = this.parseUShortList();
+  }
+  return this.relativeOffset = r, s;
+};
+k.prototype.parseCoverage = function() {
+  const t = this.offset + this.relativeOffset, e = this.parseUShort(), n = this.parseUShort();
+  if (e === 1)
+    return {
+      format: 1,
+      glyphs: this.parseUShortList(n)
+    };
+  if (e === 2) {
+    const r = new Array(n);
+    for (let s = 0; s < n; s++)
+      r[s] = {
+        start: this.parseUShort(),
+        end: this.parseUShort(),
+        index: this.parseUShort()
+      };
+    return {
+      format: 2,
+      ranges: r
+    };
+  }
+  throw new Error("0x" + t.toString(16) + ": Coverage format must be 1 or 2.");
+};
+k.prototype.parseClassDef = function() {
+  const t = this.offset + this.relativeOffset, e = this.parseUShort();
+  return e === 1 ? {
+    format: 1,
+    startGlyph: this.parseUShort(),
+    classes: this.parseUShortList()
+  } : e === 2 ? {
+    format: 2,
+    ranges: this.parseRecordList({
+      start: k.uShort,
+      end: k.uShort,
+      classId: k.uShort
+    })
+  } : (console.warn(`0x${t.toString(16)}: This font file uses an invalid ClassDef format of ${e}. It might be corrupted and should be reacquired if it doesn't display as intended.`), {
+    format: e
+  });
+};
+k.list = function(t, e) {
+  return function() {
+    return this.parseList(t, e);
+  };
+};
+k.list32 = function(t, e) {
+  return function() {
+    return this.parseList32(t, e);
+  };
+};
+k.recordList = function(t, e) {
+  return function() {
+    return this.parseRecordList(t, e);
+  };
+};
+k.recordList32 = function(t, e) {
+  return function() {
+    return this.parseRecordList32(t, e);
+  };
+};
+k.pointer = function(t) {
+  return function() {
+    return this.parsePointer(t);
+  };
+};
+k.pointer32 = function(t) {
+  return function() {
+    return this.parsePointer32(t);
+  };
+};
+k.tag = k.prototype.parseTag;
+k.byte = k.prototype.parseByte;
+k.uShort = k.offset16 = k.prototype.parseUShort;
+k.uShortList = k.prototype.parseUShortList;
+k.uInt24 = k.prototype.parseUInt24;
+k.uLong = k.offset32 = k.prototype.parseULong;
+k.uLongList = k.prototype.parseULongList;
+k.fixed = k.prototype.parseFixed;
+k.f2Dot14 = k.prototype.parseF2Dot14;
+k.struct = k.prototype.parseStruct;
+k.coverage = k.prototype.parseCoverage;
+k.classDef = k.prototype.parseClassDef;
+var Os = {
+  reserved: k.uShort,
+  reqFeatureIndex: k.uShort,
+  featureIndexes: k.uShortList
+};
+k.prototype.parseScriptList = function() {
+  return this.parsePointer(k.recordList({
+    tag: k.tag,
+    script: k.pointer({
+      defaultLangSys: k.pointer(Os),
+      langSysRecords: k.recordList({
+        tag: k.tag,
+        langSys: k.pointer(Os)
+      })
+    })
+  })) || [];
+};
+k.prototype.parseFeatureList = function() {
+  return this.parsePointer(k.recordList({
+    tag: k.tag,
+    feature: k.pointer({
+      featureParams: k.offset16,
+      lookupListIndexes: k.uShortList
+    })
+  })) || [];
+};
+k.prototype.parseLookupList = function(t) {
+  return this.parsePointer(k.list(k.pointer(function() {
+    const e = this.parseUShort();
+    H.argument(1 <= e && e <= 9, "GPOS/GSUB lookup type " + e + " unknown.");
+    const n = this.parseUShort(), r = n & 16;
+    return {
+      lookupType: e,
+      lookupFlag: n,
+      subtables: this.parseList(k.pointer(t[e])),
+      markFilteringSet: r ? this.parseUShort() : void 0
+    };
+  }))) || [];
+};
+k.prototype.parseFeatureVariationsList = function() {
+  return this.parsePointer32(function() {
+    const t = this.parseUShort(), e = this.parseUShort();
+    return H.argument(t === 1 && e < 1, "GPOS/GSUB feature variations table unknown."), this.parseRecordList32({
+      conditionSetOffset: k.offset32,
+      featureTableSubstitutionOffset: k.offset32
+    });
+  }) || [];
+};
+k.prototype.parseVariationStore = function() {
+  const t = this.relativeOffset, e = this.parseUShort(), n = {
+    itemVariationStore: this.parseItemVariationStore()
+  };
+  return this.relativeOffset = t + e + 2, n;
+};
+k.prototype.parseItemVariationStore = function() {
+  const t = this.relativeOffset, e = {
+    format: this.parseUShort(),
+    variationRegions: [],
+    itemVariationSubtables: []
+  }, n = this.parseOffset32(), r = this.parseUShort(), s = this.parseULongList(r);
+  this.relativeOffset = t + n, e.variationRegions = this.parseVariationRegionList();
+  for (let i = 0; i < r; i++) {
+    const a = s[i];
+    this.relativeOffset = t + a, e.itemVariationSubtables.push(this.parseItemVariationSubtable());
+  }
+  return e;
+};
+k.prototype.parseVariationRegionList = function() {
+  const t = this.parseUShort(), e = this.parseUShort();
+  return this.parseRecordList(e, {
+    regionAxes: k.recordList(t, {
+      startCoord: k.f2Dot14,
+      peakCoord: k.f2Dot14,
+      endCoord: k.f2Dot14
+    })
+  });
+};
+k.prototype.parseItemVariationSubtable = function() {
+  const t = this.parseUShort(), e = this.parseUShort(), n = this.parseUShortList(), r = n.length;
+  return {
+    regionIndexes: n,
+    deltaSets: t && r ? this.parseDeltaSets(t, e, r) : []
+  };
+};
+k.prototype.parseDeltaSetIndexMap = function() {
+  const t = this.parseByte(), e = this.parseByte(), n = [];
+  let r = 0;
+  switch (t) {
+    case 0:
+      r = this.parseUShort();
+      break;
+    case 1:
+      r = this.parseULong();
+      break;
+    default:
+      console.error(`unsupported DeltaSetIndexMap format ${t}`);
+  }
+  if (!r) return {
+    format: t,
+    entryFormat: e
+  };
+  const s = (e & we.INNER_INDEX_BIT_COUNT_MASK) + 1, i = ((e & we.MAP_ENTRY_SIZE_MASK) >> 4) + 1;
+  for (let a = 0; a < r; a++) {
+    let o;
+    if (i === 1)
+      o = this.parseByte();
+    else if (i === 2)
+      o = this.parseUShort();
+    else if (i === 3)
+      o = this.parseUInt24();
+    else if (i === 4)
+      o = this.parseULong();
+    else
+      throw new Error(`Invalid entry size of ${i}`);
+    const c = o >> s, l = o & (1 << s) - 1;
+    n.push({ outerIndex: c, innerIndex: l });
+  }
+  return {
+    format: t,
+    entryFormat: e,
+    map: n
+  };
+};
+k.prototype.parseDeltaSets = function(t, e, n) {
+  const r = Array.from({ length: t }, () => []), s = e & we.LONG_WORDS, i = e & we.WORD_DELTA_COUNT_MASK;
+  if (i > n)
+    throw Error("wordCount must be less than or equal to regionIndexCount");
+  const a = (s ? this.parseLong : this.parseShort).bind(this), o = (s ? this.parseShort : this.parseChar).bind(this);
+  for (let c = 0; c < t; c++)
+    for (let l = 0; l < n; l++)
+      l < i ? r[c].push(a()) : r[c].push(o());
+  return r;
+};
+k.prototype.parseTupleVariationStoreList = function(t, e, n) {
+  const r = this.parseUShort(), i = this.parseUShort() & 1, a = this.parseOffset32(), o = (i ? this.parseULong : this.parseUShort).bind(this), c = {};
+  let l = o();
+  i || (l *= 2);
+  let u;
+  for (let f = 0; f < r; f++) {
+    u = o(), i || (u *= 2);
+    const h = u - l;
+    c[f] = h ? this.parseTupleVariationStore(
+      a + l,
+      t,
+      e,
+      n,
+      f
+    ) : void 0, l = u;
+  }
+  return c;
+};
+k.prototype.parseTupleVariationStore = function(t, e, n, r, s) {
+  const i = this.relativeOffset;
+  this.relativeOffset = t, n === "cvar" && (this.relativeOffset += 4);
+  const a = this.parseUShort(), o = !!(a & we.SHARED_POINT_NUMBERS), c = a & we.COUNT_MASK;
+  let l = this.parseOffset16();
+  const u = [];
+  let f = [];
+  for (let y = 0; y < c; y++) {
+    const g = this.parseTupleVariationHeader(e, n);
+    u.push(g);
+  }
+  this.relativeOffset !== t + l && (console.warn(`Unexpected offset after parsing tuple variation headers! Expected ${t + l}, actually ${this.relativeOffset}`), this.relativeOffset = t + l), o && (f = this.parsePackedPointNumbers());
+  let h = this.relativeOffset;
+  for (let y = 0; y < c; y++) {
+    const g = u[y];
+    g.privatePoints = [], this.relativeOffset = h, n === "cvar" && !g.peakTuple && console.warn("An embedded peak tuple is required in TupleVariationHeaders for the cvar table."), g.flags.privatePointNumbers && (g.privatePoints = this.parsePackedPointNumbers()), delete g.flags;
+    const b = this.offset, v = this.relativeOffset, w = (C) => {
+      let T, E;
+      const R = () => {
+        let U = 0;
+        if (n === "gvar") {
+          if (U = g.privatePoints.length || f.length, !U) {
+            const W = r.get(s);
+            W.path, U = W.points.length, U += 4;
+          }
+        } else n === "cvar" && (U = r.length);
+        this.offset = b, this.relativeOffset = v, T = this.parsePackedDeltas(U), n === "gvar" && (E = this.parsePackedDeltas(U));
+      };
+      return {
+        configurable: !0,
+        get: function() {
+          return T === void 0 && R(), C === "deltasY" ? E : T;
+        },
+        set: function(U) {
+          T === void 0 && R(), C === "deltasY" ? E = U : T = U;
+        }
+      };
+    };
+    Object.defineProperty(g, "deltas", w.call(this, "deltas")), n === "gvar" && Object.defineProperty(g, "deltasY", w.call(this, "deltasY")), h += g.variationDataSize, delete g.variationDataSize;
+  }
+  this.relativeOffset = i;
+  const p = {
+    headers: u
+  };
+  return p.sharedPoints = f, p;
+};
+k.prototype.parseTupleVariationHeader = function(t, e) {
+  const n = this.parseUShort(), r = this.parseUShort(), s = !!(r & we.EMBEDDED_PEAK_TUPLE), i = !!(r & we.INTERMEDIATE_REGION), a = !!(r & we.PRIVATE_POINT_NUMBERS), o = s ? void 0 : r & we.TUPLE_INDEX_MASK, c = s ? this.parseTupleRecords(1, t)[0] : void 0, l = i ? this.parseTupleRecords(1, t)[0] : void 0, u = i ? this.parseTupleRecords(1, t)[0] : void 0, f = {
+    variationDataSize: n,
+    peakTuple: c,
+    intermediateStartTuple: l,
+    intermediateEndTuple: u,
+    flags: {
+      embeddedPeakTuple: s,
+      intermediateRegion: i,
+      privatePointNumbers: a
+    }
+  };
+  return e === "gvar" && (f.sharedTupleRecordsIndex = o), f;
+};
+k.prototype.parsePackedPointNumbers = function() {
+  const t = this.parseByte(), e = [];
+  let n = t;
+  if (t >= 128) {
+    const s = this.parseByte();
+    n = (t & we.POINT_RUN_COUNT_MASK) << 8 | s;
+  }
+  let r = 0;
+  for (; e.length < n; ) {
+    const s = this.parseByte(), i = !!(s & we.POINTS_ARE_WORDS);
+    let a = (s & we.POINT_RUN_COUNT_MASK) + 1;
+    for (let o = 0; o < a && e.length < n; o++) {
+      let c;
+      i ? c = this.parseUShort() : c = this.parseByte(), r = r + c, e.push(r);
+    }
+  }
+  return e;
+};
+k.prototype.parsePackedDeltas = function(t) {
+  const e = [];
+  for (; e.length < t; ) {
+    const n = this.parseByte(), r = !!(n & we.DELTAS_ARE_ZERO), s = !!(n & we.DELTAS_ARE_WORDS), i = (n & we.DELTA_RUN_COUNT_MASK) + 1;
+    for (let a = 0; a < i && e.length < t; a++)
+      r ? e.push(0) : s ? e.push(this.parseShort()) : e.push(this.parseChar());
+  }
+  return e;
+};
+var M = {
+  getByte: As,
+  getCard8: As,
+  getUShort: In,
+  getCard16: In,
+  getShort: pc,
+  getUInt24: va,
+  getULong: jr,
+  getFixed: Sa,
+  getTag: gc,
+  getOffset: mc,
+  getBytes: yc,
+  bytesToString: bc,
+  Parser: k
+}, Rn = [
+  "copyright",
+  // 0
+  "fontFamily",
+  // 1
+  "fontSubfamily",
+  // 2
+  "uniqueID",
+  // 3
+  "fullName",
+  // 4
+  "version",
+  // 5
+  "postScriptName",
+  // 6
+  "trademark",
+  // 7
+  "manufacturer",
+  // 8
+  "designer",
+  // 9
+  "description",
+  // 10
+  "manufacturerURL",
+  // 11
+  "designerURL",
+  // 12
+  "license",
+  // 13
+  "licenseURL",
+  // 14
+  "reserved",
+  // 15
+  "preferredFamily",
+  // 16
+  "preferredSubfamily",
+  // 17
+  "compatibleFullName",
+  // 18
+  "sampleText",
+  // 19
+  "postScriptFindFontName",
+  // 20
+  "wwsFamily",
+  // 21
+  "wwsSubfamily"
+  // 22
+], wa = {
+  0: "en",
+  1: "fr",
+  2: "de",
+  3: "it",
+  4: "nl",
+  5: "sv",
+  6: "es",
+  7: "da",
+  8: "pt",
+  9: "no",
+  10: "he",
+  11: "ja",
+  12: "ar",
+  13: "fi",
+  14: "el",
+  15: "is",
+  16: "mt",
+  17: "tr",
+  18: "hr",
+  19: "zh-Hant",
+  20: "ur",
+  21: "hi",
+  22: "th",
+  23: "ko",
+  24: "lt",
+  25: "pl",
+  26: "hu",
+  27: "es",
+  28: "lv",
+  29: "se",
+  30: "fo",
+  31: "fa",
+  32: "ru",
+  33: "zh",
+  34: "nl-BE",
+  35: "ga",
+  36: "sq",
+  37: "ro",
+  38: "cz",
+  39: "sk",
+  40: "si",
+  41: "yi",
+  42: "sr",
+  43: "mk",
+  44: "bg",
+  45: "uk",
+  46: "be",
+  47: "uz",
+  48: "kk",
+  49: "az-Cyrl",
+  50: "az-Arab",
+  51: "hy",
+  52: "ka",
+  53: "mo",
+  54: "ky",
+  55: "tg",
+  56: "tk",
+  57: "mn-CN",
+  58: "mn",
+  59: "ps",
+  60: "ks",
+  61: "ku",
+  62: "sd",
+  63: "bo",
+  64: "ne",
+  65: "sa",
+  66: "mr",
+  67: "bn",
+  68: "as",
+  69: "gu",
+  70: "pa",
+  71: "or",
+  72: "ml",
+  73: "kn",
+  74: "ta",
+  75: "te",
+  76: "si",
+  77: "my",
+  78: "km",
+  79: "lo",
+  80: "vi",
+  81: "id",
+  82: "tl",
+  83: "ms",
+  84: "ms-Arab",
+  85: "am",
+  86: "ti",
+  87: "om",
+  88: "so",
+  89: "sw",
+  90: "rw",
+  91: "rn",
+  92: "ny",
+  93: "mg",
+  94: "eo",
+  128: "cy",
+  129: "eu",
+  130: "ca",
+  131: "la",
+  132: "qu",
+  133: "gn",
+  134: "ay",
+  135: "tt",
+  136: "ug",
+  137: "dz",
+  138: "jv",
+  139: "su",
+  140: "gl",
+  141: "af",
+  142: "br",
+  143: "iu",
+  144: "gd",
+  145: "gv",
+  146: "ga",
+  147: "to",
+  148: "el-polyton",
+  149: "kl",
+  150: "az",
+  151: "nn"
+}, vc = {
+  0: 0,
+  // langEnglish → smRoman
+  1: 0,
+  // langFrench → smRoman
+  2: 0,
+  // langGerman → smRoman
+  3: 0,
+  // langItalian → smRoman
+  4: 0,
+  // langDutch → smRoman
+  5: 0,
+  // langSwedish → smRoman
+  6: 0,
+  // langSpanish → smRoman
+  7: 0,
+  // langDanish → smRoman
+  8: 0,
+  // langPortuguese → smRoman
+  9: 0,
+  // langNorwegian → smRoman
+  10: 5,
+  // langHebrew → smHebrew
+  11: 1,
+  // langJapanese → smJapanese
+  12: 4,
+  // langArabic → smArabic
+  13: 0,
+  // langFinnish → smRoman
+  14: 6,
+  // langGreek → smGreek
+  15: 0,
+  // langIcelandic → smRoman (modified)
+  16: 0,
+  // langMaltese → smRoman
+  17: 0,
+  // langTurkish → smRoman (modified)
+  18: 0,
+  // langCroatian → smRoman (modified)
+  19: 2,
+  // langTradChinese → smTradChinese
+  20: 4,
+  // langUrdu → smArabic
+  21: 9,
+  // langHindi → smDevanagari
+  22: 21,
+  // langThai → smThai
+  23: 3,
+  // langKorean → smKorean
+  24: 29,
+  // langLithuanian → smCentralEuroRoman
+  25: 29,
+  // langPolish → smCentralEuroRoman
+  26: 29,
+  // langHungarian → smCentralEuroRoman
+  27: 29,
+  // langEstonian → smCentralEuroRoman
+  28: 29,
+  // langLatvian → smCentralEuroRoman
+  29: 0,
+  // langSami → smRoman
+  30: 0,
+  // langFaroese → smRoman (modified)
+  31: 4,
+  // langFarsi → smArabic (modified)
+  32: 7,
+  // langRussian → smCyrillic
+  33: 25,
+  // langSimpChinese → smSimpChinese
+  34: 0,
+  // langFlemish → smRoman
+  35: 0,
+  // langIrishGaelic → smRoman (modified)
+  36: 0,
+  // langAlbanian → smRoman
+  37: 0,
+  // langRomanian → smRoman (modified)
+  38: 29,
+  // langCzech → smCentralEuroRoman
+  39: 29,
+  // langSlovak → smCentralEuroRoman
+  40: 0,
+  // langSlovenian → smRoman (modified)
+  41: 5,
+  // langYiddish → smHebrew
+  42: 7,
+  // langSerbian → smCyrillic
+  43: 7,
+  // langMacedonian → smCyrillic
+  44: 7,
+  // langBulgarian → smCyrillic
+  45: 7,
+  // langUkrainian → smCyrillic (modified)
+  46: 7,
+  // langByelorussian → smCyrillic
+  47: 7,
+  // langUzbek → smCyrillic
+  48: 7,
+  // langKazakh → smCyrillic
+  49: 7,
+  // langAzerbaijani → smCyrillic
+  50: 4,
+  // langAzerbaijanAr → smArabic
+  51: 24,
+  // langArmenian → smArmenian
+  52: 23,
+  // langGeorgian → smGeorgian
+  53: 7,
+  // langMoldavian → smCyrillic
+  54: 7,
+  // langKirghiz → smCyrillic
+  55: 7,
+  // langTajiki → smCyrillic
+  56: 7,
+  // langTurkmen → smCyrillic
+  57: 27,
+  // langMongolian → smMongolian
+  58: 7,
+  // langMongolianCyr → smCyrillic
+  59: 4,
+  // langPashto → smArabic
+  60: 4,
+  // langKurdish → smArabic
+  61: 4,
+  // langKashmiri → smArabic
+  62: 4,
+  // langSindhi → smArabic
+  63: 26,
+  // langTibetan → smTibetan
+  64: 9,
+  // langNepali → smDevanagari
+  65: 9,
+  // langSanskrit → smDevanagari
+  66: 9,
+  // langMarathi → smDevanagari
+  67: 13,
+  // langBengali → smBengali
+  68: 13,
+  // langAssamese → smBengali
+  69: 11,
+  // langGujarati → smGujarati
+  70: 10,
+  // langPunjabi → smGurmukhi
+  71: 12,
+  // langOriya → smOriya
+  72: 17,
+  // langMalayalam → smMalayalam
+  73: 16,
+  // langKannada → smKannada
+  74: 14,
+  // langTamil → smTamil
+  75: 15,
+  // langTelugu → smTelugu
+  76: 18,
+  // langSinhalese → smSinhalese
+  77: 19,
+  // langBurmese → smBurmese
+  78: 20,
+  // langKhmer → smKhmer
+  79: 22,
+  // langLao → smLao
+  80: 30,
+  // langVietnamese → smVietnamese
+  81: 0,
+  // langIndonesian → smRoman
+  82: 0,
+  // langTagalog → smRoman
+  83: 0,
+  // langMalayRoman → smRoman
+  84: 4,
+  // langMalayArabic → smArabic
+  85: 28,
+  // langAmharic → smEthiopic
+  86: 28,
+  // langTigrinya → smEthiopic
+  87: 28,
+  // langOromo → smEthiopic
+  88: 0,
+  // langSomali → smRoman
+  89: 0,
+  // langSwahili → smRoman
+  90: 0,
+  // langKinyarwanda → smRoman
+  91: 0,
+  // langRundi → smRoman
+  92: 0,
+  // langNyanja → smRoman
+  93: 0,
+  // langMalagasy → smRoman
+  94: 0,
+  // langEsperanto → smRoman
+  128: 0,
+  // langWelsh → smRoman (modified)
+  129: 0,
+  // langBasque → smRoman
+  130: 0,
+  // langCatalan → smRoman
+  131: 0,
+  // langLatin → smRoman
+  132: 0,
+  // langQuechua → smRoman
+  133: 0,
+  // langGuarani → smRoman
+  134: 0,
+  // langAymara → smRoman
+  135: 7,
+  // langTatar → smCyrillic
+  136: 4,
+  // langUighur → smArabic
+  137: 26,
+  // langDzongkha → smTibetan
+  138: 0,
+  // langJavaneseRom → smRoman
+  139: 0,
+  // langSundaneseRom → smRoman
+  140: 0,
+  // langGalician → smRoman
+  141: 0,
+  // langAfrikaans → smRoman
+  142: 0,
+  // langBreton → smRoman (modified)
+  143: 28,
+  // langInuktitut → smEthiopic (modified)
+  144: 0,
+  // langScottishGaelic → smRoman (modified)
+  145: 0,
+  // langManxGaelic → smRoman (modified)
+  146: 0,
+  // langIrishGaelicScript → smRoman (modified)
+  147: 0,
+  // langTongan → smRoman
+  148: 6,
+  // langGreekAncient → smRoman
+  149: 0,
+  // langGreenlandic → smRoman
+  150: 0,
+  // langAzerbaijanRoman → smRoman
+  151: 0
+  // langNynorsk → smRoman
+}, Ca = {
+  1078: "af",
+  1052: "sq",
+  1156: "gsw",
+  1118: "am",
+  5121: "ar-DZ",
+  15361: "ar-BH",
+  3073: "ar",
+  2049: "ar-IQ",
+  11265: "ar-JO",
+  13313: "ar-KW",
+  12289: "ar-LB",
+  4097: "ar-LY",
+  6145: "ary",
+  8193: "ar-OM",
+  16385: "ar-QA",
+  1025: "ar-SA",
+  10241: "ar-SY",
+  7169: "aeb",
+  14337: "ar-AE",
+  9217: "ar-YE",
+  1067: "hy",
+  1101: "as",
+  2092: "az-Cyrl",
+  1068: "az",
+  1133: "ba",
+  1069: "eu",
+  1059: "be",
+  2117: "bn",
+  1093: "bn-IN",
+  8218: "bs-Cyrl",
+  5146: "bs",
+  1150: "br",
+  1026: "bg",
+  1027: "ca",
+  3076: "zh-HK",
+  5124: "zh-MO",
+  2052: "zh",
+  4100: "zh-SG",
+  1028: "zh-TW",
+  1155: "co",
+  1050: "hr",
+  4122: "hr-BA",
+  1029: "cs",
+  1030: "da",
+  1164: "prs",
+  1125: "dv",
+  2067: "nl-BE",
+  1043: "nl",
+  3081: "en-AU",
+  10249: "en-BZ",
+  4105: "en-CA",
+  9225: "en-029",
+  16393: "en-IN",
+  6153: "en-IE",
+  8201: "en-JM",
+  17417: "en-MY",
+  5129: "en-NZ",
+  13321: "en-PH",
+  18441: "en-SG",
+  7177: "en-ZA",
+  11273: "en-TT",
+  2057: "en-GB",
+  1033: "en",
+  12297: "en-ZW",
+  1061: "et",
+  1080: "fo",
+  1124: "fil",
+  1035: "fi",
+  2060: "fr-BE",
+  3084: "fr-CA",
+  1036: "fr",
+  5132: "fr-LU",
+  6156: "fr-MC",
+  4108: "fr-CH",
+  1122: "fy",
+  1110: "gl",
+  1079: "ka",
+  3079: "de-AT",
+  1031: "de",
+  5127: "de-LI",
+  4103: "de-LU",
+  2055: "de-CH",
+  1032: "el",
+  1135: "kl",
+  1095: "gu",
+  1128: "ha",
+  1037: "he",
+  1081: "hi",
+  1038: "hu",
+  1039: "is",
+  1136: "ig",
+  1057: "id",
+  1117: "iu",
+  2141: "iu-Latn",
+  2108: "ga",
+  1076: "xh",
+  1077: "zu",
+  1040: "it",
+  2064: "it-CH",
+  1041: "ja",
+  1099: "kn",
+  1087: "kk",
+  1107: "km",
+  1158: "quc",
+  1159: "rw",
+  1089: "sw",
+  1111: "kok",
+  1042: "ko",
+  1088: "ky",
+  1108: "lo",
+  1062: "lv",
+  1063: "lt",
+  2094: "dsb",
+  1134: "lb",
+  1071: "mk",
+  2110: "ms-BN",
+  1086: "ms",
+  1100: "ml",
+  1082: "mt",
+  1153: "mi",
+  1146: "arn",
+  1102: "mr",
+  1148: "moh",
+  1104: "mn",
+  2128: "mn-CN",
+  1121: "ne",
+  1044: "nb",
+  2068: "nn",
+  1154: "oc",
+  1096: "or",
+  1123: "ps",
+  1045: "pl",
+  1046: "pt",
+  2070: "pt-PT",
+  1094: "pa",
+  1131: "qu-BO",
+  2155: "qu-EC",
+  3179: "qu",
+  1048: "ro",
+  1047: "rm",
+  1049: "ru",
+  9275: "smn",
+  4155: "smj-NO",
+  5179: "smj",
+  3131: "se-FI",
+  1083: "se",
+  2107: "se-SE",
+  8251: "sms",
+  6203: "sma-NO",
+  7227: "sms",
+  1103: "sa",
+  7194: "sr-Cyrl-BA",
+  3098: "sr",
+  6170: "sr-Latn-BA",
+  2074: "sr-Latn",
+  1132: "nso",
+  1074: "tn",
+  1115: "si",
+  1051: "sk",
+  1060: "sl",
+  11274: "es-AR",
+  16394: "es-BO",
+  13322: "es-CL",
+  9226: "es-CO",
+  5130: "es-CR",
+  7178: "es-DO",
+  12298: "es-EC",
+  17418: "es-SV",
+  4106: "es-GT",
+  18442: "es-HN",
+  2058: "es-MX",
+  19466: "es-NI",
+  6154: "es-PA",
+  15370: "es-PY",
+  10250: "es-PE",
+  20490: "es-PR",
+  // Microsoft has defined two different language codes for
+  // “Spanish with modern sorting” and “Spanish with traditional
+  // sorting”. This makes sense for collation APIs, and it would be
+  // possible to express this in BCP 47 language tags via Unicode
+  // extensions (eg., es-u-co-trad is Spanish with traditional
+  // sorting). However, for storing names in fonts, the distinction
+  // does not make sense, so we give “es” in both cases.
+  3082: "es",
+  1034: "es",
+  21514: "es-US",
+  14346: "es-UY",
+  8202: "es-VE",
+  2077: "sv-FI",
+  1053: "sv",
+  1114: "syr",
+  1064: "tg",
+  2143: "tzm",
+  1097: "ta",
+  1092: "tt",
+  1098: "te",
+  1054: "th",
+  1105: "bo",
+  1055: "tr",
+  1090: "tk",
+  1152: "ug",
+  1058: "uk",
+  1070: "hsb",
+  1056: "ur",
+  2115: "uz-Cyrl",
+  1091: "uz",
+  1066: "vi",
+  1106: "cy",
+  1160: "wo",
+  1157: "sah",
+  1144: "ii",
+  1130: "yo"
+};
+function Sc(t, e, n) {
+  switch (t) {
+    case 0:
+      if (e === 65535)
+        return "und";
+      if (n)
+        return n[e];
+      break;
+    case 1:
+      return wa[e];
+    case 3:
+      return Ca[e];
+  }
+}
+var Rr = "utf-16", wc = {
+  0: "macintosh",
+  // smRoman
+  1: "x-mac-japanese",
+  // smJapanese
+  2: "x-mac-chinesetrad",
+  // smTradChinese
+  3: "x-mac-korean",
+  // smKorean
+  6: "x-mac-greek",
+  // smGreek
+  7: "x-mac-cyrillic",
+  // smCyrillic
+  9: "x-mac-devanagai",
+  // smDevanagari
+  10: "x-mac-gurmukhi",
+  // smGurmukhi
+  11: "x-mac-gujarati",
+  // smGujarati
+  12: "x-mac-oriya",
+  // smOriya
+  13: "x-mac-bengali",
+  // smBengali
+  14: "x-mac-tamil",
+  // smTamil
+  15: "x-mac-telugu",
+  // smTelugu
+  16: "x-mac-kannada",
+  // smKannada
+  17: "x-mac-malayalam",
+  // smMalayalam
+  18: "x-mac-sinhalese",
+  // smSinhalese
+  19: "x-mac-burmese",
+  // smBurmese
+  20: "x-mac-khmer",
+  // smKhmer
+  21: "x-mac-thai",
+  // smThai
+  22: "x-mac-lao",
+  // smLao
+  23: "x-mac-georgian",
+  // smGeorgian
+  24: "x-mac-armenian",
+  // smArmenian
+  25: "x-mac-chinesesimp",
+  // smSimpChinese
+  26: "x-mac-tibetan",
+  // smTibetan
+  27: "x-mac-mongolian",
+  // smMongolian
+  28: "x-mac-ethiopic",
+  // smEthiopic
+  29: "x-mac-ce",
+  // smCentralEuroRoman
+  30: "x-mac-vietnamese",
+  // smVietnamese
+  31: "x-mac-extarabic"
+  // smExtArabic
+}, Cc = {
+  15: "x-mac-icelandic",
+  // langIcelandic
+  17: "x-mac-turkish",
+  // langTurkish
+  18: "x-mac-croatian",
+  // langCroatian
+  24: "x-mac-ce",
+  // langLithuanian
+  25: "x-mac-ce",
+  // langPolish
+  26: "x-mac-ce",
+  // langHungarian
+  27: "x-mac-ce",
+  // langEstonian
+  28: "x-mac-ce",
+  // langLatvian
+  30: "x-mac-icelandic",
+  // langFaroese
+  37: "x-mac-romanian",
+  // langRomanian
+  38: "x-mac-ce",
+  // langCzech
+  39: "x-mac-ce",
+  // langSlovak
+  40: "x-mac-ce",
+  // langSlovenian
+  143: "x-mac-inuit",
+  // langInuktitut
+  146: "x-mac-gaelic"
+  // langIrishGaelicScript
+};
+function $r(t, e, n) {
+  switch (t) {
+    case 0:
+      return Rr;
+    case 1:
+      return Cc[n] || wc[e];
+    case 3:
+      if (e === 1 || e === 10)
+        return Rr;
+      break;
+  }
+}
+var Ta = {
+  0: "unicode",
+  1: "macintosh",
+  2: "reserved",
+  3: "windows"
+};
+function Tc(t) {
+  return Ta[t];
+}
+function kc(t, e, n) {
+  const r = {}, s = new M.Parser(t, e), i = s.parseUShort(), a = s.parseUShort(), o = s.offset + s.parseUShort();
+  for (let c = 0; c < a; c++) {
+    const l = s.parseUShort(), u = s.parseUShort(), f = s.parseUShort(), h = s.parseUShort(), p = Rn[h] || h, y = s.parseUShort(), g = s.parseUShort(), b = Sc(l, f, n), v = $r(l, u, f), w = Tc(l);
+    if (v !== void 0 && b !== void 0 && w !== void 0) {
+      let C;
+      if (v === Rr ? C = Pt.UTF16(t, o + g, y) : C = Pt.MACSTRING(t, o + g, y, v), C) {
+        let T = r[w];
+        T === void 0 && (T = r[w] = {});
+        let E = T[p];
+        E === void 0 && (E = T[p] = {}), E[b] = C;
+      }
+    }
+  }
+  return i === 1 && s.parseUShort(), r;
+}
+function dn(t) {
+  const e = {};
+  for (let n in t)
+    e[t[n]] = parseInt(n);
+  return e;
+}
+function Ls(t, e, n, r, s, i) {
+  return new O.Record("NameRecord", [
+    { name: "platformID", type: "USHORT", value: t },
+    { name: "encodingID", type: "USHORT", value: e },
+    { name: "languageID", type: "USHORT", value: n },
+    { name: "nameID", type: "USHORT", value: r },
+    { name: "length", type: "USHORT", value: s },
+    { name: "offset", type: "USHORT", value: i }
+  ]);
+}
+function Fc(t, e) {
+  const n = t.length, r = e.length - n + 1;
+  e:
+    for (let s = 0; s < r; s++)
+      for (; s < r; s++) {
+        for (let i = 0; i < n; i++)
+          if (e[s + i] !== t[i])
+            continue e;
+        return s;
+      }
+  return -1;
+}
+function Is(t, e) {
+  let n = Fc(t, e);
+  if (n < 0) {
+    n = e.length;
+    let r = 0;
+    const s = t.length;
+    for (; r < s; ++r)
+      e.push(t[r]);
+  }
+  return n;
+}
+function Ec(t, e) {
+  const n = dn(Ta), r = dn(wa), s = dn(Ca), i = [], a = [];
+  for (let c in t) {
+    let l;
+    const u = [], f = {}, h = dn(Rn), p = n[c];
+    for (let y in t[c]) {
+      let g = h[y];
+      if (g === void 0 && (g = y), l = parseInt(g), isNaN(l))
+        throw new Error('Name table entry "' + y + '" does not exist, see nameTableNames for complete list.');
+      f[l] = t[c][y], u.push(l);
+    }
+    for (let y = 0; y < u.length; y++) {
+      l = u[y];
+      const g = f[l];
+      for (let b in g) {
+        const v = g[b];
+        if (p === 1 || p === 0) {
+          let w = r[b], C = vc[w];
+          const T = $r(p, C, w);
+          let E = B.MACSTRING(v, T);
+          if (p === 0 && (w = e.indexOf(b), w < 0 && (w = e.length, e.push(b)), C = 4, E = B.UTF16(v)), E !== void 0) {
+            const R = Is(E, a);
+            i.push(Ls(
+              p,
+              C,
+              w,
+              l,
+              E.length,
+              R
+            ));
+          }
+        }
+        if (p === 3) {
+          const w = s[b];
+          if (w !== void 0) {
+            const C = B.UTF16(v), T = Is(C, a);
+            i.push(Ls(
+              3,
+              1,
+              w,
+              l,
+              C.length,
+              T
+            ));
+          }
+        }
+      }
+    }
+  }
+  i.sort(function(c, l) {
+    return c.platformID - l.platformID || c.encodingID - l.encodingID || c.languageID - l.languageID || c.nameID - l.nameID;
+  });
+  const o = new O.Table("name", [
+    { name: "format", type: "USHORT", value: 0 },
+    { name: "count", type: "USHORT", value: i.length },
+    { name: "stringOffset", type: "USHORT", value: 6 + i.length * 12 }
+  ]);
+  for (let c = 0; c < i.length; c++)
+    o.fields.push({ name: "record_" + c, type: "RECORD", value: i[c] });
+  return o.fields.push({ name: "strings", type: "LITERAL", value: a }), o;
+}
+function Bn(t, e, n = []) {
+  if (e < 256 && e in Rn) {
+    if (n.length && !n.includes(parseInt(e)))
+      return;
+    e = Rn[e];
+  }
+  for (let r in t)
+    for (let s in t[r])
+      if (s === e || parseInt(s) === e)
+        return t[r][s];
+}
+var ka = { parse: kc, make: Ec, getNameByID: Bn };
+function Ac(t, e, n, r) {
+  t.length = e.parseUShort(), t.language = e.parseUShort() - 1;
+  const s = e.parseByteList(t.length), i = Object.assign({}, s), a = $r(n, r, t.language), o = kn[a];
+  for (let c = 0; c < o.length; c++)
+    i[o.charCodeAt(c)] = s[128 + c];
+  t.glyphIndexMap = i;
+}
+function Oc(t, e, n) {
+  e.parseUShort(), t.length = e.parseULong(), t.language = e.parseULong();
+  let r;
+  t.groupCount = r = e.parseULong(), t.glyphIndexMap = {};
+  for (let s = 0; s < r; s += 1) {
+    const i = e.parseULong(), a = e.parseULong();
+    let o = e.parseULong();
+    for (let c = i; c <= a; c += 1)
+      t.glyphIndexMap[c] = o, n === 12 && o++;
+  }
+}
+function Lc(t, e, n, r, s) {
+  t.length = e.parseUShort(), t.language = e.parseUShort();
+  let i;
+  t.segCount = i = e.parseUShort() >> 1, e.skip("uShort", 3), t.glyphIndexMap = {};
+  const a = new M.Parser(n, r + s + 14), o = new M.Parser(n, r + s + 16 + i * 2), c = new M.Parser(n, r + s + 16 + i * 4), l = new M.Parser(n, r + s + 16 + i * 6);
+  let u = r + s + 16 + i * 8;
+  for (let f = 0; f < i - 1; f += 1) {
+    let h;
+    const p = a.parseUShort(), y = o.parseUShort(), g = c.parseShort(), b = l.parseUShort();
+    for (let v = y; v <= p; v += 1)
+      b !== 0 ? (u = l.offset + l.relativeOffset - 2, u += b, u += (v - y) * 2, h = M.getUShort(n, u), h !== 0 && (h = h + g & 65535)) : h = v + g & 65535, t.glyphIndexMap[v] = h;
+  }
+}
+function Ic(t, e) {
+  const n = {};
+  e.skip("uLong");
+  const r = e.parseULong();
+  for (let s = 0; s < r; s += 1) {
+    const i = e.parseUInt24(), a = {
+      varSelector: i
+    }, o = e.parseOffset32(), c = e.parseOffset32(), l = e.relativeOffset;
+    o && (e.relativeOffset = o, a.defaultUVS = e.parseStruct({
+      ranges: function() {
+        return e.parseRecordList32({
+          startUnicodeValue: e.parseUInt24,
+          additionalCount: e.parseByte
+        });
+      }
+    })), c && (e.relativeOffset = c, a.nonDefaultUVS = e.parseStruct({
+      uvsMappings: function() {
+        const u = {}, f = e.parseRecordList32({
+          unicodeValue: e.parseUInt24,
+          glyphID: e.parseUShort
+        });
+        for (let h = 0; h < f.length; h += 1)
+          u[f[h].unicodeValue] = f[h];
+        return u;
+      }
+    })), n[i] = a, e.relativeOffset = l;
+  }
+  t.varSelectorList = n;
+}
+function Rc(t, e) {
+  const n = {};
+  n.version = M.getUShort(t, e), H.argument(n.version === 0, "cmap table version should be 0."), n.numTables = M.getUShort(t, e + 2);
+  let r = null, s = -1, i = -1, a = null, o = null;
+  const c = [0, 1, 2, 3, 4, 6], l = [0, 1, 10];
+  for (let f = n.numTables - 1; f >= 0; f -= 1)
+    if (a = M.getUShort(t, e + 4 + f * 8), o = M.getUShort(t, e + 4 + f * 8 + 2), a === 3 && l.includes(o) || a === 0 && c.includes(o) || a === 1 && o === 0) {
+      if (i > 0) continue;
+      if (i = M.getULong(t, e + 4 + f * 8 + 4), r)
+        break;
+    } else if (a === 0 && o === 5) {
+      if (s = M.getULong(t, e + 4 + f * 8 + 4), r = new M.Parser(t, e + s), r.parseUShort() !== 14)
+        s = -1, r = null;
+      else if (i > 0)
+        break;
+    }
+  if (i === -1)
+    throw new Error("No valid cmap sub-tables found.");
+  const u = new M.Parser(t, e + i);
+  if (n.format = u.parseUShort(), n.format === 0)
+    Ac(n, u, a, o);
+  else if (n.format === 12 || n.format === 13)
+    Oc(n, u, n.format);
+  else if (n.format === 4)
+    Lc(n, u, t, e, i);
+  else
+    throw new Error(
+      "Only format 0 (platformId 1, encodingId 0), 4, 12 and 14 cmap tables are supported (found format " + n.format + ", platformId " + a + ", encodingId " + o + ")."
+    );
+  return r && Ic(n, r), n;
+}
+function Bc(t, e, n) {
+  t.segments.push({
+    end: e,
+    start: e,
+    delta: -(e - n),
+    offset: 0,
+    glyphIndex: n
+  });
+}
+function Dc(t) {
+  t.segments.push({
+    end: 65535,
+    start: 65535,
+    delta: 1,
+    offset: 0
+  });
+}
+function Mc(t) {
+  if (t.length === 0) return t;
+  const e = [t[0]];
+  for (let n = 1; n < t.length; n++) {
+    const r = e[e.length - 1], s = t[n];
+    r.end + 1 === s.start && r.delta === s.delta && s.end !== 65535 ? r.end = s.end : e.push(s);
+  }
+  return e;
+}
+function _c(t) {
+  let e = !0, n;
+  for (n = t.length - 1; n > 0; n -= 1)
+    if (t.get(n).unicode > 65535) {
+      e = !1;
+      break;
+    }
+  let r = [
+    { name: "version", type: "USHORT", value: 0 },
+    { name: "numTables", type: "USHORT", value: e ? 1 : 2 },
+    // CMAP 4 header
+    { name: "platformID", type: "USHORT", value: 3 },
+    { name: "encodingID", type: "USHORT", value: 1 },
+    { name: "offset", type: "ULONG", value: e ? 12 : 20 }
+  ];
+  e || r.push(
+    // CMAP 12 header
+    { name: "cmap12PlatformID", type: "USHORT", value: 3 },
+    // We encode only for PlatformID = 3 (Windows) because it is supported everywhere
+    { name: "cmap12EncodingID", type: "USHORT", value: 10 },
+    { name: "cmap12Offset", type: "ULONG", value: 0 }
+  ), r.push(
+    // CMAP 4 Subtable
+    { name: "format", type: "USHORT", value: 4 },
+    { name: "cmap4Length", type: "USHORT", value: 0 },
+    { name: "language", type: "USHORT", value: 0 },
+    { name: "segCountX2", type: "USHORT", value: 0 },
+    { name: "searchRange", type: "USHORT", value: 0 },
+    { name: "entrySelector", type: "USHORT", value: 0 },
+    { name: "rangeShift", type: "USHORT", value: 0 }
+  );
+  const s = new O.Table("cmap", r);
+  for (s.segments = [], n = 0; n < t.length; n += 1) {
+    const p = t.get(n);
+    for (let y = 0; y < p.unicodes.length; y += 1)
+      Bc(s, p.unicodes[y], n);
+  }
+  s.segments.sort(function(p, y) {
+    return p.start - y.start;
+  }), s.segments = Mc(s.segments), Dc(s);
+  const i = s.segments.length;
+  let a = 0, o = [], c = [], l = [], u = [], f = [], h = [];
+  for (n = 0; n < i; n += 1) {
+    const p = s.segments[n];
+    p.end <= 65535 && p.start <= 65535 ? (o.push({ name: "end_" + n, type: "USHORT", value: p.end }), c.push({ name: "start_" + n, type: "USHORT", value: p.start }), l.push({ name: "idDelta_" + n, type: "SHORT", value: p.delta }), u.push({ name: "idRangeOffset_" + n, type: "USHORT", value: p.offset }), p.glyphId !== void 0 && f.push({ name: "glyph_" + n, type: "USHORT", value: p.glyphId })) : a += 1, !e && p.glyphIndex !== void 0 && (h.push({ name: "cmap12Start_" + n, type: "ULONG", value: p.start }), h.push({ name: "cmap12End_" + n, type: "ULONG", value: p.end }), h.push({ name: "cmap12Glyph_" + n, type: "ULONG", value: p.glyphIndex }));
+  }
+  s.segCountX2 = (i - a) * 2, s.searchRange = Math.pow(2, Math.floor(Math.log(i - a) / Math.log(2))) * 2, s.entrySelector = Math.log(s.searchRange / 2) / Math.log(2), s.rangeShift = s.segCountX2 - s.searchRange;
+  for (let p = 0; p < o.length; p++)
+    s.fields.push(o[p]);
+  s.fields.push({ name: "reservedPad", type: "USHORT", value: 0 });
+  for (let p = 0; p < c.length; p++)
+    s.fields.push(c[p]);
+  for (let p = 0; p < l.length; p++)
+    s.fields.push(l[p]);
+  for (let p = 0; p < u.length; p++)
+    s.fields.push(u[p]);
+  for (let p = 0; p < f.length; p++)
+    s.fields.push(f[p]);
+  if (s.cmap4Length = 14 + // Subtable header
+  o.length * 2 + 2 + // reservedPad
+  c.length * 2 + l.length * 2 + u.length * 2 + f.length * 2, !e) {
+    const p = 16 + // Subtable header
+    h.length * 4;
+    s.cmap12Offset = 12 + 2 * 2 + 4 + s.cmap4Length, s.fields.push({ name: "cmap12Format", type: "USHORT", value: 12 }, { name: "cmap12Reserved", type: "USHORT", value: 0 }, { name: "cmap12Length", type: "ULONG", value: p }, { name: "cmap12Language", type: "ULONG", value: 0 }, { name: "cmap12nGroups", type: "ULONG", value: h.length / 3 });
+    for (let y = 0; y < h.length; y++)
+      s.fields.push(h[y]);
+  }
+  return s;
+}
+var Fa = { parse: Rc, make: _c }, xn = [
+  ".notdef",
+  "space",
+  "exclam",
+  "quotedbl",
+  "numbersign",
+  "dollar",
+  "percent",
+  "ampersand",
+  "quoteright",
+  "parenleft",
+  "parenright",
+  "asterisk",
+  "plus",
+  "comma",
+  "hyphen",
+  "period",
+  "slash",
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "colon",
+  "semicolon",
+  "less",
+  "equal",
+  "greater",
+  "question",
+  "at",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+  "bracketleft",
+  "backslash",
+  "bracketright",
+  "asciicircum",
+  "underscore",
+  "quoteleft",
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "braceleft",
+  "bar",
+  "braceright",
+  "asciitilde",
+  "exclamdown",
+  "cent",
+  "sterling",
+  "fraction",
+  "yen",
+  "florin",
+  "section",
+  "currency",
+  "quotesingle",
+  "quotedblleft",
+  "guillemotleft",
+  "guilsinglleft",
+  "guilsinglright",
+  "fi",
+  "fl",
+  "endash",
+  "dagger",
+  "daggerdbl",
+  "periodcentered",
+  "paragraph",
+  "bullet",
+  "quotesinglbase",
+  "quotedblbase",
+  "quotedblright",
+  "guillemotright",
+  "ellipsis",
+  "perthousand",
+  "questiondown",
+  "grave",
+  "acute",
+  "circumflex",
+  "tilde",
+  "macron",
+  "breve",
+  "dotaccent",
+  "dieresis",
+  "ring",
+  "cedilla",
+  "hungarumlaut",
+  "ogonek",
+  "caron",
+  "emdash",
+  "AE",
+  "ordfeminine",
+  "Lslash",
+  "Oslash",
+  "OE",
+  "ordmasculine",
+  "ae",
+  "dotlessi",
+  "lslash",
+  "oslash",
+  "oe",
+  "germandbls",
+  "onesuperior",
+  "logicalnot",
+  "mu",
+  "trademark",
+  "Eth",
+  "onehalf",
+  "plusminus",
+  "Thorn",
+  "onequarter",
+  "divide",
+  "brokenbar",
+  "degree",
+  "thorn",
+  "threequarters",
+  "twosuperior",
+  "registered",
+  "minus",
+  "eth",
+  "multiply",
+  "threesuperior",
+  "copyright",
+  "Aacute",
+  "Acircumflex",
+  "Adieresis",
+  "Agrave",
+  "Aring",
+  "Atilde",
+  "Ccedilla",
+  "Eacute",
+  "Ecircumflex",
+  "Edieresis",
+  "Egrave",
+  "Iacute",
+  "Icircumflex",
+  "Idieresis",
+  "Igrave",
+  "Ntilde",
+  "Oacute",
+  "Ocircumflex",
+  "Odieresis",
+  "Ograve",
+  "Otilde",
+  "Scaron",
+  "Uacute",
+  "Ucircumflex",
+  "Udieresis",
+  "Ugrave",
+  "Yacute",
+  "Ydieresis",
+  "Zcaron",
+  "aacute",
+  "acircumflex",
+  "adieresis",
+  "agrave",
+  "aring",
+  "atilde",
+  "ccedilla",
+  "eacute",
+  "ecircumflex",
+  "edieresis",
+  "egrave",
+  "iacute",
+  "icircumflex",
+  "idieresis",
+  "igrave",
+  "ntilde",
+  "oacute",
+  "ocircumflex",
+  "odieresis",
+  "ograve",
+  "otilde",
+  "scaron",
+  "uacute",
+  "ucircumflex",
+  "udieresis",
+  "ugrave",
+  "yacute",
+  "ydieresis",
+  "zcaron",
+  "exclamsmall",
+  "Hungarumlautsmall",
+  "dollaroldstyle",
+  "dollarsuperior",
+  "ampersandsmall",
+  "Acutesmall",
+  "parenleftsuperior",
+  "parenrightsuperior",
+  "266 ff",
+  "onedotenleader",
+  "zerooldstyle",
+  "oneoldstyle",
+  "twooldstyle",
+  "threeoldstyle",
+  "fouroldstyle",
+  "fiveoldstyle",
+  "sixoldstyle",
+  "sevenoldstyle",
+  "eightoldstyle",
+  "nineoldstyle",
+  "commasuperior",
+  "threequartersemdash",
+  "periodsuperior",
+  "questionsmall",
+  "asuperior",
+  "bsuperior",
+  "centsuperior",
+  "dsuperior",
+  "esuperior",
+  "isuperior",
+  "lsuperior",
+  "msuperior",
+  "nsuperior",
+  "osuperior",
+  "rsuperior",
+  "ssuperior",
+  "tsuperior",
+  "ff",
+  "ffi",
+  "ffl",
+  "parenleftinferior",
+  "parenrightinferior",
+  "Circumflexsmall",
+  "hyphensuperior",
+  "Gravesmall",
+  "Asmall",
+  "Bsmall",
+  "Csmall",
+  "Dsmall",
+  "Esmall",
+  "Fsmall",
+  "Gsmall",
+  "Hsmall",
+  "Ismall",
+  "Jsmall",
+  "Ksmall",
+  "Lsmall",
+  "Msmall",
+  "Nsmall",
+  "Osmall",
+  "Psmall",
+  "Qsmall",
+  "Rsmall",
+  "Ssmall",
+  "Tsmall",
+  "Usmall",
+  "Vsmall",
+  "Wsmall",
+  "Xsmall",
+  "Ysmall",
+  "Zsmall",
+  "colonmonetary",
+  "onefitted",
+  "rupiah",
+  "Tildesmall",
+  "exclamdownsmall",
+  "centoldstyle",
+  "Lslashsmall",
+  "Scaronsmall",
+  "Zcaronsmall",
+  "Dieresissmall",
+  "Brevesmall",
+  "Caronsmall",
+  "Dotaccentsmall",
+  "Macronsmall",
+  "figuredash",
+  "hypheninferior",
+  "Ogoneksmall",
+  "Ringsmall",
+  "Cedillasmall",
+  "questiondownsmall",
+  "oneeighth",
+  "threeeighths",
+  "fiveeighths",
+  "seveneighths",
+  "onethird",
+  "twothirds",
+  "zerosuperior",
+  "foursuperior",
+  "fivesuperior",
+  "sixsuperior",
+  "sevensuperior",
+  "eightsuperior",
+  "ninesuperior",
+  "zeroinferior",
+  "oneinferior",
+  "twoinferior",
+  "threeinferior",
+  "fourinferior",
+  "fiveinferior",
+  "sixinferior",
+  "seveninferior",
+  "eightinferior",
+  "nineinferior",
+  "centinferior",
+  "dollarinferior",
+  "periodinferior",
+  "commainferior",
+  "Agravesmall",
+  "Aacutesmall",
+  "Acircumflexsmall",
+  "Atildesmall",
+  "Adieresissmall",
+  "Aringsmall",
+  "AEsmall",
+  "Ccedillasmall",
+  "Egravesmall",
+  "Eacutesmall",
+  "Ecircumflexsmall",
+  "Edieresissmall",
+  "Igravesmall",
+  "Iacutesmall",
+  "Icircumflexsmall",
+  "Idieresissmall",
+  "Ethsmall",
+  "Ntildesmall",
+  "Ogravesmall",
+  "Oacutesmall",
+  "Ocircumflexsmall",
+  "Otildesmall",
+  "Odieresissmall",
+  "OEsmall",
+  "Oslashsmall",
+  "Ugravesmall",
+  "Uacutesmall",
+  "Ucircumflexsmall",
+  "Udieresissmall",
+  "Yacutesmall",
+  "Thornsmall",
+  "Ydieresissmall",
+  "001.000",
+  "001.001",
+  "001.002",
+  "001.003",
+  "Black",
+  "Bold",
+  "Book",
+  "Light",
+  "Medium",
+  "Regular",
+  "Roman",
+  "Semibold"
+], Uc = [
+  ".notdef",
+  "space",
+  "exclam",
+  "quotedbl",
+  "numbersign",
+  "dollar",
+  "percent",
+  "ampersand",
+  "quoteright",
+  "parenleft",
+  "parenright",
+  "asterisk",
+  "plus",
+  "comma",
+  "hyphen",
+  "period",
+  "slash",
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "colon",
+  "semicolon",
+  "less",
+  "equal",
+  "greater",
+  "question",
+  "at",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+  "bracketleft",
+  "backslash",
+  "bracketright",
+  "asciicircum",
+  "underscore",
+  "quoteleft",
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "braceleft",
+  "bar",
+  "braceright",
+  "asciitilde",
+  "exclamdown",
+  "cent",
+  "sterling",
+  "fraction",
+  "yen",
+  "florin",
+  "section",
+  "currency",
+  "quotesingle",
+  "quotedblleft",
+  "guillemotleft",
+  "guilsinglleft",
+  "guilsinglright",
+  "fi",
+  "fl",
+  "endash",
+  "dagger",
+  "daggerdbl",
+  "periodcentered",
+  "paragraph",
+  "bullet",
+  "quotesinglbase",
+  "quotedblbase",
+  "quotedblright",
+  "guillemotright",
+  "ellipsis",
+  "perthousand",
+  "questiondown",
+  "grave",
+  "acute",
+  "circumflex",
+  "tilde",
+  "macron",
+  "breve",
+  "dotaccent",
+  "dieresis",
+  "ring",
+  "cedilla",
+  "hungarumlaut",
+  "ogonek",
+  "caron",
+  "emdash",
+  "AE",
+  "ordfeminine",
+  "Lslash",
+  "Oslash",
+  "OE",
+  "ordmasculine",
+  "ae",
+  "dotlessi",
+  "lslash",
+  "oslash",
+  "oe",
+  "germandbls",
+  "onesuperior",
+  "logicalnot",
+  "mu",
+  "trademark",
+  "Eth",
+  "onehalf",
+  "plusminus",
+  "Thorn",
+  "onequarter",
+  "divide",
+  "brokenbar",
+  "degree",
+  "thorn",
+  "threequarters",
+  "twosuperior",
+  "registered",
+  "minus",
+  "eth",
+  "multiply",
+  "threesuperior",
+  "copyright",
+  "Aacute",
+  "Acircumflex",
+  "Adieresis",
+  "Agrave",
+  "Aring",
+  "Atilde",
+  "Ccedilla",
+  "Eacute",
+  "Ecircumflex",
+  "Edieresis",
+  "Egrave",
+  "Iacute",
+  "Icircumflex",
+  "Idieresis",
+  "Igrave",
+  "Ntilde",
+  "Oacute",
+  "Ocircumflex",
+  "Odieresis",
+  "Ograve",
+  "Otilde",
+  "Scaron",
+  "Uacute",
+  "Ucircumflex",
+  "Udieresis",
+  "Ugrave",
+  "Yacute",
+  "Ydieresis",
+  "Zcaron",
+  "aacute",
+  "acircumflex",
+  "adieresis",
+  "agrave",
+  "aring",
+  "atilde",
+  "ccedilla",
+  "eacute",
+  "ecircumflex",
+  "edieresis",
+  "egrave",
+  "iacute",
+  "icircumflex",
+  "idieresis",
+  "igrave",
+  "ntilde",
+  "oacute",
+  "ocircumflex",
+  "odieresis",
+  "ograve",
+  "otilde",
+  "scaron",
+  "uacute",
+  "ucircumflex",
+  "udieresis",
+  "ugrave",
+  "yacute",
+  "ydieresis",
+  "zcaron"
+], Pc = [
+  ".notdef",
+  "space",
+  "exclamsmall",
+  "Hungarumlautsmall",
+  "dollaroldstyle",
+  "dollarsuperior",
+  "ampersandsmall",
+  "Acutesmall",
+  "parenleftsuperior",
+  "parenrightsuperior",
+  "twodotenleader",
+  "onedotenleader",
+  "comma",
+  "hyphen",
+  "period",
+  "fraction",
+  "zerooldstyle",
+  "oneoldstyle",
+  "twooldstyle",
+  "threeoldstyle",
+  "fouroldstyle",
+  "fiveoldstyle",
+  "sixoldstyle",
+  "sevenoldstyle",
+  "eightoldstyle",
+  "nineoldstyle",
+  "colon",
+  "semicolon",
+  "commasuperior",
+  "threequartersemdash",
+  "periodsuperior",
+  "questionsmall",
+  "asuperior",
+  "bsuperior",
+  "centsuperior",
+  "dsuperior",
+  "esuperior",
+  "isuperior",
+  "lsuperior",
+  "msuperior",
+  "nsuperior",
+  "osuperior",
+  "rsuperior",
+  "ssuperior",
+  "tsuperior",
+  "ff",
+  "fi",
+  "fl",
+  "ffi",
+  "ffl",
+  "parenleftinferior",
+  "parenrightinferior",
+  "Circumflexsmall",
+  "hyphensuperior",
+  "Gravesmall",
+  "Asmall",
+  "Bsmall",
+  "Csmall",
+  "Dsmall",
+  "Esmall",
+  "Fsmall",
+  "Gsmall",
+  "Hsmall",
+  "Ismall",
+  "Jsmall",
+  "Ksmall",
+  "Lsmall",
+  "Msmall",
+  "Nsmall",
+  "Osmall",
+  "Psmall",
+  "Qsmall",
+  "Rsmall",
+  "Ssmall",
+  "Tsmall",
+  "Usmall",
+  "Vsmall",
+  "Wsmall",
+  "Xsmall",
+  "Ysmall",
+  "Zsmall",
+  "colonmonetary",
+  "onefitted",
+  "rupiah",
+  "Tildesmall",
+  "exclamdownsmall",
+  "centoldstyle",
+  "Lslashsmall",
+  "Scaronsmall",
+  "Zcaronsmall",
+  "Dieresissmall",
+  "Brevesmall",
+  "Caronsmall",
+  "Dotaccentsmall",
+  "Macronsmall",
+  "figuredash",
+  "hypheninferior",
+  "Ogoneksmall",
+  "Ringsmall",
+  "Cedillasmall",
+  "onequarter",
+  "onehalf",
+  "threequarters",
+  "questiondownsmall",
+  "oneeighth",
+  "threeeighths",
+  "fiveeighths",
+  "seveneighths",
+  "onethird",
+  "twothirds",
+  "zerosuperior",
+  "onesuperior",
+  "twosuperior",
+  "threesuperior",
+  "foursuperior",
+  "fivesuperior",
+  "sixsuperior",
+  "sevensuperior",
+  "eightsuperior",
+  "ninesuperior",
+  "zeroinferior",
+  "oneinferior",
+  "twoinferior",
+  "threeinferior",
+  "fourinferior",
+  "fiveinferior",
+  "sixinferior",
+  "seveninferior",
+  "eightinferior",
+  "nineinferior",
+  "centinferior",
+  "dollarinferior",
+  "periodinferior",
+  "commainferior",
+  "Agravesmall",
+  "Aacutesmall",
+  "Acircumflexsmall",
+  "Atildesmall",
+  "Adieresissmall",
+  "Aringsmall",
+  "AEsmall",
+  "Ccedillasmall",
+  "Egravesmall",
+  "Eacutesmall",
+  "Ecircumflexsmall",
+  "Edieresissmall",
+  "Igravesmall",
+  "Iacutesmall",
+  "Icircumflexsmall",
+  "Idieresissmall",
+  "Ethsmall",
+  "Ntildesmall",
+  "Ogravesmall",
+  "Oacutesmall",
+  "Ocircumflexsmall",
+  "Otildesmall",
+  "Odieresissmall",
+  "OEsmall",
+  "Oslashsmall",
+  "Ugravesmall",
+  "Uacutesmall",
+  "Ucircumflexsmall",
+  "Udieresissmall",
+  "Yacutesmall",
+  "Thornsmall",
+  "Ydieresissmall"
+], Nc = [
+  ".notdef",
+  "space",
+  "dollaroldstyle",
+  "dollarsuperior",
+  "parenleftsuperior",
+  "parenrightsuperior",
+  "twodotenleader",
+  "onedotenleader",
+  "comma",
+  "hyphen",
+  "period",
+  "fraction",
+  "zerooldstyle",
+  "oneoldstyle",
+  "twooldstyle",
+  "threeoldstyle",
+  "fouroldstyle",
+  "fiveoldstyle",
+  "sixoldstyle",
+  "sevenoldstyle",
+  "eightoldstyle",
+  "nineoldstyle",
+  "colon",
+  "semicolon",
+  "commasuperior",
+  "threequartersemdash",
+  "periodsuperior",
+  "asuperior",
+  "bsuperior",
+  "centsuperior",
+  "dsuperior",
+  "esuperior",
+  "isuperior",
+  "lsuperior",
+  "msuperior",
+  "nsuperior",
+  "osuperior",
+  "rsuperior",
+  "ssuperior",
+  "tsuperior",
+  "ff",
+  "fi",
+  "fl",
+  "ffi",
+  "ffl",
+  "parenleftinferior",
+  "parenrightinferior",
+  "hyphensuperior",
+  "colonmonetary",
+  "onefitted",
+  "rupiah",
+  "centoldstyle",
+  "figuredash",
+  "hypheninferior",
+  "onequarter",
+  "onehalf",
+  "threequarters",
+  "oneeighth",
+  "threeeighths",
+  "fiveeighths",
+  "seveneighths",
+  "onethird",
+  "twothirds",
+  "zerosuperior",
+  "onesuperior",
+  "twosuperior",
+  "threesuperior",
+  "foursuperior",
+  "fivesuperior",
+  "sixsuperior",
+  "sevensuperior",
+  "eightsuperior",
+  "ninesuperior",
+  "zeroinferior",
+  "oneinferior",
+  "twoinferior",
+  "threeinferior",
+  "fourinferior",
+  "fiveinferior",
+  "sixinferior",
+  "seveninferior",
+  "eightinferior",
+  "nineinferior",
+  "centinferior",
+  "dollarinferior",
+  "periodinferior",
+  "commainferior"
+], Br = [
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "space",
+  "exclam",
+  "quotedbl",
+  "numbersign",
+  "dollar",
+  "percent",
+  "ampersand",
+  "quoteright",
+  "parenleft",
+  "parenright",
+  "asterisk",
+  "plus",
+  "comma",
+  "hyphen",
+  "period",
+  "slash",
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "colon",
+  "semicolon",
+  "less",
+  "equal",
+  "greater",
+  "question",
+  "at",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+  "bracketleft",
+  "backslash",
+  "bracketright",
+  "asciicircum",
+  "underscore",
+  "quoteleft",
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "braceleft",
+  "bar",
+  "braceright",
+  "asciitilde",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "exclamdown",
+  "cent",
+  "sterling",
+  "fraction",
+  "yen",
+  "florin",
+  "section",
+  "currency",
+  "quotesingle",
+  "quotedblleft",
+  "guillemotleft",
+  "guilsinglleft",
+  "guilsinglright",
+  "fi",
+  "fl",
+  "",
+  "endash",
+  "dagger",
+  "daggerdbl",
+  "periodcentered",
+  "",
+  "paragraph",
+  "bullet",
+  "quotesinglbase",
+  "quotedblbase",
+  "quotedblright",
+  "guillemotright",
+  "ellipsis",
+  "perthousand",
+  "",
+  "questiondown",
+  "",
+  "grave",
+  "acute",
+  "circumflex",
+  "tilde",
+  "macron",
+  "breve",
+  "dotaccent",
+  "dieresis",
+  "",
+  "ring",
+  "cedilla",
+  "",
+  "hungarumlaut",
+  "ogonek",
+  "caron",
+  "emdash",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "AE",
+  "",
+  "ordfeminine",
+  "",
+  "",
+  "",
+  "",
+  "Lslash",
+  "Oslash",
+  "OE",
+  "ordmasculine",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "ae",
+  "",
+  "",
+  "",
+  "dotlessi",
+  "",
+  "",
+  "lslash",
+  "oslash",
+  "oe",
+  "germandbls"
+], Gc = [
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "space",
+  "exclamsmall",
+  "Hungarumlautsmall",
+  "",
+  "dollaroldstyle",
+  "dollarsuperior",
+  "ampersandsmall",
+  "Acutesmall",
+  "parenleftsuperior",
+  "parenrightsuperior",
+  "twodotenleader",
+  "onedotenleader",
+  "comma",
+  "hyphen",
+  "period",
+  "fraction",
+  "zerooldstyle",
+  "oneoldstyle",
+  "twooldstyle",
+  "threeoldstyle",
+  "fouroldstyle",
+  "fiveoldstyle",
+  "sixoldstyle",
+  "sevenoldstyle",
+  "eightoldstyle",
+  "nineoldstyle",
+  "colon",
+  "semicolon",
+  "commasuperior",
+  "threequartersemdash",
+  "periodsuperior",
+  "questionsmall",
+  "",
+  "asuperior",
+  "bsuperior",
+  "centsuperior",
+  "dsuperior",
+  "esuperior",
+  "",
+  "",
+  "isuperior",
+  "",
+  "",
+  "lsuperior",
+  "msuperior",
+  "nsuperior",
+  "osuperior",
+  "",
+  "",
+  "rsuperior",
+  "ssuperior",
+  "tsuperior",
+  "",
+  "ff",
+  "fi",
+  "fl",
+  "ffi",
+  "ffl",
+  "parenleftinferior",
+  "",
+  "parenrightinferior",
+  "Circumflexsmall",
+  "hyphensuperior",
+  "Gravesmall",
+  "Asmall",
+  "Bsmall",
+  "Csmall",
+  "Dsmall",
+  "Esmall",
+  "Fsmall",
+  "Gsmall",
+  "Hsmall",
+  "Ismall",
+  "Jsmall",
+  "Ksmall",
+  "Lsmall",
+  "Msmall",
+  "Nsmall",
+  "Osmall",
+  "Psmall",
+  "Qsmall",
+  "Rsmall",
+  "Ssmall",
+  "Tsmall",
+  "Usmall",
+  "Vsmall",
+  "Wsmall",
+  "Xsmall",
+  "Ysmall",
+  "Zsmall",
+  "colonmonetary",
+  "onefitted",
+  "rupiah",
+  "Tildesmall",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "exclamdownsmall",
+  "centoldstyle",
+  "Lslashsmall",
+  "",
+  "",
+  "Scaronsmall",
+  "Zcaronsmall",
+  "Dieresissmall",
+  "Brevesmall",
+  "Caronsmall",
+  "",
+  "Dotaccentsmall",
+  "",
+  "",
+  "Macronsmall",
+  "",
+  "",
+  "figuredash",
+  "hypheninferior",
+  "",
+  "",
+  "Ogoneksmall",
+  "Ringsmall",
+  "Cedillasmall",
+  "",
+  "",
+  "",
+  "onequarter",
+  "onehalf",
+  "threequarters",
+  "questiondownsmall",
+  "oneeighth",
+  "threeeighths",
+  "fiveeighths",
+  "seveneighths",
+  "onethird",
+  "twothirds",
+  "",
+  "",
+  "zerosuperior",
+  "onesuperior",
+  "twosuperior",
+  "threesuperior",
+  "foursuperior",
+  "fivesuperior",
+  "sixsuperior",
+  "sevensuperior",
+  "eightsuperior",
+  "ninesuperior",
+  "zeroinferior",
+  "oneinferior",
+  "twoinferior",
+  "threeinferior",
+  "fourinferior",
+  "fiveinferior",
+  "sixinferior",
+  "seveninferior",
+  "eightinferior",
+  "nineinferior",
+  "centinferior",
+  "dollarinferior",
+  "periodinferior",
+  "commainferior",
+  "Agravesmall",
+  "Aacutesmall",
+  "Acircumflexsmall",
+  "Atildesmall",
+  "Adieresissmall",
+  "Aringsmall",
+  "AEsmall",
+  "Ccedillasmall",
+  "Egravesmall",
+  "Eacutesmall",
+  "Ecircumflexsmall",
+  "Edieresissmall",
+  "Igravesmall",
+  "Iacutesmall",
+  "Icircumflexsmall",
+  "Idieresissmall",
+  "Ethsmall",
+  "Ntildesmall",
+  "Ogravesmall",
+  "Oacutesmall",
+  "Ocircumflexsmall",
+  "Otildesmall",
+  "Odieresissmall",
+  "OEsmall",
+  "Oslashsmall",
+  "Ugravesmall",
+  "Uacutesmall",
+  "Ucircumflexsmall",
+  "Udieresissmall",
+  "Yacutesmall",
+  "Thornsmall",
+  "Ydieresissmall"
+], wt = [
+  ".notdef",
+  ".null",
+  "nonmarkingreturn",
+  "space",
+  "exclam",
+  "quotedbl",
+  "numbersign",
+  "dollar",
+  "percent",
+  "ampersand",
+  "quotesingle",
+  "parenleft",
+  "parenright",
+  "asterisk",
+  "plus",
+  "comma",
+  "hyphen",
+  "period",
+  "slash",
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "colon",
+  "semicolon",
+  "less",
+  "equal",
+  "greater",
+  "question",
+  "at",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+  "bracketleft",
+  "backslash",
+  "bracketright",
+  "asciicircum",
+  "underscore",
+  "grave",
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "braceleft",
+  "bar",
+  "braceright",
+  "asciitilde",
+  "Adieresis",
+  "Aring",
+  "Ccedilla",
+  "Eacute",
+  "Ntilde",
+  "Odieresis",
+  "Udieresis",
+  "aacute",
+  "agrave",
+  "acircumflex",
+  "adieresis",
+  "atilde",
+  "aring",
+  "ccedilla",
+  "eacute",
+  "egrave",
+  "ecircumflex",
+  "edieresis",
+  "iacute",
+  "igrave",
+  "icircumflex",
+  "idieresis",
+  "ntilde",
+  "oacute",
+  "ograve",
+  "ocircumflex",
+  "odieresis",
+  "otilde",
+  "uacute",
+  "ugrave",
+  "ucircumflex",
+  "udieresis",
+  "dagger",
+  "degree",
+  "cent",
+  "sterling",
+  "section",
+  "bullet",
+  "paragraph",
+  "germandbls",
+  "registered",
+  "copyright",
+  "trademark",
+  "acute",
+  "dieresis",
+  "notequal",
+  "AE",
+  "Oslash",
+  "infinity",
+  "plusminus",
+  "lessequal",
+  "greaterequal",
+  "yen",
+  "mu",
+  "partialdiff",
+  "summation",
+  "product",
+  "pi",
+  "integral",
+  "ordfeminine",
+  "ordmasculine",
+  "Omega",
+  "ae",
+  "oslash",
+  "questiondown",
+  "exclamdown",
+  "logicalnot",
+  "radical",
+  "florin",
+  "approxequal",
+  "Delta",
+  "guillemotleft",
+  "guillemotright",
+  "ellipsis",
+  "nonbreakingspace",
+  "Agrave",
+  "Atilde",
+  "Otilde",
+  "OE",
+  "oe",
+  "endash",
+  "emdash",
+  "quotedblleft",
+  "quotedblright",
+  "quoteleft",
+  "quoteright",
+  "divide",
+  "lozenge",
+  "ydieresis",
+  "Ydieresis",
+  "fraction",
+  "currency",
+  "guilsinglleft",
+  "guilsinglright",
+  "fi",
+  "fl",
+  "daggerdbl",
+  "periodcentered",
+  "quotesinglbase",
+  "quotedblbase",
+  "perthousand",
+  "Acircumflex",
+  "Ecircumflex",
+  "Aacute",
+  "Edieresis",
+  "Egrave",
+  "Iacute",
+  "Icircumflex",
+  "Idieresis",
+  "Igrave",
+  "Oacute",
+  "Ocircumflex",
+  "apple",
+  "Ograve",
+  "Uacute",
+  "Ucircumflex",
+  "Ugrave",
+  "dotlessi",
+  "circumflex",
+  "tilde",
+  "macron",
+  "breve",
+  "dotaccent",
+  "ring",
+  "cedilla",
+  "hungarumlaut",
+  "ogonek",
+  "caron",
+  "Lslash",
+  "lslash",
+  "Scaron",
+  "scaron",
+  "Zcaron",
+  "zcaron",
+  "brokenbar",
+  "Eth",
+  "eth",
+  "Yacute",
+  "yacute",
+  "Thorn",
+  "thorn",
+  "minus",
+  "multiply",
+  "onesuperior",
+  "twosuperior",
+  "threesuperior",
+  "onehalf",
+  "onequarter",
+  "threequarters",
+  "franc",
+  "Gbreve",
+  "gbreve",
+  "Idotaccent",
+  "Scedilla",
+  "scedilla",
+  "Cacute",
+  "cacute",
+  "Ccaron",
+  "ccaron",
+  "dcroat"
+];
+function Ea(t) {
+  this.font = t;
+}
+Ea.prototype.charToGlyphIndex = function(t) {
+  const e = t.codePointAt(0), n = this.font.glyphs;
+  if (n)
+    for (let r = 0; r < n.length; r += 1) {
+      const s = n.get(r);
+      for (let i = 0; i < s.unicodes.length; i += 1)
+        if (s.unicodes[i] === e)
+          return r;
+    }
+  return null;
+};
+function Aa(t) {
+  this.cmap = t;
+}
+Aa.prototype.charToGlyphIndex = function(t) {
+  return this.cmap.glyphIndexMap[t.codePointAt(0)] || 0;
+};
+function Oa(t, e) {
+  this.encoding = t, this.charset = e;
+}
+Oa.prototype.charToGlyphIndex = function(t) {
+  const e = t.codePointAt(0), n = this.encoding[e];
+  return this.charset.indexOf(n);
+};
+function Yr(t) {
+  switch (t.version) {
+    case 1:
+      this.names = wt.slice();
+      break;
+    case 2:
+      this.names = new Array(t.numberOfGlyphs);
+      for (let e = 0; e < t.numberOfGlyphs; e++)
+        t.glyphNameIndex[e] < wt.length ? this.names[e] = wt[t.glyphNameIndex[e]] : this.names[e] = t.names[t.glyphNameIndex[e] - wt.length];
+      break;
+    case 2.5:
+      this.names = new Array(t.numberOfGlyphs);
+      for (let e = 0; e < t.numberOfGlyphs; e++)
+        this.names[e] = wt[e + t.glyphNameIndex[e]];
+      break;
+    case 3:
+      this.names = [];
+      break;
+    default:
+      this.names = [];
+      break;
+  }
+}
+Yr.prototype.nameToGlyphIndex = function(t) {
+  return this.names.indexOf(t);
+};
+Yr.prototype.glyphIndexToName = function(t) {
+  return this.names[t];
+};
+function Hc(t) {
+  let e;
+  const n = t.tables.cmap.glyphIndexMap, r = Object.keys(n);
+  for (let s = 0; s < r.length; s += 1) {
+    const i = r[s], a = n[i];
+    e = t.glyphs.get(a), e.addUnicode(parseInt(i));
+  }
+  for (let s = 0; s < t.glyphs.length; s += 1)
+    e = t.glyphs.get(s), t.cffEncoding ? e.name = t.cffEncoding.charset[s] : t.glyphNames.names && (e.name = t.glyphNames.glyphIndexToName(s));
+}
+function zc(t) {
+  t._IndexToUnicodeMap = {};
+  const e = t.tables.cmap.glyphIndexMap, n = Object.keys(e);
+  for (let r = 0; r < n.length; r += 1) {
+    const s = n[r];
+    let i = e[s];
+    t._IndexToUnicodeMap[i] === void 0 ? t._IndexToUnicodeMap[i] = {
+      unicodes: [parseInt(s)]
+    } : t._IndexToUnicodeMap[i].unicodes.push(parseInt(s));
+  }
+}
+function Wc(t, e) {
+  e.lowMemory ? zc(t) : Hc(t);
+}
+function Vc(t, e, n, r, s) {
+  t.beginPath(), t.moveTo(e, n), t.lineTo(r, s), t.stroke();
+}
+var vt = { line: Vc };
+function qc(t, e) {
+  const n = new k(t, e), r = n.parseShort();
+  r !== 0 && console.warn("Only CPALv0 is currently fully supported.");
+  const s = n.parseShort(), i = n.parseShort(), a = n.parseShort(), o = n.parseOffset32(), c = n.parseUShortList(i);
+  n.relativeOffset = o;
+  const l = n.parseULongList(a);
+  return n.relativeOffset = o, {
+    version: r,
+    numPaletteEntries: s,
+    colorRecords: l,
+    colorRecordIndices: c
+  };
+}
+function jc({ version: t = 0, numPaletteEntries: e = 0, colorRecords: n = [], colorRecordIndices: r = [0] }) {
+  return H.argument(t === 0, "Only CPALv0 are supported."), H.argument(n.length, "No colorRecords given."), H.argument(r.length, "No colorRecordIndices given."), r.length > 1 && H.argument(e, "Can't infer numPaletteEntries on multiple colorRecordIndices"), new O.Table("CPAL", [
+    { name: "version", type: "USHORT", value: t },
+    { name: "numPaletteEntries", type: "USHORT", value: e || n.length },
+    { name: "numPalettes", type: "USHORT", value: r.length },
+    { name: "numColorRecords", type: "USHORT", value: n.length },
+    { name: "colorRecordsArrayOffset", type: "ULONG", value: 12 + 2 * r.length },
+    ...r.map((s, i) => ({ name: "colorRecordIndices_" + i, type: "USHORT", value: s })),
+    ...n.map((s, i) => ({ name: "colorRecords_" + i, type: "ULONG", value: s }))
+  ]);
+}
+function La(t) {
+  var e = (t & 4278190080) >> 24, n = (t & 16711680) >> 16, r = (t & 65280) >> 8, s = t & 255;
+  return e = e + 256 & 255, n = n + 256 & 255, r = r + 256 & 255, s = (s + 256 & 255) / 255, { b: e, g: n, r, a: s };
+}
+function Xr(t, e, n = 0, r = "hexa") {
+  if (e == 65535)
+    return "currentColor";
+  const s = t && t.tables && t.tables.cpal;
+  if (!s) return "currentColor";
+  if (n > s.colorRecordIndices.length - 1)
+    throw new Error(`Palette index out of range (colorRecordIndices.length: ${s.colorRecordIndices.length}, index: ${e})`);
+  if (e > s.numPaletteEntries)
+    throw new Error(`Color index out of range (numPaletteEntries: ${s.numPaletteEntries}, index: ${e})`);
+  const i = s.colorRecordIndices[n] + e;
+  if (i > s.colorRecords)
+    throw new Error(`Color index out of range (colorRecords.length: ${s.colorRecords.length}, lookupIndex: ${i})`);
+  const a = La(s.colorRecords[i]);
+  return r === "bgra" ? a : Ht(a, r);
+}
+function ze(t) {
+  return ("0" + parseInt(t).toString(16)).slice(-2);
+}
+function $c(t) {
+  const e = t.r / 255, n = t.g / 255, r = t.b / 255, s = Math.max(e, n, r), i = Math.min(e, n, r);
+  let a, o, c = (s + i) / 2;
+  if (s === i)
+    a = o = 0;
+  else {
+    const l = s - i;
+    switch (o = c > 0.5 ? l / (2 - s - i) : l / (s + i), s) {
+      case e:
+        a = (n - r) / l + (n < r ? 6 : 0);
+        break;
+      case n:
+        a = (r - e) / l + 2;
+        break;
+      case r:
+        a = (e - n) / l + 4;
+        break;
+    }
+    a /= 6;
+  }
+  return {
+    h: a * 360,
+    s: o * 100,
+    l: c * 100
+  };
+}
+function Yc(t) {
+  let { h: e, s: n, l: r, a: s } = t;
+  e = e % 360, n /= 100, r /= 100;
+  const i = (1 - Math.abs(2 * r - 1)) * n, a = i * (1 - Math.abs(e / 60 % 2 - 1)), o = r - i / 2;
+  let c = 0, l = 0, u = 0;
+  return 0 <= e && e < 60 ? (c = i, l = a, u = 0) : 60 <= e && e < 120 ? (c = a, l = i, u = 0) : 120 <= e && e < 180 ? (c = 0, l = i, u = a) : 180 <= e && e < 240 ? (c = 0, l = a, u = i) : 240 <= e && e < 300 ? (c = a, l = 0, u = i) : 300 <= e && e <= 360 && (c = i, l = 0, u = a), {
+    r: Math.round((c + o) * 255),
+    g: Math.round((l + o) * 255),
+    b: Math.round((u + o) * 255),
+    a: s
+  };
+}
+function Ia(t) {
+  return parseInt(`0x${ze(t.b)}${ze(t.g)}${ze(t.r)}${ze(t.a * 255)}`, 16);
+}
+function Dn(t, e = "hexa") {
+  const n = e == "raw" || e == "cpal", r = Number.isInteger(t);
+  let s = !0;
+  if (r && n || t === "currentColor")
+    return t;
+  if (typeof t == "object") {
+    if (e == "bgra")
+      return t;
+    if (n)
+      return Ia(t);
+  } else if (!r && /^#([a-f0-9]{3}|[a-f0-9]{4}|[a-f0-9]{6}|[a-f0-9]{8})$/i.test(t.trim())) {
+    switch (t = t.trim().substring(1), t.length) {
+      case 3:
+        t = {
+          r: parseInt(t[0].repeat(2), 16),
+          g: parseInt(t[1].repeat(2), 16),
+          b: parseInt(t[2].repeat(2), 16),
+          a: 1
+        };
+        break;
+      case 4:
+        t = {
+          r: parseInt(t[0].repeat(2), 16),
+          g: parseInt(t[1].repeat(2), 16),
+          b: parseInt(t[2].repeat(2), 16),
+          a: parseInt(t[3].repeat(2), 16) / 255
+        };
+        break;
+      case 6:
+        t = {
+          r: parseInt(t[0] + t[1], 16),
+          g: parseInt(t[2] + t[3], 16),
+          b: parseInt(t[4] + t[5], 16),
+          a: 1
+        };
+        break;
+      case 8:
+        t = {
+          r: parseInt(t[0] + t[1], 16),
+          g: parseInt(t[2] + t[3], 16),
+          b: parseInt(t[4] + t[5], 16),
+          a: parseInt(t[6] + t[7], 16) / 255
+        };
+        break;
+    }
+    if (e == "bgra")
+      return t;
+  } else if (typeof document < "u" && /^[a-z]+$/i.test(t)) {
+    const i = document.createElement("canvas").getContext("2d");
+    i.fillStyle = t;
+    const a = Ht(i.fillStyle, "hexa");
+    a === "#000000ff" && t.toLowerCase() !== "black" ? s = !1 : t = a;
+  } else {
+    t = t.trim();
+    const i = /rgba?\(\s*(?:(\d*\.\d+)(%?)|(\d+)(%?))\s*(?:,|\s*)\s*(?:(\d*\.\d+)(%?)|(\d+)(%?))\s*(?:,|\s*)\s*(?:(\d*\.\d+)(%?)|(\d+)(%?))\s*(?:(?:,|\s|\/)\s*(?:(0*(?:\.\d+)?()|0*1(?:\.0+)?())|(?:\.\d+)|(\d+)(%)|(\d*\.\d+)(%)))?\s*\)/;
+    if (i.test(t)) {
+      const a = t.match(i).filter((o) => typeof o < "u");
+      t = {
+        r: Math.round(parseFloat(a[1]) / (a[2] ? 100 / 255 : 1)),
+        g: Math.round(parseFloat(a[3]) / (a[4] ? 100 / 255 : 1)),
+        b: Math.round(parseFloat(a[5]) / (a[6] ? 100 / 255 : 1)),
+        a: a[7] ? parseFloat(a[7]) / (a[8] ? 100 : 1) : 1
+      };
+    } else {
+      const a = /hsla?\(\s*(?:(\d*\.\d+|\d+)(deg|turn|))\s*(?:,|\s*)\s*(?:(\d*\.\d+)%?|(\d+)%?)\s*(?:,|\s*)\s*(?:(\d*\.\d+)%?|(\d+)%?)\s*(?:(?:,|\s|\/)\s*(?:(0*(?:\.\d+)?()|0*1(?:\.0+)?())|(?:\.\d+)|(\d+)(%)|(\d*\.\d+)(%)))?\s*\)/;
+      if (a.test(t)) {
+        const o = t.match(a).filter((c) => typeof c < "u");
+        t = Yc({
+          h: parseFloat(o[1]) * (o[2] === "turn" ? 360 : 1),
+          s: parseFloat(o[3]),
+          l: parseFloat(o[4]),
+          a: o[5] ? parseFloat(o[5]) / (o[6] ? 100 : 1) : 1
+        });
+      } else
+        s = !1;
+    }
+  }
+  if (!s)
+    throw new Error(`Invalid color format: ${t}`);
+  return Ht(t, e);
+}
+function Ht(t, e = "hexa") {
+  if (t === "currentColor") return t;
+  if (Number.isInteger(t)) {
+    if (e == "raw" || e == "cpal")
+      return t;
+    t = La(t);
+  } else typeof t != "object" && (t = Dn(t, "bgra"));
+  let n = ["hsl", "hsla"].includes(e) ? $c(t) : null;
+  switch (e) {
+    case "rgba":
+      return `rgba(${t.r}, ${t.g}, ${t.b}, ${parseFloat(t.a.toFixed(3))})`;
+    case "rgb":
+      return `rgb(${t.r}, ${t.g}, ${t.b})`;
+    case "hex":
+    case "hex6":
+    case "hex-6":
+      return `#${ze(t.r)}${ze(t.g)}${ze(t.b)}`;
+    case "hexa":
+    case "hex8":
+    case "hex-8":
+      return `#${ze(t.r)}${ze(t.g)}${ze(t.b)}${ze(t.a * 255)}`;
+    case "hsl":
+      return `hsl(${n.h.toFixed(2)}, ${n.s.toFixed(2)}%, ${n.l.toFixed(2)}%)`;
+    case "hsla":
+      return `hsla(${n.h.toFixed(2)}, ${n.s.toFixed(2)}%, ${n.l.toFixed(2)}%, ${parseFloat(t.a.toFixed(3))})`;
+    case "bgra":
+      return t;
+    case "raw":
+    case "cpal":
+      return Ia(t);
+    default:
+      throw new Error("Unknown color format: " + e);
+  }
+}
+var Ra = { parse: qc, make: jc, getPaletteColor: Xr, parseColor: Dn, formatColor: Ht };
+function Xc(t, e) {
+  let n = e || new Ut();
+  return {
+    configurable: !0,
+    get: function() {
+      return typeof n == "function" && (n = n()), n;
+    },
+    set: function(r) {
+      n = r;
+    }
+  };
+}
+function Ce(t) {
+  this.bindConstructorValues(t);
+}
+Ce.prototype.bindConstructorValues = function(t) {
+  if (this.index = t.index || 0, t.name === ".notdef" ? t.unicode = void 0 : t.name === ".null" && (t.unicode = 0), t.unicode === 0 && t.name !== ".null")
+    throw new Error('The unicode value "0" is reserved for the glyph name ".null" and cannot be used by any other glyph.');
+  this.name = t.name || null, this.unicode = t.unicode, this.unicodes = t.unicodes || (t.unicode !== void 0 ? [t.unicode] : []), "xMin" in t && (this.xMin = t.xMin), "yMin" in t && (this.yMin = t.yMin), "xMax" in t && (this.xMax = t.xMax), "yMax" in t && (this.yMax = t.yMax), "advanceWidth" in t && (this.advanceWidth = t.advanceWidth), "leftSideBearing" in t && (this.leftSideBearing = t.leftSideBearing), "points" in t && (this.points = t.points), Object.defineProperty(this, "path", Xc(this, t.path));
+};
+Ce.prototype.addUnicode = function(t) {
+  this.unicodes.length === 0 && (this.unicode = t), this.unicodes.push(t);
+};
+Ce.prototype.getBoundingBox = function() {
+  return this.path.getBoundingBox();
+};
+Ce.prototype.getPath = function(t, e, n, r, s) {
+  t = t !== void 0 ? t : 0, e = e !== void 0 ? e : 0, n = n !== void 0 ? n : 72, r = Object.assign({}, s && s.defaultRenderOptions, r);
+  let i, a, o = r.xScale, c = r.yScale;
+  const l = 1 / (this.path.unitsPerEm || 1e3) * n;
+  let u = this;
+  s && s.variation && (u = s.variation.getTransform(this, r.variation), i = u.path.commands), r.hinting && s && s.hinting && (a = u.path && s.hinting.exec(u, n, r)), a ? (i = s.hinting.getCommands(a), t = Math.round(t), e = Math.round(e), o = c = 1) : (i = u.path.commands, o === void 0 && (o = l), c === void 0 && (c = l));
+  const f = new Ut();
+  if (r.drawSVG) {
+    const h = this.getSvgImage(s);
+    if (h) {
+      const p = new Ut();
+      return p._image = {
+        image: h.image,
+        x: t + h.leftSideBearing * l,
+        y: e - h.baseline * l,
+        width: h.image.width * l,
+        height: h.image.height * l
+      }, f._layers = [p], f;
+    }
+  }
+  if (r.drawLayers) {
+    const h = this.getLayers(s);
+    if (h && h.length) {
+      f._layers = [];
+      for (let p = 0; p < h.length; p += 1) {
+        const y = h[p];
+        let g = Xr(s, y.paletteIndex, r.usePalette);
+        g === "currentColor" ? g = r.fill || "black" : g = Ht(g, r.colorFormat || "rgba"), r = Object.assign({}, r, { fill: g }), f._layers.push(this.getPath.call(y.glyph, t, e, n, r, s));
+      }
+      return f;
+    }
+  }
+  f.fill = r.fill || this.path.fill, f.stroke = this.path.stroke, f.strokeWidth = this.path.strokeWidth * l;
+  for (let h = 0; h < i.length; h += 1) {
+    const p = i[h];
+    p.type === "M" ? f.moveTo(t + p.x * o, e + -p.y * c) : p.type === "L" ? f.lineTo(t + p.x * o, e + -p.y * c) : p.type === "Q" ? f.quadraticCurveTo(
+      t + p.x1 * o,
+      e + -p.y1 * c,
+      t + p.x * o,
+      e + -p.y * c
+    ) : p.type === "C" ? f.curveTo(
+      t + p.x1 * o,
+      e + -p.y1 * c,
+      t + p.x2 * o,
+      e + -p.y2 * c,
+      t + p.x * o,
+      e + -p.y * c
+    ) : p.type === "Z" && f.stroke && f.strokeWidth && f.closePath();
+  }
+  return f;
+};
+Ce.prototype.getLayers = function(t) {
+  if (!t)
+    throw new Error("The font object is required to read the colr/cpal tables in order to get the layers.");
+  return t.layers.get(this.index);
+};
+Ce.prototype.getSvgImage = function(t) {
+  if (!t)
+    throw new Error("The font object is required to read the svg table in order to get the image.");
+  return t.svgImages.get(this.index);
+};
+Ce.prototype.getContours = function(t = null) {
+  if (this.points === void 0 && !t)
+    return [];
+  const e = [];
+  let n = [], r = t || this.points;
+  for (let s = 0; s < r.length; s += 1) {
+    const i = r[s];
+    n.push(i), i.lastPointOfContour && (e.push(n), n = []);
+  }
+  return H.argument(n.length === 0, "There are still points left in the current contour."), e;
+};
+Ce.prototype.getMetrics = function() {
+  const t = this.path.commands, e = [], n = [];
+  for (let s = 0; s < t.length; s += 1) {
+    const i = t[s];
+    i.type !== "Z" && (e.push(i.x), n.push(i.y)), (i.type === "Q" || i.type === "C") && (e.push(i.x1), n.push(i.y1)), i.type === "C" && (e.push(i.x2), n.push(i.y2));
+  }
+  const r = {
+    xMin: Math.min.apply(null, e),
+    yMin: Math.min.apply(null, n),
+    xMax: Math.max.apply(null, e),
+    yMax: Math.max.apply(null, n),
+    leftSideBearing: this.leftSideBearing
+  };
+  return isFinite(r.xMin) || (r.xMin = 0), isFinite(r.xMax) || (r.xMax = this.advanceWidth), isFinite(r.yMin) || (r.yMin = 0), isFinite(r.yMax) || (r.yMax = 0), r.rightSideBearing = this.advanceWidth - r.leftSideBearing - (r.xMax - r.xMin), r;
+};
+Ce.prototype.draw = function(t, e, n, r, s, i) {
+  s = Object.assign({}, i && i.defaultRenderOptions, s), this.getPath(e, n, r, s, i).draw(t);
+};
+Ce.prototype.drawPoints = function(t, e, n, r, s, i) {
+  if (s = Object.assign({}, i && i.defaultRenderOptions, s), s.drawLayers) {
+    const h = this.getLayers(i);
+    if (h && h.length) {
+      for (let p = 0; p < h.length; p += 1)
+        h[p].glyph.index !== this.index && this.drawPoints.call(h[p].glyph, t, e, n, r);
+      return;
+    }
+  }
+  function a(h, p, y, g) {
+    t.beginPath();
+    for (let b = 0; b < h.length; b += 1)
+      t.moveTo(p + h[b].x * g, y + h[b].y * g), t.arc(p + h[b].x * g, y + h[b].y * g, 2, 0, Math.PI * 2, !1);
+    t.fill();
+  }
+  e = e !== void 0 ? e : 0, n = n !== void 0 ? n : 0, r = r !== void 0 ? r : 24;
+  const o = 1 / this.path.unitsPerEm * r, c = [], l = [];
+  let f = this.path.commands;
+  i && i.variation && (f = i.variation.getTransform(this, s.variation).path.commands);
+  for (let h = 0; h < f.length; h += 1) {
+    const p = f[h];
+    p.x !== void 0 && c.push({ x: p.x, y: -p.y }), p.x1 !== void 0 && l.push({ x: p.x1, y: -p.y1 }), p.x2 !== void 0 && l.push({ x: p.x2, y: -p.y2 });
+  }
+  t.fillStyle = "blue", a(c, e, n, o), t.fillStyle = "red", a(l, e, n, o);
+};
+Ce.prototype.drawMetrics = function(t, e, n, r) {
+  let s;
+  e = e !== void 0 ? e : 0, n = n !== void 0 ? n : 0, r = r !== void 0 ? r : 24, s = 1 / this.path.unitsPerEm * r, t.lineWidth = 1, t.strokeStyle = "black", vt.line(t, e, -1e4, e, 1e4), vt.line(t, -1e4, n, 1e4, n);
+  const i = this.xMin || 0;
+  let a = this.yMin || 0;
+  const o = this.xMax || 0;
+  let c = this.yMax || 0;
+  const l = this.advanceWidth || 0;
+  t.strokeStyle = "blue", vt.line(t, e + i * s, -1e4, e + i * s, 1e4), vt.line(t, e + o * s, -1e4, e + o * s, 1e4), vt.line(t, -1e4, n + -a * s, 1e4, n + -a * s), vt.line(t, -1e4, n + -c * s, 1e4, n + -c * s), t.strokeStyle = "green", vt.line(t, e + l * s, -1e4, e + l * s, 1e4);
+};
+Ce.prototype.toPathData = function(t, e) {
+  t = Object.assign({}, { variation: e && e.defaultRenderOptions.variation }, t);
+  let n = this;
+  e && e.variation && (n = e.variation.getTransform(this, t.variation));
+  let r = n.points && t.pointsTransform ? t.pointsTransform(n.points) : n.path;
+  return t.pathTransform && (r = t.pathTransform(r)), r.toPathData(t);
+};
+Ce.prototype.fromSVG = function(t, e = {}) {
+  return this.path.fromSVG(t, e);
+};
+Ce.prototype.toSVG = function(t, e) {
+  const n = this.toPathData.apply(this, [t, e]);
+  return this.path.toSVG(t, n);
+};
+Ce.prototype.toDOMElement = function(t, e) {
+  t = Object.assign({}, { variation: e && e.defaultRenderOptions.variation }, t);
+  let n = this.path;
+  return e && e.variation && (n = e.variation.getTransform(this, t.variation).path), n.toDOMElement(t);
+};
+var Jt = Ce;
+function Lt(t, e, n) {
+  Object.defineProperty(t, e, {
+    get: function() {
+      return typeof t[n] > "u" && t.path, t[n];
+    },
+    set: function(r) {
+      t[n] = r;
+    },
+    enumerable: !0,
+    configurable: !0
+  });
+}
+function Gn(t, e) {
+  if (this.font = t, this.glyphs = {}, Array.isArray(e))
+    for (let n = 0; n < e.length; n++) {
+      const r = e[n];
+      r.path.unitsPerEm = t.unitsPerEm, this.glyphs[n] = r;
+    }
+  this.length = e && e.length || 0;
+}
+typeof Symbol < "u" && Symbol.iterator && (Gn.prototype[Symbol.iterator] = function() {
+  let t = -1;
+  return {
+    next: (function() {
+      t++;
+      const e = t >= this.length - 1;
+      return { value: this.get(t), done: e };
+    }).bind(this)
+  };
+});
+Gn.prototype.get = function(t) {
+  if (this.font._push && this.glyphs[t] === void 0) {
+    this.font._push(t), typeof this.glyphs[t] == "function" && (this.glyphs[t] = this.glyphs[t]());
+    let e = this.glyphs[t], n = this.font._IndexToUnicodeMap[t];
+    if (n)
+      for (let r = 0; r < n.unicodes.length; r++)
+        e.addUnicode(n.unicodes[r]);
+    this.font.cffEncoding ? e.name = this.font.cffEncoding.charset[t] : this.font.glyphNames.names && (e.name = this.font.glyphNames.glyphIndexToName(t)), this.glyphs[t].advanceWidth = this.font._hmtxTableData[t].advanceWidth, this.glyphs[t].leftSideBearing = this.font._hmtxTableData[t].leftSideBearing;
+  } else
+    typeof this.glyphs[t] == "function" && (this.glyphs[t] = this.glyphs[t]());
+  return this.glyphs[t];
+};
+Gn.prototype.push = function(t, e) {
+  this.glyphs[t] = e, this.length++;
+};
+function Kc(t, e) {
+  return new Jt({ index: e, font: t });
+}
+function Zc(t, e, n, r, s, i) {
+  return function() {
+    const a = new Jt({ index: e, font: t });
+    return a.path = function() {
+      n(a, r, s);
+      const o = i(t.glyphs, a);
+      return o.unitsPerEm = t.unitsPerEm, o;
+    }, Lt(a, "numberOfContours", "_numberOfContours"), Lt(a, "xMin", "_xMin"), Lt(a, "xMax", "_xMax"), Lt(a, "yMin", "_yMin"), Lt(a, "yMax", "_yMax"), Lt(a, "points", "_points"), a;
+  };
+}
+function Jc(t, e, n, r, s) {
+  return function() {
+    const i = new Jt({ index: e, font: t });
+    return i.path = function() {
+      const a = n(t, i, r, s);
+      return a.unitsPerEm = t.unitsPerEm, a;
+    }, i;
+  };
+}
+var Je = { GlyphSet: Gn, glyphLoader: Kc, ttfGlyphLoader: Zc, cffGlyphLoader: Jc };
+function Ba(t, e) {
+  if (t === e)
+    return !0;
+  if (Array.isArray(t) && Array.isArray(e)) {
+    if (t.length !== e.length)
+      return !1;
+    for (let n = 0; n < t.length; n += 1)
+      if (!Ba(t[n], e[n]))
+        return !1;
+    return !0;
+  } else
+    return !1;
+}
+var Rs = 10;
+function Mn(t) {
+  let e;
+  return t.length < 1240 ? e = 107 : t.length < 33900 ? e = 1131 : e = 32768, e;
+}
+function $e(t, e, n, r) {
+  const s = [], i = [], a = r > 1 ? M.getULong(t, e) : M.getCard16(t, e), o = r > 1 ? 4 : 2;
+  let c, l;
+  if (a !== 0) {
+    const u = M.getByte(t, e + o);
+    c = e + (a + 1) * u + o;
+    let f = e + o + 1;
+    for (let h = 0; h < a + 1; h += 1)
+      s.push(M.getOffset(t, f, u)), f += u;
+    l = c + s[a];
+  } else
+    l = e + o;
+  for (let u = 0; u < s.length - 1; u += 1) {
+    let f = M.getBytes(t, c + s[u], c + s[u + 1]);
+    n && (f = n(f, t, e, r)), i.push(f);
+  }
+  return { objects: i, startOffset: e, endOffset: l };
+}
+function Qc(t, e, n) {
+  const r = [], s = n > 1 ? M.getULong(t, e) : M.getCard16(t, e), i = n > 1 ? 4 : 2;
+  let a, o;
+  if (s !== 0) {
+    const c = M.getByte(t, e + i);
+    a = e + (s + 1) * c + i;
+    let l = e + i + 1;
+    for (let u = 0; u < s + 1; u += 1)
+      r.push(M.getOffset(t, l, c)), l += c;
+    o = a + r[s];
+  } else
+    o = e + i;
+  return { offsets: r, startOffset: e, endOffset: o };
+}
+function el(t, e, n, r, s, i) {
+  const a = i > 1 ? M.getULong(n, r) : M.getCard16(n, r), o = i > 1 ? 4 : 2;
+  let c = 0;
+  if (a !== 0) {
+    const u = M.getByte(n, r + o);
+    c = r + (a + 1) * u + o;
+  }
+  return M.getBytes(n, c + e[t], c + e[t + 1]);
+}
+function tl(t) {
+  let e = "";
+  const r = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "E", "E-", null, "-"];
+  for (; ; ) {
+    const s = t.parseByte(), i = s >> 4, a = s & 15;
+    if (i === 15 || (e += r[i], a === 15))
+      break;
+    e += r[a];
+  }
+  return parseFloat(e);
+}
+function nl(t, e) {
+  let n, r, s, i;
+  if (e === 28)
+    return n = t.parseByte(), r = t.parseByte(), n << 8 | r;
+  if (e === 29)
+    return n = t.parseByte(), r = t.parseByte(), s = t.parseByte(), i = t.parseByte(), n << 24 | r << 16 | s << 8 | i;
+  if (e === 30)
+    return tl(t);
+  if (e >= 32 && e <= 246)
+    return e - 139;
+  if (e >= 247 && e <= 250)
+    return n = t.parseByte(), (e - 247) * 256 + n + 108;
+  if (e >= 251 && e <= 254)
+    return n = t.parseByte(), -(e - 251) * 256 - n - 108;
+  throw new Error("Invalid b0 " + e);
+}
+function rl(t) {
+  const e = {};
+  for (let n = 0; n < t.length; n += 1) {
+    const r = t[n][0], s = t[n][1];
+    let i;
+    if (s.length === 1 ? i = s[0] : i = s, Object.prototype.hasOwnProperty.call(e, r) && !isNaN(e[r]))
+      throw new Error("Object " + e + " already has key " + r);
+    e[r] = i;
+  }
+  return e;
+}
+function Kr(t, e, n, r) {
+  e = e !== void 0 ? e : 0;
+  const s = new M.Parser(t, e), i = [];
+  let a = [];
+  n = n !== void 0 ? n : t.byteLength;
+  let o = r < 2 ? 22 : 28;
+  for (; s.relativeOffset < n; ) {
+    let c = s.parseByte();
+    if (c < o) {
+      if (c === 12 && (c = 1200 + s.parseByte()), r > 1 && c === 23) {
+        pl(a);
+        continue;
+      }
+      i.push([c, a]), a = [];
+    } else
+      a.push(nl(s, c));
+  }
+  return rl(i);
+}
+function Xt(t, e) {
+  return e <= 390 ? e = xn[e] : t ? e = t[e - 391] : e = void 0, e;
+}
+function Zr(t, e, n) {
+  const r = {};
+  let s;
+  for (let i = 0; i < e.length; i += 1) {
+    const a = e[i];
+    if (Array.isArray(a.type)) {
+      const o = [];
+      o.length = a.type.length;
+      for (let c = 0; c < a.type.length; c++)
+        s = t[a.op] !== void 0 ? t[a.op][c] : void 0, s === void 0 && (s = a.value !== void 0 && a.value[c] !== void 0 ? a.value[c] : null), a.type[c] === "SID" && (s = Xt(n, s)), o[c] = s;
+      r[a.name] = o;
+    } else
+      s = t[a.op], s === void 0 && (s = a.value !== void 0 ? a.value : null), a.type === "SID" && (s = Xt(n, s)), r[a.name] = s;
+  }
+  return r;
+}
+function sl(t, e) {
+  const n = {};
+  if (n.formatMajor = M.getCard8(t, e), n.formatMinor = M.getCard8(t, e + 1), n.formatMajor > 2)
+    throw new Error(`Unsupported CFF table version ${n.formatMajor}.${n.formatMinor}`);
+  return n.size = M.getCard8(t, e + 2), n.formatMajor < 2 ? (n.offsetSize = M.getCard8(t, e + 3), n.startOffset = e, n.endOffset = e + 4) : (n.topDictLength = M.getCard16(t, e + 3), n.endOffset = e + 8), n;
+}
+var Da = [
+  { name: "version", op: 0, type: "SID" },
+  { name: "notice", op: 1, type: "SID" },
+  { name: "copyright", op: 1200, type: "SID" },
+  { name: "fullName", op: 2, type: "SID" },
+  { name: "familyName", op: 3, type: "SID" },
+  { name: "weight", op: 4, type: "SID" },
+  { name: "isFixedPitch", op: 1201, type: "number", value: 0 },
+  { name: "italicAngle", op: 1202, type: "number", value: 0 },
+  { name: "underlinePosition", op: 1203, type: "number", value: -100 },
+  { name: "underlineThickness", op: 1204, type: "number", value: 50 },
+  { name: "paintType", op: 1205, type: "number", value: 0 },
+  { name: "charstringType", op: 1206, type: "number", value: 2 },
+  {
+    name: "fontMatrix",
+    op: 1207,
+    type: ["real", "real", "real", "real", "real", "real"],
+    value: [1e-3, 0, 0, 1e-3, 0, 0]
+  },
+  { name: "uniqueId", op: 13, type: "number" },
+  { name: "fontBBox", op: 5, type: ["number", "number", "number", "number"], value: [0, 0, 0, 0] },
+  { name: "strokeWidth", op: 1208, type: "number", value: 0 },
+  { name: "xuid", op: 14, type: [], value: null },
+  { name: "charset", op: 15, type: "offset", value: 0 },
+  { name: "encoding", op: 16, type: "offset", value: 0 },
+  { name: "charStrings", op: 17, type: "offset", value: 0 },
+  { name: "private", op: 18, type: ["number", "offset"], value: [0, 0] },
+  { name: "ros", op: 1230, type: ["SID", "SID", "number"] },
+  { name: "cidFontVersion", op: 1231, type: "number", value: 0 },
+  { name: "cidFontRevision", op: 1232, type: "number", value: 0 },
+  { name: "cidFontType", op: 1233, type: "number", value: 0 },
+  { name: "cidCount", op: 1234, type: "number", value: 8720 },
+  { name: "uidBase", op: 1235, type: "number" },
+  { name: "fdArray", op: 1236, type: "offset" },
+  { name: "fdSelect", op: 1237, type: "offset" },
+  { name: "fontName", op: 1238, type: "SID" }
+], il = [
+  {
+    name: "fontMatrix",
+    op: 1207,
+    type: ["real", "real", "real", "real", "real", "real"],
+    value: [1e-3, 0, 0, 1e-3, 0, 0]
+  },
+  { name: "charStrings", op: 17, type: "offset" },
+  { name: "fdArray", op: 1236, type: "offset" },
+  { name: "fdSelect", op: 1237, type: "offset" },
+  { name: "vstore", op: 24, type: "offset" }
+], Ma = [
+  { name: "subrs", op: 19, type: "offset", value: 0 },
+  { name: "defaultWidthX", op: 20, type: "number", value: 0 },
+  { name: "nominalWidthX", op: 21, type: "number", value: 0 }
+], al = [
+  { name: "blueValues", op: 6, type: "delta" },
+  { name: "otherBlues", op: 7, type: "delta" },
+  { name: "familyBlues", op: 7, type: "delta" },
+  { name: "familyBlues", op: 8, type: "delta" },
+  { name: "familyOtherBlues", op: 9, type: "delta" },
+  { name: "blueScale", op: 1209, type: "number", value: 0.039625 },
+  { name: "blueShift", op: 1210, type: "number", value: 7 },
+  { name: "blueFuzz", op: 1211, type: "number", value: 1 },
+  { name: "stdHW", op: 10, type: "number" },
+  { name: "stdVW", op: 11, type: "number" },
+  { name: "stemSnapH", op: 1212, type: "number" },
+  { name: "stemSnapV", op: 1213, type: "number" },
+  { name: "languageGroup", op: 1217, type: "number", value: 0 },
+  { name: "expansionFactor", op: 1218, type: "number", value: 0.06 },
+  { name: "vsindex", op: 22, type: "number", value: 0 },
+  { name: "subrs", op: 19, type: "offset" }
+], ol = [
+  { name: "private", op: 18, type: ["number", "offset"], value: [0, 0] }
+];
+function cl(t, e, n, r) {
+  const s = Kr(t, e, t.byteLength, r);
+  return Zr(s, r > 1 ? il : Da, n);
+}
+function Jr(t, e, n, r, s) {
+  const i = Kr(t, e, n, s);
+  return Zr(i, s > 1 ? al : Ma, r);
+}
+function ll(t, e, n) {
+  const r = Kr(t, e, void 0, n);
+  return Zr(r, ol);
+}
+function ul(t, e, n) {
+  const r = [];
+  for (let s = 0; s < n.length; s++) {
+    const i = new DataView(new Uint8Array(n[s]).buffer), a = ll(i, 0, 2), o = a.private[0], c = a.private[1];
+    if (o !== 0 && c !== 0) {
+      const l = Jr(t, c + e, o, [], 2);
+      if (l.subrs) {
+        const u = c + l.subrs, f = $e(t, u + e, void 0, 2);
+        a._subrs = f.objects, a._subrsBias = Mn(a._subrs);
+      }
+      a._privateDict = l;
+    }
+    r.push(a);
+  }
+  return r;
+}
+function Qn(t, e, n, r, s) {
+  const i = [];
+  for (let a = 0; a < n.length; a += 1) {
+    const o = new DataView(new Uint8Array(n[a]).buffer), c = cl(o, 0, r, s);
+    c._subrs = [], c._subrsBias = 0, c._defaultWidthX = 0, c._nominalWidthX = 0;
+    const l = s < 2 ? c.private[0] : 0, u = s < 2 ? c.private[1] : 0;
+    if (l !== 0 && u !== 0) {
+      const f = Jr(t, u + e, l, r, s);
+      if (c._defaultWidthX = f.defaultWidthX, c._nominalWidthX = f.nominalWidthX, f.subrs !== 0) {
+        const h = u + f.subrs, p = $e(t, h + e, void 0, s);
+        c._subrs = p.objects, c._subrsBias = Mn(c._subrs);
+      }
+      c._privateDict = f;
+    }
+    i.push(c);
+  }
+  return i;
+}
+function hl(t, e, n, r, s) {
+  let i, a;
+  const o = new M.Parser(t, e);
+  n -= 1;
+  const c = [".notdef"], l = o.parseCard8();
+  if (l === 0)
+    for (let u = 0; u < n; u += 1)
+      i = o.parseSID(), s ? c.push(i) : c.push(Xt(r, i) || i);
+  else if (l === 1)
+    for (; c.length <= n; ) {
+      i = o.parseSID(), a = o.parseCard8();
+      for (let u = 0; u <= a; u += 1)
+        s ? c.push("cid" + ("00000" + i).slice(-5)) : c.push(Xt(r, i) || i), i += 1;
+    }
+  else if (l === 2)
+    for (; c.length <= n; ) {
+      i = o.parseSID(), a = o.parseCard16();
+      for (let u = 0; u <= a; u += 1)
+        s ? c.push("cid" + ("00000" + i).slice(-5)) : c.push(Xt(r, i) || i), i += 1;
+    }
+  else
+    throw new Error("Unknown charset format " + l);
+  return c;
+}
+function fl(t, e) {
+  let n;
+  const r = {}, s = new M.Parser(t, e), i = s.parseCard8();
+  if (i === 0) {
+    const a = s.parseCard8();
+    for (let o = 0; o < a; o += 1)
+      n = s.parseCard8(), r[n] = o;
+  } else if (i === 1) {
+    const a = s.parseCard8();
+    n = 1;
+    for (let o = 0; o < a; o += 1) {
+      const c = s.parseCard8(), l = s.parseCard8();
+      for (let u = c; u <= c + l; u += 1)
+        r[u] = n, n += 1;
+    }
+  } else
+    throw new Error("Unknown encoding format " + i);
+  return r;
+}
+function pl(t) {
+  let e = t.pop();
+  for (; t.length > e; )
+    t.pop();
+}
+function _a(t, e) {
+  const n = t.tables.cff && t.tables.cff.topDict && t.tables.cff.topDict.paintType || 0;
+  return n === 2 && (e.fill = null, e.stroke = "black", e.strokeWidth = t.tables.cff.topDict.strokeWidth || 0), n;
+}
+function Dr(t, e, n, r, s) {
+  let i, a, o, c;
+  const l = new Ut(), u = [];
+  let f = 0, h = !1, p = !1, y = 0, g = 0, b, v, w, C, T = 0, E = [], R, U = 0;
+  const W = t.tables.cff2 || t.tables.cff;
+  if (w = W.topDict._defaultWidthX, C = W.topDict._nominalWidthX, s = s || t.variation && t.variation.get(), e.getBlendPath || (e.getBlendPath = function(D) {
+    return Dr(t, e, n, r, D);
+  }), t.isCIDFont || r > 1) {
+    const D = W.topDict._fdSelect ? W.topDict._fdSelect[e.index] : 0, _ = W.topDict._fdArray[D];
+    b = _._subrs, v = _._subrsBias, r > 1 ? (E = W.topDict._vstore.itemVariationStore, T = _._privateDict.vsindex) : (w = _._defaultWidthX, C = _._nominalWidthX);
+  } else
+    b = W.topDict._subrs, v = W.topDict._subrsBias;
+  const j = _a(t, l);
+  let N = w;
+  function $(D, _) {
+    p && j !== 2 && l.closePath(), l.moveTo(D, _), p = !0;
+  }
+  function ie() {
+    let D;
+    D = (u.length & 1) !== 0, D && !h && (N = u.shift() + C), f += u.length >> 1, u.length = 0, h = !0;
+  }
+  function P(D) {
+    let _, re, Te, Qe, _e, fe, Y, ne, de, be, me, ye, ce = 0;
+    for (; ce < D.length; ) {
+      let ve = D[ce];
+      switch (ce += 1, ve) {
+        case 1:
+          ie();
+          break;
+        case 3:
+          ie();
+          break;
+        case 4:
+          u.length > 1 && !h && (N = u.shift() + C, h = !0), g += u.pop(), $(y, g);
+          break;
+        case 5:
+          for (; u.length > 0; )
+            y += u.shift(), g += u.shift(), l.lineTo(y, g);
+          break;
+        case 6:
+          for (; u.length > 0 && (y += u.shift(), l.lineTo(y, g), u.length !== 0); )
+            g += u.shift(), l.lineTo(y, g);
+          break;
+        case 7:
+          for (; u.length > 0 && (g += u.shift(), l.lineTo(y, g), u.length !== 0); )
+            y += u.shift(), l.lineTo(y, g);
+          break;
+        case 8:
+          for (; u.length > 0; )
+            i = y + u.shift(), a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), y = o + u.shift(), g = c + u.shift(), l.curveTo(i, a, o, c, y, g);
+          break;
+        case 10:
+          if (_e = u.pop() + v, fe = b[_e], fe) {
+            if (U >= Rs) {
+              console.warn("CFF charstring subroutine call depth exceeded, skipping callsubr");
+              break;
+            }
+            U++, P(fe), U--;
+          }
+          break;
+        case 11:
+          if (r > 1) {
+            console.error("CFF CharString operator return (11) is not supported in CFF2");
+            break;
+          }
+          return;
+        case 12:
+          switch (ve = D[ce], ce += 1, ve) {
+            case 35:
+              i = y + u.shift(), a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), Y = o + u.shift(), ne = c + u.shift(), de = Y + u.shift(), be = ne + u.shift(), me = de + u.shift(), ye = be + u.shift(), y = me + u.shift(), g = ye + u.shift(), u.shift(), l.curveTo(i, a, o, c, Y, ne), l.curveTo(de, be, me, ye, y, g);
+              break;
+            case 34:
+              i = y + u.shift(), a = g, o = i + u.shift(), c = a + u.shift(), Y = o + u.shift(), ne = c, de = Y + u.shift(), be = c, me = de + u.shift(), ye = g, y = me + u.shift(), l.curveTo(i, a, o, c, Y, ne), l.curveTo(de, be, me, ye, y, g);
+              break;
+            case 36:
+              i = y + u.shift(), a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), Y = o + u.shift(), ne = c, de = Y + u.shift(), be = c, me = de + u.shift(), ye = be + u.shift(), y = me + u.shift(), l.curveTo(i, a, o, c, Y, ne), l.curveTo(de, be, me, ye, y, g);
+              break;
+            case 37:
+              i = y + u.shift(), a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), Y = o + u.shift(), ne = c + u.shift(), de = Y + u.shift(), be = ne + u.shift(), me = de + u.shift(), ye = be + u.shift(), Math.abs(me - y) > Math.abs(ye - g) ? y = me + u.shift() : g = ye + u.shift(), l.curveTo(i, a, o, c, Y, ne), l.curveTo(de, be, me, ye, y, g);
+              break;
+            default:
+              console.log("Glyph " + e.index + ": unknown operator 1200" + ve), u.length = 0;
+          }
+          break;
+        case 14:
+          if (r > 1) {
+            console.error("CFF CharString operator endchar (14) is not supported in CFF2");
+            break;
+          }
+          if (u.length >= 4) {
+            const et = Br[u.pop()], x = Br[u.pop()], d = u.pop(), m = u.pop();
+            if (et && x) {
+              e.isComposite = !0, e.components = [];
+              const S = t.cffEncoding.charset.indexOf(et), F = t.cffEncoding.charset.indexOf(x);
+              e.components.push({
+                glyphIndex: F,
+                dx: 0,
+                dy: 0
+              }), e.components.push({
+                glyphIndex: S,
+                dx: m,
+                dy: d
+              }), l.extend(t.glyphs.get(F).path);
+              const A = t.glyphs.get(S), L = JSON.parse(JSON.stringify(A.path.commands));
+              for (let q = 0; q < L.length; q += 1) {
+                const V = L[q];
+                V.type !== "Z" && (V.x += m, V.y += d), (V.type === "Q" || V.type === "C") && (V.x1 += m, V.y1 += d), V.type === "C" && (V.x2 += m, V.y2 += d);
+              }
+              l.extend(L);
+            }
+          } else u.length > 0 && !h && (N = u.shift() + C, h = !0);
+          p && j !== 2 && (l.closePath(), p = !1);
+          break;
+        case 15:
+          if (r < 2) {
+            console.error("CFF2 CharString operator vsindex (15) is not supported in CFF");
+            break;
+          }
+          T = u.pop();
+          break;
+        case 16:
+          if (r < 2) {
+            console.error("CFF2 CharString operator blend (16) is not supported in CFF");
+            break;
+          }
+          R || (R = t.variation && s && t.variation.process.getBlendVector(E, T, s));
+          var X = u.pop(), xe = R ? R.length : E.itemVariationSubtables[T].regionIndexes.length, Ee = X * xe, Ae = u.length - Ee, Oe = Ae - X;
+          if (R)
+            for (let et = 0; et < X; et++) {
+              var Re = u[Oe + et];
+              for (let x = 0; x < xe; x++)
+                Re += R[x] * u[Ae++];
+              u[Oe + et] = Re;
+            }
+          for (; Ee--; )
+            u.pop();
+          break;
+        case 18:
+          ie();
+          break;
+        case 19:
+        case 20:
+          ie(), ce += f + 7 >> 3;
+          break;
+        case 21:
+          u.length > 2 && !h && (N = u.shift() + C, h = !0), g += u.pop(), y += u.pop(), $(y, g);
+          break;
+        case 22:
+          u.length > 1 && !h && (N = u.shift() + C, h = !0), y += u.pop(), $(y, g);
+          break;
+        case 23:
+          ie();
+          break;
+        case 24:
+          for (; u.length > 2; )
+            i = y + u.shift(), a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), y = o + u.shift(), g = c + u.shift(), l.curveTo(i, a, o, c, y, g);
+          y += u.shift(), g += u.shift(), l.lineTo(y, g);
+          break;
+        case 25:
+          for (; u.length > 6; )
+            y += u.shift(), g += u.shift(), l.lineTo(y, g);
+          i = y + u.shift(), a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), y = o + u.shift(), g = c + u.shift(), l.curveTo(i, a, o, c, y, g);
+          break;
+        case 26:
+          for (u.length & 1 && (y += u.shift()); u.length > 0; )
+            i = y, a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), y = o, g = c + u.shift(), l.curveTo(i, a, o, c, y, g);
+          break;
+        case 27:
+          for (u.length & 1 && (g += u.shift()); u.length > 0; )
+            i = y + u.shift(), a = g, o = i + u.shift(), c = a + u.shift(), y = o + u.shift(), g = c, l.curveTo(i, a, o, c, y, g);
+          break;
+        case 28:
+          _ = D[ce], re = D[ce + 1], u.push((_ << 24 | re << 16) >> 16), ce += 2;
+          break;
+        case 29:
+          if (_e = u.pop() + t.gsubrsBias, fe = t.gsubrs[_e], fe) {
+            if (U >= Rs) {
+              console.warn("CFF charstring subroutine call depth exceeded, skipping callgsubr");
+              break;
+            }
+            U++, P(fe), U--;
+          }
+          break;
+        case 30:
+          for (; u.length > 0 && (i = y, a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), y = o + u.shift(), g = c + (u.length === 1 ? u.shift() : 0), l.curveTo(i, a, o, c, y, g), u.length !== 0); )
+            i = y + u.shift(), a = g, o = i + u.shift(), c = a + u.shift(), g = c + u.shift(), y = o + (u.length === 1 ? u.shift() : 0), l.curveTo(i, a, o, c, y, g);
+          break;
+        case 31:
+          for (; u.length > 0 && (i = y + u.shift(), a = g, o = i + u.shift(), c = a + u.shift(), g = c + u.shift(), y = o + (u.length === 1 ? u.shift() : 0), l.curveTo(i, a, o, c, y, g), u.length !== 0); )
+            i = y, a = g + u.shift(), o = i + u.shift(), c = a + u.shift(), y = o + u.shift(), g = c + (u.length === 1 ? u.shift() : 0), l.curveTo(i, a, o, c, y, g);
+          break;
+        default:
+          ve < 32 ? console.log("Glyph " + e.index + ": unknown operator " + ve) : ve < 247 ? u.push(ve - 139) : ve < 251 ? (_ = D[ce], ce += 1, u.push((ve - 247) * 256 + _ + 108)) : ve < 255 ? (_ = D[ce], ce += 1, u.push(-(ve - 251) * 256 - _ - 108)) : (_ = D[ce], re = D[ce + 1], Te = D[ce + 2], Qe = D[ce + 3], ce += 4, u.push((_ << 24 | re << 16 | Te << 8 | Qe) / 65536));
+      }
+    }
+  }
+  return P(n), t.variation && s && (l.commands = l.commands.map((D) => {
+    const _ = Object.keys(D);
+    for (let re = 0; re < _.length; re++) {
+      const Te = _[re];
+      Te !== "type" && (D[Te] = Math.round(D[Te]));
+    }
+    return D;
+  })), h && (e.advanceWidth = N), l;
+}
+function Bs(t, e, n, r, s) {
+  const i = [];
+  let a;
+  const o = new M.Parser(t, e), c = o.parseCard8();
+  if (c === 0)
+    for (let l = 0; l < n; l++) {
+      if (a = o.parseCard8(), a >= r)
+        throw new Error("CFF table CID Font FDSelect has bad FD index value " + a + " (FD count " + r + ")");
+      i.push(a);
+    }
+  else if (c === 3 || s > 1 && c === 4) {
+    const l = c === 4 ? o.parseULong() : o.parseCard16();
+    let u = c === 4 ? o.parseULong() : o.parseCard16();
+    if (u !== 0)
+      throw new Error(`CFF Table CID Font FDSelect format ${c} range has bad initial GID ${u}`);
+    let f;
+    for (let h = 0; h < l; h++) {
+      if (a = c === 4 ? o.parseUShort() : o.parseCard8(), f = c === 4 ? o.parseULong() : o.parseCard16(), a >= r)
+        throw new Error("CFF table CID Font FDSelect has bad FD index value " + a + " (FD count " + r + ")");
+      if (f > n)
+        throw new Error(`CFF Table CID Font FDSelect format ${s} range has bad GID ${f}`);
+      for (; u < f; u++)
+        i.push(a);
+      u = f;
+    }
+    if (f !== n)
+      throw new Error("CFF Table CID Font FDSelect format 3 range has bad final (Sentinal) GID " + f);
+  } else
+    throw new Error("CFF Table CID Font FDSelect table has unsupported format " + c);
+  return i;
+}
+function dl(t, e, n, r) {
+  let s;
+  const i = sl(t, e);
+  i.formatMajor === 2 ? s = n.tables.cff2 = {} : s = n.tables.cff = {};
+  const a = i.formatMajor > 1 ? null : $e(t, i.endOffset, M.bytesToString), o = i.formatMajor > 1 ? null : $e(t, a.endOffset), c = i.formatMajor > 1 ? null : $e(t, o.endOffset, M.bytesToString), l = $e(t, i.formatMajor > 1 ? e + i.size + i.topDictLength : c.endOffset, void 0, i.formatMajor);
+  n.gsubrs = l.objects, n.gsubrsBias = Mn(n.gsubrs);
+  let u;
+  if (i.formatMajor > 1) {
+    const h = e + i.size, p = M.getBytes(t, h, h + i.topDictLength);
+    u = Qn(t, 0, [p], void 0, i.formatMajor)[0];
+  } else {
+    const h = Qn(t, e, o.objects, c.objects, i.formatMajor);
+    if (h.length !== 1)
+      throw new Error("CFF table has too many fonts in 'FontSet' - count of fonts NameIndex.length = " + h.length);
+    u = h[0];
+  }
+  if (s.topDict = u, u._privateDict && (n.defaultWidthX = u._privateDict.defaultWidthX, n.nominalWidthX = u._privateDict.nominalWidthX), i.formatMajor < 2 && u.ros[0] !== void 0 && u.ros[1] !== void 0 && (n.isCIDFont = !0), i.formatMajor > 1) {
+    let h = u.fdArray, p = u.fdSelect;
+    if (!h)
+      throw new Error("This is a CFF2 font, but FDArray information is missing");
+    const y = $e(t, e + h, null, i.formatMajor), g = ul(t, e, y.objects);
+    u._fdArray = g, p && (u._fdSelect = Bs(t, e + p, n.numGlyphs, g.length, i.formatMajor));
+  } else if (n.isCIDFont) {
+    let h = u.fdArray, p = u.fdSelect;
+    if (h === 0 || p === 0)
+      throw new Error("Font is marked as a CID font, but FDArray and/or FDSelect information is missing");
+    h += e;
+    const y = $e(t, h), g = Qn(t, e, y.objects, c.objects, i.formatMajor);
+    u._fdArray = g, p += e, u._fdSelect = Bs(t, p, n.numGlyphs, g.length, i.formatMajor);
+  }
+  if (i.formatMajor < 2) {
+    const h = e + u.private[1], p = Jr(t, h, u.private[0], c.objects, i.formatMajor);
+    if (n.defaultWidthX = p.defaultWidthX, n.nominalWidthX = p.nominalWidthX, p.subrs !== 0) {
+      const y = h + p.subrs, g = $e(t, y);
+      n.subrs = g.objects, n.subrsBias = Mn(n.subrs);
+    } else
+      n.subrs = [], n.subrsBias = 0;
+  }
+  let f;
+  if (r.lowMemory ? (f = Qc(t, e + u.charStrings, i.formatMajor), n.nGlyphs = f.offsets.length - (i.formatMajor > 1 ? 1 : 0)) : (f = $e(t, e + u.charStrings, null, i.formatMajor), n.nGlyphs = f.objects.length), i.formatMajor > 1 && n.tables.maxp && n.nGlyphs !== n.tables.maxp.numGlyphs && console.error(`Glyph count in the CFF2 table (${n.nGlyphs}) must correspond to the glyph count in the maxp table (${n.tables.maxp.numGlyphs})`), i.formatMajor < 2) {
+    let h = [], p = [];
+    u.charset === 0 ? h = Uc : u.charset === 1 ? h = Pc : u.charset === 2 ? h = Nc : h = hl(t, e + u.charset, n.nGlyphs, c.objects, n.isCIDFont), u.encoding === 0 ? p = Br : u.encoding === 1 ? p = Gc : p = fl(t, e + u.encoding), n.cffEncoding = new Oa(p, h), n.encoding = n.encoding || n.cffEncoding;
+  }
+  if (n.glyphs = new Je.GlyphSet(n), r.lowMemory)
+    n._push = function(h) {
+      const p = el(h, f.offsets, t, e + u.charStrings, void 0, i.formatMajor);
+      n.glyphs.push(h, Je.cffGlyphLoader(n, h, Dr, p, i.formatMajor));
+    };
+  else
+    for (let h = 0; h < n.nGlyphs; h += 1) {
+      const p = f.objects[h];
+      n.glyphs.push(h, Je.cffGlyphLoader(n, h, Dr, p, i.formatMajor));
+    }
+  if (u.vstore) {
+    const h = new M.Parser(t, e + u.vstore);
+    u._vstore = h.parseVariationStore();
+  }
+}
+function Ua(t, e) {
+  let n, r = xn.indexOf(t);
+  return r >= 0 && (n = r), r = e.indexOf(t), r >= 0 ? n = r + xn.length : (n = xn.length + e.length, e.push(t)), n;
+}
+function gl() {
+  return new O.Record("Header", [
+    { name: "major", type: "Card8", value: 1 },
+    { name: "minor", type: "Card8", value: 0 },
+    { name: "hdrSize", type: "Card8", value: 4 },
+    { name: "major", type: "Card8", value: 1 }
+  ]);
+}
+function ml(t) {
+  const e = new O.Record("Name INDEX", [
+    { name: "names", type: "INDEX", value: [] }
+  ]);
+  e.names = [];
+  for (let n = 0; n < t.length; n += 1)
+    e.names.push({ name: "name_" + n, type: "NAME", value: t[n] });
+  return e;
+}
+function Pa(t, e, n) {
+  const r = {};
+  for (let s = 0; s < t.length; s += 1) {
+    const i = t[s];
+    let a = e[i.name];
+    a !== void 0 && !Ba(a, i.value) && (i.type === "SID" && (a = Ua(a, n)), r[i.op] = { name: i.name, type: i.type, value: a });
+  }
+  return r;
+}
+function Ds(t, e, n) {
+  const r = new O.Record("Top DICT", [
+    { name: "dict", type: "DICT", value: {} }
+  ]);
+  return r.dict = Pa(Da, t, e), r;
+}
+function Ms(t) {
+  const e = new O.Record("Top DICT INDEX", [
+    { name: "topDicts", type: "INDEX", value: [] }
+  ]);
+  return e.topDicts = [{ name: "topDict_0", type: "TABLE", value: t }], e;
+}
+function yl(t) {
+  const e = new O.Record("String INDEX", [
+    { name: "strings", type: "INDEX", value: [] }
+  ]);
+  e.strings = [];
+  for (let n = 0; n < t.length; n += 1)
+    e.strings.push({ name: "string_" + n, type: "STRING", value: t[n] });
+  return e;
+}
+function bl() {
+  return new O.Record("Global Subr INDEX", [
+    { name: "subrs", type: "INDEX", value: [] }
+  ]);
+}
+function xl(t, e) {
+  const n = new O.Record("Charsets", [
+    { name: "format", type: "Card8", value: 0 }
+  ]);
+  for (let r = 0; r < t.length; r += 1) {
+    const s = t[r], i = Ua(s, e);
+    n.fields.push({ name: "glyph_" + r, type: "SID", value: i });
+  }
+  return n;
+}
+function vl(t, e) {
+  const n = [], r = t.path;
+  n.push({ name: "width", type: "NUMBER", value: t.advanceWidth });
+  let s = 0, i = 0;
+  for (let a = 0; a < r.commands.length; a += 1) {
+    let o, c, l = r.commands[a];
+    if (l.type === "Q") {
+      const u = 0.3333333333333333, f = 2 / 3;
+      l = {
+        type: "C",
+        x: l.x,
+        y: l.y,
+        x1: Math.round(u * s + f * l.x1),
+        y1: Math.round(u * i + f * l.y1),
+        x2: Math.round(u * l.x + f * l.x1),
+        y2: Math.round(u * l.y + f * l.y1)
+      };
+    }
+    if (l.type === "M")
+      o = Math.round(l.x - s), c = Math.round(l.y - i), n.push({ name: "dx", type: "NUMBER", value: o }), n.push({ name: "dy", type: "NUMBER", value: c }), n.push({ name: "rmoveto", type: "OP", value: 21 }), s = Math.round(l.x), i = Math.round(l.y);
+    else if (l.type === "L")
+      o = Math.round(l.x - s), c = Math.round(l.y - i), n.push({ name: "dx", type: "NUMBER", value: o }), n.push({ name: "dy", type: "NUMBER", value: c }), n.push({ name: "rlineto", type: "OP", value: 5 }), s = Math.round(l.x), i = Math.round(l.y);
+    else if (l.type === "C") {
+      const u = Math.round(l.x1 - s), f = Math.round(l.y1 - i), h = Math.round(l.x2 - l.x1), p = Math.round(l.y2 - l.y1);
+      o = Math.round(l.x - l.x2), c = Math.round(l.y - l.y2), n.push({ name: "dx1", type: "NUMBER", value: u }), n.push({ name: "dy1", type: "NUMBER", value: f }), n.push({ name: "dx2", type: "NUMBER", value: h }), n.push({ name: "dy2", type: "NUMBER", value: p }), n.push({ name: "dx", type: "NUMBER", value: o }), n.push({ name: "dy", type: "NUMBER", value: c }), n.push({ name: "rrcurveto", type: "OP", value: 8 }), s = Math.round(l.x), i = Math.round(l.y);
+    }
+  }
+  return n.push({ name: "endchar", type: "OP", value: 14 }), n;
+}
+function Sl(t, e) {
+  const n = new O.Record("CharStrings INDEX", [
+    { name: "charStrings", type: "INDEX", value: [] }
+  ]);
+  for (let r = 0; r < t.length; r += 1) {
+    const s = t.get(r), i = vl(s);
+    n.charStrings.push({ name: s.name, type: "CHARSTRING", value: i });
+  }
+  return n;
+}
+function wl(t, e, n) {
+  const r = new O.Record("Private DICT", [
+    { name: "dict", type: "DICT", value: {} }
+  ]);
+  return r.dict = Pa(Ma, t, e), r;
+}
+function Cl(t, e) {
+  const n = new O.Table("CFF ", [
+    { name: "header", type: "RECORD" },
+    { name: "nameIndex", type: "RECORD" },
+    { name: "topDictIndex", type: "RECORD" },
+    { name: "stringIndex", type: "RECORD" },
+    { name: "globalSubrIndex", type: "RECORD" },
+    { name: "charsets", type: "RECORD" },
+    { name: "charStringsIndex", type: "RECORD" },
+    { name: "privateDict", type: "RECORD" }
+  ]), r = 1 / e.unitsPerEm, s = {
+    version: e.version,
+    fullName: e.fullName,
+    familyName: e.familyName,
+    weight: e.weightName,
+    fontBBox: e.fontBBox || [0, 0, 0, 0],
+    fontMatrix: [r, 0, 0, r, 0, 0],
+    charset: 999,
+    encoding: 0,
+    charStrings: 999,
+    private: [0, 999]
+  }, i = e && e.topDict || {};
+  i.paintType && (s.paintType = i.paintType, s.strokeWidth = i.strokeWidth || 0);
+  const a = {}, o = [];
+  let c;
+  for (let h = 1; h < t.length; h += 1)
+    c = t.get(h), o.push(c.name);
+  const l = [];
+  n.header = gl(), n.nameIndex = ml([e.postScriptName]);
+  let u = Ds(s, l);
+  n.topDictIndex = Ms(u), n.globalSubrIndex = bl(), n.charsets = xl(o, l), n.charStringsIndex = Sl(t), n.privateDict = wl(a, l), n.stringIndex = yl(l);
+  const f = n.header.sizeOf() + n.nameIndex.sizeOf() + n.topDictIndex.sizeOf() + n.stringIndex.sizeOf() + n.globalSubrIndex.sizeOf();
+  return s.charset = f, s.encoding = 0, s.charStrings = s.charset + n.charsets.sizeOf(), s.private[1] = s.charStrings + n.charStringsIndex.sizeOf(), u = Ds(s, l), n.topDictIndex = Ms(u), n;
+}
+var Mr = { parse: dl, make: Cl };
+function Tl(t, e) {
+  const n = {}, r = new M.Parser(t, e);
+  return n.version = r.parseVersion(), n.fontRevision = Math.round(r.parseFixed() * 1e3) / 1e3, n.checkSumAdjustment = r.parseULong(), n.magicNumber = r.parseULong(), H.argument(n.magicNumber === 1594834165, "Font header has wrong magic number."), n.flags = r.parseUShort(), n.unitsPerEm = r.parseUShort(), n.created = r.parseLongDateTime(), n.modified = r.parseLongDateTime(), n.xMin = r.parseShort(), n.yMin = r.parseShort(), n.xMax = r.parseShort(), n.yMax = r.parseShort(), n.macStyle = r.parseUShort(), n.lowestRecPPEM = r.parseUShort(), n.fontDirectionHint = r.parseShort(), n.indexToLocFormat = r.parseShort(), n.glyphDataFormat = r.parseShort(), n;
+}
+function kl(t) {
+  const e = Math.round((/* @__PURE__ */ new Date()).getTime() / 1e3) + 2082844800;
+  let n = e, r = t.macStyle || 0;
+  return t.createdTimestamp && (n = t.createdTimestamp + 2082844800), new O.Table("head", [
+    { name: "version", type: "FIXED", value: 65536 },
+    { name: "fontRevision", type: "FIXED", value: 65536 },
+    { name: "checkSumAdjustment", type: "ULONG", value: 0 },
+    { name: "magicNumber", type: "ULONG", value: 1594834165 },
+    { name: "flags", type: "USHORT", value: 0 },
+    { name: "unitsPerEm", type: "USHORT", value: 1e3 },
+    { name: "created", type: "LONGDATETIME", value: n },
+    { name: "modified", type: "LONGDATETIME", value: e },
+    { name: "xMin", type: "SHORT", value: 0 },
+    { name: "yMin", type: "SHORT", value: 0 },
+    { name: "xMax", type: "SHORT", value: 0 },
+    { name: "yMax", type: "SHORT", value: 0 },
+    { name: "macStyle", type: "USHORT", value: r },
+    { name: "lowestRecPPEM", type: "USHORT", value: 0 },
+    { name: "fontDirectionHint", type: "SHORT", value: 2 },
+    { name: "indexToLocFormat", type: "SHORT", value: 0 },
+    { name: "glyphDataFormat", type: "SHORT", value: 0 }
+  ], t);
+}
+var Na = { parse: Tl, make: kl };
+function Fl(t, e) {
+  const n = {}, r = new M.Parser(t, e);
+  return n.version = r.parseVersion(), n.ascender = r.parseShort(), n.descender = r.parseShort(), n.lineGap = r.parseShort(), n.advanceWidthMax = r.parseUShort(), n.minLeftSideBearing = r.parseShort(), n.minRightSideBearing = r.parseShort(), n.xMaxExtent = r.parseShort(), n.caretSlopeRise = r.parseShort(), n.caretSlopeRun = r.parseShort(), n.caretOffset = r.parseShort(), r.relativeOffset += 8, n.metricDataFormat = r.parseShort(), n.numberOfHMetrics = r.parseUShort(), n;
+}
+function El(t) {
+  return new O.Table("hhea", [
+    { name: "version", type: "FIXED", value: 65536 },
+    { name: "ascender", type: "FWORD", value: 0 },
+    { name: "descender", type: "FWORD", value: 0 },
+    { name: "lineGap", type: "FWORD", value: 0 },
+    { name: "advanceWidthMax", type: "UFWORD", value: 0 },
+    { name: "minLeftSideBearing", type: "FWORD", value: 0 },
+    { name: "minRightSideBearing", type: "FWORD", value: 0 },
+    { name: "xMaxExtent", type: "FWORD", value: 0 },
+    { name: "caretSlopeRise", type: "SHORT", value: 1 },
+    { name: "caretSlopeRun", type: "SHORT", value: 0 },
+    { name: "caretOffset", type: "SHORT", value: 0 },
+    { name: "reserved1", type: "SHORT", value: 0 },
+    { name: "reserved2", type: "SHORT", value: 0 },
+    { name: "reserved3", type: "SHORT", value: 0 },
+    { name: "reserved4", type: "SHORT", value: 0 },
+    { name: "metricDataFormat", type: "SHORT", value: 0 },
+    { name: "numberOfHMetrics", type: "USHORT", value: 0 }
+  ], t);
+}
+var Ga = { parse: Fl, make: El };
+function Al(t, e, n, r, s) {
+  let i, a;
+  const o = new M.Parser(t, e);
+  for (let c = 0; c < r; c += 1) {
+    c < n && (i = o.parseUShort(), a = o.parseShort());
+    const l = s.get(c);
+    l.advanceWidth = i, l.leftSideBearing = a;
+  }
+}
+function Ol(t, e, n, r, s) {
+  t._hmtxTableData = {};
+  let i, a;
+  const o = new M.Parser(e, n);
+  for (let c = 0; c < s; c += 1)
+    c < r && (i = o.parseUShort(), a = o.parseShort()), t._hmtxTableData[c] = {
+      advanceWidth: i,
+      leftSideBearing: a
+    };
+}
+function Ll(t, e, n, r, s, i, a) {
+  a.lowMemory ? Ol(t, e, n, r, s) : Al(e, n, r, s, i);
+}
+function Il(t) {
+  const e = new O.Table("hmtx", []);
+  for (let n = 0; n < t.length; n += 1) {
+    const r = t.get(n), s = r.advanceWidth || 0, i = r.leftSideBearing || 0;
+    e.fields.push({ name: "advanceWidth_" + n, type: "USHORT", value: s }), e.fields.push({ name: "leftSideBearing_" + n, type: "SHORT", value: i });
+  }
+  return e;
+}
+var Ha = { parse: Ll, make: Il };
+function Rl(t) {
+  const e = new O.Table("ltag", [
+    { name: "version", type: "ULONG", value: 1 },
+    { name: "flags", type: "ULONG", value: 0 },
+    { name: "numTags", type: "ULONG", value: t.length }
+  ]);
+  let n = "";
+  const r = 12 + t.length * 4;
+  for (let s = 0; s < t.length; ++s) {
+    let i = n.indexOf(t[s]);
+    i < 0 && (i = n.length, n += t[s]), e.fields.push({ name: "offset " + s, type: "USHORT", value: r + i }), e.fields.push({ name: "length " + s, type: "USHORT", value: t[s].length });
+  }
+  return e.fields.push({ name: "stringPool", type: "CHARARRAY", value: n }), e;
+}
+function Bl(t, e) {
+  const n = new M.Parser(t, e), r = n.parseULong();
+  H.argument(r === 1, "Unsupported ltag table version."), n.skip("uLong", 1);
+  const s = n.parseULong(), i = [];
+  for (let a = 0; a < s; a++) {
+    let o = "";
+    const c = e + n.parseUShort(), l = n.parseUShort();
+    for (let u = c; u < c + l; ++u)
+      o += String.fromCharCode(t.getInt8(u));
+    i.push(o);
+  }
+  return i;
+}
+var za = { make: Rl, parse: Bl };
+function Dl(t, e) {
+  const n = {}, r = new M.Parser(t, e);
+  return n.version = r.parseVersion(), n.numGlyphs = r.parseUShort(), n.version === 1 && (n.maxPoints = r.parseUShort(), n.maxContours = r.parseUShort(), n.maxCompositePoints = r.parseUShort(), n.maxCompositeContours = r.parseUShort(), n.maxZones = r.parseUShort(), n.maxTwilightPoints = r.parseUShort(), n.maxStorage = r.parseUShort(), n.maxFunctionDefs = r.parseUShort(), n.maxInstructionDefs = r.parseUShort(), n.maxStackElements = r.parseUShort(), n.maxSizeOfInstructions = r.parseUShort(), n.maxComponentElements = r.parseUShort(), n.maxComponentDepth = r.parseUShort()), n;
+}
+function Ml(t) {
+  return new O.Table("maxp", [
+    { name: "version", type: "FIXED", value: 20480 },
+    { name: "numGlyphs", type: "USHORT", value: t }
+  ]);
+}
+var Wa = { parse: Dl, make: Ml }, _r = [
+  { begin: 0, end: 127 },
+  // Basic Latin
+  { begin: 128, end: 255 },
+  // Latin-1 Supplement
+  { begin: 256, end: 383 },
+  // Latin Extended-A
+  { begin: 384, end: 591 },
+  // Latin Extended-B
+  { begin: 592, end: 687 },
+  // IPA Extensions
+  { begin: 688, end: 767 },
+  // Spacing Modifier Letters
+  { begin: 768, end: 879 },
+  // Combining Diacritical Marks
+  { begin: 880, end: 1023 },
+  // Greek and Coptic
+  { begin: 11392, end: 11519 },
+  // Coptic
+  { begin: 1024, end: 1279 },
+  // Cyrillic
+  { begin: 1328, end: 1423 },
+  // Armenian
+  { begin: 1424, end: 1535 },
+  // Hebrew
+  { begin: 42240, end: 42559 },
+  // Vai
+  { begin: 1536, end: 1791 },
+  // Arabic
+  { begin: 1984, end: 2047 },
+  // NKo
+  { begin: 2304, end: 2431 },
+  // Devanagari
+  { begin: 2432, end: 2559 },
+  // Bengali
+  { begin: 2560, end: 2687 },
+  // Gurmukhi
+  { begin: 2688, end: 2815 },
+  // Gujarati
+  { begin: 2816, end: 2943 },
+  // Oriya
+  { begin: 2944, end: 3071 },
+  // Tamil
+  { begin: 3072, end: 3199 },
+  // Telugu
+  { begin: 3200, end: 3327 },
+  // Kannada
+  { begin: 3328, end: 3455 },
+  // Malayalam
+  { begin: 3584, end: 3711 },
+  // Thai
+  { begin: 3712, end: 3839 },
+  // Lao
+  { begin: 4256, end: 4351 },
+  // Georgian
+  { begin: 6912, end: 7039 },
+  // Balinese
+  { begin: 4352, end: 4607 },
+  // Hangul Jamo
+  { begin: 7680, end: 7935 },
+  // Latin Extended Additional
+  { begin: 7936, end: 8191 },
+  // Greek Extended
+  { begin: 8192, end: 8303 },
+  // General Punctuation
+  { begin: 8304, end: 8351 },
+  // Superscripts And Subscripts
+  { begin: 8352, end: 8399 },
+  // Currency Symbol
+  { begin: 8400, end: 8447 },
+  // Combining Diacritical Marks For Symbols
+  { begin: 8448, end: 8527 },
+  // Letterlike Symbols
+  { begin: 8528, end: 8591 },
+  // Number Forms
+  { begin: 8592, end: 8703 },
+  // Arrows
+  { begin: 8704, end: 8959 },
+  // Mathematical Operators
+  { begin: 8960, end: 9215 },
+  // Miscellaneous Technical
+  { begin: 9216, end: 9279 },
+  // Control Pictures
+  { begin: 9280, end: 9311 },
+  // Optical Character Recognition
+  { begin: 9312, end: 9471 },
+  // Enclosed Alphanumerics
+  { begin: 9472, end: 9599 },
+  // Box Drawing
+  { begin: 9600, end: 9631 },
+  // Block Elements
+  { begin: 9632, end: 9727 },
+  // Geometric Shapes
+  { begin: 9728, end: 9983 },
+  // Miscellaneous Symbols
+  { begin: 9984, end: 10175 },
+  // Dingbats
+  { begin: 12288, end: 12351 },
+  // CJK Symbols And Punctuation
+  { begin: 12352, end: 12447 },
+  // Hiragana
+  { begin: 12448, end: 12543 },
+  // Katakana
+  { begin: 12544, end: 12591 },
+  // Bopomofo
+  { begin: 12592, end: 12687 },
+  // Hangul Compatibility Jamo
+  { begin: 43072, end: 43135 },
+  // Phags-pa
+  { begin: 12800, end: 13055 },
+  // Enclosed CJK Letters And Months
+  { begin: 13056, end: 13311 },
+  // CJK Compatibility
+  { begin: 44032, end: 55215 },
+  // Hangul Syllables
+  { begin: 55296, end: 57343 },
+  // Non-Plane 0 *
+  { begin: 67840, end: 67871 },
+  // Phoenicia
+  { begin: 19968, end: 40959 },
+  // CJK Unified Ideographs
+  { begin: 57344, end: 63743 },
+  // Private Use Area (plane 0)
+  { begin: 12736, end: 12783 },
+  // CJK Strokes
+  { begin: 64256, end: 64335 },
+  // Alphabetic Presentation Forms
+  { begin: 64336, end: 65023 },
+  // Arabic Presentation Forms-A
+  { begin: 65056, end: 65071 },
+  // Combining Half Marks
+  { begin: 65040, end: 65055 },
+  // Vertical Forms
+  { begin: 65104, end: 65135 },
+  // Small Form Variants
+  { begin: 65136, end: 65279 },
+  // Arabic Presentation Forms-B
+  { begin: 65280, end: 65519 },
+  // Halfwidth And Fullwidth Forms
+  { begin: 65520, end: 65535 },
+  // Specials
+  { begin: 3840, end: 4095 },
+  // Tibetan
+  { begin: 1792, end: 1871 },
+  // Syriac
+  { begin: 1920, end: 1983 },
+  // Thaana
+  { begin: 3456, end: 3583 },
+  // Sinhala
+  { begin: 4096, end: 4255 },
+  // Myanmar
+  { begin: 4608, end: 4991 },
+  // Ethiopic
+  { begin: 5024, end: 5119 },
+  // Cherokee
+  { begin: 5120, end: 5759 },
+  // Unified Canadian Aboriginal Syllabics
+  { begin: 5760, end: 5791 },
+  // Ogham
+  { begin: 5792, end: 5887 },
+  // Runic
+  { begin: 6016, end: 6143 },
+  // Khmer
+  { begin: 6144, end: 6319 },
+  // Mongolian
+  { begin: 10240, end: 10495 },
+  // Braille Patterns
+  { begin: 40960, end: 42127 },
+  // Yi Syllables
+  { begin: 5888, end: 5919 },
+  // Tagalog
+  { begin: 66304, end: 66351 },
+  // Old Italic
+  { begin: 66352, end: 66383 },
+  // Gothic
+  { begin: 66560, end: 66639 },
+  // Deseret
+  { begin: 118784, end: 119039 },
+  // Byzantine Musical Symbols
+  { begin: 119808, end: 120831 },
+  // Mathematical Alphanumeric Symbols
+  { begin: 1044480, end: 1048573 },
+  // Private Use (plane 15)
+  { begin: 65024, end: 65039 },
+  // Variation Selectors
+  { begin: 917504, end: 917631 },
+  // Tags
+  { begin: 6400, end: 6479 },
+  // Limbu
+  { begin: 6480, end: 6527 },
+  // Tai Le
+  { begin: 6528, end: 6623 },
+  // New Tai Lue
+  { begin: 6656, end: 6687 },
+  // Buginese
+  { begin: 11264, end: 11359 },
+  // Glagolitic
+  { begin: 11568, end: 11647 },
+  // Tifinagh
+  { begin: 19904, end: 19967 },
+  // Yijing Hexagram Symbols
+  { begin: 43008, end: 43055 },
+  // Syloti Nagri
+  { begin: 65536, end: 65663 },
+  // Linear B Syllabary
+  { begin: 65856, end: 65935 },
+  // Ancient Greek Numbers
+  { begin: 66432, end: 66463 },
+  // Ugaritic
+  { begin: 66464, end: 66527 },
+  // Old Persian
+  { begin: 66640, end: 66687 },
+  // Shavian
+  { begin: 66688, end: 66735 },
+  // Osmanya
+  { begin: 67584, end: 67647 },
+  // Cypriot Syllabary
+  { begin: 68096, end: 68191 },
+  // Kharoshthi
+  { begin: 119552, end: 119647 },
+  // Tai Xuan Jing Symbols
+  { begin: 73728, end: 74751 },
+  // Cuneiform
+  { begin: 119648, end: 119679 },
+  // Counting Rod Numerals
+  { begin: 7040, end: 7103 },
+  // Sundanese
+  { begin: 7168, end: 7247 },
+  // Lepcha
+  { begin: 7248, end: 7295 },
+  // Ol Chiki
+  { begin: 43136, end: 43231 },
+  // Saurashtra
+  { begin: 43264, end: 43311 },
+  // Kayah Li
+  { begin: 43312, end: 43359 },
+  // Rejang
+  { begin: 43520, end: 43615 },
+  // Cham
+  { begin: 65936, end: 65999 },
+  // Ancient Symbols
+  { begin: 66e3, end: 66047 },
+  // Phaistos Disc
+  { begin: 66208, end: 66271 },
+  // Carian
+  { begin: 127024, end: 127135 }
+  // Domino Tiles
+];
+function _l(t) {
+  for (let e = 0; e < _r.length; e += 1) {
+    const n = _r[e];
+    if (t >= n.begin && t < n.end)
+      return e;
+  }
+  return -1;
+}
+function Ul(t, e) {
+  const n = {}, r = new M.Parser(t, e);
+  n.version = r.parseUShort(), n.xAvgCharWidth = r.parseShort(), n.usWeightClass = r.parseUShort(), n.usWidthClass = r.parseUShort(), n.fsType = r.parseUShort(), n.ySubscriptXSize = r.parseShort(), n.ySubscriptYSize = r.parseShort(), n.ySubscriptXOffset = r.parseShort(), n.ySubscriptYOffset = r.parseShort(), n.ySuperscriptXSize = r.parseShort(), n.ySuperscriptYSize = r.parseShort(), n.ySuperscriptXOffset = r.parseShort(), n.ySuperscriptYOffset = r.parseShort(), n.yStrikeoutSize = r.parseShort(), n.yStrikeoutPosition = r.parseShort(), n.sFamilyClass = r.parseShort(), n.panose = [];
+  for (let s = 0; s < 10; s++)
+    n.panose[s] = r.parseByte();
+  return n.ulUnicodeRange1 = r.parseULong(), n.ulUnicodeRange2 = r.parseULong(), n.ulUnicodeRange3 = r.parseULong(), n.ulUnicodeRange4 = r.parseULong(), n.achVendID = String.fromCharCode(r.parseByte(), r.parseByte(), r.parseByte(), r.parseByte()), n.fsSelection = r.parseUShort(), n.usFirstCharIndex = r.parseUShort(), n.usLastCharIndex = r.parseUShort(), n.sTypoAscender = r.parseShort(), n.sTypoDescender = r.parseShort(), n.sTypoLineGap = r.parseShort(), n.usWinAscent = r.parseUShort(), n.usWinDescent = r.parseUShort(), n.version >= 1 && (n.ulCodePageRange1 = r.parseULong(), n.ulCodePageRange2 = r.parseULong()), n.version >= 2 && (n.sxHeight = r.parseShort(), n.sCapHeight = r.parseShort(), n.usDefaultChar = r.parseUShort(), n.usBreakChar = r.parseUShort(), n.usMaxContent = r.parseUShort()), n;
+}
+function Pl(t) {
+  return new O.Table("OS/2", [
+    { name: "version", type: "USHORT", value: 3 },
+    { name: "xAvgCharWidth", type: "SHORT", value: 0 },
+    { name: "usWeightClass", type: "USHORT", value: 0 },
+    { name: "usWidthClass", type: "USHORT", value: 0 },
+    { name: "fsType", type: "USHORT", value: 0 },
+    { name: "ySubscriptXSize", type: "SHORT", value: 650 },
+    { name: "ySubscriptYSize", type: "SHORT", value: 699 },
+    { name: "ySubscriptXOffset", type: "SHORT", value: 0 },
+    { name: "ySubscriptYOffset", type: "SHORT", value: 140 },
+    { name: "ySuperscriptXSize", type: "SHORT", value: 650 },
+    { name: "ySuperscriptYSize", type: "SHORT", value: 699 },
+    { name: "ySuperscriptXOffset", type: "SHORT", value: 0 },
+    { name: "ySuperscriptYOffset", type: "SHORT", value: 479 },
+    { name: "yStrikeoutSize", type: "SHORT", value: 49 },
+    { name: "yStrikeoutPosition", type: "SHORT", value: 258 },
+    { name: "sFamilyClass", type: "SHORT", value: 0 },
+    { name: "bFamilyType", type: "BYTE", value: 0 },
+    { name: "bSerifStyle", type: "BYTE", value: 0 },
+    { name: "bWeight", type: "BYTE", value: 0 },
+    { name: "bProportion", type: "BYTE", value: 0 },
+    { name: "bContrast", type: "BYTE", value: 0 },
+    { name: "bStrokeVariation", type: "BYTE", value: 0 },
+    { name: "bArmStyle", type: "BYTE", value: 0 },
+    { name: "bLetterform", type: "BYTE", value: 0 },
+    { name: "bMidline", type: "BYTE", value: 0 },
+    { name: "bXHeight", type: "BYTE", value: 0 },
+    { name: "ulUnicodeRange1", type: "ULONG", value: 0 },
+    { name: "ulUnicodeRange2", type: "ULONG", value: 0 },
+    { name: "ulUnicodeRange3", type: "ULONG", value: 0 },
+    { name: "ulUnicodeRange4", type: "ULONG", value: 0 },
+    { name: "achVendID", type: "CHARARRAY", value: "XXXX" },
+    { name: "fsSelection", type: "USHORT", value: 0 },
+    { name: "usFirstCharIndex", type: "USHORT", value: 0 },
+    { name: "usLastCharIndex", type: "USHORT", value: 0 },
+    { name: "sTypoAscender", type: "SHORT", value: 0 },
+    { name: "sTypoDescender", type: "SHORT", value: 0 },
+    { name: "sTypoLineGap", type: "SHORT", value: 0 },
+    { name: "usWinAscent", type: "USHORT", value: 0 },
+    { name: "usWinDescent", type: "USHORT", value: 0 },
+    { name: "ulCodePageRange1", type: "ULONG", value: 0 },
+    { name: "ulCodePageRange2", type: "ULONG", value: 0 },
+    { name: "sxHeight", type: "SHORT", value: 0 },
+    { name: "sCapHeight", type: "SHORT", value: 0 },
+    { name: "usDefaultChar", type: "USHORT", value: 0 },
+    { name: "usBreakChar", type: "USHORT", value: 0 },
+    { name: "usMaxContext", type: "USHORT", value: 0 }
+  ], t);
+}
+var Ur = { parse: Ul, make: Pl, unicodeRanges: _r, getUnicodeRange: _l };
+function Nl(t, e) {
+  const n = {}, r = new M.Parser(t, e);
+  switch (n.version = r.parseVersion(), n.italicAngle = r.parseFixed(), n.underlinePosition = r.parseShort(), n.underlineThickness = r.parseShort(), n.isFixedPitch = r.parseULong(), n.minMemType42 = r.parseULong(), n.maxMemType42 = r.parseULong(), n.minMemType1 = r.parseULong(), n.maxMemType1 = r.parseULong(), n.version) {
+    case 1:
+      n.names = wt.slice();
+      break;
+    case 2:
+      n.numberOfGlyphs = r.parseUShort(), n.glyphNameIndex = new Array(n.numberOfGlyphs);
+      for (let s = 0; s < n.numberOfGlyphs; s++)
+        n.glyphNameIndex[s] = r.parseUShort();
+      n.names = [];
+      for (let s = 0; s < n.numberOfGlyphs; s++)
+        if (n.glyphNameIndex[s] >= wt.length) {
+          const i = r.parseChar();
+          n.names.push(r.parseString(i));
+        }
+      break;
+    case 2.5:
+      n.numberOfGlyphs = r.parseUShort(), n.offset = new Array(n.numberOfGlyphs);
+      for (let s = 0; s < n.numberOfGlyphs; s++)
+        n.offset[s] = r.parseChar();
+      break;
+  }
+  return n;
+}
+function Gl(t) {
+  const {
+    italicAngle: e = Math.round((t.italicAngle || 0) * 65536),
+    underlinePosition: n = 0,
+    underlineThickness: r = 0,
+    isFixedPitch: s = 0,
+    minMemType42: i = 0,
+    maxMemType42: a = 0,
+    minMemType1: o = 0,
+    maxMemType1: c = 0
+  } = t.tables.post || {};
+  return new O.Table("post", [
+    { name: "version", type: "FIXED", value: 196608 },
+    { name: "italicAngle", type: "FIXED", value: e },
+    { name: "underlinePosition", type: "FWORD", value: n },
+    { name: "underlineThickness", type: "FWORD", value: r },
+    { name: "isFixedPitch", type: "ULONG", value: s },
+    { name: "minMemType42", type: "ULONG", value: i },
+    { name: "maxMemType42", type: "ULONG", value: a },
+    { name: "minMemType1", type: "ULONG", value: o },
+    { name: "maxMemType1", type: "ULONG", value: c }
+  ]);
+}
+var Va = { parse: Nl, make: Gl }, We = new Array(9);
+We[1] = function() {
+  const e = this.offset + this.relativeOffset, n = this.parseUShort();
+  if (n === 1)
+    return {
+      substFormat: 1,
+      coverage: this.parsePointer(k.coverage),
+      deltaGlyphId: this.parseShort()
+    };
+  if (n === 2)
+    return {
+      substFormat: 2,
+      coverage: this.parsePointer(k.coverage),
+      substitute: this.parseOffset16List()
+    };
+  H.assert(!1, "0x" + e.toString(16) + ": lookup type 1 format must be 1 or 2.");
+};
+We[2] = function() {
+  const e = this.parseUShort();
+  return H.argument(e === 1, "GSUB Multiple Substitution Subtable identifier-format must be 1"), {
+    substFormat: e,
+    coverage: this.parsePointer(k.coverage),
+    sequences: this.parseListOfLists()
+  };
+};
+We[3] = function() {
+  const e = this.parseUShort();
+  return H.argument(e === 1, "GSUB Alternate Substitution Subtable identifier-format must be 1"), {
+    substFormat: e,
+    coverage: this.parsePointer(k.coverage),
+    alternateSets: this.parseListOfLists()
+  };
+};
+We[4] = function() {
+  const e = this.parseUShort();
+  return H.argument(e === 1, "GSUB ligature table identifier-format must be 1"), {
+    substFormat: e,
+    coverage: this.parsePointer(k.coverage),
+    ligatureSets: this.parseListOfLists(function() {
+      return {
+        ligGlyph: this.parseUShort(),
+        components: this.parseUShortList(this.parseUShort() - 1)
+      };
+    })
+  };
+};
+var Bt = {
+  sequenceIndex: k.uShort,
+  lookupListIndex: k.uShort
+};
+We[5] = function() {
+  const e = this.offset + this.relativeOffset, n = this.parseUShort();
+  if (n === 1)
+    return {
+      substFormat: n,
+      coverage: this.parsePointer(k.coverage),
+      ruleSets: this.parseListOfLists(function() {
+        const r = this.parseUShort(), s = this.parseUShort();
+        return {
+          input: this.parseUShortList(r - 1),
+          lookupRecords: this.parseRecordList(s, Bt)
+        };
+      })
+    };
+  if (n === 2)
+    return {
+      substFormat: n,
+      coverage: this.parsePointer(k.coverage),
+      classDef: this.parsePointer(k.classDef),
+      classSets: this.parseListOfLists(function() {
+        const r = this.parseUShort(), s = this.parseUShort();
+        return {
+          classes: this.parseUShortList(r - 1),
+          lookupRecords: this.parseRecordList(s, Bt)
+        };
+      })
+    };
+  if (n === 3) {
+    const r = this.parseUShort(), s = this.parseUShort();
+    return {
+      substFormat: n,
+      coverages: this.parseList(r, k.pointer(k.coverage)),
+      lookupRecords: this.parseRecordList(s, Bt)
+    };
+  }
+  H.assert(!1, "0x" + e.toString(16) + ": lookup type 5 format must be 1, 2 or 3.");
+};
+We[6] = function() {
+  const e = this.offset + this.relativeOffset, n = this.parseUShort();
+  if (n === 1)
+    return {
+      substFormat: 1,
+      coverage: this.parsePointer(k.coverage),
+      chainRuleSets: this.parseListOfLists(function() {
+        return {
+          backtrack: this.parseUShortList(),
+          input: this.parseUShortList(this.parseShort() - 1),
+          lookahead: this.parseUShortList(),
+          lookupRecords: this.parseRecordList(Bt)
+        };
+      })
+    };
+  if (n === 2)
+    return {
+      substFormat: 2,
+      coverage: this.parsePointer(k.coverage),
+      backtrackClassDef: this.parsePointer(k.classDef),
+      inputClassDef: this.parsePointer(k.classDef),
+      lookaheadClassDef: this.parsePointer(k.classDef),
+      chainClassSet: this.parseListOfLists(function() {
+        return {
+          backtrack: this.parseUShortList(),
+          input: this.parseUShortList(this.parseShort() - 1),
+          lookahead: this.parseUShortList(),
+          lookupRecords: this.parseRecordList(Bt)
+        };
+      })
+    };
+  if (n === 3)
+    return {
+      substFormat: 3,
+      backtrackCoverage: this.parseList(k.pointer(k.coverage)),
+      inputCoverage: this.parseList(k.pointer(k.coverage)),
+      lookaheadCoverage: this.parseList(k.pointer(k.coverage)),
+      lookupRecords: this.parseRecordList(Bt)
+    };
+  H.assert(!1, "0x" + e.toString(16) + ": lookup type 6 format must be 1, 2 or 3.");
+};
+We[7] = function() {
+  const e = this.parseUShort();
+  H.argument(e === 1, "GSUB Extension Substitution subtable identifier-format must be 1");
+  const n = this.parseUShort(), r = new k(this.data, this.offset + this.parseULong());
+  return {
+    substFormat: 1,
+    lookupType: n,
+    extension: We[n].call(r)
+  };
+};
+We[8] = function() {
+  const e = this.parseUShort();
+  return H.argument(e === 1, "GSUB Reverse Chaining Contextual Single Substitution Subtable identifier-format must be 1"), {
+    substFormat: e,
+    coverage: this.parsePointer(k.coverage),
+    backtrackCoverage: this.parseList(k.pointer(k.coverage)),
+    lookaheadCoverage: this.parseList(k.pointer(k.coverage)),
+    substitutes: this.parseUShortList()
+  };
+};
+function Hl(t, e) {
+  e = e || 0;
+  const n = new k(t, e), r = n.parseVersion(1);
+  return H.argument(r === 1 || r === 1.1, "Unsupported GSUB table version."), r === 1 ? {
+    version: r,
+    scripts: n.parseScriptList(),
+    features: n.parseFeatureList(),
+    lookups: n.parseLookupList(We)
+  } : {
+    version: r,
+    scripts: n.parseScriptList(),
+    features: n.parseFeatureList(),
+    lookups: n.parseLookupList(We),
+    variations: n.parseFeatureVariationsList()
+  };
+}
+var Et = new Array(9);
+Et[1] = function(e) {
+  if (e.substFormat === 1)
+    return new O.Table("substitutionTable", [
+      { name: "substFormat", type: "USHORT", value: 1 },
+      { name: "coverage", type: "TABLE", value: new O.Coverage(e.coverage) },
+      { name: "deltaGlyphID", type: "SHORT", value: e.deltaGlyphId }
+    ]);
+  if (e.substFormat === 2)
+    return new O.Table("substitutionTable", [
+      { name: "substFormat", type: "USHORT", value: 2 },
+      { name: "coverage", type: "TABLE", value: new O.Coverage(e.coverage) }
+    ].concat(O.ushortList("substitute", e.substitute)));
+  H.fail("Lookup type 1 substFormat must be 1 or 2.");
+};
+Et[2] = function(e) {
+  return H.assert(e.substFormat === 1, "Lookup type 2 substFormat must be 1."), new O.Table("substitutionTable", [
+    { name: "substFormat", type: "USHORT", value: 1 },
+    { name: "coverage", type: "TABLE", value: new O.Coverage(e.coverage) }
+  ].concat(O.tableList("seqSet", e.sequences, function(n) {
+    return new O.Table("sequenceSetTable", O.ushortList("sequence", n));
+  })));
+};
+Et[3] = function(e) {
+  return H.assert(e.substFormat === 1, "Lookup type 3 substFormat must be 1."), new O.Table("substitutionTable", [
+    { name: "substFormat", type: "USHORT", value: 1 },
+    { name: "coverage", type: "TABLE", value: new O.Coverage(e.coverage) }
+  ].concat(O.tableList("altSet", e.alternateSets, function(n) {
+    return new O.Table("alternateSetTable", O.ushortList("alternate", n));
+  })));
+};
+Et[4] = function(e) {
+  return H.assert(e.substFormat === 1, "Lookup type 4 substFormat must be 1."), new O.Table("substitutionTable", [
+    { name: "substFormat", type: "USHORT", value: 1 },
+    { name: "coverage", type: "TABLE", value: new O.Coverage(e.coverage) }
+  ].concat(O.tableList("ligSet", e.ligatureSets, function(n) {
+    return new O.Table("ligatureSetTable", O.tableList("ligature", n, function(r) {
+      return new O.Table(
+        "ligatureTable",
+        [{ name: "ligGlyph", type: "USHORT", value: r.ligGlyph }].concat(O.ushortList("component", r.components, r.components.length + 1))
+      );
+    }));
+  })));
+};
+Et[5] = function(e) {
+  if (e.substFormat === 1)
+    return new O.Table("contextualSubstitutionTable", [
+      { name: "substFormat", type: "USHORT", value: e.substFormat },
+      { name: "coverage", type: "TABLE", value: new O.Coverage(e.coverage) }
+    ].concat(O.tableList("sequenceRuleSet", e.ruleSets, function(n) {
+      return n ? new O.Table("sequenceRuleSetTable", O.tableList("sequenceRule", n, function(r) {
+        let s = O.ushortList("seqLookup", [], r.lookupRecords.length).concat(O.ushortList("inputSequence", r.input, r.input.length + 1));
+        [s[0], s[1]] = [s[1], s[0]];
+        for (let i = 0; i < r.lookupRecords.length; i++) {
+          const a = r.lookupRecords[i];
+          s = s.concat({ name: "sequenceIndex" + i, type: "USHORT", value: a.sequenceIndex }).concat({ name: "lookupListIndex" + i, type: "USHORT", value: a.lookupListIndex });
+        }
+        return new O.Table("sequenceRuleTable", s);
+      })) : new O.Table("NULL", null);
+    })));
+  if (e.substFormat === 2)
+    return new O.Table("contextualSubstitutionTable", [
+      { name: "substFormat", type: "USHORT", value: e.substFormat },
+      { name: "coverage", type: "TABLE", value: new O.Coverage(e.coverage) },
+      { name: "classDef", type: "TABLE", value: new O.ClassDef(e.classDef) }
+    ].concat(O.tableList("classSeqRuleSet", e.classSets, function(n) {
+      return n ? new O.Table("classSeqRuleSetTable", O.tableList("classSeqRule", n, function(r) {
+        let s = O.ushortList("classes", r.classes, r.classes.length + 1).concat(O.ushortList("seqLookupCount", [], r.lookupRecords.length));
+        for (let i = 0; i < r.lookupRecords.length; i++) {
+          const a = r.lookupRecords[i];
+          s = s.concat({ name: "sequenceIndex" + i, type: "USHORT", value: a.sequenceIndex }).concat({ name: "lookupListIndex" + i, type: "USHORT", value: a.lookupListIndex });
+        }
+        return new O.Table("classSeqRuleTable", s);
+      })) : new O.Table("NULL", null);
+    })));
+  if (e.substFormat === 3) {
+    let n = [
+      { name: "substFormat", type: "USHORT", value: e.substFormat }
+    ];
+    n.push({ name: "inputGlyphCount", type: "USHORT", value: e.coverages.length }), n.push({ name: "substitutionCount", type: "USHORT", value: e.lookupRecords.length });
+    for (let s = 0; s < e.coverages.length; s++) {
+      const i = e.coverages[s];
+      n.push({ name: "inputCoverage" + s, type: "TABLE", value: new O.Coverage(i) });
+    }
+    for (let s = 0; s < e.lookupRecords.length; s++) {
+      const i = e.lookupRecords[s];
+      n = n.concat({ name: "sequenceIndex" + s, type: "USHORT", value: i.sequenceIndex }).concat({ name: "lookupListIndex" + s, type: "USHORT", value: i.lookupListIndex });
+    }
+    return new O.Table("contextualSubstitutionTable", n);
+  }
+  H.assert(!1, "lookup type 5 format must be 1, 2 or 3.");
+};
+Et[6] = function(e) {
+  if (e.substFormat === 1)
+    return new O.Table("chainContextTable", [
+      { name: "substFormat", type: "USHORT", value: e.substFormat },
+      { name: "coverage", type: "TABLE", value: new O.Coverage(e.coverage) }
+    ].concat(O.tableList("chainRuleSet", e.chainRuleSets, function(r) {
+      return new O.Table("chainRuleSetTable", O.tableList("chainRule", r, function(s) {
+        let i = O.ushortList("backtrackGlyph", s.backtrack, s.backtrack.length).concat(O.ushortList("inputGlyph", s.input, s.input.length + 1)).concat(O.ushortList("lookaheadGlyph", s.lookahead, s.lookahead.length)).concat(O.ushortList("substitution", [], s.lookupRecords.length));
+        for (let a = 0; a < s.lookupRecords.length; a++) {
+          const o = s.lookupRecords[a];
+          i = i.concat({ name: "sequenceIndex" + a, type: "USHORT", value: o.sequenceIndex }).concat({ name: "lookupListIndex" + a, type: "USHORT", value: o.lookupListIndex });
+        }
+        return new O.Table("chainRuleTable", i);
+      }));
+    })));
+  if (e.substFormat === 2)
+    H.assert(!1, "lookup type 6 format 2 is not yet supported.");
+  else if (e.substFormat === 3) {
+    let n = [
+      { name: "substFormat", type: "USHORT", value: e.substFormat }
+    ];
+    n.push({ name: "backtrackGlyphCount", type: "USHORT", value: e.backtrackCoverage.length });
+    for (let s = 0; s < e.backtrackCoverage.length; s++) {
+      const i = e.backtrackCoverage[s];
+      n.push({ name: "backtrackCoverage" + s, type: "TABLE", value: new O.Coverage(i) });
+    }
+    n.push({ name: "inputGlyphCount", type: "USHORT", value: e.inputCoverage.length });
+    for (let s = 0; s < e.inputCoverage.length; s++) {
+      const i = e.inputCoverage[s];
+      n.push({ name: "inputCoverage" + s, type: "TABLE", value: new O.Coverage(i) });
+    }
+    n.push({ name: "lookaheadGlyphCount", type: "USHORT", value: e.lookaheadCoverage.length });
+    for (let s = 0; s < e.lookaheadCoverage.length; s++) {
+      const i = e.lookaheadCoverage[s];
+      n.push({ name: "lookaheadCoverage" + s, type: "TABLE", value: new O.Coverage(i) });
+    }
+    n.push({ name: "substitutionCount", type: "USHORT", value: e.lookupRecords.length });
+    for (let s = 0; s < e.lookupRecords.length; s++) {
+      const i = e.lookupRecords[s];
+      n = n.concat({ name: "sequenceIndex" + s, type: "USHORT", value: i.sequenceIndex }).concat({ name: "lookupListIndex" + s, type: "USHORT", value: i.lookupListIndex });
+    }
+    return new O.Table("chainContextTable", n);
+  }
+  H.assert(!1, "lookup type 6 format must be 1, 2 or 3.");
+};
+function zl(t) {
+  return new O.Table("GSUB", [
+    { name: "version", type: "ULONG", value: 65536 },
+    { name: "scripts", type: "TABLE", value: new O.ScriptList(t.scripts) },
+    { name: "features", type: "TABLE", value: new O.FeatureList(t.features) },
+    { name: "lookups", type: "TABLE", value: new O.LookupList(t.lookups, Et) }
+  ]);
+}
+var qa = { parse: Hl, make: zl };
+function Wl(t, e) {
+  const n = new M.Parser(t, e), r = n.parseULong();
+  H.argument(r === 1, "Unsupported META table version."), n.parseULong(), n.parseULong();
+  const s = n.parseULong(), i = {};
+  for (let a = 0; a < s; a++) {
+    const o = n.parseTag(), c = n.parseULong(), l = n.parseULong();
+    if (o === "appl" || o === "bild")
+      continue;
+    const u = Pt.UTF8(t, e + c, l);
+    i[o] = u;
+  }
+  return i;
+}
+function Vl(t) {
+  const e = Object.keys(t).length;
+  let n = "";
+  const r = 16 + e * 12, s = new O.Table("meta", [
+    { name: "version", type: "ULONG", value: 1 },
+    { name: "flags", type: "ULONG", value: 0 },
+    { name: "offset", type: "ULONG", value: r },
+    { name: "numTags", type: "ULONG", value: e }
+  ]);
+  for (let i in t) {
+    const a = n.length;
+    n += t[i], s.fields.push({ name: "tag " + i, type: "TAG", value: i }), s.fields.push({ name: "offset " + i, type: "ULONG", value: r + a }), s.fields.push({ name: "length " + i, type: "ULONG", value: t[i].length });
+  }
+  return s.fields.push({ name: "stringPool", type: "CHARARRAY", value: n }), s;
+}
+var ja = { parse: Wl, make: Vl };
+function ql(t, e) {
+  const n = new k(t, e), r = n.parseUShort();
+  r !== 0 && console.warn("Only COLRv0 is currently fully supported. A subset of color glyphs might be available in this font if provided in the v0 format.");
+  const s = n.parseUShort(), i = n.parseOffset32(), a = n.parseOffset32(), o = n.parseUShort();
+  n.relativeOffset = i;
+  const c = n.parseRecordList(s, {
+    glyphID: k.uShort,
+    firstLayerIndex: k.uShort,
+    numLayers: k.uShort
+  });
+  n.relativeOffset = a;
+  const l = n.parseRecordList(o, {
+    glyphID: k.uShort,
+    paletteIndex: k.uShort
+  });
+  return {
+    version: r,
+    baseGlyphRecords: c,
+    layerRecords: l
+  };
+}
+function jl({ version: t = 0, baseGlyphRecords: e = [], layerRecords: n = [] }) {
+  H.argument(t === 0, "Only COLRv0 supported.");
+  const r = 14, s = r + e.length * 6;
+  return new O.Table("COLR", [
+    { name: "version", type: "USHORT", value: t },
+    { name: "numBaseGlyphRecords", type: "USHORT", value: e.length },
+    { name: "baseGlyphRecordsOffset", type: "ULONG", value: r },
+    { name: "layerRecordsOffset", type: "ULONG", value: s },
+    { name: "numLayerRecords", type: "USHORT", value: n.length },
+    ...e.map((i, a) => [
+      { name: "glyphID_" + a, type: "USHORT", value: i.glyphID },
+      { name: "firstLayerIndex_" + a, type: "USHORT", value: i.firstLayerIndex },
+      { name: "numLayers_" + a, type: "USHORT", value: i.numLayers }
+    ]).flat(),
+    ...n.map((i, a) => [
+      { name: "LayerGlyphID_" + a, type: "USHORT", value: i.glyphID },
+      { name: "paletteIndex_" + a, type: "USHORT", value: i.paletteIndex }
+    ]).flat()
+  ]);
+}
+var $a = { parse: ql, make: jl };
+function $l(t, e) {
+  return [
+    { name: "tag_" + t, type: "TAG", value: e.tag },
+    { name: "minValue_" + t, type: "FIXED", value: e.minValue << 16 },
+    { name: "defaultValue_" + t, type: "FIXED", value: e.defaultValue << 16 },
+    { name: "maxValue_" + t, type: "FIXED", value: e.maxValue << 16 },
+    { name: "flags_" + t, type: "USHORT", value: 0 },
+    { name: "nameID_" + t, type: "USHORT", value: e.axisNameID }
+  ];
+}
+function Yl(t, e, n) {
+  const r = {}, s = new M.Parser(t, e);
+  r.tag = s.parseTag(), r.minValue = s.parseFixed(), r.defaultValue = s.parseFixed(), r.maxValue = s.parseFixed(), s.skip("uShort", 1);
+  const i = s.parseUShort();
+  return r.axisNameID = i, r.name = Bn(n, i), r;
+}
+function Xl(t, e, n, r = {}) {
+  const s = [
+    { name: "nameID_" + t, type: "USHORT", value: e.subfamilyNameID },
+    { name: "flags_" + t, type: "USHORT", value: 0 }
+  ];
+  for (let i = 0; i < n.length; ++i) {
+    const a = n[i].tag;
+    s.push({
+      name: "axis_" + t + " " + a,
+      type: "FIXED",
+      value: e.coordinates[a] << 16
+    });
+  }
+  return r && r.postScriptNameID && s.push({
+    name: "postScriptNameID_",
+    type: "USHORT",
+    value: e.postScriptNameID !== void 0 ? e.postScriptNameID : 65535
+  }), s;
+}
+function Kl(t, e, n, r, s) {
+  const i = {}, a = new M.Parser(t, e), o = a.parseUShort();
+  i.subfamilyNameID = o, i.name = Bn(r, o, [2, 17]), a.skip("uShort", 1), i.coordinates = {};
+  for (let l = 0; l < n.length; ++l)
+    i.coordinates[n[l].tag] = a.parseFixed();
+  if (a.relativeOffset === s)
+    return i.postScriptNameID = void 0, i.postScriptName = void 0, i;
+  const c = a.parseUShort();
+  return i.postScriptNameID = c == 65535 ? void 0 : c, i.postScriptName = i.postScriptNameID !== void 0 ? Bn(r, c, [6]) : "", i;
+}
+function Zl(t, e) {
+  const n = new O.Table("fvar", [
+    { name: "version", type: "ULONG", value: 65536 },
+    { name: "offsetToData", type: "USHORT", value: 0 },
+    { name: "countSizePairs", type: "USHORT", value: 2 },
+    { name: "axisCount", type: "USHORT", value: t.axes.length },
+    { name: "axisSize", type: "USHORT", value: 20 },
+    { name: "instanceCount", type: "USHORT", value: t.instances.length },
+    { name: "instanceSize", type: "USHORT", value: 4 + t.axes.length * 4 }
+  ]);
+  n.offsetToData = n.sizeOf();
+  for (let s = 0; s < t.axes.length; s++)
+    n.fields = n.fields.concat($l(s, t.axes[s]));
+  const r = {};
+  for (let s = 0; s < t.instances.length; s++)
+    if (t.instances[s].postScriptNameID !== void 0) {
+      n.instanceSize += 2, r.postScriptNameID = !0;
+      break;
+    }
+  for (let s = 0; s < t.instances.length; s++)
+    n.fields = n.fields.concat(Xl(
+      s,
+      t.instances[s],
+      t.axes,
+      r
+    ));
+  return n;
+}
+function Jl(t, e, n) {
+  const r = new M.Parser(t, e), s = r.parseULong();
+  H.argument(s === 65536, "Unsupported fvar table version.");
+  const i = r.parseOffset16();
+  r.skip("uShort", 1);
+  const a = r.parseUShort(), o = r.parseUShort(), c = r.parseUShort(), l = r.parseUShort(), u = [];
+  for (let p = 0; p < a; p++)
+    u.push(Yl(t, e + i + p * o, n));
+  const f = [], h = e + i + a * o;
+  for (let p = 0; p < c; p++)
+    f.push(Kl(t, h + p * l, u, n, l));
+  return { axes: u, instances: f };
+}
+var Ya = { make: Zl, parse: Jl }, Ql = {
+  tag: k.tag,
+  nameID: k.uShort,
+  ordering: k.uShort
+}, nn = new Array(5);
+nn[1] = function() {
+  return {
+    axisIndex: this.parseUShort(),
+    flags: this.parseUShort(),
+    valueNameID: this.parseUShort(),
+    value: this.parseFixed()
+  };
+};
+nn[2] = function() {
+  return {
+    axisIndex: this.parseUShort(),
+    flags: this.parseUShort(),
+    valueNameID: this.parseUShort(),
+    nominalValue: this.parseFixed(),
+    rangeMinValue: this.parseFixed(),
+    rangeMaxValue: this.parseFixed()
+  };
+};
+nn[3] = function() {
+  return {
+    axisIndex: this.parseUShort(),
+    flags: this.parseUShort(),
+    valueNameID: this.parseUShort(),
+    value: this.parseFixed(),
+    linkedValue: this.parseFixed()
+  };
+};
+nn[4] = function() {
+  const e = this.parseUShort();
+  return {
+    flags: this.parseUShort(),
+    valueNameID: this.parseUShort(),
+    axisValues: this.parseList(e, function() {
+      return {
+        axisIndex: this.parseUShort(),
+        value: this.parseFixed()
+      };
+    })
+  };
+};
+function eu() {
+  const t = this.parseUShort(), e = nn[t], n = {
+    format: t
+  };
+  return e === void 0 ? (console.warn(`Unknown axis value table format ${t}`), n) : Object.assign(n, this.parseStruct(e.bind(this)));
+}
+function tu(t, e, n) {
+  e || (e = 0);
+  const r = new M.Parser(t, e), s = r.parseUShort(), i = r.parseUShort();
+  s !== 1 && console.warn(`Unsupported STAT table version ${s}.${i}`);
+  const a = [
+    s,
+    i
+  ], o = r.parseUShort(), c = r.parseUShort(), l = r.parseOffset32(), u = r.parseUShort(), f = r.parseOffset32(), h = s > 1 || i > 0 ? r.parseUShort() : void 0;
+  n !== void 0 && H.argument(c >= n.axes.length, "STAT axis count must be greater than or equal to fvar axis count"), u > 0 && H.argument(c >= 0, "STAT axis count must be greater than 0 if STAT axis value count is greater than 0");
+  const p = [];
+  for (let b = 0; b < c; b++)
+    r.offset = e + l, r.relativeOffset = b * o, p.push(r.parseStruct(Ql));
+  r.offset = e, r.relativeOffset = f;
+  const y = r.parseUShortList(u), g = [];
+  for (let b = 0; b < u; b++)
+    r.offset = e + f, r.relativeOffset = y[b], g.push(eu.apply(r));
+  return {
+    version: a,
+    axes: p,
+    values: g,
+    elidedFallbackNameID: h
+  };
+}
+var rn = new Array(5);
+rn[1] = function(e, n) {
+  return [
+    { name: `format${e}`, type: "USHORT", value: 1 },
+    { name: `axisIndex${e}`, type: "USHORT", value: n.axisIndex },
+    { name: `flags${e}`, type: "USHORT", value: n.flags },
+    { name: `valueNameID${e}`, type: "USHORT", value: n.valueNameID },
+    { name: `value${e}`, type: "FLOAT", value: n.value }
+  ];
+};
+rn[2] = function(e, n) {
+  return [
+    { name: `format${e}`, type: "USHORT", value: 2 },
+    { name: `axisIndex${e}`, type: "USHORT", value: n.axisIndex },
+    { name: `flags${e}`, type: "USHORT", value: n.flags },
+    { name: `valueNameID${e}`, type: "USHORT", value: n.valueNameID },
+    { name: `nominalValue${e}`, type: "FLOAT", value: n.nominalValue },
+    { name: `rangeMinValue${e}`, type: "FLOAT", value: n.rangeMinValue },
+    { name: `rangeMaxValue${e}`, type: "FLOAT", value: n.rangeMaxValue }
+  ];
+};
+rn[3] = function(e, n) {
+  return [
+    { name: `format${e}`, type: "USHORT", value: 3 },
+    { name: `axisIndex${e}`, type: "USHORT", value: n.axisIndex },
+    { name: `flags${e}`, type: "USHORT", value: n.flags },
+    { name: `valueNameID${e}`, type: "USHORT", value: n.valueNameID },
+    { name: `value${e}`, type: "FLOAT", value: n.value },
+    { name: `linkedValue${e}`, type: "FLOAT", value: n.linkedValue }
+  ];
+};
+rn[4] = function(e, n) {
+  let r = [
+    { name: `format${e}`, type: "USHORT", value: 4 },
+    { name: `axisCount${e}`, type: "USHORT", value: n.axisValues.length },
+    { name: `flags${e}`, type: "USHORT", value: n.flags },
+    { name: `valueNameID${e}`, type: "USHORT", value: n.valueNameID }
+  ];
+  for (let s = 0; s < n.axisValues.length; s++)
+    r = r.concat([
+      { name: `format${e}axisIndex${s}`, type: "USHORT", value: n.axisValues[s].axisIndex },
+      { name: `format${e}value${s}`, type: "FLOAT", value: n.axisValues[s].value }
+    ]);
+  return r;
+};
+function nu(t, e) {
+  return new O.Record("axisRecord_" + t, [
+    { name: "axisTag_" + t, type: "TAG", value: e.tag },
+    { name: "axisNameID_" + t, type: "USHORT", value: e.nameID },
+    { name: "axisOrdering_" + t, type: "USHORT", value: e.ordering }
+  ]);
+}
+function ru(t, e) {
+  const n = e.format, r = rn[n];
+  H.argument(r !== void 0, `Unknown axis value table format ${n}`);
+  const s = r(t, e);
+  return new O.Table("axisValueTable_" + t, s);
+}
+function su(t) {
+  const e = new O.Table("STAT", [
+    { name: "majorVersion", type: "USHORT", value: 1 },
+    { name: "minorVersion", type: "USHORT", value: 2 },
+    { name: "designAxisSize", type: "USHORT", value: 8 },
+    { name: "designAxisCount", type: "USHORT", value: t.axes.length },
+    { name: "designAxesOffset", type: "ULONG", value: 0 },
+    { name: "axisValueCount", type: "USHORT", value: t.values.length },
+    { name: "offsetToAxisValueOffsets", type: "ULONG", value: 0 },
+    { name: "elidedFallbackNameID", type: "USHORT", value: t.elidedFallbackNameID }
+  ]);
+  e.designAxesOffset = e.offsetToAxisValueOffsets = e.sizeOf();
+  for (let i = 0; i < t.axes.length; i++) {
+    const a = nu(i, t.axes[i]);
+    e.offsetToAxisValueOffsets += a.sizeOf(), e.fields = e.fields.concat(a.fields);
+  }
+  const n = [];
+  let r = [], s = t.values.length * 2;
+  for (let i = 0; i < t.values.length; i++) {
+    const a = ru(i, t.values[i]);
+    n.push({
+      name: "offset_" + i,
+      type: "USHORT",
+      value: s
+    }), s += a.sizeOf(), r = r.concat(a.fields);
+  }
+  return e.fields = e.fields.concat(n), e.fields = e.fields.concat(r), e;
+}
+var Xa = { make: su, parse: tu };
+function iu(t, e) {
+  return new O.Record("axisValueMap_" + t, [
+    { name: "fromCoordinate_" + t, type: "F2DOT14", value: e.fromCoordinate },
+    { name: "toCoordinate_" + t, type: "F2DOT14", value: e.toCoordinate }
+  ]);
+}
+function au(t, e) {
+  const n = new O.Record("segmentMap_" + t, [
+    { name: "positionMapCount_" + t, type: "USHORT", value: e.axisValueMaps.length }
+  ]);
+  let r = [];
+  for (let s = 0; s < e.axisValueMaps.length; s++) {
+    const i = iu(`${t}_${s}`, e.axisValueMaps[s]);
+    r = r.concat(i.fields);
+  }
+  return n.fields = n.fields.concat(r), n;
+}
+function ou(t, e) {
+  H.argument(t.axisSegmentMaps.length === e.axes.length, "avar axis count must correspond to fvar axis count");
+  const n = new O.Table("avar", [
+    { name: "majorVersion", type: "USHORT", value: 1 },
+    { name: "minorVersion", type: "USHORT", value: 0 },
+    { name: "reserved", type: "USHORT", value: 0 },
+    { name: "axisCount", type: "USHORT", value: t.axisSegmentMaps.length }
+  ]);
+  for (let r = 0; r < t.axisSegmentMaps.length; r++) {
+    const s = au(r, t.axisSegmentMaps[r]);
+    n.fields = n.fields.concat(s.fields);
+  }
+  return n;
+}
+function cu(t, e, n) {
+  e || (e = 0);
+  const r = new k(t, e), s = r.parseUShort(), i = r.parseUShort();
+  s !== 1 && console.warn(`Unsupported avar table version ${s}.${i}`), r.skip("uShort", 1);
+  const a = r.parseUShort();
+  H.argument(a === n.axes.length, "avar axis count must correspond to fvar axis count");
+  const o = [];
+  for (let c = 0; c < a; c++) {
+    const l = [], u = r.parseUShort();
+    for (let f = 0; f < u; f++) {
+      const h = r.parseF2Dot14(), p = r.parseF2Dot14();
+      l.push({
+        fromCoordinate: h,
+        toCoordinate: p
+      });
+    }
+    o.push({
+      axisValueMaps: l
+    });
+  }
+  return {
+    version: [s, i],
+    axisSegmentMaps: o
+  };
+}
+var Ka = { make: ou, parse: cu };
+function lu(t, e, n, r) {
+  const s = new M.Parser(t, e), i = s.parseTupleVariationStore(
+    s.relativeOffset,
+    n.axes.length,
+    "cvar",
+    r
+  ), a = s.parseUShort(), o = s.parseUShort();
+  return a !== 1 && console.warn(`Unsupported cvar table version ${a}.${o}`), {
+    version: [a, o],
+    ...i
+  };
+}
+function uu() {
+  console.warn("Writing of cvar tables is not yet supported.");
+}
+var Za = { make: uu, parse: lu };
+function hu(t, e, n, r) {
+  const s = new M.Parser(t, e), i = s.parseUShort(), a = s.parseUShort();
+  i !== 1 && console.warn(`Unsupported gvar table version ${i}.${a}`);
+  const o = s.parseUShort();
+  o !== n.axes.length && console.warn(`axisCount ${o} in gvar table does not match the number of axes ${n.axes.length} in the fvar table!`);
+  const c = s.parseUShort(), l = s.parsePointer32(function() {
+    return this.parseTupleRecords(c, o);
+  }), u = s.parseTupleVariationStoreList(o, "gvar", r);
+  return {
+    version: [i, a],
+    sharedTuples: l,
+    glyphVariations: u
+  };
+}
+function fu() {
+  console.warn("Writing of gvar tables is not yet supported.");
+}
+var Ja = { make: fu, parse: hu };
+function pu(t, e) {
+  const n = {}, r = new M.Parser(t, e);
+  n.version = r.parseUShort(), H.argument(n.version <= 1, "Unsupported gasp table version."), n.numRanges = r.parseUShort(), n.gaspRanges = [];
+  for (let s = 0; s < n.numRanges; s++)
+    n.gaspRanges[s] = {
+      rangeMaxPPEM: r.parseUShort(),
+      rangeGaspBehavior: r.parseUShort()
+    };
+  return n;
+}
+function du(t) {
+  const e = new O.Table("gasp", [
+    { name: "version", type: "USHORT", value: 1 },
+    { name: "numRanges", type: "USHORT", value: t.numRanges }
+  ]);
+  for (let n in t.gaspRanges)
+    e.fields.push({ name: "rangeMaxPPEM", type: "USHORT", value: t.gaspRanges[n].rangeMaxPPEM }), e.fields.push({ name: "rangeGaspBehavior", type: "USHORT", value: t.gaspRanges[n].rangeGaspBehavior });
+  return e;
+}
+var Qa = { parse: pu, make: du };
+function gu(t, e) {
+  const n = /* @__PURE__ */ new Map(), r = t.buffer, s = new k(t, e);
+  if (s.parseUShort() !== 0) return n;
+  s.relativeOffset = s.parseOffset32();
+  const a = t.byteOffset + e + s.relativeOffset, o = s.parseUShort(), c = /* @__PURE__ */ new Map();
+  for (let l = 0; l < o; l++) {
+    const u = s.parseUShort(), f = s.parseUShort(), h = a + s.parseOffset32(), p = s.parseULong();
+    let y = c.get(h);
+    y === void 0 && (y = new Uint8Array(r, h, p), c.set(h, y));
+    for (let g = u; g <= f; g++)
+      n.set(g, y);
+  }
+  return n;
+}
+function mu(t) {
+  const e = Array.from(t.keys()).sort(), n = [], r = [], s = /* @__PURE__ */ new Map();
+  let i = 0, a = { endGlyphID: null };
+  for (let h = 0, p = e.length; h < p; h++) {
+    const y = e[h], g = t.get(y);
+    let b = s.get(g);
+    b === void 0 && (b = i, r.push(g), s.set(g, b), i += g.byteLength), y - 1 === a.endGlyphID && b === a.svgDocOffset ? a.endGlyphID = y : (a = {
+      startGlyphID: y,
+      endGlyphID: y,
+      svgDocOffset: b,
+      svgDocLength: g.byteLength
+    }, n.push(a));
+  }
+  const o = n.length, c = r.length, l = 2 + o * 12, u = new Array(4 + o * 4 + c);
+  let f = 0;
+  u[f++] = { name: "version", type: "USHORT", value: 0 }, u[f++] = { name: "svgDocumentListOffset", type: "ULONG", value: 10 }, u[f++] = { name: "reserved", type: "ULONG", value: 0 }, u[f++] = { name: "numEntries", type: "USHORT", value: o };
+  for (let h = 0; h < o; h++) {
+    const p = "documentRecord_" + h, { startGlyphID: y, endGlyphID: g, svgDocOffset: b, svgDocLength: v } = n[h];
+    u[f++] = { name: p + "_startGlyphID", type: "USHORT", value: y }, u[f++] = { name: p + "_endGlyphID", type: "USHORT", value: g }, u[f++] = { name: p + "_svgDocOffset", type: "ULONG", value: l + b }, u[f++] = { name: p + "_svgDocLength", type: "ULONG", value: v };
+  }
+  for (let h = 0; h < c; h++)
+    u[f++] = { name: "svgDoc_" + h, type: "LITERAL", value: r[h] };
+  return new O.Table("SVG ", u);
+}
+var eo = {
+  make: mu,
+  parse: gu
+};
+function _s(t) {
+  return Math.log(t) / Math.log(2) | 0;
+}
+function Qr(t) {
+  for (; t.length % 4 !== 0; )
+    t.push(0);
+  let e = 0;
+  for (let n = 0; n < t.length; n += 4)
+    e += (t[n] << 24) + (t[n + 1] << 16) + (t[n + 2] << 8) + t[n + 3];
+  return e %= Math.pow(2, 32), e;
+}
+function Us(t, e, n, r) {
+  return new O.Record("Table Record", [
+    { name: "tag", type: "TAG", value: t !== void 0 ? t : "" },
+    { name: "checkSum", type: "ULONG", value: e !== void 0 ? e : 0 },
+    { name: "offset", type: "ULONG", value: n !== void 0 ? n : 0 },
+    { name: "length", type: "ULONG", value: r !== void 0 ? r : 0 }
+  ]);
+}
+function to(t) {
+  const e = new O.Table("sfnt", [
+    { name: "version", type: "TAG", value: "OTTO" },
+    { name: "numTables", type: "USHORT", value: 0 },
+    { name: "searchRange", type: "USHORT", value: 0 },
+    { name: "entrySelector", type: "USHORT", value: 0 },
+    { name: "rangeShift", type: "USHORT", value: 0 }
+  ]);
+  e.tables = t, e.numTables = t.length;
+  const n = Math.pow(2, _s(e.numTables));
+  e.searchRange = 16 * n, e.entrySelector = _s(n), e.rangeShift = e.numTables * 16 - e.searchRange;
+  const r = [], s = [];
+  let i = e.sizeOf() + Us().sizeOf() * e.numTables;
+  for (; i % 4 !== 0; )
+    i += 1, s.push({ name: "padding", type: "BYTE", value: 0 });
+  for (let a = 0; a < t.length; a += 1) {
+    const o = t[a];
+    H.argument(o.tableName.length === 4, "Table name" + o.tableName + " is invalid.");
+    const c = o.sizeOf(), l = Us(o.tableName, Qr(o.encode()), i, c);
+    for (r.push({ name: l.tag + " Table Record", type: "RECORD", value: l }), s.push({ name: o.tableName + " table", type: "RECORD", value: o }), i += c, H.argument(!isNaN(i), "Something went wrong calculating the offset."); i % 4 !== 0; )
+      i += 1, s.push({ name: "padding", type: "BYTE", value: 0 });
+  }
+  return r.sort(function(a, o) {
+    return a.value.tag > o.value.tag ? 1 : -1;
+  }), e.fields = e.fields.concat(r), e.fields = e.fields.concat(s), e;
+}
+function Ps(t, e, n) {
+  for (let r = 0; r < e.length; r += 1) {
+    const s = t.charToGlyphIndex(e[r]);
+    if (s > 0)
+      return t.glyphs.get(s).getMetrics();
+  }
+  return n;
+}
+function yu(t) {
+  let e = 0;
+  for (let n = 0; n < t.length; n += 1)
+    e += t[n];
+  return e / t.length;
+}
+function bu(t) {
+  const e = [], n = [], r = [], s = [], i = [], a = [], o = [];
+  let c, l = 0, u = 0, f = 0, h = 0, p = 0;
+  for (let X = 0; X < t.glyphs.length; X += 1) {
+    const xe = t.glyphs.get(X), Ee = xe.unicode | 0;
+    if (isNaN(xe.advanceWidth))
+      throw new Error("Glyph " + xe.name + " (" + X + "): advanceWidth is not a number.");
+    (c > Ee || c === void 0) && Ee > 0 && (c = Ee), l < Ee && (l = Ee);
+    const Ae = Ur.getUnicodeRange(Ee);
+    if (Ae < 32)
+      u |= 1 << Ae;
+    else if (Ae < 64)
+      f |= 1 << Ae - 32;
+    else if (Ae < 96)
+      h |= 1 << Ae - 64;
+    else if (Ae < 123)
+      p |= 1 << Ae - 96;
+    else
+      throw new Error("Unicode ranges bits > 123 are reserved for internal usage");
+    if (xe.name === ".notdef") continue;
+    const Oe = xe.getMetrics();
+    e.push(Oe.xMin), n.push(Oe.yMin), r.push(Oe.xMax), s.push(Oe.yMax), a.push(Oe.leftSideBearing), o.push(Oe.rightSideBearing), i.push(xe.advanceWidth);
+  }
+  const y = {
+    xMin: Math.min.apply(null, e),
+    yMin: Math.min.apply(null, n),
+    xMax: Math.max.apply(null, r),
+    yMax: Math.max.apply(null, s),
+    advanceWidthMax: Math.max.apply(null, i),
+    advanceWidthAvg: yu(i),
+    minLeftSideBearing: Math.min.apply(null, a),
+    maxLeftSideBearing: Math.max.apply(null, a),
+    minRightSideBearing: Math.min.apply(null, o)
+  };
+  y.ascender = t.ascender, y.descender = t.descender;
+  let g = 0;
+  t.weightClass >= 600 && (g |= t.macStyleValues.BOLD), t.italicAngle < 0 && (g |= t.macStyleValues.ITALIC);
+  const b = Na.make({
+    flags: 3,
+    // 00000011 (baseline for font at y=0; left sidebearing point at x=0)
+    unitsPerEm: t.unitsPerEm,
+    xMin: y.xMin,
+    yMin: y.yMin,
+    xMax: y.xMax,
+    yMax: y.yMax,
+    lowestRecPPEM: 3,
+    macStyle: g,
+    createdTimestamp: t.createdTimestamp
+  }), v = Ga.make({
+    ascender: y.ascender,
+    descender: y.descender,
+    advanceWidthMax: y.advanceWidthMax,
+    minLeftSideBearing: y.minLeftSideBearing,
+    minRightSideBearing: y.minRightSideBearing,
+    xMaxExtent: y.maxLeftSideBearing + (y.xMax - y.xMin),
+    numberOfHMetrics: t.glyphs.length
+  }), w = Wa.make(t.glyphs.length), C = Ur.make(Object.assign({
+    xAvgCharWidth: Math.round(y.advanceWidthAvg),
+    usFirstCharIndex: c,
+    usLastCharIndex: l,
+    ulUnicodeRange1: u,
+    ulUnicodeRange2: f,
+    ulUnicodeRange3: h,
+    ulUnicodeRange4: p,
+    // See http://typophile.com/node/13081 for more info on vertical metrics.
+    // We get metrics for typical characters (such as "x" for xHeight).
+    // We provide some fallback characters if characters are unavailable: their
+    // ordering was chosen experimentally.
+    sTypoAscender: y.ascender,
+    sTypoDescender: y.descender,
+    sTypoLineGap: 0,
+    usWinAscent: y.yMax,
+    usWinDescent: Math.abs(y.yMin),
+    ulCodePageRange1: 1,
+    // FIXME: hard-code Latin 1 support for now
+    sxHeight: Ps(t, "xyvw", { yMax: Math.round(y.ascender / 2) }).yMax,
+    sCapHeight: Ps(t, "HIKLEFJMNTZBDPRAGOQSUVWXY", y).yMax,
+    usDefaultChar: t.hasChar(" ") ? 32 : 0,
+    // Use space as the default character, if available.
+    usBreakChar: t.hasChar(" ") ? 32 : 0
+    // Use space as the break character, if available.
+  }, t.tables.os2)), T = Ha.make(t.glyphs), E = Fa.make(t.glyphs), R = t.getEnglishName("fontFamily"), U = t.getEnglishName("fontSubfamily"), W = R + " " + U;
+  let j = t.getEnglishName("postScriptName");
+  j || (j = R.replace(/\s/g, "") + "-" + U);
+  const N = {};
+  for (let X in t.names)
+    N[X] = t.names[X];
+  N.unicode = N.unicode || {}, N.macintosh = N.macintosh || {}, N.windows = N.windows || {};
+  const $ = t.names.unicode || {}, ie = t.names.macintosh || {}, P = t.names.windows || {};
+  for (const X in N) {
+    if (N[X] = N[X] || {}, !N[X].uniqueID) {
+      const xe = t.getEnglishName("manufacturer") || "";
+      N[X].uniqueID = { en: `${xe}: ${W}` };
+    }
+    N[X].postScriptName || (N[X].postScriptName = { en: j });
+  }
+  N.unicode.preferredFamily || (N.unicode.preferredFamily = $.fontFamily || ie.fontFamily || P.fontFamily), N.macintosh.preferredFamily || (N.macintosh.preferredFamily = ie.fontFamily || $.fontFamily || P.fontFamily), N.windows.preferredFamily || (N.windows.preferredFamily = P.fontFamily || $.fontFamily || ie.fontFamily), N.unicode.preferredSubfamily || (N.unicode.preferredSubfamily = $.fontSubfamily || ie.fontSubfamily || P.fontSubfamily), N.macintosh.preferredSubfamily || (N.macintosh.preferredSubfamily = ie.fontSubfamily || $.fontSubfamily || P.fontSubfamily), N.windows.preferredSubfamily || (N.windows.preferredSubfamily = P.fontSubfamily || $.fontSubfamily || ie.fontSubfamily);
+  const D = [], _ = ka.make(N, D), re = D.length > 0 ? za.make(D) : void 0, Te = Va.make(t), Qe = Mr.make(t.glyphs, {
+    version: t.getEnglishName("version"),
+    fullName: W,
+    familyName: R,
+    weightName: U,
+    postScriptName: j,
+    unitsPerEm: t.unitsPerEm,
+    fontBBox: [0, y.yMin, y.ascender, y.advanceWidthMax],
+    topDict: t.tables.cff && t.tables.cff.topDict || {}
+  }), _e = t.metas && Object.keys(t.metas).length > 0 ? ja.make(t.metas) : void 0, fe = [b, v, w, C, _, E, Te, Qe, T];
+  re && fe.push(re);
+  const Y = {
+    gsub: qa,
+    cpal: Ra,
+    colr: $a,
+    stat: Xa,
+    avar: Ka,
+    cvar: Za,
+    fvar: Ya,
+    gvar: Ja,
+    gasp: Qa,
+    svg: eo
+  }, ne = {
+    avar: [t.tables.fvar],
+    fvar: [t.names]
+  };
+  for (let X in Y) {
+    const xe = t.tables[X];
+    if (xe) {
+      const Ee = Y[X].make.call(t, xe, ...ne[X] || []);
+      Ee && fe.push(Ee);
+    }
+  }
+  _e && fe.push(_e);
+  const de = to(fe), be = de.encode(), me = Qr(be), ye = de.fields;
+  let ce = !1;
+  for (let X = 0; X < ye.length; X += 1)
+    if (ye[X].name === "head table") {
+      ye[X].value.checkSumAdjustment = 2981146554 - me, ce = !0;
+      break;
+    }
+  if (!ce)
+    throw new Error("Could not find head table with checkSum to adjust.");
+  return de;
+}
+var xu = { make: to, fontToTable: bu, computeCheckSum: Qr };
+function er(t, e) {
+  let n = 0, r = t.length - 1;
+  for (; n <= r; ) {
+    const s = n + r >>> 1, i = t[s].tag;
+    if (i === e)
+      return s;
+    i < e ? n = s + 1 : r = s - 1;
+  }
+  return -n - 1;
+}
+function Ns(t, e) {
+  let n = 0, r = t.length - 1;
+  for (; n <= r; ) {
+    const s = n + r >>> 1, i = t[s];
+    if (i === e)
+      return s;
+    i < e ? n = s + 1 : r = s - 1;
+  }
+  return -n - 1;
+}
+function Gs(t, e) {
+  let n, r = 0, s = t.length - 1;
+  for (; r <= s; ) {
+    const i = r + s >>> 1;
+    n = t[i];
+    const a = n.start;
+    if (a === e)
+      return n;
+    a < e ? r = i + 1 : s = i - 1;
+  }
+  if (r > 0)
+    return n = t[r - 1], e > n.end ? 0 : n;
+}
+function no(t, e) {
+  this.font = t, this.tableName = e;
+}
+no.prototype = {
+  /**
+   * Binary search an object by "tag" property
+   * @instance
+   * @function searchTag
+   * @memberof opentype.Layout
+   * @param  {Array} arr
+   * @param  {string} tag
+   * @return {number}
+   */
+  searchTag: er,
+  /**
+   * Binary search in a list of numbers
+   * @instance
+   * @function binSearch
+   * @memberof opentype.Layout
+   * @param  {Array} arr
+   * @param  {number} value
+   * @return {number}
+   */
+  binSearch: Ns,
+  /**
+   * Get or create the Layout table (GSUB, GPOS etc).
+   * @param  {boolean} create - Whether to create a new one.
+   * @return {Object} The GSUB or GPOS table.
+   */
+  getTable: function(t) {
+    let e = this.font.tables[this.tableName];
+    return !e && t && (e = this.font.tables[this.tableName] = this.createDefaultTable()), e;
+  },
+  /**
+   * Returns all scripts in the substitution table.
+   * @instance
+   * @return {Array}
+   */
+  getScriptNames: function() {
+    let t = this.getTable();
+    return t ? t.scripts.map(function(e) {
+      return e.tag;
+    }) : [];
+  },
+  /**
+   * Returns the best bet for a script name.
+   * Returns 'DFLT' if it exists.
+   * If not, returns 'latn' if it exists.
+   * If neither exist, returns undefined.
+   */
+  getDefaultScriptName: function() {
+    let t = this.getTable();
+    if (!t)
+      return;
+    let e = !1;
+    for (let n = 0; n < t.scripts.length; n++) {
+      const r = t.scripts[n].tag;
+      if (r === "DFLT") return r;
+      r === "latn" && (e = !0);
+    }
+    if (e) return "latn";
+  },
+  /**
+   * Returns all LangSysRecords in the given script.
+   * @instance
+   * @param {string} [script='DFLT']
+   * @param {boolean} create - forces the creation of this script table if it doesn't exist.
+   * @return {Object} An object with tag and script properties.
+   */
+  getScriptTable: function(t, e) {
+    const n = this.getTable(e);
+    if (n) {
+      t = t || "DFLT";
+      const r = n.scripts, s = er(n.scripts, t);
+      if (s >= 0)
+        return r[s].script;
+      if (e) {
+        const i = {
+          tag: t,
+          script: {
+            defaultLangSys: { reserved: 0, reqFeatureIndex: 65535, featureIndexes: [] },
+            langSysRecords: []
+          }
+        };
+        return r.splice(-1 - s, 0, i), i.script;
+      }
+    }
+  },
+  /**
+   * Returns a language system table
+   * @instance
+   * @param {string} [script='DFLT']
+   * @param {string} [language='dlft']
+   * @param {boolean} create - forces the creation of this langSysTable if it doesn't exist.
+   * @return {Object}
+   */
+  getLangSysTable: function(t, e, n) {
+    const r = this.getScriptTable(t, n);
+    if (r) {
+      if (!e || e === "dflt" || e === "DFLT")
+        return r.defaultLangSys;
+      const s = er(r.langSysRecords, e);
+      if (s >= 0)
+        return r.langSysRecords[s].langSys;
+      if (n) {
+        const i = {
+          tag: e,
+          langSys: { reserved: 0, reqFeatureIndex: 65535, featureIndexes: [] }
+        };
+        return r.langSysRecords.splice(-1 - s, 0, i), i.langSys;
+      }
+    }
+  },
+  /**
+   * Get a specific feature table.
+   * @instance
+   * @param {string} [script='DFLT']
+   * @param {string} [language='dlft']
+   * @param {string} feature - One of the codes listed at https://www.microsoft.com/typography/OTSPEC/featurelist.htm
+   * @param {boolean} create - forces the creation of the feature table if it doesn't exist.
+   * @return {Object}
+   */
+  getFeatureTable: function(t, e, n, r) {
+    const s = this.getLangSysTable(t, e, r);
+    if (s) {
+      let i;
+      const a = s.featureIndexes, o = this.font.tables[this.tableName].features;
+      for (let c = 0; c < a.length; c++)
+        if (i = o[a[c]], i.tag === n)
+          return i.feature;
+      if (r) {
+        const c = o.length;
+        return H.assert(c === 0 || n >= o[c - 1].tag, "Features must be added in alphabetical order."), i = {
+          tag: n,
+          feature: { params: 0, lookupListIndexes: [] }
+        }, o.push(i), a.push(c), i.feature;
+      }
+    }
+  },
+  /**
+   * Get the lookup tables of a given type for a script/language/feature.
+   * @instance
+   * @param {string} [script='DFLT']
+   * @param {string} [language='dlft']
+   * @param {string} feature - 4-letter feature code
+   * @param {number} lookupType - 1 to 9
+   * @param {boolean} create - forces the creation of the lookup table if it doesn't exist, with no subtables.
+   * @return {Object[]}
+   */
+  getLookupTables: function(t, e, n, r, s) {
+    const i = this.getFeatureTable(t, e, n, s), a = [];
+    if (i) {
+      let o;
+      const c = i.lookupListIndexes, l = this.font.tables[this.tableName].lookups;
+      for (let u = 0; u < c.length; u++)
+        o = l[c[u]], o.lookupType === r && a.push(o);
+      if (a.length === 0 && s) {
+        o = {
+          lookupType: r,
+          lookupFlag: 0,
+          subtables: [],
+          markFilteringSet: void 0
+        };
+        const u = l.length;
+        return l.push(o), c.push(u), [o];
+      }
+    }
+    return a;
+  },
+  /**
+   * Find a glyph in a class definition table
+   * https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#class-definition-table
+   * @param {object} classDefTable - an OpenType Layout class definition table
+   * @param {number} glyphIndex - the index of the glyph to find
+   * @returns {number} -1 if not found
+   */
+  getGlyphClass: function(t, e) {
+    switch (t.format) {
+      case 1:
+        return t.startGlyph <= e && e < t.startGlyph + t.classes.length ? t.classes[e - t.startGlyph] : 0;
+      case 2: {
+        const n = Gs(t.ranges, e);
+        return n ? n.classId : 0;
+      }
+    }
+  },
+  /**
+   * Find a glyph in a coverage table
+   * https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#coverage-table
+   * @param {object} coverageTable - an OpenType Layout coverage table
+   * @param {number} glyphIndex - the index of the glyph to find
+   * @returns {number} -1 if not found
+   */
+  getCoverageIndex: function(t, e) {
+    switch (t.format) {
+      case 1: {
+        const n = Ns(t.glyphs, e);
+        return n >= 0 ? n : -1;
+      }
+      case 2: {
+        const n = Gs(t.ranges, e);
+        return n ? n.index + e - n.start : -1;
+      }
+    }
+  },
+  /**
+   * Returns the list of glyph indexes of a coverage table.
+   * Format 1: the list is stored raw
+   * Format 2: compact list as range records.
+   * @instance
+   * @param  {Object} coverageTable
+   * @return {Array}
+   */
+  expandCoverage: function(t) {
+    if (t.format === 1)
+      return t.glyphs;
+    {
+      const e = [], n = t.ranges;
+      for (let r = 0; r < n.length; r++) {
+        const s = n[r], i = s.start, a = s.end;
+        for (let o = i; o <= a; o++)
+          e.push(o);
+      }
+      return e;
+    }
+  }
+};
+var Hn = no;
+function sn(t) {
+  Hn.call(this, t, "gpos");
+}
+sn.prototype = Hn.prototype;
+sn.prototype.init = function() {
+  const t = this.getDefaultScriptName();
+  this.defaultKerningTables = this.getKerningTables(t);
+};
+sn.prototype.getKerningValue = function(t, e, n) {
+  for (let r = 0; r < t.length; r++) {
+    const s = t[r].subtables;
+    for (let i = 0; i < s.length; i++) {
+      const a = s[i], o = this.getCoverageIndex(a.coverage, e);
+      if (!(o < 0))
+        switch (a.posFormat) {
+          case 1: {
+            let c = a.pairSets[o];
+            for (let l = 0; l < c.length; l++) {
+              let u = c[l];
+              if (u.secondGlyph === n)
+                return u.value1 && u.value1.xAdvance || 0;
+            }
+            break;
+          }
+          case 2: {
+            const c = this.getGlyphClass(a.classDef1, e), l = this.getGlyphClass(a.classDef2, n), u = a.classRecords[c][l];
+            return u.value1 && u.value1.xAdvance || 0;
+          }
+        }
+    }
+  }
+  return 0;
+};
+sn.prototype.getKerningTables = function(t, e) {
+  if (this.font.tables.gpos)
+    return this.getLookupTables(t, e, "kern", 2);
+};
+var vu = sn;
+function Su(t, e) {
+  const n = t.length;
+  if (n !== e.length)
+    return !1;
+  for (let r = 0; r < n; r++)
+    if (t[r] !== e[r])
+      return !1;
+  return !0;
+}
+function wu(t, e, n) {
+  let r = 0, s = t.length - 1, i = null;
+  for (; r <= s; ) {
+    const a = Math.floor((r + s) / 2), o = t[a], c = o[e];
+    if (c < n)
+      r = a + 1;
+    else if (c > n)
+      s = a - 1;
+    else {
+      i = o;
+      break;
+    }
+  }
+  return i;
+}
+function Cu(t, e, n) {
+  let r = 0, s = t.length - 1;
+  for (; r <= s; ) {
+    const i = Math.floor((r + s) / 2), a = t[i];
+    if (a[e] < n)
+      r = i + 1;
+    else if (a[e] > n)
+      s = i - 1;
+    else
+      return i;
+  }
+  return -1;
+}
+function Tu(t, e, n) {
+  let r = 0, s = t.length;
+  const i = (a, o) => a[e] - o[e];
+  for (; r < s; ) {
+    const a = r + s >>> 1;
+    i(t[a], n) < 0 ? r = a + 1 : s = a;
+  }
+  return t.splice(r, 0, n), r;
+}
+function ro(t) {
+  return t[0] === 31 && t[1] === 139 && t[2] === 8;
+}
+function ku(t) {
+  const e = new DataView(t.buffer, t.byteOffset, t.byteLength);
+  let n = 10;
+  const r = t.byteLength - 8, s = e.getInt8(3);
+  if (s & 4 && (n += 2 + e.getUint16(n, !0)), s & 8)
+    for (; n < r && t[n++] !== 0; ) ;
+  if (s & 16)
+    for (; n < r && t[n++] !== 0; ) ;
+  if (s & 2 && (n += 2), n >= r) throw new Error("Can't find compressed blocks");
+  const i = e.getUint32(e.byteLength - 4, !0);
+  return ga(t.subarray(n, r), new Uint8Array(i));
+}
+function Hs(t) {
+  return {
+    x: t.x,
+    y: t.y,
+    onCurve: t.onCurve,
+    lastPointOfContour: t.lastPointOfContour
+  };
+}
+function Fu(t) {
+  return {
+    glyphIndex: t.glyphIndex,
+    xScale: t.xScale,
+    scale01: t.scale01,
+    scale10: t.scale10,
+    yScale: t.yScale,
+    dx: t.dx,
+    dy: t.dy
+  };
+}
+function De(t) {
+  Hn.call(this, t, "gsub");
+}
+function es(t, e, n) {
+  const r = t.subtables;
+  for (let s = 0; s < r.length; s++) {
+    const i = r[s];
+    if (i.substFormat === e)
+      return i;
+  }
+  if (n)
+    return r.push(n), n;
+}
+De.prototype = Hn.prototype;
+De.prototype.createDefaultTable = function() {
+  return {
+    version: 1,
+    scripts: [{
+      tag: "DFLT",
+      script: {
+        defaultLangSys: { reserved: 0, reqFeatureIndex: 65535, featureIndexes: [] },
+        langSysRecords: []
+      }
+    }],
+    features: [],
+    lookups: []
+  };
+};
+De.prototype.getSingle = function(t, e, n) {
+  const r = [], s = this.getLookupTables(e, n, t, 1);
+  for (let i = 0; i < s.length; i++) {
+    const a = s[i].subtables;
+    for (let o = 0; o < a.length; o++) {
+      const c = a[o], l = this.expandCoverage(c.coverage);
+      let u;
+      if (c.substFormat === 1) {
+        const f = c.deltaGlyphId;
+        for (u = 0; u < l.length; u++) {
+          const h = l[u];
+          r.push({ sub: h, by: h + f });
+        }
+      } else {
+        const f = c.substitute;
+        for (u = 0; u < l.length; u++)
+          r.push({ sub: l[u], by: f[u] });
+      }
+    }
+  }
+  return r;
+};
+De.prototype.getMultiple = function(t, e, n) {
+  const r = [], s = this.getLookupTables(e, n, t, 2);
+  for (let i = 0; i < s.length; i++) {
+    const a = s[i].subtables;
+    for (let o = 0; o < a.length; o++) {
+      const c = a[o], l = this.expandCoverage(c.coverage);
+      let u;
+      for (u = 0; u < l.length; u++) {
+        const f = l[u], h = c.sequences[u];
+        r.push({ sub: f, by: h });
+      }
+    }
+  }
+  return r;
+};
+De.prototype.getAlternates = function(t, e, n) {
+  const r = [], s = this.getLookupTables(e, n, t, 3);
+  for (let i = 0; i < s.length; i++) {
+    const a = s[i].subtables;
+    for (let o = 0; o < a.length; o++) {
+      const c = a[o], l = this.expandCoverage(c.coverage), u = c.alternateSets;
+      for (let f = 0; f < l.length; f++)
+        r.push({ sub: l[f], by: u[f] });
+    }
+  }
+  return r;
+};
+De.prototype.getLigatures = function(t, e, n) {
+  const r = [], s = this.getLookupTables(e, n, t, 4);
+  for (let i = 0; i < s.length; i++) {
+    const a = s[i].subtables;
+    for (let o = 0; o < a.length; o++) {
+      const c = a[o], l = this.expandCoverage(c.coverage), u = c.ligatureSets;
+      for (let f = 0; f < l.length; f++) {
+        const h = l[f], p = u[f];
+        for (let y = 0; y < p.length; y++) {
+          const g = p[y];
+          r.push({
+            sub: [h].concat(g.components),
+            by: g.ligGlyph
+          });
+        }
+      }
+    }
+  }
+  return r;
+};
+De.prototype.addSingle = function(t, e, n, r) {
+  const s = this.getLookupTables(n, r, t, 1, !0)[0], i = es(s, 2, {
+    // lookup type 1 subtable, format 2, coverage format 1
+    substFormat: 2,
+    coverage: { format: 1, glyphs: [] },
+    substitute: []
+  });
+  H.assert(i.coverage.format === 1, "Single: unable to modify coverage table format " + i.coverage.format);
+  const a = e.sub;
+  let o = this.binSearch(i.coverage.glyphs, a);
+  o < 0 && (o = -1 - o, i.coverage.glyphs.splice(o, 0, a), i.substitute.splice(o, 0, 0)), i.substitute[o] = e.by;
+};
+De.prototype.addMultiple = function(t, e, n, r) {
+  H.assert(e.by instanceof Array && e.by.length > 1, 'Multiple: "by" must be an array of two or more ids');
+  const s = this.getLookupTables(n, r, t, 2, !0)[0], i = es(s, 1, {
+    // lookup type 2 subtable, format 1, coverage format 1
+    substFormat: 1,
+    coverage: { format: 1, glyphs: [] },
+    sequences: []
+  });
+  H.assert(i.coverage.format === 1, "Multiple: unable to modify coverage table format " + i.coverage.format);
+  const a = e.sub;
+  let o = this.binSearch(i.coverage.glyphs, a);
+  o < 0 && (o = -1 - o, i.coverage.glyphs.splice(o, 0, a), i.sequences.splice(o, 0, 0)), i.sequences[o] = e.by;
+};
+De.prototype.addAlternate = function(t, e, n, r) {
+  const s = this.getLookupTables(n, r, t, 3, !0)[0], i = es(s, 1, {
+    // lookup type 3 subtable, format 1, coverage format 1
+    substFormat: 1,
+    coverage: { format: 1, glyphs: [] },
+    alternateSets: []
+  });
+  H.assert(i.coverage.format === 1, "Alternate: unable to modify coverage table format " + i.coverage.format);
+  const a = e.sub;
+  let o = this.binSearch(i.coverage.glyphs, a);
+  o < 0 && (o = -1 - o, i.coverage.glyphs.splice(o, 0, a), i.alternateSets.splice(o, 0, 0)), i.alternateSets[o] = e.by;
+};
+De.prototype.addLigature = function(t, e, n, r) {
+  const s = this.getLookupTables(n, r, t, 4, !0)[0];
+  let i = s.subtables[0];
+  i || (i = {
+    // lookup type 4 subtable, format 1, coverage format 1
+    substFormat: 1,
+    coverage: { format: 1, glyphs: [] },
+    ligatureSets: []
+  }, s.subtables[0] = i), H.assert(i.coverage.format === 1, "Ligature: unable to modify coverage table format " + i.coverage.format);
+  const a = e.sub[0], o = e.sub.slice(1), c = {
+    ligGlyph: e.by,
+    components: o
+  };
+  let l = this.binSearch(i.coverage.glyphs, a);
+  if (l >= 0) {
+    const u = i.ligatureSets[l];
+    for (let f = 0; f < u.length; f++)
+      if (Su(u[f].components, o))
+        return;
+    u.push(c);
+  } else
+    l = -1 - l, i.coverage.glyphs.splice(l, 0, a), i.ligatureSets.splice(l, 0, [c]);
+};
+De.prototype.getFeature = function(t, e, n) {
+  if (/ss\d\d/.test(t))
+    return this.getSingle(t, e, n);
+  switch (t) {
+    case "aalt":
+    case "salt":
+      return this.getSingle(t, e, n).concat(this.getAlternates(t, e, n));
+    case "dlig":
+    case "liga":
+    case "rlig":
+      return this.getLigatures(t, e, n);
+    case "ccmp":
+      return this.getMultiple(t, e, n).concat(this.getLigatures(t, e, n));
+    case "stch":
+      return this.getMultiple(t, e, n);
+  }
+};
+De.prototype.add = function(t, e, n, r) {
+  if (/ss\d\d/.test(t))
+    return this.addSingle(t, e, n, r);
+  switch (t) {
+    case "aalt":
+    case "salt":
+      return typeof e.by == "number" ? this.addSingle(t, e, n, r) : this.addAlternate(t, e, n, r);
+    case "dlig":
+    case "liga":
+    case "rlig":
+      return this.addLigature(t, e, n, r);
+    case "ccmp":
+      return e.by instanceof Array ? this.addMultiple(t, e, n, r) : this.addLigature(t, e, n, r);
+  }
+};
+var Eu = De, so = class {
+  // private properties don't work with reify
+  // @TODO: refactor once we migrated to ES6 modules, see https://github.com/opentypejs/opentype.js/pull/579
+  // #font = null;
+  /**
+   * @type {integer} CPAL color used to (pre)fill unset colors in a palette.
+   * Format 0xBBGGRRAA
+   */
+  // defaultValue = 0x000000FF;
+  /**
+   * 
+   * @param {opentype.Font} font 
+   */
+  constructor(t) {
+    this.defaultValue = 255, this.font = t;
+  }
+  /**
+   * Returns the font's cpal table object if present
+   * @returns {Object}
+   */
+  cpal() {
+    return this.font.tables && this.font.tables.cpal ? this.font.tables.cpal : !1;
+  }
+  /**
+   * Returns an array of arrays of color values for each palette, optionally in a specified color format
+   * @param {string} colorFormat 
+   * @returns {Array<Array>}
+   */
+  getAll(t) {
+    const e = [], n = this.cpal();
+    if (!n) return e;
+    for (let r = 0; r < n.colorRecordIndices.length; r++) {
+      const s = n.colorRecordIndices[r], i = [];
+      for (let a = s; a < s + n.numPaletteEntries; a++)
+        i.push(Ht(n.colorRecords[a], t || "hexa"));
+      e.push(i);
+    }
+    return e;
+  }
+  /**
+   * Converts a color value string or array of color value strings to CPAL integer color value(s)
+   * @param {string|Array<string></string>} color 
+   * @returns {integer}
+   */
+  toCPALcolor(t) {
+    return Array.isArray(t) ? t.map((e) => Dn(e, "raw")) : Dn(t, "raw");
+  }
+  /**
+   * Fills a set of palette colors (from palette index, or a provided array of CPAL color values) with a set of colors, falling back to the default color value, until a given count
+   * @param {Array<string>|integer} palette Palette index integer or Array of colors to be filled
+   * @param {Array<string|integer>} colors Colors to fill the palette with
+   * @param {integer} _colorCount Number of colors to fill the palette with, defaults to the value of the numPaletteEntries field. Used internally by extend() and shouldn't be set manually
+   * @returns 
+   */
+  fillPalette(t, e = [], n = this.cpal().numPaletteEntries) {
+    return t = Number.isInteger(t) ? this.get(t, "raw") : t, Object.assign(Array(n).fill(this.defaultValue), this.toCPALcolor(t).concat(this.toCPALcolor(e)));
+  }
+  /**
+   * Extend existing palettes and numPaletteEntries by a number of color slots
+   * @param {integer} num number of additional color slots to add to all palettes
+   */
+  extend(t) {
+    if (this.ensureCPAL(Array(t).fill(this.defaultValue)))
+      return;
+    const e = this.cpal(), n = e.numPaletteEntries + t, r = this.getAll().map((s) => this.fillPalette(s, [], n));
+    e.numPaletteEntries = n, e.colorRecords = this.toCPALcolor(r.flat()), this.updateIndices();
+  }
+  /**
+   * Get a specific palette by its zero-based index
+   * @param {integer} paletteIndex 
+   * @param {string} [colorFormat='hexa']
+   * @returns {Array}
+   */
+  get(t, e = "hexa") {
+    return this.getAll(e)[t] || null;
+  }
+  /**
+   * Get a color from a specific palette by its zero-based index
+   * @param {integer} index 
+   * @param {integer} paletteIndex
+   * @param {string} [colorFormat ='hexa']
+   * @returns 
+   */
+  getColor(t, e = 0, n = "hexa") {
+    return Xr(this.font, t, e, n);
+  }
+  /**
+   * Set one or more colors on a specific palette by its zero-based index
+   * @param {integer} index zero-based color index to start filling from
+   * @param {string|integer|Array<string|integer>} color color value or array of color values
+   * @param {integer} paletteIndex
+   * @returns 
+   */
+  setColor(t, e, n = 0) {
+    t = parseInt(t), n = parseInt(n);
+    let r = this.getAll("raw"), s = r[n];
+    if (!s)
+      throw Error(`paletteIndex ${n} out of range`);
+    const i = this.cpal(), a = i.numPaletteEntries;
+    Array.isArray(e) || (e = [e]), e.length + t > a && (this.extend(e.length + t - a), r = this.getAll("raw"), s = r[n]);
+    for (let o = 0; o < e.length; o++)
+      s[o + t] = this.toCPALcolor(e[o]);
+    i.colorRecords = r.flat(), this.updateIndices();
+  }
+  /**
+   * Add a new palette. 
+   * @param {Array} colors (optional) colors to add to the palette, differences to existing palettes will be filled with the defaultValue.
+   * @returns 
+   */
+  add(t) {
+    if (this.ensureCPAL(t))
+      return;
+    const e = this.cpal(), n = e.numPaletteEntries;
+    t && t.length ? (t = this.toCPALcolor(t), t.length > n ? this.extend(t.length - n) : t.length < n && (t = this.fillPalette(t)), e.colorRecordIndices.push(e.colorRecords.length), e.colorRecords.push(...t)) : (e.colorRecordIndices.push(e.colorRecords.length), e.colorRecords.push(...Array(n).fill(this.defaultValue)));
+  }
+  /**
+   * deletes a palette by its zero-based index
+   * @param {integer} paletteIndex 
+   */
+  delete(t) {
+    const e = this.getAll("raw");
+    delete e[t];
+    const n = this.cpal();
+    n.colorRecordIndices.pop(), n.colorRecords = e.flat();
+  }
+  /**
+   * Deletes a specific color index in all palettes and updates all layers using that color with the replacement index
+   * @param {integer} colorIndex index of the color that should be deleted
+   * @param {integer} replacementIndex index (according to the palette before deletion) of the color to replace in layers using the color to be to deleted
+   */
+  deleteColor(t, e) {
+    if (t === e)
+      throw Error("replacementIndex cannot be the same as colorIndex");
+    const n = this.cpal(), r = this.getAll("raw"), s = [];
+    if (e > n.numPaletteEntries - 1)
+      throw Error(`Replacement index out of range: numPaletteEntries after deletion: ${n.numPaletteEntries - 1}, replacementIndex: ${e})`);
+    for (let o = 0; o < r.length; o++) {
+      const l = r[o].filter((u, f) => f !== t);
+      s.push(l);
+    }
+    const i = this.font.tables.colr;
+    if (i) {
+      const o = i.layerRecords;
+      for (let c = 0; c < o.length; c++) {
+        const l = o[c].paletteIndex;
+        if (l > t)
+          o[c].paletteIndex -= 1;
+        else if (l === t) {
+          let u = 0;
+          for (let f = 0; f < r.length; f++)
+            if (e > t && e <= t + r[f].length) {
+              u++;
+              break;
+            }
+          o[c].paletteIndex = e - u;
+        }
+      }
+      this.font.tables.colr = {
+        ...i,
+        layerRecords: o
+      };
+    }
+    const a = s.flat();
+    for (let o = 0; o < r.length; o++)
+      n.colorRecordIndices[o] -= o;
+    n.numPaletteEntries = Math.max(0, n.numPaletteEntries - 1), n.colorRecords = this.toCPALcolor(a);
+  }
+  /**
+   * Makes sure that the CPAL table exists and is populated with default values.
+   * @param {Array} colors (optional) colors to populate on creation
+   * @returns {Boolean} true if it was created, false if it already existed.
+   */
+  ensureCPAL(t) {
+    return this.cpal() ? !1 : (!t || !t.length ? t = [this.defaultValue] : t = this.toCPALcolor(t), this.font.tables.cpal = {
+      version: 0,
+      numPaletteEntries: t.length,
+      colorRecords: t,
+      colorRecordIndices: [0]
+    }, !0);
+  }
+  /**
+   * Mainly used internally. Recalculates the colorRecordIndices array based on the numPaletteEntries and number of palettes
+   */
+  updateIndices() {
+    const t = this.cpal(), e = Math.ceil(t.colorRecords.length / t.numPaletteEntries);
+    t.colorRecordIndices = [];
+    for (let n = 0; n < e; n++)
+      t.colorRecordIndices.push(n * t.numPaletteEntries);
+  }
+}, Au = class {
+  // private properties don't work with reify
+  // @TODO: refactor once we migrated to ES6 modules, see https://github.com/opentypejs/opentype.js/pull/579
+  // #font = null;
+  constructor(t) {
+    this.font = t;
+  }
+  /**
+   * Mainly used internally. Ensures that the COLR table exists and is populated with default values
+   * @returns the LayerManager's font instance for chaining
+   */
+  ensureCOLR() {
+    return this.font.tables.colr || (this.font.tables.colr = {
+      version: 0,
+      baseGlyphRecords: [],
+      layerRecords: []
+    }), this.font;
+  }
+  /**
+   * Gets the layers for a specific glyph
+   * @param {integer} glyphIndex
+   * @returns {Array<Object>} array of layer objects {glyph, paletteIndex}
+   */
+  get(t) {
+    const e = this.font, n = [], r = e.tables.colr, s = e.tables.cpal;
+    if (!r || !s)
+      return n;
+    const i = wu(r.baseGlyphRecords, "glyphID", t);
+    if (!i)
+      return n;
+    const a = i.firstLayerIndex, o = i.numLayers;
+    for (let c = 0; c < o; c++) {
+      const l = r.layerRecords[a + c];
+      n.push({
+        glyph: e.glyphs.get(l.glyphID),
+        paletteIndex: l.paletteIndex
+      });
+    }
+    return n;
+  }
+  /**
+   * Adds one or more layers to a glyph, at the end or at a specific position.
+   * @param {integer} glyphIndex glyph index to add the layer(s) to.
+   * @param {Array|Object} layers layer object {glyph, paletteIndex}/{glyphID, paletteIndex} or array of layer objects.
+   * @param {integer?} position position to insert the layers at (will default to adding at the end).
+   */
+  add(t, e, n) {
+    const r = this.get(t);
+    e = Array.isArray(e) ? e : [e], n === void 0 || n === 1 / 0 || n > r.length ? n = r.length : n < 0 && (n = r.length + 1 + n % (r.length + 1), n >= r.length + 1 && (n -= r.length + 1));
+    const s = [];
+    for (let i = 0; i < n; i++) {
+      const a = Number.isInteger(r[i].glyph) ? r[i].glyph : r[i].glyph.index;
+      s.push({
+        glyphID: a,
+        paletteIndex: r[i].paletteIndex
+      });
+    }
+    for (const i of e) {
+      const a = Number.isInteger(i.glyph) ? i.glyph : i.glyph.index;
+      s.push({
+        glyphID: a,
+        paletteIndex: i.paletteIndex
+      });
+    }
+    for (let i = n; i < r.length; i++) {
+      const a = Number.isInteger(r[i].glyph) ? r[i].glyph : r[i].glyph.index;
+      s.push({
+        glyphID: a,
+        paletteIndex: r[i].paletteIndex
+      });
+    }
+    this.updateColrTable(t, s);
+  }
+  /**
+   * Sets a color glyph layer's paletteIndex property to a new index
+   * @param {integer} glyphIndex glyph in the font by zero-based glyph index
+   * @param {integer} layerIndex layer in the glyph by zero-based layer index
+   * @param {integer} paletteIndex new color to set for the layer by zero-based index in any palette
+   */
+  setPaletteIndex(t, e, n) {
+    let r = this.get(t);
+    r[e] ? (r = r.map((s, i) => ({
+      glyphID: s.glyph.index,
+      paletteIndex: i === e ? n : s.paletteIndex
+    })), this.updateColrTable(t, r)) : console.error("Invalid layer index");
+  }
+  /**
+   * Removes one or more layers from a glyph.
+   * @param {integer} glyphIndex glyph index to remove the layer(s) from
+   * @param {integer} start index to remove the layer at
+   * @param {integer?} end (optional) if provided, removes all layers from start index to (and including) end index
+   */
+  remove(t, e, n = e) {
+    let r = this.get(t);
+    r = r.map((s) => ({
+      glyphID: s.glyph.index,
+      paletteIndex: s.paletteIndex
+    })), r.splice(e, n - e + 1), this.updateColrTable(t, r);
+  }
+  /**
+   * Mainly used internally. Mainly used internally. Updates the colr table, adding a baseGlyphRecord if needed,
+   * ensuring that it's inserted at the correct position, updating numLayers, and adjusting firstLayerIndex values
+   * for all baseGlyphRecords according to any deletions or insertions.
+   * @param {integer} glyphIndex 
+   * @param {Array<Object>} layers array of layer objects {glyphID, paletteIndex}
+   */
+  updateColrTable(t, e) {
+    this.ensureCOLR();
+    const r = this.font.tables.colr;
+    let s = Cu(r.baseGlyphRecords, "glyphID", t);
+    if (s === -1) {
+      const u = { glyphID: t, firstLayerIndex: r.layerRecords.length, numLayers: 0 };
+      s = Tu(r.baseGlyphRecords, "glyphID", u);
+    }
+    const a = r.baseGlyphRecords[s], o = a.numLayers, c = e.length, l = c - o;
+    if (l > 0) {
+      const u = e.slice(o).map((f) => ({
+        glyphID: f.glyphID,
+        paletteIndex: f.paletteIndex
+      }));
+      r.layerRecords.splice(a.firstLayerIndex + o, 0, ...u);
+    } else l < 0 && r.layerRecords.splice(a.firstLayerIndex + c, -l);
+    for (let u = 0; u < Math.min(o, c); u++)
+      r.layerRecords[a.firstLayerIndex + u] = {
+        glyphID: e[u].glyphID,
+        paletteIndex: e[u].paletteIndex
+      };
+    if (a.numLayers = c, l !== 0)
+      for (let u = 0; u < r.baseGlyphRecords.length; u++) {
+        const f = r.baseGlyphRecords[u];
+        u === s || f.firstLayerIndex < a.firstLayerIndex || (r.baseGlyphRecords[u].firstLayerIndex += l);
+      }
+  }
+}, Ou = class {
+  /**
+   * @param {opentype.Font} font
+   */
+  constructor(t) {
+    this.font = t, this.cache = /* @__PURE__ */ new WeakMap();
+  }
+  /**
+   * @param {number} glyphIndex
+   * @returns {SvgImage | undefined}
+   */
+  get(t) {
+    const e = this.getOrCreateSvgImageCacheEntry(t);
+    return e && e.image;
+  }
+  /**
+   * @param {number} glyphIndex
+   * @returns {Promise<SvgImage> | undefined}
+   */
+  getAsync(t) {
+    const e = this.getOrCreateSvgImageCacheEntry(t);
+    return e && e.promise;
+  }
+  /**
+   * @param {number} glyphIndex
+   * @returns {SVGImageCacheEntry | undefined}
+   */
+  getOrCreateSvgImageCacheEntry(t) {
+    const e = this.font.tables.svg;
+    if (e === void 0) return;
+    const n = e.get(t);
+    if (n === void 0) return;
+    let r = this.cache.get(n);
+    r === void 0 && (r = Lu(n), this.cache.set(n, r));
+    let s = r.images.get(t);
+    return s === void 0 && (s = Iu(this.font, r.template, t), s.promise.then((i) => {
+      if (s.image = i, typeof this.font.onGlyphUpdated == "function")
+        try {
+          this.font.onGlyphUpdated(t);
+        } catch (a) {
+          console.error("font.onGlyphUpdated", t, a);
+        }
+    }), r.images.set(t, s)), s;
+  }
+};
+function Lu(t) {
+  return {
+    template: Ru(t).then(Mu),
+    images: /* @__PURE__ */ new Map()
+  };
+}
+function Iu(t, e, n) {
+  return {
+    promise: e.then((r) => {
+      let s;
+      typeof r == "string" ? s = r : (r[4] = n, s = r.join(""));
+      const i = _u(s, t.unitsPerEm);
+      return i.image.decode().then(() => i);
+    }),
+    image: void 0
+  };
+}
+var Ru = typeof DecompressionStream == "function" ? Du : Bu;
+function Bu(t) {
+  try {
+    return Promise.resolve(new TextDecoder().decode(ro(t) ? ku(t) : t));
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+function Du(t) {
+  if (ro(t))
+    return new Response(new Response(t).body.pipeThrough(new DecompressionStream("gzip"))).text();
+  try {
+    return Promise.resolve(new TextDecoder().decode(t));
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+function Mu(t) {
+  const e = t.indexOf("<svg"), n = t.indexOf(">", e + 4) + 1;
+  if (/ id=['"]glyph\d+['"]/.test(t.substring(e, n)))
+    return t;
+  const r = t.lastIndexOf("</svg>");
+  return [
+    t.substring(0, n),
+    "<defs>",
+    t.substring(n, r),
+    '</defs><use href="#glyph',
+    "",
+    '"/>',
+    t.substring(r)
+  ];
+}
+function _u(t, e) {
+  const r = new DOMParser().parseFromString(t, "image/svg+xml").documentElement, s = r.viewBox.baseVal, i = r.width.baseVal, a = r.height.baseVal;
+  let o = 1, c = 1;
+  s.width > 0 && s.height > 0 && (i.unitType === 1 ? (o = i.valueInSpecifiedUnits / s.width, c = a.unitType === 1 ? a.valueInSpecifiedUnits / s.height : o) : a.unitType === 1 ? (c = a.valueInSpecifiedUnits / s.height, o = c) : e && (o = e / s.width, c = e / s.height));
+  const l = document.createElement("div");
+  l.style.position = "fixed", l.style.visibility = "hidden", l.appendChild(r), document.body.appendChild(l);
+  const u = r.getBBox();
+  document.body.removeChild(l);
+  const f = (u.x - s.x) * o, h = (s.y - u.y) * c, p = u.width * o, y = u.height * c;
+  r.setAttribute("viewBox", [u.x, u.y, u.width, u.height].join(" ")), o !== 1 && r.setAttribute("width", p), c !== 1 && r.setAttribute("height", y);
+  const g = new Image(p, y);
+  return g.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(r.outerHTML), { leftSideBearing: f, baseline: h, image: g };
+}
+var tr = /* @__PURE__ */ new WeakMap();
+function zs(t, e, n, r, s) {
+  let i;
+  return (e & r) > 0 ? (i = t.parseByte(), e & s || (i = -i), i = n + i) : (e & s) > 0 ? i = n : i = n + t.parseShort(), i;
+}
+function io(t, e, n) {
+  const r = new M.Parser(e, n);
+  t._numberOfContours = r.parseShort(), t._xMin = r.parseShort(), t._yMin = r.parseShort(), t._xMax = r.parseShort(), t._yMax = r.parseShort();
+  let s, i;
+  if (t._numberOfContours > 0) {
+    const a = t.endPointIndices = [];
+    for (let c = 0; c < t._numberOfContours; c += 1)
+      a.push(r.parseUShort());
+    t.instructionLength = r.parseUShort(), t.instructions = [];
+    for (let c = 0; c < t.instructionLength; c += 1)
+      t.instructions.push(r.parseByte());
+    const o = a[a.length - 1] + 1;
+    s = [];
+    for (let c = 0; c < o; c += 1)
+      if (i = r.parseByte(), s.push(i), (i & 8) > 0) {
+        const l = r.parseByte();
+        for (let u = 0; u < l; u += 1)
+          s.push(i), c += 1;
+      }
+    if (H.argument(s.length === o, "Bad flags."), a.length > 0) {
+      const c = [];
+      let l;
+      if (o > 0) {
+        for (let h = 0; h < o; h += 1)
+          i = s[h], l = {}, l.onCurve = !!(i & 1), l.lastPointOfContour = a.indexOf(h) >= 0, c.push(l);
+        let u = 0;
+        for (let h = 0; h < o; h += 1)
+          i = s[h], l = c[h], l.x = zs(r, i, u, 2, 16), u = l.x;
+        let f = 0;
+        for (let h = 0; h < o; h += 1)
+          i = s[h], l = c[h], l.y = zs(r, i, f, 4, 32), f = l.y;
+      }
+      t.points = c;
+    } else
+      t.points = [];
+  } else if (t._numberOfContours === 0)
+    t.points = [];
+  else {
+    t.isComposite = !0, t.points = [], t.components = [];
+    let a = !0;
+    for (; a; ) {
+      s = r.parseUShort();
+      const o = {
+        glyphIndex: r.parseUShort(),
+        xScale: 1,
+        scale01: 0,
+        scale10: 0,
+        yScale: 1,
+        dx: 0,
+        dy: 0
+      };
+      (s & 1) > 0 ? (s & 2) > 0 ? (o.dx = r.parseShort(), o.dy = r.parseShort()) : o.matchedPoints = [r.parseUShort(), r.parseUShort()] : (s & 2) > 0 ? (o.dx = r.parseChar(), o.dy = r.parseChar()) : o.matchedPoints = [r.parseByte(), r.parseByte()], (s & 8) > 0 ? o.xScale = o.yScale = r.parseF2Dot14() : (s & 64) > 0 ? (o.xScale = r.parseF2Dot14(), o.yScale = r.parseF2Dot14()) : (s & 128) > 0 && (o.xScale = r.parseF2Dot14(), o.scale01 = r.parseF2Dot14(), o.scale10 = r.parseF2Dot14(), o.yScale = r.parseF2Dot14()), t.components.push(o), a = !!(s & 32);
+    }
+    if (s & 256) {
+      t.instructionLength = r.parseUShort(), t.instructions = [];
+      for (let o = 0; o < t.instructionLength; o += 1)
+        t.instructions.push(r.parseByte());
+    }
+  }
+}
+function vn(t, e) {
+  const n = [];
+  for (let r = 0; r < t.length; r += 1) {
+    const s = t[r], i = {
+      x: e.xScale * s.x + e.scale10 * s.y + e.dx,
+      y: e.scale01 * s.x + e.yScale * s.y + e.dy,
+      onCurve: s.onCurve,
+      lastPointOfContour: s.lastPointOfContour
+    };
+    n.push(i);
+  }
+  return n;
+}
+function Uu(t) {
+  const e = [];
+  let n = [];
+  for (let r = 0; r < t.length; r += 1) {
+    const s = t[r];
+    n.push(s), s.lastPointOfContour && (e.push(n), n = []);
+  }
+  return H.argument(n.length === 0, "There are still points left in the current contour."), e;
+}
+function ts(t) {
+  const e = new Ut();
+  if (!t)
+    return e;
+  const n = Uu(t);
+  for (let r = 0; r < n.length; ++r) {
+    const s = n[r];
+    let i = s[s.length - 1], a = s[0];
+    if (i.onCurve)
+      e.moveTo(i.x, i.y);
+    else if (a.onCurve)
+      e.moveTo(a.x, a.y);
+    else {
+      const o = { x: (i.x + a.x) * 0.5, y: (i.y + a.y) * 0.5 };
+      e.moveTo(o.x, o.y);
+    }
+    for (let o = 0; o < s.length; ++o)
+      if (i = a, a = s[(o + 1) % s.length], i.onCurve)
+        e.lineTo(i.x, i.y);
+      else {
+        let c = a;
+        a.onCurve || (c = { x: (i.x + a.x) * 0.5, y: (i.y + a.y) * 0.5 }), e.quadraticCurveTo(i.x, i.y, c.x, c.y);
+      }
+    e.closePath();
+  }
+  return e;
+}
+function ao(t, e) {
+  if (e.isComposite) {
+    tr.has(t) || tr.set(t, /* @__PURE__ */ new Set());
+    const n = tr.get(t);
+    n.add(e.index);
+    try {
+      for (let r = 0; r < e.components.length; r += 1) {
+        const s = e.components[r];
+        if (n.has(s.glyphIndex))
+          continue;
+        const i = t.get(s.glyphIndex);
+        if (i.getPath(), i.points) {
+          let a;
+          if (s.matchedPoints === void 0)
+            a = vn(i.points, s);
+          else {
+            if (s.matchedPoints[0] > e.points.length - 1 || s.matchedPoints[1] > i.points.length - 1)
+              throw Error("Matched points out of range in " + e.name);
+            const o = e.points[s.matchedPoints[0]];
+            let c = i.points[s.matchedPoints[1]];
+            const l = {
+              xScale: s.xScale,
+              scale01: s.scale01,
+              scale10: s.scale10,
+              yScale: s.yScale,
+              dx: 0,
+              dy: 0
+            };
+            c = vn([c], l)[0], l.dx = o.x - c.x, l.dy = o.y - c.y, a = vn(i.points, l);
+          }
+          e.points = e.points.concat(a);
+        }
+      }
+    } finally {
+      n.delete(e.index);
+    }
+  }
+  return ts(e.points);
+}
+function Pu(t, e, n, r) {
+  const s = new Je.GlyphSet(r);
+  for (let i = 0; i < n.length - 1; i += 1) {
+    const a = n[i], o = n[i + 1];
+    a !== o ? s.push(i, Je.ttfGlyphLoader(r, i, io, t, e + a, ao)) : s.push(i, Je.glyphLoader(r, i));
+  }
+  return s;
+}
+function Nu(t, e, n, r) {
+  const s = new Je.GlyphSet(r);
+  return r._push = function(i) {
+    const a = n[i], o = n[i + 1];
+    a !== o ? s.push(i, Je.ttfGlyphLoader(r, i, io, t, e + a, ao)) : s.push(i, Je.glyphLoader(r, i));
+  }, s;
+}
+function Gu(t, e, n, r, s) {
+  return s.lowMemory ? Nu(t, e, n, r) : Pu(t, e, n, r);
+}
+var oo = { getPath: ts, parse: Gu }, Hu = class {
+  constructor(t) {
+    this.font = t;
+  }
+  /**
+   * Modifies a coords object to make sure that tags have a length of 4
+   * @param {Object} coords - variation coordinates
+   */
+  normalizeCoordTags(t) {
+    for (const e in t)
+      if (e.length < 4) {
+        const n = e.padEnd(4, " ");
+        t[n] === void 0 && (t[n] = t[e]), delete t[e];
+      }
+  }
+  /**
+   * Normalizes the coordinates from the axis ranges to a range of -1 to 1.
+   * @param {Object} coords - The coordinates object to normalize.
+   * @returns {Array<number>} The normalized coordinates as an array
+   */
+  getNormalizedCoords(t) {
+    t || (t = this.font.variation.get());
+    let e = [];
+    this.normalizeCoordTags(t);
+    for (let n = 0; n < this.fvar().axes.length; n++) {
+      const r = this.fvar().axes[n];
+      let s = t[r.tag];
+      s === void 0 && (s = r.defaultValue), s < r.defaultValue ? e.push((s - r.defaultValue + Number.EPSILON) / (r.defaultValue - r.minValue + Number.EPSILON)) : e.push((s - r.defaultValue + Number.EPSILON) / (r.maxValue - r.defaultValue + Number.EPSILON));
+    }
+    if (this.avar())
+      for (let n = 0; n < this.avar().axisSegmentMaps.length; n++) {
+        let r = this.avar().axisSegmentMaps[n];
+        for (let s = 0; s < r.axisValueMaps.length; s++) {
+          let i = r.axisValueMaps[s];
+          if (s >= 1 && e[n] < i.fromCoordinate) {
+            let a = r.axisValueMaps[s - 1];
+            e[n] = ((e[n] - a.fromCoordinate) * (i.toCoordinate - a.toCoordinate) + Number.EPSILON) / (i.fromCoordinate - a.fromCoordinate + Number.EPSILON) + a.toCoordinate;
+            break;
+          }
+        }
+      }
+    return e;
+  }
+  /**
+   * Interpolates points within a glyph if deltas are not provided for all points.
+   * @param {Array<Object>} points - The points to be interpolated.
+   * @param {Array<Object>} glyphPoints - Reference points from the glyph.
+   * @param {Object} deltaMap - A map indicating which points have deltas.
+   */
+  interpolatePoints(t, e, n) {
+    if (t.length === 0)
+      return;
+    let r = 0;
+    for (; r < t.length; ) {
+      let s = r, i = r, a = t[i];
+      for (; !a.lastPointOfContour; )
+        a = t[++i];
+      for (; r <= i && !n[r]; )
+        r++;
+      if (r > i)
+        continue;
+      let o = r, c = r;
+      for (r++; r <= i; )
+        n[r] && (this.deltaInterpolate(c + 1, r - 1, c, r, e, t), c = r), r++;
+      c === o ? this.deltaShift(s, i, c, e, t) : (this.deltaInterpolate(c + 1, i, c, o, e, t), o > 0 && this.deltaInterpolate(s, o - 1, c, o, e, t)), r = i + 1;
+    }
+  }
+  /**
+   * Interpolates delta values between two points.
+   * @param {number} p1 - Start point index for interpolation.
+   * @param {number} p2 - End point index for interpolation.
+   * @param {number} ref1 - Reference point index for the start delta.
+   * @param {number} ref2 - Reference point index for the end delta.
+   * @param {Array<Object>} glyphPoints - Reference points from the glyph.
+   * @param {Array<Object>} points - The points to be adjusted.
+   */
+  deltaInterpolate(t, e, n, r, s, i) {
+    if (t > e)
+      return;
+    let a = ["x", "y"];
+    for (let c = 0; c < a.length; c++) {
+      let l = a[c];
+      if (s[n][l] > s[r][l]) {
+        var o = n;
+        n = r, r = o;
+      }
+      let u = s[n][l], f = s[r][l], h = i[n][l], p = i[r][l];
+      if (u !== f || h === p) {
+        let y = u === f ? 0 : (p - h) / (f - u);
+        for (let g = t; g <= e; g++) {
+          let b = s[g][l];
+          b <= u ? b += h - u : b >= f ? b += p - f : b = h + (b - u) * y, i[g][l] = b;
+        }
+      }
+    }
+  }
+  /**
+   * Applies a delta shift to a range of points based on a reference point.
+   * @param {number} p1 - Start point index for shifting.
+   * @param {number} p2 - End point index for shifting.
+   * @param {number} ref - Reference point index.
+   * @param {Array<Object>} glyphPoints - Reference points from the glyph.
+   * @param {Array<Object>} points - The points to be shifted.
+   */
+  deltaShift(t, e, n, r, s) {
+    let i = s[n].x - r[n].x, a = s[n].y - r[n].y;
+    if (!(i === 0 && a === 0))
+      for (let o = t; o <= e; o++)
+        o !== n && (s[o].x += i, s[o].y += a);
+  }
+  /**
+   * Transforms glyph components based on variation data.
+   * @param {Glyph} glyph - The composite glyph to transform.
+   * @param {Array<Object>} transformedPoints - Points that are already transformed.
+   * @param {Object} coords - Variation coordinates.
+   * @param {Array<number>} tuplePoints - Points that are part of the tuple.
+   * @param {Object} header - Header information from the variation data.
+   * @param {number} factor - The scaling factor for the transformation.
+   */
+  transformComponents(t, e, n, r, s, i) {
+    let a = 0;
+    for (let o = 0; o < t.components.length; o++) {
+      const c = t.components[o], l = this.font.glyphs.get(c.glyphIndex), u = Fu(c), f = r.indexOf(o);
+      f > -1 && (u.dx += Math.round(s.deltas[f] * i), u.dy += Math.round(s.deltasY[f] * i));
+      const h = vn(this.getTransform(l, n).points, u);
+      e.splice(a, h.length, ...h), a += l.points.length;
+    }
+  }
+  applyTupleVariationStore(t, e, n, r = "gvar", s = {}) {
+    n || (n = this.font.variation.get());
+    const i = this.getNormalizedCoords(n), { headers: a, sharedPoints: o } = t, c = this.fvar().axes.length;
+    let l;
+    r === "gvar" ? l = e.map(Hs) : r === "cvar" && (l = [...e]);
+    for (let u = 0; u < a.length; u++) {
+      const f = a[u];
+      let h = 1;
+      for (let y = 0; y < c; y++) {
+        let g = [0];
+        switch (r) {
+          case "gvar":
+            g = f.peakTuple ? f.peakTuple : this.gvar().sharedTuples[f.sharedTupleRecordsIndex];
+            break;
+          case "cvar":
+            g = f.peakTuple;
+            break;
+        }
+        if (g[y] !== 0) {
+          if (i[y] === 0) {
+            h = 0;
+            break;
+          }
+          if (f.intermediateStartTuple)
+            if (i[y] < f.intermediateStartTuple[y] || i[y] > f.intermediateEndTuple[y]) {
+              h = 0;
+              break;
+            } else i[y] < g[y] ? h = h * (i[y] - f.intermediateStartTuple[y] + Number.EPSILON) / (g[y] - f.intermediateStartTuple[y] + Number.EPSILON) : h = h * (f.intermediateEndTuple[y] - i[y] + Number.EPSILON) / (f.intermediateEndTuple[y] - g[y] + Number.EPSILON);
+          else {
+            if (i[y] < Math.min(0, g[y]) || i[y] > Math.max(0, g[y])) {
+              h = 0;
+              break;
+            }
+            h = (h * i[y] + Number.EPSILON) / (g[y] + Number.EPSILON);
+          }
+        }
+      }
+      if (h === 0)
+        continue;
+      const p = f.privatePoints.length ? f.privatePoints : o;
+      if (r === "gvar" && s.glyph && s.glyph.isComposite)
+        this.transformComponents(s.glyph, l, n, p, f, h);
+      else if (p.length === 0)
+        for (let y = 0; y < l.length; y++) {
+          const g = l[y];
+          r === "gvar" ? l[y] = {
+            x: Math.round(g.x + f.deltas[y] * h),
+            y: Math.round(g.y + f.deltasY[y] * h),
+            onCurve: g.onCurve,
+            lastPointOfContour: g.lastPointOfContour
+          } : r === "cvar" && (l[y] = Math.round(g + f.deltas[y] * h));
+        }
+      else {
+        let y;
+        r === "gvar" ? y = l.map(Hs) : r === "cvar" && (y = l);
+        const g = Array(e.length).fill(!1);
+        for (let b = 0; b < p.length; b++) {
+          let v = p[b];
+          if (v < e.length) {
+            let w = y[v];
+            r === "gvar" ? (g[v] = !0, w.x += f.deltas[b] * h, w.y += f.deltasY[b] * h) : r === "cvar" && (l[v] = Math.round(w + f.deltas[b] * h));
+          }
+        }
+        if (r === "gvar") {
+          this.interpolatePoints(y, l, g);
+          for (let b = 0; b < e.length; b++) {
+            let v = y[b].x - l[b].x, w = y[b].y - l[b].y;
+            l[b].x = Math.round(l[b].x + v), l[b].y = Math.round(l[b].y + w);
+          }
+        }
+      }
+    }
+    return l;
+  }
+  /**
+   * Retrieves a transformed copy of a glyph based on the provided variation coordinates, or the glyph itself if no variation was applied
+   * @param {opentype.Glyph|number} glyph - Glyph or index of glyph to transform.
+   * @param {Object} coords - Variation coords object (will fall back to variation coords in the defaultRenderOptions)
+   * @returns {opentype.Glyph} - The transformed glyph.
+   */
+  getTransform(t, e) {
+    Number.isInteger(t) && (t = this.font.glyphs.get(t));
+    const n = t.getBlendPath, r = !!(t.points && t.points.length);
+    let s = t;
+    if (n || r) {
+      if (e || (e = this.font.variation.get()), r) {
+        const i = this.gvar() && this.gvar().glyphVariations[t.index];
+        if (i) {
+          const a = t.points;
+          let o = this.applyTupleVariationStore(i, a, e, "gvar", { glyph: t });
+          s = new Jt(Object.assign({}, t, { points: o, path: ts(o) }));
+        }
+      } else if (n) {
+        const i = t.getBlendPath(e);
+        s = new Jt(Object.assign({}, t, { path: i }));
+      }
+    }
+    return this.font.tables.hvar && (t._advanceWidth = typeof t._advanceWidth < "u" ? t._advanceWidth : t.advanceWidth, t.advanceWidth = s.advanceWidth = Math.round(t._advanceWidth + this.getVariableAdjustment(s.index, "hvar", "advanceWidth", e)), t._leftSideBearing = typeof t._leftSideBearing < "u" ? t._leftSideBearing : t.leftSideBearing, t.leftSideBearing = s.leftSideBearing = Math.round(t._leftSideBearing + this.getVariableAdjustment(s.index, "hvar", "lsb", e))), s;
+  }
+  getCvarTransform(t) {
+    const e = this.font.tables.cvt, n = this.cvar();
+    return !e || !e.length || !n || !n.headers.length ? e : this.applyTupleVariationStore(n, e, t, "cvar");
+  }
+  /**
+   * Calculates the variable adjustment for a glyph property from variation data.
+   * @param {number} gid - Glyph ID.
+   * @param {string} tableName - The name of the variation data table.
+   * @param {string} parameter - The property to adjust.
+   * @param {Object} coords - Variation coordinates.
+   * @returns {number} - The calculated adjustment.
+   */
+  getVariableAdjustment(t, e, n, r) {
+    r = r || this.font.variation.get();
+    let s, i;
+    const a = this.font.tables[e];
+    if (!a)
+      throw Error(`trying to get variation adjustment from non-existent table "${a}"`);
+    if (!a.itemVariationStore)
+      throw Error(`trying to get variation adjustment from table "${a}" which does not have an itemVariationStore`);
+    const o = a[n] && a[n].map.length;
+    if (o) {
+      let c = t;
+      c >= o && (c = o - 1), { outerIndex: s, innerIndex: i } = a[n].map[c];
+    } else
+      s = 0, i = t;
+    return this.getDelta(a.itemVariationStore, s, i, r);
+  }
+  /**
+   * Retrieves the delta value from a variation store.
+   * @param {Object} itemStore - The item variation store.
+   * @param {number} outerIndex - The outer index in the variation subtables.
+   * @param {number} innerIndex - The inner index in the delta sets.
+   * @param {Object} coords - Variation coordinates.
+   * @returns {number} - The delta value.
+   */
+  getDelta(t, e, n, r) {
+    if (e >= t.itemVariationSubtables.length)
+      return 0;
+    let s = t.itemVariationSubtables[e];
+    if (n >= s.deltaSets.length)
+      return 0;
+    let i = s.deltaSets[n], a = this.getBlendVector(t, e, r), o = 0;
+    for (let c = 0; c < s.regionIndexes.length; c++)
+      o += i[c] * a[c];
+    return o;
+  }
+  /**
+   * Calculates the blend vector for a set of variation coordinates.
+   * @param {Object} itemStore - The item variation store.
+   * @param {number} itemIndex - Index of the current item in the variation subtables.
+   * @param {Object} coords - Variation coordinates.
+   * @returns {Array<number>} - The blend vector for the given coordinates.
+   */
+  getBlendVector(t, e, n) {
+    n || (n = this.font.variation.get());
+    let r = t.itemVariationSubtables[e];
+    const s = this.getNormalizedCoords(n);
+    let i = [];
+    for (let a = 0; a < r.regionIndexes.length; a++) {
+      let o = 1, c = r.regionIndexes[a], l = t.variationRegions[c].regionAxes;
+      for (let u = 0; u < l.length; u++) {
+        let f = l[u], h;
+        f.startCoord > f.peakCoord || f.peakCoord > f.endCoord || f.startCoord < 0 && f.endCoord > 0 && f.peakCoord !== 0 || f.peakCoord === 0 ? h = 1 : s[u] < f.startCoord || s[u] > f.endCoord ? h = 0 : s[u] === f.peakCoord ? h = 1 : s[u] < f.peakCoord ? h = (s[u] - f.startCoord + Number.EPSILON) / (f.peakCoord - f.startCoord + Number.EPSILON) : h = (f.endCoord - s[u] + Number.EPSILON) / (f.endCoord - f.peakCoord + Number.EPSILON), o *= h;
+      }
+      i[a] = o;
+    }
+    return i;
+  }
+  /**
+   * Helper method that returns the font's avar table if present
+   * @returns {Object|undefined}
+   */
+  avar() {
+    return this.font.tables.avar;
+  }
+  /**
+   * Helper method that returns the font's cvar table if present
+   * @returns {Object|undefined}
+   */
+  cvar() {
+    return this.font.tables.cvar;
+  }
+  /**
+   * Helper method that returns the font's fvar table if present
+   * @returns {Object|undefined}
+   */
+  fvar() {
+    return this.font.tables.fvar;
+  }
+  /**
+   * Helper method that returns the font's gvar table if present
+   * @returns {Object|undefined}
+   */
+  gvar() {
+    return this.font.tables.gvar;
+  }
+  /**
+   * Helper method that returns the font's hvar table if present
+   * @returns {Object|undefined}
+   */
+  hvar() {
+    return this.font.tables.hvar;
+  }
+}, zu = class {
+  constructor(t) {
+    this.font = t, this.process = new Hu(this.font), this.activateDefaultVariation(), this.getTransform = this.process.getTransform.bind(this.process);
+  }
+  /**
+   * Tries to determine the default instance and sets its variation data as the font.defaultRenderOptions.
+   * If not defaultInstance can be determined, the default coordinates of all axes are used.
+   */
+  activateDefaultVariation() {
+    const t = this.getDefaultInstanceIndex();
+    t > -1 ? this.set(t) : this.set(this.getDefaultCoordinates());
+  }
+  /**
+   * Retrieves the default coordinates for the font's variation axes.
+   * @returns {Object} An object mapping axis tags to their default values.
+   */
+  getDefaultCoordinates() {
+    return this.fvar().axes.reduce((t, e) => (t[e.tag] = e.defaultValue, t), {});
+  }
+  /**
+   * Gets the index of the default variation instance or -1 if not able to determine
+   * @returns {integer} default index or -1
+   */
+  getDefaultInstanceIndex() {
+    const t = this.getDefaultCoordinates();
+    let e = this.getInstanceIndex(t);
+    return e < 0 && (e = this.fvar().instances.findIndex((n) => n.name && n.name.en === "Regular")), e;
+  }
+  /**
+   * Retrieves the index of the variation instance matching the coordinates object or -1 if not able to determine
+   * @param {integer|Object} coordinates An object where keys are axis tags and values are the corresponding variation values.
+   * @returns {integer} The index of the matching instance or -1 if no match is found.
+   */
+  getInstanceIndex(t) {
+    return this.fvar().instances.findIndex(
+      (e) => Object.keys(t).every(
+        (n) => e.coordinates[n] === t[n]
+      )
+    );
+  }
+  /**
+   * Retrieves a variation instance by its zero-based index
+   * @param {integer} index - zero-based index of the variation instance
+   * @returns {Object} - variation instance or null if the index is invalid.
+   */
+  getInstance(t) {
+    return this.fvar().instances && this.fvar().instances[t];
+  }
+  /**
+   * Set the variation coordinates to use by default for rendering in the font.defaultRenderOptions
+   * @param {integer|Object} instanceIdOrObject Either the zero-based index of a variation instance or an object with axis tags as keys and variation values as values
+   */
+  set(t) {
+    let e;
+    if (Number.isInteger(t)) {
+      const n = this.getInstance(t);
+      if (!n)
+        throw Error(`Invalid instance index ${t}`);
+      e = { ...n.coordinates };
+    } else
+      e = t, this.process.normalizeCoordTags(e);
+    e = Object.assign(
+      {},
+      this.font.defaultRenderOptions.variation,
+      e
+    ), this.font.defaultRenderOptions = Object.assign(
+      {},
+      this.font.defaultRenderOptions,
+      { variation: e }
+    );
+  }
+  /**
+   * Returns the variation coordinates currently set in the font.defaultRenderOptions
+   * @returns {Object}
+   */
+  get() {
+    return Object.assign({}, this.font.defaultRenderOptions.variation);
+  }
+  /**
+   * Helper method that returns the font's avar table if present
+   * @returns {Object|undefined}
+   */
+  avar() {
+    return this.font.tables.avar;
+  }
+  /**
+   * Helper method that returns the font's cvar table if present
+   * @returns {Object|undefined}
+   */
+  cvar() {
+    return this.font.tables.cvar;
+  }
+  /**
+   * Helper method that returns the font's fvar table if present
+   * @returns {Object|undefined}
+   */
+  fvar() {
+    return this.font.tables.fvar;
+  }
+  /**
+   * Helper method that returns the font's gvar table if present
+   * @returns {Object|undefined}
+   */
+  gvar() {
+    return this.font.tables.gvar;
+  }
+  /**
+   * Helper method that returns the font's hvar table if present
+   * @returns {Object|undefined}
+   */
+  hvar() {
+    return this.font.tables.hvar;
+  }
+}, Ws = 1e6, _n = 64, Un = 1e4, co, kt, lo, Pr;
+function uo(t) {
+  this.font = t, this.getCommands = function(e) {
+    return oo.getPath(e).commands;
+  }, this._fpgmState = this._prepState = void 0, this._errorState = 0;
+}
+function Wu(t) {
+  return t;
+}
+function ho(t) {
+  return Math.sign(t) * Math.round(Math.abs(t));
+}
+function Vu(t) {
+  return Math.sign(t) * Math.round(Math.abs(t * 2)) / 2;
+}
+function qu(t) {
+  return Math.sign(t) * (Math.round(Math.abs(t) + 0.5) - 0.5);
+}
+function ju(t) {
+  return Math.sign(t) * Math.ceil(Math.abs(t));
+}
+function $u(t) {
+  return Math.sign(t) * Math.floor(Math.abs(t));
+}
+var fo = function(t) {
+  const e = this.srPeriod;
+  let n = this.srPhase;
+  const r = this.srThreshold;
+  let s = 1;
+  return t < 0 && (t = -t, s = -1), t += r - n, t = Math.trunc(t / e) * e, t += n, t < 0 ? n * s : t * s;
+}, Ze = {
+  x: 1,
+  y: 0,
+  axis: "x",
+  // Gets the projected distance between two points.
+  // o1/o2 ... if true, respective original position is used.
+  distance: function(t, e, n, r) {
+    return (n ? t.xo : t.x) - (r ? e.xo : e.x);
+  },
+  // Moves point p so the moved position has the same relative
+  // position to the moved positions of rp1 and rp2 than the
+  // original positions had.
+  //
+  // See APPENDIX on INTERPOLATE at the bottom of this file.
+  interpolate: function(t, e, n, r) {
+    let s, i, a, o, c, l, u;
+    if (!r || r === this) {
+      if (s = t.xo - e.xo, i = t.xo - n.xo, c = e.x - e.xo, l = n.x - n.xo, a = Math.abs(s), o = Math.abs(i), u = a + o, u === 0) {
+        t.x = t.xo + (c + l) / 2;
+        return;
+      }
+      t.x = t.xo + (c * o + l * a) / u;
+      return;
+    }
+    if (s = r.distance(t, e, !0, !0), i = r.distance(t, n, !0, !0), c = r.distance(e, e, !1, !0), l = r.distance(n, n, !1, !0), a = Math.abs(s), o = Math.abs(i), u = a + o, u === 0) {
+      Ze.setRelative(t, t, (c + l) / 2, r, !0);
+      return;
+    }
+    Ze.setRelative(t, t, (c * o + l * a) / u, r, !0);
+  },
+  // Slope of line normal to this
+  normalSlope: Number.NEGATIVE_INFINITY,
+  // Sets the point 'p' relative to point 'rp'
+  // by the distance 'd'.
+  //
+  // See APPENDIX on SETRELATIVE at the bottom of this file.
+  //
+  // p   ... point to set
+  // rp  ... reference point
+  // d   ... distance on projection vector
+  // pv  ... projection vector (undefined = this)
+  // org ... if true, uses the original position of rp as reference.
+  setRelative: function(t, e, n, r, s) {
+    if (!r || r === this) {
+      t.x = (s ? e.xo : e.x) + n;
+      return;
+    }
+    const i = s ? e.xo : e.x, a = s ? e.yo : e.y, o = i + n * r.x, c = a + n * r.y;
+    t.x = o + (t.y - c) / r.normalSlope;
+  },
+  // Slope of vector line.
+  slope: 0,
+  // Touches the point p.
+  touch: function(t) {
+    t.xTouched = !0;
+  },
+  // Tests if a point p is touched.
+  touched: function(t) {
+    return t.xTouched;
+  },
+  // Untouches the point p.
+  untouch: function(t) {
+    t.xTouched = !1;
+  }
+}, it = {
+  x: 0,
+  y: 1,
+  axis: "y",
+  // Gets the projected distance between two points.
+  // o1/o2 ... if true, respective original position is used.
+  distance: function(t, e, n, r) {
+    return (n ? t.yo : t.y) - (r ? e.yo : e.y);
+  },
+  // Moves point p so the moved position has the same relative
+  // position to the moved positions of rp1 and rp2 than the
+  // original positions had.
+  //
+  // See APPENDIX on INTERPOLATE at the bottom of this file.
+  interpolate: function(t, e, n, r) {
+    let s, i, a, o, c, l, u;
+    if (!r || r === this) {
+      if (s = t.yo - e.yo, i = t.yo - n.yo, c = e.y - e.yo, l = n.y - n.yo, a = Math.abs(s), o = Math.abs(i), u = a + o, u === 0) {
+        t.y = t.yo + (c + l) / 2;
+        return;
+      }
+      t.y = t.yo + (c * o + l * a) / u;
+      return;
+    }
+    if (s = r.distance(t, e, !0, !0), i = r.distance(t, n, !0, !0), c = r.distance(e, e, !1, !0), l = r.distance(n, n, !1, !0), a = Math.abs(s), o = Math.abs(i), u = a + o, u === 0) {
+      it.setRelative(t, t, (c + l) / 2, r, !0);
+      return;
+    }
+    it.setRelative(t, t, (c * o + l * a) / u, r, !0);
+  },
+  // Slope of line normal to this.
+  normalSlope: 0,
+  // Sets the point 'p' relative to point 'rp'
+  // by the distance 'd'
+  //
+  // See APPENDIX on SETRELATIVE at the bottom of this file.
+  //
+  // p   ... point to set
+  // rp  ... reference point
+  // d   ... distance on projection vector
+  // pv  ... projection vector (undefined = this)
+  // org ... if true, uses the original position of rp as reference.
+  setRelative: function(t, e, n, r, s) {
+    if (!r || r === this) {
+      t.y = (s ? e.yo : e.y) + n;
+      return;
+    }
+    const i = s ? e.xo : e.x, a = s ? e.yo : e.y, o = i + n * r.x, c = a + n * r.y;
+    t.y = c + r.normalSlope * (t.x - o);
+  },
+  // Slope of vector line.
+  slope: Number.POSITIVE_INFINITY,
+  // Touches the point p.
+  touch: function(t) {
+    t.yTouched = !0;
+  },
+  // Tests if a point p is touched.
+  touched: function(t) {
+    return t.yTouched;
+  },
+  // Untouches the point p.
+  untouch: function(t) {
+    t.yTouched = !1;
+  }
+};
+Object.freeze(Ze);
+Object.freeze(it);
+function an(t, e) {
+  this.x = t, this.y = e, this.axis = void 0, this.slope = e / t, this.normalSlope = -t / e, Object.freeze(this);
+}
+an.prototype.distance = function(t, e, n, r) {
+  return this.x * Ze.distance(t, e, n, r) + this.y * it.distance(t, e, n, r);
+};
+an.prototype.interpolate = function(t, e, n, r) {
+  let s, i, a, o, c, l, u;
+  if (a = r.distance(t, e, !0, !0), o = r.distance(t, n, !0, !0), s = r.distance(e, e, !1, !0), i = r.distance(n, n, !1, !0), c = Math.abs(a), l = Math.abs(o), u = c + l, u === 0) {
+    this.setRelative(t, t, (s + i) / 2, r, !0);
+    return;
+  }
+  this.setRelative(t, t, (s * l + i * c) / u, r, !0);
+};
+an.prototype.setRelative = function(t, e, n, r, s) {
+  r = r || this;
+  const i = s ? e.xo : e.x, a = s ? e.yo : e.y, o = i + n * r.x, c = a + n * r.y, l = r.normalSlope, u = this.slope, f = t.x, h = t.y;
+  t.x = (u * f - l * o + c - h) / (u - l), t.y = u * (t.x - f) + h;
+};
+an.prototype.touch = function(t) {
+  t.xTouched = !0, t.yTouched = !0;
+};
+function on(t, e) {
+  const n = Math.sqrt(t * t + e * e);
+  return t /= n, e /= n, t === 1 && e === 0 ? Ze : t === 0 && e === 1 ? it : new an(t, e);
+}
+function at(t, e, n, r) {
+  this.x = this.xo = Math.round(t * 64) / 64, this.y = this.yo = Math.round(e * 64) / 64, this.lastPointOfContour = n, this.onCurve = r, this.prevPointOnContour = void 0, this.nextPointOnContour = void 0, this.xTouched = !1, this.yTouched = !1, Object.preventExtensions(this);
+}
+at.prototype.nextTouched = function(t) {
+  let e = this.nextPointOnContour;
+  for (; !t.touched(e) && e !== this; ) e = e.nextPointOnContour;
+  return e;
+};
+at.prototype.prevTouched = function(t) {
+  let e = this.prevPointOnContour;
+  for (; !t.touched(e) && e !== this; ) e = e.prevPointOnContour;
+  return e;
+};
+var Qt = Object.freeze(new at(0, 0)), Yu = {
+  cvCutIn: 17 / 16,
+  // control value cut in
+  deltaBase: 9,
+  deltaShift: 0.125,
+  loop: 1,
+  // loops some instructions
+  minDis: 1,
+  // minimum distance
+  autoFlip: !0
+};
+function pt(t, e) {
+  switch (this.env = t, this.stack = [], this.prog = e, t) {
+    case "glyf":
+      this.zp0 = this.zp1 = this.zp2 = 1, this.rp0 = this.rp1 = this.rp2 = 0;
+    case "prep":
+      this.fv = this.pv = this.dpv = Ze, this.round = ho;
+  }
+}
+uo.prototype.exec = function(t, e) {
+  if (typeof e != "number")
+    throw new Error("Point size is not a number!");
+  if (this._errorState > 2) return;
+  const n = this.font;
+  let r = this._prepState;
+  if (!r || r.ppem !== e) {
+    let s = this._fpgmState;
+    if (!s) {
+      pt.prototype = Yu, s = this._fpgmState = new pt("fpgm", n.tables.fpgm), s.funcs = [], s.font = n, s.instructionCount = 0, s.callDepth = 0;
+      try {
+        kt(s);
+      } catch (a) {
+        console.log("Hinting error in FPGM:" + a), this._errorState = 3;
+        return;
+      }
+    }
+    pt.prototype = s, r = this._prepState = new pt("prep", n.tables.prep), r.ppem = e, r.instructionCount = 0, r.callDepth = 0;
+    const i = n.variation && n.variation.process.getCvarTransform() || n.tables.cvt;
+    if (i) {
+      const a = r.cvt = new Array(i.length), o = e / n.unitsPerEm;
+      for (let c = 0; c < i.length; c++)
+        a[c] = i[c] * o;
+    } else
+      r.cvt = [];
+    try {
+      kt(r);
+    } catch (a) {
+      this._errorState < 2 && console.log("Hinting error in PREP:" + a), this._errorState = 2;
+    }
+  }
+  if (!(this._errorState > 1))
+    try {
+      return lo(t, r);
+    } catch (s) {
+      this._errorState < 1 && (console.log("Hinting error:" + s), console.log("Note: further hinting errors are silenced")), this._errorState = 1;
+      return;
+    }
+};
+lo = function(t, e) {
+  const n = e.ppem / e.font.unitsPerEm, r = n;
+  let s = t.components, i, a, o;
+  if (pt.prototype = e, !s)
+    o = new pt("glyf", t.instructions), o.instructionCount = 0, o.callDepth = 0, Pr(t, o, n, r), a = o.gZone;
+  else {
+    const c = e.font;
+    a = [], i = [];
+    for (let l = 0; l < s.length; l++) {
+      const u = s[l], f = c.glyphs.get(u.glyphIndex);
+      o = new pt("glyf", f.instructions), o.instructionCount = 0, o.callDepth = 0, Pr(f, o, n, r);
+      const h = Math.round(u.dx * n), p = Math.round(u.dy * r), y = o.gZone, g = o.contours;
+      for (let v = 0; v < y.length; v++) {
+        const w = y[v];
+        w.xTouched = w.yTouched = !1, w.xo = w.x = w.x + h, w.yo = w.y = w.y + p;
+      }
+      const b = a.length;
+      a.push.apply(a, y);
+      for (let v = 0; v < g.length; v++)
+        i.push(g[v] + b);
+    }
+    t.instructions && !o.inhibitGridFit && (o = new pt("glyf", t.instructions), o.gZone = o.z0 = o.z1 = o.z2 = a, o.contours = i, a.push(
+      new at(0, 0),
+      new at(Math.round(t.advanceWidth * n), 0)
+    ), kt(o), a.length -= 2);
+  }
+  return a;
+};
+Pr = function(t, e, n, r) {
+  const s = t.points || [], i = s.length, a = e.gZone = e.z0 = e.z1 = e.z2 = [], o = e.contours = [];
+  let c;
+  for (let f = 0; f < i; f++)
+    c = s[f], a[f] = new at(
+      c.x * n,
+      c.y * r,
+      c.lastPointOfContour,
+      c.onCurve
+    );
+  let l, u;
+  for (let f = 0; f < i; f++)
+    c = a[f], l || (l = c, o.push(f)), c.lastPointOfContour ? (c.nextPointOnContour = l, l.prevPointOnContour = c, l = void 0) : (u = a[f + 1], c.nextPointOnContour = u, u.prevPointOnContour = c);
+  e.inhibitGridFit || (a.push(
+    new at(0, 0),
+    new at(Math.round(t.advanceWidth * n), 0)
+  ), kt(e), a.length -= 2);
+};
+kt = function(t) {
+  let e = t.prog;
+  if (!e) return;
+  const n = e.length;
+  let r;
+  for (t.ip = 0; t.ip < n; t.ip++) {
+    if (++t.instructionCount > Ws)
+      throw new Error(
+        "Hinting instructions exceeded maximum of " + Ws
+      );
+    if (r = co[e[t.ip]], !r)
+      throw new Error(
+        "unknown instruction: 0x" + Number(e[t.ip]).toString(16)
+      );
+    r(t);
+  }
+};
+function zn(t) {
+  const e = t.tZone = new Array(t.gZone.length);
+  for (let n = 0; n < e.length; n++)
+    e[n] = new at(0, 0);
+}
+function po(t, e) {
+  const n = t.prog;
+  let r = t.ip, s = 1, i;
+  do
+    if (i = n[++r], i === 88)
+      s++;
+    else if (i === 89)
+      s--;
+    else if (i === 64)
+      r += n[r + 1] + 1;
+    else if (i === 65)
+      r += 2 * n[r + 1] + 1;
+    else if (i >= 176 && i <= 183)
+      r += i - 176 + 1;
+    else if (i >= 184 && i <= 191)
+      r += (i - 184 + 1) * 2;
+    else if (e && s === 1 && i === 27)
+      break;
+  while (s > 0);
+  t.ip = r;
+}
+function Vs(t, e) {
+  e.fv = e.pv = e.dpv = t;
+}
+function qs(t, e) {
+  e.pv = e.dpv = t;
+}
+function js(t, e) {
+  e.fv = t;
+}
+function $s(t, e) {
+  const n = e.stack, r = n.pop(), s = n.pop(), i = e.z2[r], a = e.z1[s];
+  let o, c;
+  t ? (o = i.y - a.y, c = a.x - i.x) : (o = a.x - i.x, c = a.y - i.y), e.pv = e.dpv = on(o, c);
+}
+function Ys(t, e) {
+  const n = e.stack, r = n.pop(), s = n.pop(), i = e.z2[r], a = e.z1[s];
+  let o, c;
+  t ? (o = i.y - a.y, c = a.x - i.x) : (o = a.x - i.x, c = a.y - i.y), e.fv = on(o, c);
+}
+function Xu(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  t.pv = t.dpv = on(r, n);
+}
+function Ku(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  t.fv = on(r, n);
+}
+function Zu(t) {
+  const e = t.stack, n = t.pv;
+  e.push(n.x * 16384), e.push(n.y * 16384);
+}
+function Ju(t) {
+  const e = t.stack, n = t.fv;
+  e.push(n.x * 16384), e.push(n.y * 16384);
+}
+function Qu(t) {
+  t.fv = t.pv;
+}
+function eh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop(), s = e.pop(), i = e.pop(), a = e.pop(), o = t.z0, c = t.z1, l = o[n], u = o[r], f = c[s], h = c[i], p = t.z2[a], y = l.x, g = l.y, b = u.x, v = u.y, w = f.x, C = f.y, T = h.x, E = h.y, R = (y - b) * (C - E) - (g - v) * (w - T), U = y * v - g * b, W = w * E - C * T;
+  p.x = (U * (w - T) - W * (y - b)) / R, p.y = (U * (C - E) - W * (g - v)) / R;
+}
+function th(t) {
+  t.rp0 = t.stack.pop();
+}
+function nh(t) {
+  t.rp1 = t.stack.pop();
+}
+function rh(t) {
+  t.rp2 = t.stack.pop();
+}
+function sh(t) {
+  const e = t.stack.pop();
+  switch (t.zp0 = e, e) {
+    case 0:
+      t.tZone || zn(t), t.z0 = t.tZone;
+      break;
+    case 1:
+      t.z0 = t.gZone;
+      break;
+    default:
+      throw new Error("Invalid zone pointer");
+  }
+}
+function ih(t) {
+  const e = t.stack.pop();
+  switch (t.zp1 = e, e) {
+    case 0:
+      t.tZone || zn(t), t.z1 = t.tZone;
+      break;
+    case 1:
+      t.z1 = t.gZone;
+      break;
+    default:
+      throw new Error("Invalid zone pointer");
+  }
+}
+function ah(t) {
+  const e = t.stack.pop();
+  switch (t.zp2 = e, e) {
+    case 0:
+      t.tZone || zn(t), t.z2 = t.tZone;
+      break;
+    case 1:
+      t.z2 = t.gZone;
+      break;
+    default:
+      throw new Error("Invalid zone pointer");
+  }
+}
+function oh(t) {
+  const e = t.stack.pop();
+  switch (t.zp0 = t.zp1 = t.zp2 = e, e) {
+    case 0:
+      t.tZone || zn(t), t.z0 = t.z1 = t.z2 = t.tZone;
+      break;
+    case 1:
+      t.z0 = t.z1 = t.z2 = t.gZone;
+      break;
+    default:
+      throw new Error("Invalid zone pointer");
+  }
+}
+function ch(t) {
+  t.loop = t.stack.pop(), t.loop > Un && (t.loop = Un);
+}
+function lh(t) {
+  t.round = ho;
+}
+function uh(t) {
+  t.round = qu;
+}
+function hh(t) {
+  const e = t.stack.pop();
+  t.minDis = e / 64;
+}
+function fh(t) {
+  po(t, !1);
+}
+function ph(t) {
+  const e = t.stack.pop();
+  t.ip += e - 1;
+}
+function dh(t) {
+  const e = t.stack.pop();
+  t.cvCutIn = e / 64;
+}
+function gh(t) {
+  const e = t.stack;
+  e.push(e[e.length - 1]);
+}
+function nr(t) {
+  t.stack.pop();
+}
+function mh(t) {
+  t.stack.length = 0;
+}
+function yh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(n), e.push(r);
+}
+function bh(t) {
+  const e = t.stack;
+  e.push(e.length);
+}
+function xh(t) {
+  const e = t.stack, n = e.pop();
+  let r = e.pop();
+  if (r > Un && (r = Un), ++t.callDepth > _n)
+    throw new Error("Hinting call depth exceeded maximum of " + _n);
+  const s = t.ip, i = t.prog;
+  t.prog = t.funcs[n];
+  for (let a = 0; a < r; a++)
+    kt(t);
+  t.ip = s, t.prog = i, t.callDepth--;
+}
+function vh(t) {
+  const e = t.stack.pop();
+  if (++t.callDepth > _n)
+    throw new Error("Hinting call depth exceeded maximum of " + _n);
+  const n = t.ip, r = t.prog;
+  t.prog = t.funcs[e], kt(t), t.ip = n, t.prog = r, t.callDepth--;
+}
+function Sh(t) {
+  const e = t.stack, n = e.pop();
+  e.push(e[e.length - n]);
+}
+function wh(t) {
+  const e = t.stack, n = e.pop();
+  e.push(e.splice(e.length - n, 1)[0]);
+}
+function Ch(t) {
+  if (t.env !== "fpgm") throw new Error("FDEF not allowed here");
+  const e = t.stack, n = t.prog;
+  let r = t.ip;
+  const s = e.pop(), i = r;
+  for (; n[++r] !== 45; ) ;
+  t.ip = r, t.funcs[s] = n.slice(i + 1, r);
+}
+function Xs(t, e) {
+  const n = e.stack.pop(), r = e.z0[n], s = e.fv, i = e.pv;
+  let a = i.distance(r, Qt);
+  t && (a = e.round(a)), s.setRelative(r, Qt, a, i), s.touch(r), e.rp0 = e.rp1 = n;
+}
+function Ks(t, e) {
+  const n = e.z2, r = n.length - 2;
+  let s, i, a;
+  for (let o = 0; o < r; o++)
+    s = n[o], !t.touched(s) && (i = s.prevTouched(t), i !== s && (a = s.nextTouched(t), i === a && t.setRelative(s, s, t.distance(i, i, !1, !0), t, !0), t.interpolate(s, i, a, t)));
+}
+function Zs(t, e) {
+  const n = e.stack, r = t ? e.rp1 : e.rp2, s = (t ? e.z0 : e.z1)[r], i = e.fv, a = e.pv;
+  let o = e.loop;
+  const c = e.z2;
+  for (; o--; ) {
+    const l = n.pop(), u = c[l], f = a.distance(s, s, !1, !0);
+    i.setRelative(u, u, f, a), i.touch(u);
+  }
+  e.loop = 1;
+}
+function Js(t, e) {
+  const n = e.stack, r = t ? e.rp1 : e.rp2, s = (t ? e.z0 : e.z1)[r], i = e.fv, a = e.pv, o = n.pop(), c = e.z2[e.contours[o]];
+  let l = c;
+  const u = a.distance(s, s, !1, !0);
+  do
+    l !== s && i.setRelative(l, l, u, a), l = l.nextPointOnContour;
+  while (l !== c);
+}
+function Qs(t, e) {
+  const n = e.stack, r = t ? e.rp1 : e.rp2, s = (t ? e.z0 : e.z1)[r], i = e.fv, a = e.pv, o = n.pop();
+  let c;
+  switch (o) {
+    case 0:
+      c = e.tZone;
+      break;
+    case 1:
+      c = e.gZone;
+      break;
+    default:
+      throw new Error("Invalid zone");
+  }
+  let l;
+  const u = a.distance(s, s, !1, !0), f = c.length - 2;
+  for (let h = 0; h < f; h++)
+    l = c[h], i.setRelative(l, l, u, a);
+}
+function Th(t) {
+  const e = t.stack;
+  let n = t.loop;
+  const r = t.fv, s = e.pop() / 64, i = t.z2;
+  for (; n--; ) {
+    const a = e.pop(), o = i[a];
+    r.setRelative(o, o, s), r.touch(o);
+  }
+  t.loop = 1;
+}
+function kh(t) {
+  const e = t.stack, n = t.rp1, r = t.rp2;
+  let s = t.loop;
+  const i = t.z0[n], a = t.z1[r], o = t.fv, c = t.dpv, l = t.z2;
+  for (; s--; ) {
+    const u = e.pop(), f = l[u];
+    o.interpolate(f, i, a, c), o.touch(f);
+  }
+  t.loop = 1;
+}
+function ei(t, e) {
+  const n = e.stack, r = n.pop() / 64, s = n.pop(), i = e.z1[s], a = e.z0[e.rp0], o = e.fv, c = e.pv;
+  o.setRelative(i, a, r, c), o.touch(i), e.rp1 = e.rp0, e.rp2 = s, t && (e.rp0 = s);
+}
+function Fh(t) {
+  const e = t.stack, n = t.rp0, r = t.z0[n];
+  let s = t.loop;
+  const i = t.fv, a = t.pv, o = t.z1;
+  for (; s--; ) {
+    const c = e.pop(), l = o[c];
+    i.setRelative(l, r, 0, a), i.touch(l);
+  }
+  t.loop = 1;
+}
+function Eh(t) {
+  t.round = Vu;
+}
+function ti(t, e) {
+  const n = e.stack, r = n.pop(), s = n.pop(), i = e.z0[s], a = e.fv, o = e.pv;
+  let c = e.cvt[r], l = o.distance(i, Qt);
+  t && (Math.abs(l - c) < e.cvCutIn && (l = c), l = e.round(l)), a.setRelative(i, Qt, l, o), e.zp0 === 0 && (i.xo = i.x, i.yo = i.y), a.touch(i), e.rp0 = e.rp1 = s;
+}
+function Ah(t) {
+  const e = t.prog;
+  let n = t.ip;
+  const r = t.stack, s = e[++n];
+  for (let i = 0; i < s; i++) r.push(e[++n]);
+  t.ip = n;
+}
+function Oh(t) {
+  let e = t.ip;
+  const n = t.prog, r = t.stack, s = n[++e];
+  for (let i = 0; i < s; i++) {
+    let a = n[++e] << 8 | n[++e];
+    a & 32768 && (a = -((a ^ 65535) + 1)), r.push(a);
+  }
+  t.ip = e;
+}
+function Lh(t) {
+  const e = t.stack;
+  let n = t.store;
+  n || (n = t.store = []);
+  const r = e.pop(), s = e.pop();
+  n[s] = r;
+}
+function Ih(t) {
+  const e = t.stack, n = t.store, r = e.pop(), s = n && n[r] || 0;
+  e.push(s);
+}
+function Rh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  t.cvt[r] = n / 64;
+}
+function Bh(t) {
+  const e = t.stack, n = e.pop();
+  e.push(t.cvt[n] * 64);
+}
+function ni(t, e) {
+  const n = e.stack, r = n.pop(), s = e.z2[r];
+  n.push(e.dpv.distance(s, Qt, t, !1) * 64);
+}
+function ri(t, e) {
+  const n = e.stack, r = n.pop(), s = n.pop(), i = e.z1[r], a = e.z0[s], o = e.dpv.distance(a, i, t, t);
+  e.stack.push(Math.round(o * 64));
+}
+function Dh(t) {
+  t.stack.push(t.ppem);
+}
+function Mh(t) {
+  t.autoFlip = !0;
+}
+function _h(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(r < n ? 1 : 0);
+}
+function Uh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(r <= n ? 1 : 0);
+}
+function Ph(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(r > n ? 1 : 0);
+}
+function Nh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(r >= n ? 1 : 0);
+}
+function Gh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(n === r ? 1 : 0);
+}
+function Hh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(n !== r ? 1 : 0);
+}
+function zh(t) {
+  const e = t.stack, n = e.pop();
+  e.push(Math.trunc(n) & 1 ? 1 : 0);
+}
+function Wh(t) {
+  const e = t.stack, n = e.pop();
+  e.push(Math.trunc(n) & 1 ? 0 : 1);
+}
+function Vh(t) {
+  t.stack.pop() || po(t, !0);
+}
+function qh(t) {
+}
+function jh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(n && r ? 1 : 0);
+}
+function $h(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(n || r ? 1 : 0);
+}
+function Yh(t) {
+  const e = t.stack, n = e.pop();
+  e.push(n ? 0 : 1);
+}
+function rr(t, e) {
+  const n = e.stack, r = n.pop(), s = e.fv, i = e.pv, a = e.ppem, o = e.deltaBase + (t - 1) * 16, c = e.deltaShift, l = e.z0;
+  for (let u = 0; u < r; u++) {
+    const f = n.pop(), h = n.pop();
+    if (o + ((h & 240) >> 4) !== a) continue;
+    let y = (h & 15) - 8;
+    y >= 0 && y++;
+    const g = l[f];
+    s.setRelative(g, g, y * c, i);
+  }
+}
+function Xh(t) {
+  const n = t.stack.pop();
+  t.deltaBase = n;
+}
+function Kh(t) {
+  const n = t.stack.pop();
+  t.deltaShift = Math.pow(0.5, n);
+}
+function Zh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(r + n);
+}
+function Jh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(r - n);
+}
+function Qh(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(r * 64 / n);
+}
+function ef(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(r * n / 64);
+}
+function tf(t) {
+  const e = t.stack, n = e.pop();
+  e.push(Math.abs(n));
+}
+function nf(t) {
+  const e = t.stack;
+  let n = e.pop();
+  e.push(-n);
+}
+function rf(t) {
+  const e = t.stack, n = e.pop();
+  e.push(Math.floor(n / 64) * 64);
+}
+function sf(t) {
+  const e = t.stack, n = e.pop();
+  e.push(Math.ceil(n / 64) * 64);
+}
+function gn(t, e) {
+  const n = e.stack, r = n.pop();
+  n.push(e.round(r / 64) * 64);
+}
+function af(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  t.cvt[r] = n * t.ppem / t.font.unitsPerEm;
+}
+function sr(t, e) {
+  const n = e.stack, r = n.pop(), s = e.ppem, i = e.deltaBase + (t - 1) * 16, a = e.deltaShift;
+  for (let o = 0; o < r; o++) {
+    const c = n.pop(), l = n.pop();
+    if (i + ((l & 240) >> 4) !== s) continue;
+    let f = (l & 15) - 8;
+    f >= 0 && f++;
+    const h = f * a;
+    e.cvt[c] += h;
+  }
+}
+function of(t) {
+  let e = t.stack.pop();
+  t.round = fo;
+  let n;
+  switch (e & 192) {
+    case 0:
+      n = 0.5;
+      break;
+    case 64:
+      n = 1;
+      break;
+    case 128:
+      n = 2;
+      break;
+    default:
+      throw new Error("invalid SROUND value");
+  }
+  switch (t.srPeriod = n, e & 48) {
+    case 0:
+      t.srPhase = 0;
+      break;
+    case 16:
+      t.srPhase = 0.25 * n;
+      break;
+    case 32:
+      t.srPhase = 0.5 * n;
+      break;
+    case 48:
+      t.srPhase = 0.75 * n;
+      break;
+    default:
+      throw new Error("invalid SROUND value");
+  }
+  e &= 15, e === 0 ? t.srThreshold = 0 : t.srThreshold = (e / 8 - 0.5) * n;
+}
+function cf(t) {
+  let e = t.stack.pop();
+  t.round = fo;
+  let n;
+  switch (e & 192) {
+    case 0:
+      n = Math.sqrt(2) / 2;
+      break;
+    case 64:
+      n = Math.sqrt(2);
+      break;
+    case 128:
+      n = 2 * Math.sqrt(2);
+      break;
+    default:
+      throw new Error("invalid S45ROUND value");
+  }
+  switch (t.srPeriod = n, e & 48) {
+    case 0:
+      t.srPhase = 0;
+      break;
+    case 16:
+      t.srPhase = 0.25 * n;
+      break;
+    case 32:
+      t.srPhase = 0.5 * n;
+      break;
+    case 48:
+      t.srPhase = 0.75 * n;
+      break;
+    default:
+      throw new Error("invalid S45ROUND value");
+  }
+  e &= 15, e === 0 ? t.srThreshold = 0 : t.srThreshold = (e / 8 - 0.5) * n;
+}
+function lf(t) {
+  t.round = Wu;
+}
+function uf(t) {
+  t.round = ju;
+}
+function hf(t) {
+  t.round = $u;
+}
+function ff(t) {
+  t.stack.pop();
+}
+function si(t, e) {
+  const n = e.stack, r = n.pop(), s = n.pop(), i = e.z2[r], a = e.z1[s];
+  let o, c;
+  t ? (o = i.y - a.y, c = a.x - i.x) : (o = a.x - i.x, c = a.y - i.y), e.dpv = on(o, c);
+}
+function pf(t) {
+  const e = t.stack, n = e.pop();
+  let r = 0;
+  n & 1 && (r = 35), n & 32 && (r |= 4096), e.push(r);
+}
+function df(t) {
+  const e = t.stack, n = e.pop(), r = e.pop(), s = e.pop();
+  e.push(r), e.push(n), e.push(s);
+}
+function gf(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(Math.max(r, n));
+}
+function mf(t) {
+  const e = t.stack, n = e.pop(), r = e.pop();
+  e.push(Math.min(r, n));
+}
+function yf(t) {
+  t.stack.pop();
+}
+function bf(t) {
+  const e = t.stack.pop();
+  let n = t.stack.pop();
+  switch (e) {
+    case 1:
+      t.inhibitGridFit = !!n;
+      return;
+    case 2:
+      t.ignoreCvt = !!n;
+      return;
+    default:
+      throw new Error("invalid INSTCTRL[] selector");
+  }
+}
+function ot(t, e) {
+  const n = e.stack, r = e.prog;
+  let s = e.ip;
+  for (let i = 0; i < t; i++) n.push(r[++s]);
+  e.ip = s;
+}
+function ct(t, e) {
+  let n = e.ip;
+  const r = e.prog, s = e.stack;
+  for (let i = 0; i < t; i++) {
+    let a = r[++n] << 8 | r[++n];
+    a & 32768 && (a = -((a ^ 65535) + 1)), s.push(a);
+  }
+  e.ip = n;
+}
+function G(t, e, n, r, s, i) {
+  const a = i.stack, o = t && a.pop(), c = a.pop(), l = i.rp0, u = i.z0[l], f = i.z1[c], h = i.minDis, p = i.fv, y = i.dpv;
+  let g, b, v;
+  g = y.distance(f, u, !0, !0), b = g >= 0 ? 1 : -1, g = Math.abs(g), t && (v = i.cvt[o], r && Math.abs(g - v) < i.cvCutIn && (g = v)), n && g < h && (g = h), r && (g = i.round(g)), p.setRelative(f, u, b * g, y), p.touch(f), i.rp1 = i.rp0, i.rp2 = c, e && (i.rp0 = c);
+}
+co = [
+  /* 0x00 */
+  Vs.bind(void 0, it),
+  /* 0x01 */
+  Vs.bind(void 0, Ze),
+  /* 0x02 */
+  qs.bind(void 0, it),
+  /* 0x03 */
+  qs.bind(void 0, Ze),
+  /* 0x04 */
+  js.bind(void 0, it),
+  /* 0x05 */
+  js.bind(void 0, Ze),
+  /* 0x06 */
+  $s.bind(void 0, 0),
+  /* 0x07 */
+  $s.bind(void 0, 1),
+  /* 0x08 */
+  Ys.bind(void 0, 0),
+  /* 0x09 */
+  Ys.bind(void 0, 1),
+  /* 0x0A */
+  Xu,
+  /* 0x0B */
+  Ku,
+  /* 0x0C */
+  Zu,
+  /* 0x0D */
+  Ju,
+  /* 0x0E */
+  Qu,
+  /* 0x0F */
+  eh,
+  /* 0x10 */
+  th,
+  /* 0x11 */
+  nh,
+  /* 0x12 */
+  rh,
+  /* 0x13 */
+  sh,
+  /* 0x14 */
+  ih,
+  /* 0x15 */
+  ah,
+  /* 0x16 */
+  oh,
+  /* 0x17 */
+  ch,
+  /* 0x18 */
+  lh,
+  /* 0x19 */
+  uh,
+  /* 0x1A */
+  hh,
+  /* 0x1B */
+  fh,
+  /* 0x1C */
+  ph,
+  /* 0x1D */
+  dh,
+  /* 0x1E */
+  void 0,
+  // TODO SSWCI
+  /* 0x1F */
+  void 0,
+  // TODO SSW
+  /* 0x20 */
+  gh,
+  /* 0x21 */
+  nr,
+  /* 0x22 */
+  mh,
+  /* 0x23 */
+  yh,
+  /* 0x24 */
+  bh,
+  /* 0x25 */
+  Sh,
+  /* 0x26 */
+  wh,
+  /* 0x27 */
+  void 0,
+  // TODO ALIGNPTS
+  /* 0x28 */
+  void 0,
+  /* 0x29 */
+  void 0,
+  // TODO UTP
+  /* 0x2A */
+  xh,
+  /* 0x2B */
+  vh,
+  /* 0x2C */
+  Ch,
+  /* 0x2D */
+  void 0,
+  // ENDF (eaten by FDEF)
+  /* 0x2E */
+  Xs.bind(void 0, 0),
+  /* 0x2F */
+  Xs.bind(void 0, 1),
+  /* 0x30 */
+  Ks.bind(void 0, it),
+  /* 0x31 */
+  Ks.bind(void 0, Ze),
+  /* 0x32 */
+  Zs.bind(void 0, 0),
+  /* 0x33 */
+  Zs.bind(void 0, 1),
+  /* 0x34 */
+  Js.bind(void 0, 0),
+  /* 0x35 */
+  Js.bind(void 0, 1),
+  /* 0x36 */
+  Qs.bind(void 0, 0),
+  /* 0x37 */
+  Qs.bind(void 0, 1),
+  /* 0x38 */
+  Th,
+  /* 0x39 */
+  kh,
+  /* 0x3A */
+  ei.bind(void 0, 0),
+  /* 0x3B */
+  ei.bind(void 0, 1),
+  /* 0x3C */
+  Fh,
+  /* 0x3D */
+  Eh,
+  /* 0x3E */
+  ti.bind(void 0, 0),
+  /* 0x3F */
+  ti.bind(void 0, 1),
+  /* 0x40 */
+  Ah,
+  /* 0x41 */
+  Oh,
+  /* 0x42 */
+  Lh,
+  /* 0x43 */
+  Ih,
+  /* 0x44 */
+  Rh,
+  /* 0x45 */
+  Bh,
+  /* 0x46 */
+  ni.bind(void 0, 0),
+  /* 0x47 */
+  ni.bind(void 0, 1),
+  /* 0x48 */
+  void 0,
+  // TODO SCFS
+  /* 0x49 */
+  ri.bind(void 0, 0),
+  /* 0x4A */
+  ri.bind(void 0, 1),
+  /* 0x4B */
+  Dh,
+  /* 0x4C */
+  void 0,
+  // TODO MPS
+  /* 0x4D */
+  Mh,
+  /* 0x4E */
+  void 0,
+  // TODO FLIPOFF
+  /* 0x4F */
+  void 0,
+  // TODO DEBUG
+  /* 0x50 */
+  _h,
+  /* 0x51 */
+  Uh,
+  /* 0x52 */
+  Ph,
+  /* 0x53 */
+  Nh,
+  /* 0x54 */
+  Gh,
+  /* 0x55 */
+  Hh,
+  /* 0x56 */
+  zh,
+  /* 0x57 */
+  Wh,
+  /* 0x58 */
+  Vh,
+  /* 0x59 */
+  qh,
+  /* 0x5A */
+  jh,
+  /* 0x5B */
+  $h,
+  /* 0x5C */
+  Yh,
+  /* 0x5D */
+  rr.bind(void 0, 1),
+  /* 0x5E */
+  Xh,
+  /* 0x5F */
+  Kh,
+  /* 0x60 */
+  Zh,
+  /* 0x61 */
+  Jh,
+  /* 0x62 */
+  Qh,
+  /* 0x63 */
+  ef,
+  /* 0x64 */
+  tf,
+  /* 0x65 */
+  nf,
+  /* 0x66 */
+  rf,
+  /* 0x67 */
+  sf,
+  /* 0x68 */
+  gn.bind(void 0, 0),
+  /* 0x69 */
+  gn.bind(void 0, 1),
+  /* 0x6A */
+  gn.bind(void 0, 2),
+  /* 0x6B */
+  gn.bind(void 0, 3),
+  /* 0x6C */
+  void 0,
+  // TODO NROUND[ab]
+  /* 0x6D */
+  void 0,
+  // TODO NROUND[ab]
+  /* 0x6E */
+  void 0,
+  // TODO NROUND[ab]
+  /* 0x6F */
+  void 0,
+  // TODO NROUND[ab]
+  /* 0x70 */
+  af,
+  /* 0x71 */
+  rr.bind(void 0, 2),
+  /* 0x72 */
+  rr.bind(void 0, 3),
+  /* 0x73 */
+  sr.bind(void 0, 1),
+  /* 0x74 */
+  sr.bind(void 0, 2),
+  /* 0x75 */
+  sr.bind(void 0, 3),
+  /* 0x76 */
+  of,
+  /* 0x77 */
+  cf,
+  /* 0x78 */
+  void 0,
+  // TODO JROT[]
+  /* 0x79 */
+  void 0,
+  // TODO JROF[]
+  /* 0x7A */
+  lf,
+  /* 0x7B */
+  void 0,
+  /* 0x7C */
+  uf,
+  /* 0x7D */
+  hf,
+  /* 0x7E */
+  nr,
+  // actually SANGW, supposed to do only a pop though
+  /* 0x7F */
+  nr,
+  // actually AA, supposed to do only a pop though
+  /* 0x80 */
+  void 0,
+  // TODO FLIPPT
+  /* 0x81 */
+  void 0,
+  // TODO FLIPRGON
+  /* 0x82 */
+  void 0,
+  // TODO FLIPRGOFF
+  /* 0x83 */
+  void 0,
+  /* 0x84 */
+  void 0,
+  /* 0x85 */
+  ff,
+  /* 0x86 */
+  si.bind(void 0, 0),
+  /* 0x87 */
+  si.bind(void 0, 1),
+  /* 0x88 */
+  pf,
+  /* 0x89 */
+  void 0,
+  // TODO IDEF
+  /* 0x8A */
+  df,
+  /* 0x8B */
+  gf,
+  /* 0x8C */
+  mf,
+  /* 0x8D */
+  yf,
+  /* 0x8E */
+  bf,
+  /* 0x8F */
+  void 0,
+  /* 0x90 */
+  void 0,
+  /* 0x91 */
+  void 0,
+  /* 0x92 */
+  void 0,
+  /* 0x93 */
+  void 0,
+  /* 0x94 */
+  void 0,
+  /* 0x95 */
+  void 0,
+  /* 0x96 */
+  void 0,
+  /* 0x97 */
+  void 0,
+  /* 0x98 */
+  void 0,
+  /* 0x99 */
+  void 0,
+  /* 0x9A */
+  void 0,
+  /* 0x9B */
+  void 0,
+  /* 0x9C */
+  void 0,
+  /* 0x9D */
+  void 0,
+  /* 0x9E */
+  void 0,
+  /* 0x9F */
+  void 0,
+  /* 0xA0 */
+  void 0,
+  /* 0xA1 */
+  void 0,
+  /* 0xA2 */
+  void 0,
+  /* 0xA3 */
+  void 0,
+  /* 0xA4 */
+  void 0,
+  /* 0xA5 */
+  void 0,
+  /* 0xA6 */
+  void 0,
+  /* 0xA7 */
+  void 0,
+  /* 0xA8 */
+  void 0,
+  /* 0xA9 */
+  void 0,
+  /* 0xAA */
+  void 0,
+  /* 0xAB */
+  void 0,
+  /* 0xAC */
+  void 0,
+  /* 0xAD */
+  void 0,
+  /* 0xAE */
+  void 0,
+  /* 0xAF */
+  void 0,
+  /* 0xB0 */
+  ot.bind(void 0, 1),
+  /* 0xB1 */
+  ot.bind(void 0, 2),
+  /* 0xB2 */
+  ot.bind(void 0, 3),
+  /* 0xB3 */
+  ot.bind(void 0, 4),
+  /* 0xB4 */
+  ot.bind(void 0, 5),
+  /* 0xB5 */
+  ot.bind(void 0, 6),
+  /* 0xB6 */
+  ot.bind(void 0, 7),
+  /* 0xB7 */
+  ot.bind(void 0, 8),
+  /* 0xB8 */
+  ct.bind(void 0, 1),
+  /* 0xB9 */
+  ct.bind(void 0, 2),
+  /* 0xBA */
+  ct.bind(void 0, 3),
+  /* 0xBB */
+  ct.bind(void 0, 4),
+  /* 0xBC */
+  ct.bind(void 0, 5),
+  /* 0xBD */
+  ct.bind(void 0, 6),
+  /* 0xBE */
+  ct.bind(void 0, 7),
+  /* 0xBF */
+  ct.bind(void 0, 8),
+  /* 0xC0 */
+  G.bind(void 0, 0, 0, 0, 0, 0),
+  /* 0xC1 */
+  G.bind(void 0, 0, 0, 0, 0, 1),
+  /* 0xC2 */
+  G.bind(void 0, 0, 0, 0, 0, 2),
+  /* 0xC3 */
+  G.bind(void 0, 0, 0, 0, 0, 3),
+  /* 0xC4 */
+  G.bind(void 0, 0, 0, 0, 1, 0),
+  /* 0xC5 */
+  G.bind(void 0, 0, 0, 0, 1, 1),
+  /* 0xC6 */
+  G.bind(void 0, 0, 0, 0, 1, 2),
+  /* 0xC7 */
+  G.bind(void 0, 0, 0, 0, 1, 3),
+  /* 0xC8 */
+  G.bind(void 0, 0, 0, 1, 0, 0),
+  /* 0xC9 */
+  G.bind(void 0, 0, 0, 1, 0, 1),
+  /* 0xCA */
+  G.bind(void 0, 0, 0, 1, 0, 2),
+  /* 0xCB */
+  G.bind(void 0, 0, 0, 1, 0, 3),
+  /* 0xCC */
+  G.bind(void 0, 0, 0, 1, 1, 0),
+  /* 0xCD */
+  G.bind(void 0, 0, 0, 1, 1, 1),
+  /* 0xCE */
+  G.bind(void 0, 0, 0, 1, 1, 2),
+  /* 0xCF */
+  G.bind(void 0, 0, 0, 1, 1, 3),
+  /* 0xD0 */
+  G.bind(void 0, 0, 1, 0, 0, 0),
+  /* 0xD1 */
+  G.bind(void 0, 0, 1, 0, 0, 1),
+  /* 0xD2 */
+  G.bind(void 0, 0, 1, 0, 0, 2),
+  /* 0xD3 */
+  G.bind(void 0, 0, 1, 0, 0, 3),
+  /* 0xD4 */
+  G.bind(void 0, 0, 1, 0, 1, 0),
+  /* 0xD5 */
+  G.bind(void 0, 0, 1, 0, 1, 1),
+  /* 0xD6 */
+  G.bind(void 0, 0, 1, 0, 1, 2),
+  /* 0xD7 */
+  G.bind(void 0, 0, 1, 0, 1, 3),
+  /* 0xD8 */
+  G.bind(void 0, 0, 1, 1, 0, 0),
+  /* 0xD9 */
+  G.bind(void 0, 0, 1, 1, 0, 1),
+  /* 0xDA */
+  G.bind(void 0, 0, 1, 1, 0, 2),
+  /* 0xDB */
+  G.bind(void 0, 0, 1, 1, 0, 3),
+  /* 0xDC */
+  G.bind(void 0, 0, 1, 1, 1, 0),
+  /* 0xDD */
+  G.bind(void 0, 0, 1, 1, 1, 1),
+  /* 0xDE */
+  G.bind(void 0, 0, 1, 1, 1, 2),
+  /* 0xDF */
+  G.bind(void 0, 0, 1, 1, 1, 3),
+  /* 0xE0 */
+  G.bind(void 0, 1, 0, 0, 0, 0),
+  /* 0xE1 */
+  G.bind(void 0, 1, 0, 0, 0, 1),
+  /* 0xE2 */
+  G.bind(void 0, 1, 0, 0, 0, 2),
+  /* 0xE3 */
+  G.bind(void 0, 1, 0, 0, 0, 3),
+  /* 0xE4 */
+  G.bind(void 0, 1, 0, 0, 1, 0),
+  /* 0xE5 */
+  G.bind(void 0, 1, 0, 0, 1, 1),
+  /* 0xE6 */
+  G.bind(void 0, 1, 0, 0, 1, 2),
+  /* 0xE7 */
+  G.bind(void 0, 1, 0, 0, 1, 3),
+  /* 0xE8 */
+  G.bind(void 0, 1, 0, 1, 0, 0),
+  /* 0xE9 */
+  G.bind(void 0, 1, 0, 1, 0, 1),
+  /* 0xEA */
+  G.bind(void 0, 1, 0, 1, 0, 2),
+  /* 0xEB */
+  G.bind(void 0, 1, 0, 1, 0, 3),
+  /* 0xEC */
+  G.bind(void 0, 1, 0, 1, 1, 0),
+  /* 0xED */
+  G.bind(void 0, 1, 0, 1, 1, 1),
+  /* 0xEE */
+  G.bind(void 0, 1, 0, 1, 1, 2),
+  /* 0xEF */
+  G.bind(void 0, 1, 0, 1, 1, 3),
+  /* 0xF0 */
+  G.bind(void 0, 1, 1, 0, 0, 0),
+  /* 0xF1 */
+  G.bind(void 0, 1, 1, 0, 0, 1),
+  /* 0xF2 */
+  G.bind(void 0, 1, 1, 0, 0, 2),
+  /* 0xF3 */
+  G.bind(void 0, 1, 1, 0, 0, 3),
+  /* 0xF4 */
+  G.bind(void 0, 1, 1, 0, 1, 0),
+  /* 0xF5 */
+  G.bind(void 0, 1, 1, 0, 1, 1),
+  /* 0xF6 */
+  G.bind(void 0, 1, 1, 0, 1, 2),
+  /* 0xF7 */
+  G.bind(void 0, 1, 1, 0, 1, 3),
+  /* 0xF8 */
+  G.bind(void 0, 1, 1, 1, 0, 0),
+  /* 0xF9 */
+  G.bind(void 0, 1, 1, 1, 0, 1),
+  /* 0xFA */
+  G.bind(void 0, 1, 1, 1, 0, 2),
+  /* 0xFB */
+  G.bind(void 0, 1, 1, 1, 0, 3),
+  /* 0xFC */
+  G.bind(void 0, 1, 1, 1, 1, 0),
+  /* 0xFD */
+  G.bind(void 0, 1, 1, 1, 1, 1),
+  /* 0xFE */
+  G.bind(void 0, 1, 1, 1, 1, 2),
+  /* 0xFF */
+  G.bind(void 0, 1, 1, 1, 1, 3)
+];
+var xf = uo;
+function Wt(t) {
+  this.char = t, this.state = {}, this.activeState = null;
+}
+function ns(t, e, n) {
+  this.contextName = n, this.startIndex = t, this.endOffset = e;
+}
+function vf(t, e, n) {
+  this.contextName = t, this.openRange = null, this.ranges = [], this.checkStart = e, this.checkEnd = n;
+}
+function Fe(t, e) {
+  this.context = t, this.index = e, this.length = t.length, this.current = t[e], this.backtrack = t.slice(0, e), this.lookahead = t.slice(e + 1);
+}
+function Wn(t) {
+  this.eventId = t, this.subscribers = [];
+}
+function Sf(t) {
+  const e = [
+    "start",
+    "end",
+    "next",
+    "newToken",
+    "contextStart",
+    "contextEnd",
+    "insertToken",
+    "removeToken",
+    "removeRange",
+    "replaceToken",
+    "replaceRange",
+    "composeRUD",
+    "updateContextsRanges"
+  ];
+  for (let r = 0; r < e.length; r++) {
+    const s = e[r];
+    Object.defineProperty(this.events, s, {
+      value: new Wn(s)
+    });
+  }
+  if (t)
+    for (let r = 0; r < e.length; r++) {
+      const s = e[r], i = t[s];
+      typeof i == "function" && this.events[s].subscribe(i);
+    }
+  const n = [
+    "insertToken",
+    "removeToken",
+    "removeRange",
+    "replaceToken",
+    "replaceRange",
+    "composeRUD"
+  ];
+  for (let r = 0; r < n.length; r++) {
+    const s = n[r];
+    this.events[s].subscribe(
+      this.updateContextsRanges
+    );
+  }
+}
+function he(t) {
+  this.tokens = [], this.registeredContexts = {}, this.contextCheckers = [], this.events = {}, this.registeredModifiers = [], Sf.call(this, t);
+}
+Wt.prototype.setState = function(t, e) {
+  return this.state[t] = e, this.activeState = { key: t, value: this.state[t] }, this.activeState;
+};
+Wt.prototype.getState = function(t) {
+  return this.state[t] || null;
+};
+he.prototype.inboundIndex = function(t) {
+  return t >= 0 && t < this.tokens.length;
+};
+he.prototype.composeRUD = function(t) {
+  const n = t.map((s) => this[s[0]].apply(this, s.slice(1).concat(!0))), r = (s) => typeof s == "object" && Object.prototype.hasOwnProperty.call(s, "FAIL");
+  if (n.every(r))
+    return {
+      FAIL: "composeRUD: one or more operations hasn't completed successfully",
+      report: n.filter(r)
+    };
+  this.dispatch("composeRUD", [n.filter((s) => !r(s))]);
+};
+he.prototype.replaceRange = function(t, e, n, r) {
+  e = e !== null ? e : this.tokens.length;
+  const s = n.every((i) => i instanceof Wt);
+  if (!isNaN(t) && this.inboundIndex(t) && s) {
+    const i = this.tokens.splice.apply(
+      this.tokens,
+      [t, e].concat(n)
+    );
+    return r || this.dispatch("replaceToken", [t, e, n]), [i, n];
+  } else
+    return { FAIL: "replaceRange: invalid tokens or startIndex." };
+};
+he.prototype.replaceToken = function(t, e, n) {
+  if (!isNaN(t) && this.inboundIndex(t) && e instanceof Wt) {
+    const r = this.tokens.splice(t, 1, e);
+    return n || this.dispatch("replaceToken", [t, e]), [r[0], e];
+  } else
+    return { FAIL: "replaceToken: invalid token or index." };
+};
+he.prototype.removeRange = function(t, e, n) {
+  e = isNaN(e) ? this.tokens.length : e;
+  const r = this.tokens.splice(t, e);
+  return n || this.dispatch("removeRange", [r, t, e]), r;
+};
+he.prototype.removeToken = function(t, e) {
+  if (!isNaN(t) && this.inboundIndex(t)) {
+    const n = this.tokens.splice(t, 1);
+    return e || this.dispatch("removeToken", [n, t]), n;
+  } else
+    return { FAIL: "removeToken: invalid token index." };
+};
+he.prototype.insertToken = function(t, e, n) {
+  return t.every(
+    (s) => s instanceof Wt
+  ) ? (this.tokens.splice.apply(
+    this.tokens,
+    [e, 0].concat(t)
+  ), n || this.dispatch("insertToken", [t, e]), t) : { FAIL: "insertToken: invalid token(s)." };
+};
+he.prototype.registerModifier = function(t, e, n) {
+  this.events.newToken.subscribe(function(r, s) {
+    const i = [r, s], a = e === null || e.apply(this, i) === !0, o = [r, s];
+    if (a) {
+      let c = n.apply(this, o);
+      r.setState(t, c);
+    }
+  }), this.registeredModifiers.push(t);
+};
+Wn.prototype.subscribe = function(t) {
+  return typeof t == "function" ? this.subscribers.push(t) - 1 : { FAIL: `invalid '${this.eventId}' event handler` };
+};
+Wn.prototype.unsubscribe = function(t) {
+  this.subscribers.splice(t, 1);
+};
+Fe.prototype.setCurrentIndex = function(t) {
+  this.index = t, this.current = this.context[t], this.backtrack = this.context.slice(0, t), this.lookahead = this.context.slice(t + 1);
+};
+Fe.prototype.get = function(t) {
+  switch (!0) {
+    case t === 0:
+      return this.current;
+    case (t < 0 && Math.abs(t) <= this.backtrack.length):
+      return this.backtrack.slice(t)[0];
+    case (t > 0 && t <= this.lookahead.length):
+      return this.lookahead[t - 1];
+    default:
+      return null;
+  }
+};
+he.prototype.rangeToText = function(t) {
+  if (t instanceof ns)
+    return this.getRangeTokens(t).map((e) => e.char).join("");
+};
+he.prototype.getText = function() {
+  return this.tokens.map((t) => t.char).join("");
+};
+he.prototype.getContext = function(t) {
+  let e = this.registeredContexts[t];
+  return e || null;
+};
+he.prototype.on = function(t, e) {
+  const n = this.events[t];
+  return n ? n.subscribe(e) : null;
+};
+he.prototype.dispatch = function(t, e) {
+  const n = this.events[t];
+  if (n instanceof Wn)
+    for (let r = 0; r < n.subscribers.length; r++)
+      n.subscribers[r].apply(this, e || []);
+};
+he.prototype.registerContextChecker = function(t, e, n) {
+  if (this.getContext(t)) return {
+    FAIL: `context name '${t}' is already registered.`
+  };
+  if (typeof e != "function") return {
+    FAIL: "missing context start check."
+  };
+  if (typeof n != "function") return {
+    FAIL: "missing context end check."
+  };
+  const r = new vf(
+    t,
+    e,
+    n
+  );
+  return this.registeredContexts[t] = r, this.contextCheckers.push(r), r;
+};
+he.prototype.getRangeTokens = function(t) {
+  const e = t.startIndex + t.endOffset;
+  return [].concat(
+    this.tokens.slice(t.startIndex, e)
+  );
+};
+he.prototype.getContextRanges = function(t) {
+  const e = this.getContext(t);
+  return e ? e.ranges : { FAIL: `context checker '${t}' is not registered.` };
+};
+he.prototype.resetContextsRanges = function() {
+  const t = this.registeredContexts;
+  for (const e in t)
+    if (Object.prototype.hasOwnProperty.call(t, e)) {
+      const n = t[e];
+      n.ranges = [];
+    }
+};
+he.prototype.updateContextsRanges = function() {
+  this.resetContextsRanges();
+  const t = this.tokens.map((e) => e.char);
+  for (let e = 0; e < t.length; e++) {
+    const n = new Fe(t, e);
+    this.runContextCheck(n);
+  }
+  this.dispatch("updateContextsRanges", [this.registeredContexts]);
+};
+he.prototype.setEndOffset = function(t, e) {
+  const n = this.getContext(e).openRange.startIndex;
+  let r = new ns(n, t, e);
+  const s = this.getContext(e).ranges;
+  return r.rangeId = `${e}.${s.length}`, s.push(r), this.getContext(e).openRange = null, r;
+};
+he.prototype.runContextCheck = function(t) {
+  const e = t.index;
+  for (let n = 0; n < this.contextCheckers.length; n++) {
+    const r = this.contextCheckers[n];
+    let s = r.contextName, i = this.getContext(s).openRange;
+    if (!i && r.checkStart(t) && (i = new ns(e, null, s), this.getContext(s).openRange = i, this.dispatch("contextStart", [s, e])), i && r.checkEnd(t)) {
+      const a = e - i.startIndex + 1, o = this.setEndOffset(a, s);
+      this.dispatch("contextEnd", [s, o]);
+    }
+  }
+};
+he.prototype.tokenize = function(t) {
+  this.tokens = [], this.resetContextsRanges();
+  let e = Array.from(t);
+  this.dispatch("start");
+  for (let n = 0; n < e.length; n++) {
+    const r = e[n], s = new Fe(e, n);
+    this.dispatch("next", [s]), this.runContextCheck(s);
+    let i = new Wt(r);
+    this.tokens.push(i), this.dispatch("newToken", [i, s]);
+  }
+  return this.dispatch("end", [this.tokens]), this.tokens;
+};
+var wf = he;
+function gt(t) {
+  return /[\u0600-\u065F\u066A-\u06D2\u06FA-\u06FF]/.test(t);
+}
+function go(t) {
+  return /[\u0630\u0690\u0621\u0631\u0661\u0671\u0622\u0632\u0672\u0692\u06C2\u0623\u0673\u0693\u06C3\u0624\u0694\u06C4\u0625\u0675\u0695\u06C5\u06E5\u0676\u0696\u06C6\u0627\u0677\u0697\u06C7\u0648\u0688\u0698\u06C8\u0689\u0699\u06C9\u068A\u06CA\u066B\u068B\u06CB\u068C\u068D\u06CD\u06FD\u068E\u06EE\u06FE\u062F\u068F\u06CF\u06EF]/.test(t);
+}
+function mt(t) {
+  return /[\u0600-\u0605\u060C-\u060E\u0610-\u061B\u061E\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/.test(t);
+}
+function Sn(t) {
+  return /[\u0E00-\u0E7F]/.test(t);
+}
+function wn(t) {
+  return /[A-z]/.test(t);
+}
+function Cf(t) {
+  return /\s/.test(t);
+}
+function Me(t) {
+  this.font = t, this.features = {};
+}
+function ut(t) {
+  this.id = t.id, this.tag = t.tag, this.substitution = t.substitution;
+}
+function yt(t, e) {
+  if (!t) return -1;
+  switch (e.format) {
+    case 1:
+      return e.glyphs.indexOf(t);
+    case 2: {
+      let n = e.ranges;
+      for (let r = 0; r < n.length; r++) {
+        const s = n[r];
+        if (t >= s.start && t <= s.end) {
+          let i = t - s.start;
+          return s.index + i;
+        }
+      }
+      break;
+    }
+    default:
+      return -1;
+  }
+  return -1;
+}
+function Tf(t, e) {
+  return yt(t, e.coverage) === -1 ? null : t + e.deltaGlyphId;
+}
+function kf(t, e) {
+  let n = yt(t, e.coverage);
+  return n === -1 ? null : e.substitute[n];
+}
+function ir(t, e) {
+  let n = [];
+  for (let r = 0; r < t.length; r++) {
+    const s = t[r];
+    let i = e.current;
+    i = Array.isArray(i) ? i[0] : i;
+    const a = yt(i, s);
+    a !== -1 && n.push(a);
+  }
+  return n.length !== t.length ? -1 : n;
+}
+function Ff(t, e) {
+  const n = e.inputCoverage.length + e.lookaheadCoverage.length + e.backtrackCoverage.length;
+  if (t.context.length < n) return [];
+  let r = ir(
+    e.inputCoverage,
+    t
+  );
+  if (r === -1) return [];
+  const s = e.inputCoverage.length - 1;
+  if (t.lookahead.length < e.lookaheadCoverage.length) return [];
+  let i = t.lookahead.slice(s);
+  for (; i.length && mt(i[0].char); )
+    i.shift();
+  const a = new Fe(i, 0);
+  let o = ir(
+    e.lookaheadCoverage,
+    a
+  ), c = [].concat(t.backtrack);
+  for (c.reverse(); c.length && mt(c[0].char); )
+    c.shift();
+  if (c.length < e.backtrackCoverage.length) return [];
+  const l = new Fe(c, 0);
+  let u = ir(
+    e.backtrackCoverage,
+    l
+  );
+  const f = r.length === e.inputCoverage.length && o.length === e.lookaheadCoverage.length && u.length === e.backtrackCoverage.length;
+  let h = [];
+  if (f)
+    for (let p = 0; p < e.lookupRecords.length; p++) {
+      const y = e.lookupRecords[p], g = y.lookupListIndex, b = this.getLookupByIndex(g);
+      for (let v = 0; v < b.subtables.length; v++) {
+        let w = b.subtables[v], C, T = this.getSubstitutionType(b, w);
+        if (T === "71" ? (T = this.getSubstitutionType(w, w.extension), C = this.getLookupMethod(w, w.extension), w = w.extension) : C = this.getLookupMethod(b, w), T === "12") {
+          const E = t.get(y.sequenceIndex), R = C(E);
+          R && h.push(R);
+        } else if (T === "21") {
+          const E = t.get(y.sequenceIndex), R = C(E);
+          R && h.push(R);
+        } else
+          throw new Error(`Substitution type ${T} is not supported in chaining substitution`);
+      }
+    }
+  return h;
+}
+function Ef(t, e) {
+  let n = t.current, r = yt(n, e.coverage);
+  if (r === -1) return null;
+  let s, i = e.ligatureSets[r];
+  for (let a = 0; a < i.length; a++) {
+    s = i[a];
+    for (let o = 0; o < s.components.length; o++) {
+      const c = t.lookahead[o], l = s.components[o];
+      if (c !== l) break;
+      if (o === s.components.length - 1) return s;
+    }
+  }
+  return null;
+}
+function Af(t, e) {
+  let n = t.current;
+  if (yt(n, e.coverage) === -1)
+    return null;
+  for (const s of e.ruleSets)
+    for (const i of s) {
+      let a = !0;
+      for (let o = 0; o < i.input.length; o++)
+        if (t.lookahead[o] !== i.input[o]) {
+          a = !1;
+          break;
+        }
+      if (a) {
+        let o = [];
+        o.push(n);
+        for (let l = 0; l < i.input.length; l++)
+          o.push(i.input[l]);
+        const c = (l, u) => {
+          const { lookupListIndex: f, sequenceIndex: h } = u, { subtables: p } = this.getLookupByIndex(f);
+          for (const y of p)
+            yt(l[h], y.coverage) !== -1 && (l[h] = y.deltaGlyphId);
+        };
+        for (let l = 0; l < i.lookupRecords.length; l++) {
+          const u = i.lookupRecords[l];
+          c(o, u);
+        }
+        return o;
+      }
+    }
+  return null;
+}
+function Of(t, e) {
+  if (t.context.length < e.coverages.length)
+    return [];
+  for (let r = 0; r < e.coverages.length; r++) {
+    let s = t.get(r);
+    if (s = Array.isArray(s) ? s[0] : s, yt(s, e.coverages[r]) === -1)
+      return [];
+  }
+  let n = [];
+  for (let r = 0; r < e.lookupRecords.length; r++) {
+    const s = e.lookupRecords[r], i = s.lookupListIndex, a = this.getLookupByIndex(i);
+    for (let o = 0; o < a.subtables.length; o++) {
+      let c = a.subtables[o], l, u = this.getSubstitutionType(a, c);
+      if (u === "71" ? (u = this.getSubstitutionType(c, c.extension), l = this.getLookupMethod(c, c.extension), c = c.extension) : l = this.getLookupMethod(a, c), u === "12") {
+        const f = t.get(s.sequenceIndex), h = l(f);
+        h && n.push(h);
+      } else if (u === "21") {
+        const f = t.get(s.sequenceIndex), h = l(f);
+        h && n.push(h);
+      }
+    }
+  }
+  return n;
+}
+function Lf(t, e) {
+  let n = yt(t, e.coverage);
+  return n === -1 ? null : e.sequences[n];
+}
+Me.prototype.getDefaultScriptFeaturesIndexes = function() {
+  const t = this.font.tables.gsub.scripts;
+  for (let e = 0; e < t.length; e++) {
+    const n = t[e];
+    if (n.tag === "DFLT") return n.script.defaultLangSys.featureIndexes;
+  }
+  return [];
+};
+Me.prototype.getScriptFeaturesIndexes = function(t) {
+  if (!this.font.tables.gsub) return [];
+  if (!t) return this.getDefaultScriptFeaturesIndexes();
+  const n = this.font.tables.gsub.scripts;
+  for (let r = 0; r < n.length; r++) {
+    const s = n[r];
+    if (s.tag === t && s.script.defaultLangSys)
+      return s.script.defaultLangSys.featureIndexes;
+    {
+      let i = s.langSysRecords;
+      if (i)
+        for (let a = 0; a < i.length; a++) {
+          const o = i[a];
+          if (o.tag === t)
+            return o.langSys.featureIndexes;
+        }
+    }
+  }
+  return this.getDefaultScriptFeaturesIndexes();
+};
+Me.prototype.mapTagsToFeatures = function(t, e) {
+  let n = {};
+  for (let r = 0; r < t.length; r++) {
+    const s = t[r].tag, i = t[r].feature;
+    n[s] = i;
+  }
+  this.features[e].tags = n;
+};
+Me.prototype.getScriptFeatures = function(t) {
+  let e = this.features[t];
+  if (Object.prototype.hasOwnProperty.call(this.features, t)) return e;
+  const n = this.getScriptFeaturesIndexes(t);
+  if (!n) return null;
+  const r = this.font.tables.gsub;
+  return e = n.map((s) => r.features[s]), this.features[t] = e, this.mapTagsToFeatures(e, t), e;
+};
+Me.prototype.getSubstitutionType = function(t, e) {
+  const n = t.lookupType.toString(), r = e.substFormat.toString();
+  return n + r;
+};
+Me.prototype.getLookupMethod = function(t, e) {
+  let n = this.getSubstitutionType(t, e);
+  switch (n) {
+    case "11":
+      return (r) => Tf.apply(
+        this,
+        [r, e]
+      );
+    case "12":
+      return (r) => kf.apply(
+        this,
+        [r, e]
+      );
+    case "63":
+      return (r) => Ff.apply(
+        this,
+        [r, e]
+      );
+    case "41":
+      return (r) => Ef.apply(
+        this,
+        [r, e]
+      );
+    case "21":
+      return (r) => Lf.apply(
+        this,
+        [r, e]
+      );
+    case "51":
+      return (r) => Af.apply(
+        this,
+        [r, e]
+      );
+    case "53":
+      return (r) => Of.apply(
+        this,
+        [r, e]
+      );
+    default:
+      throw new Error(
+        `substitutionType : ${n} lookupType: ${t.lookupType} - substFormat: ${e.substFormat} is not yet supported`
+      );
+  }
+};
+Me.prototype.lookupFeature = function(t) {
+  let e = t.contextParams, n = e.index;
+  const r = this.getFeature({
+    tag: t.tag,
+    script: t.script
+  });
+  if (!r) return new Error(
+    `font '${(this.font.names.unicode || this.font.names.windows || this.font.names.macintosh).fullName.en}' doesn't support feature '${t.tag}' for script '${t.script}'.`
+  );
+  const s = this.getFeatureLookups(r), i = [].concat(e.context);
+  for (let a = 0; a < s.length; a++) {
+    const o = s[a], c = this.getLookupSubtables(o);
+    for (let l = 0; l < c.length; l++) {
+      let u = c[l], f = this.getSubstitutionType(o, u), h;
+      f === "71" ? (f = this.getSubstitutionType(u, u.extension), h = this.getLookupMethod(u, u.extension), u = u.extension) : h = this.getLookupMethod(o, u);
+      let p;
+      switch (f) {
+        case "11":
+          p = h(e.current), p && i.splice(n, 1, new ut({
+            id: 11,
+            tag: t.tag,
+            substitution: p
+          }));
+          break;
+        case "12":
+          p = h(e.current), p && i.splice(n, 1, new ut({
+            id: 12,
+            tag: t.tag,
+            substitution: p
+          }));
+          break;
+        case "63":
+          p = h(e), Array.isArray(p) && p.length && i.splice(n, 1, new ut({
+            id: 63,
+            tag: t.tag,
+            substitution: p
+          }));
+          break;
+        case "41":
+          p = h(e), p && i.splice(n, 1, new ut({
+            id: 41,
+            tag: t.tag,
+            substitution: p
+          }));
+          break;
+        case "21":
+          p = h(e.current), p && i.splice(n, 1, new ut({
+            id: 21,
+            tag: t.tag,
+            substitution: p
+          }));
+          break;
+        case "51":
+        case "53":
+          p = h(e), Array.isArray(p) && p.length && i.splice(n, 1, new ut({
+            id: parseInt(f),
+            tag: t.tag,
+            substitution: p
+          }));
+          break;
+      }
+      e = new Fe(i, n), !(Array.isArray(p) && !p.length) && (p = null);
+    }
+  }
+  return i.length ? i : null;
+};
+Me.prototype.supports = function(t) {
+  if (!t.script) return !1;
+  this.getScriptFeatures(t.script);
+  const e = Object.prototype.hasOwnProperty.call(this.features, t.script);
+  if (!t.tag) return e;
+  const n = this.features[t.script].some((r) => r.tag === t.tag);
+  return e && n;
+};
+Me.prototype.getLookupSubtables = function(t) {
+  return t.subtables || null;
+};
+Me.prototype.getLookupByIndex = function(t) {
+  return this.font.tables.gsub.lookups[t] || null;
+};
+Me.prototype.getFeatureLookups = function(t) {
+  return t.lookupListIndexes.map(this.getLookupByIndex.bind(this));
+};
+Me.prototype.getFeature = function(e) {
+  if (!this.font) return { FAIL: "No font was found" };
+  Object.prototype.hasOwnProperty.call(this.features, e.script) || this.getScriptFeatures(e.script);
+  const n = this.features[e.script];
+  return n ? n.tags[e.tag] ? this.features[e.script].tags[e.tag] : null : { FAIL: `No feature for script ${e.script}` };
+};
+var If = Me;
+function Rf(t) {
+  const e = t.current, n = t.get(-1);
+  return (
+    // ? arabic first char
+    n === null && gt(e) || // ? arabic char preceded with a non arabic char
+    !gt(n) && gt(e)
+  );
+}
+function Bf(t) {
+  const e = t.get(1);
+  return (
+    // ? last arabic char
+    e === null || // ? next char is not arabic
+    !gt(e)
+  );
+}
+var Df = {
+  startCheck: Rf,
+  endCheck: Bf
+};
+function Mf(t) {
+  const e = t.current, n = t.get(-1);
+  return (
+    // ? an arabic char preceded with a non arabic char
+    (gt(e) || mt(e)) && !gt(n)
+  );
+}
+function _f(t) {
+  const e = t.get(1);
+  switch (!0) {
+    case e === null:
+      return !0;
+    case (!gt(e) && !mt(e)): {
+      const n = Cf(e);
+      if (!n) return !0;
+      if (n) {
+        let r = !1;
+        if (r = t.lookahead.some(
+          (s) => gt(s) || mt(s)
+        ), !r) return !0;
+      }
+      break;
+    }
+    default:
+      return !1;
+  }
+}
+var Uf = {
+  startCheck: Mf,
+  endCheck: _f
+};
+function Pf(t, e, n) {
+  e[n].setState(t.tag, t.substitution);
+}
+function Nf(t, e, n) {
+  e[n].setState(t.tag, t.substitution);
+}
+function ar(t, e, n) {
+  for (let r = 0; r < t.substitution.length; r++) {
+    const s = t.substitution[r], i = e[n + r];
+    if (Array.isArray(s)) {
+      s.length ? i.setState(t.tag, s[0]) : i.setState("deleted", !0);
+      continue;
+    }
+    i.setState(t.tag, s);
+  }
+}
+function Gf(t, e, n) {
+  let r = e[n];
+  r.setState(t.tag, t.substitution.ligGlyph);
+  const s = t.substitution.components.length;
+  for (let i = 0; i < s; i++)
+    r = e[n + i + 1], r.setState("deleted", !0);
+}
+var ii = {
+  11: Pf,
+  12: Nf,
+  63: ar,
+  41: Gf,
+  51: ar,
+  53: ar
+};
+function Hf(t, e, n) {
+  t instanceof ut && ii[t.id] && ii[t.id](t, e, n);
+}
+var At = Hf;
+function zf(t) {
+  let e = [].concat(t.backtrack);
+  for (let n = e.length - 1; n >= 0; n--) {
+    const r = e[n], s = go(r), i = mt(r);
+    if (!s && !i) return !0;
+    if (s) return !1;
+  }
+  return !1;
+}
+function Wf(t) {
+  if (go(t.current)) return !1;
+  for (let e = 0; e < t.lookahead.length; e++) {
+    const n = t.lookahead[e];
+    if (!mt(n)) return !0;
+  }
+  return !1;
+}
+function Vf(t) {
+  const e = "arab", n = this.featuresTags[e], r = this.tokenizer.getRangeTokens(t);
+  if (r.length === 1) return;
+  let s = new Fe(
+    r.map(
+      (a) => a.getState("glyphIndex")
+    ),
+    0
+  );
+  const i = new Fe(
+    r.map(
+      (a) => a.char
+    ),
+    0
+  );
+  for (let a = 0; a < r.length; a++) {
+    const o = r[a];
+    if (mt(o.char)) continue;
+    s.setCurrentIndex(a), i.setCurrentIndex(a);
+    let c = 0;
+    zf(i) && (c |= 1), Wf(i) && (c |= 2);
+    let l;
+    switch (c) {
+      case 1:
+        l = "fina";
+        break;
+      case 2:
+        l = "init";
+        break;
+      case 3:
+        l = "medi";
+        break;
+    }
+    if (n.indexOf(l) === -1) continue;
+    let u = this.query.lookupFeature({
+      tag: l,
+      script: e,
+      contextParams: s
+    });
+    if (u instanceof Error) {
+      console.info(u.message);
+      continue;
+    }
+    for (let f = 0; f < u.length; f++) {
+      const h = u[f];
+      h instanceof ut && (At(h, r, f), s.context[f] = h.substitution);
+    }
+  }
+}
+var qf = Vf;
+function ai(t, e) {
+  const n = t.map((r) => r.activeState.value);
+  return new Fe(n, 0);
+}
+function jf(t) {
+  const e = "arab";
+  let n = this.tokenizer.getRangeTokens(t), r = ai(n);
+  for (let s = 0; s < r.context.length; s++) {
+    r.setCurrentIndex(s);
+    let i = this.query.lookupFeature({
+      tag: "rlig",
+      script: e,
+      contextParams: r
+    });
+    if (i.length) {
+      for (let a = 0; a < i.length; a++) {
+        const o = i[a];
+        At(o, n, s);
+      }
+      r = ai(n);
+    }
+  }
+}
+var $f = jf;
+function Yf(t) {
+  return t.index === 0 && t.context.length > 1;
+}
+function Xf(t) {
+  return t.index === t.context.length - 1;
+}
+var Kf = {
+  startCheck: Yf,
+  endCheck: Xf
+};
+function oi(t, e) {
+  const n = t.map((r) => r.activeState.value);
+  return new Fe(n, 0);
+}
+function Zf(t) {
+  const e = "delf", n = "ccmp";
+  let r = this.tokenizer.getRangeTokens(t), s = oi(r);
+  for (let i = 0; i < s.context.length; i++) {
+    if (!this.query.getFeature({ tag: n, script: e, contextParams: s }))
+      continue;
+    s.setCurrentIndex(i);
+    let a = this.query.lookupFeature({
+      tag: n,
+      script: e,
+      contextParams: s
+    });
+    if (a.length) {
+      for (let o = 0; o < a.length; o++) {
+        const c = a[o];
+        At(c, r, i);
+      }
+      s = oi(r);
+    }
+  }
+}
+var Jf = Zf;
+function Qf(t) {
+  const e = t.current, n = t.get(-1);
+  return (
+    // ? latin first char
+    n === null && wn(e) || // ? latin char preceded with a non latin char
+    !wn(n) && wn(e)
+  );
+}
+function ep(t) {
+  const e = t.get(1);
+  return (
+    // ? last latin char
+    e === null || // ? next char is not latin
+    !wn(e)
+  );
+}
+var tp = {
+  startCheck: Qf,
+  endCheck: ep
+};
+function ci(t, e) {
+  const n = t.map((r) => r.activeState.value);
+  return new Fe(n, 0);
+}
+function np(t) {
+  const e = "latn";
+  let n = this.tokenizer.getRangeTokens(t), r = ci(n);
+  for (let s = 0; s < r.context.length; s++) {
+    r.setCurrentIndex(s);
+    let i = this.query.lookupFeature({
+      tag: "liga",
+      script: e,
+      contextParams: r
+    });
+    if (i.length) {
+      for (let a = 0; a < i.length; a++) {
+        const o = i[a];
+        At(o, n, s);
+      }
+      r = ci(n);
+    }
+  }
+}
+var rp = np;
+function sp(t) {
+  const e = t.current, n = t.get(-1);
+  return (
+    // ? thai first char
+    n === null && Sn(e) || // ? thai char preceded with a non thai char
+    !Sn(n) && Sn(e)
+  );
+}
+function ip(t) {
+  const e = t.get(1);
+  return (
+    // ? last thai char
+    e === null || // ? next char is not thai
+    !Sn(e)
+  );
+}
+var ap = {
+  startCheck: sp,
+  endCheck: ip
+};
+function li(t, e) {
+  const n = t.map((r) => r.activeState.value);
+  return new Fe(n, e || 0);
+}
+function op(t) {
+  const e = "thai";
+  let n = this.tokenizer.getRangeTokens(t), r = li(n, 0);
+  for (let s = 0; s < r.context.length; s++) {
+    r.setCurrentIndex(s);
+    let i = this.query.lookupFeature({
+      tag: "ccmp",
+      script: e,
+      contextParams: r
+    });
+    if (i.length) {
+      for (let a = 0; a < i.length; a++) {
+        const o = i[a];
+        At(o, n, s);
+      }
+      r = li(n, s);
+    }
+  }
+}
+var cp = op;
+function ui(t, e) {
+  const n = t.map((r) => r.activeState.value);
+  return new Fe(n, e || 0);
+}
+function lp(t) {
+  const e = "thai";
+  let n = this.tokenizer.getRangeTokens(t), r = ui(n, 0);
+  for (let s = 0; s < r.context.length; s++) {
+    r.setCurrentIndex(s);
+    let i = this.query.lookupFeature({
+      tag: "liga",
+      script: e,
+      contextParams: r
+    });
+    if (i.length) {
+      for (let a = 0; a < i.length; a++) {
+        const o = i[a];
+        At(o, n, s);
+      }
+      r = ui(n, s);
+    }
+  }
+}
+var up = lp;
+function hi(t, e) {
+  const n = t.map((r) => r.activeState.value);
+  return new Fe(n, e || 0);
+}
+function hp(t) {
+  const e = "thai";
+  let n = this.tokenizer.getRangeTokens(t), r = hi(n, 0);
+  for (let s = 0; s < r.context.length; s++) {
+    r.setCurrentIndex(s);
+    let i = this.query.lookupFeature({
+      tag: "rlig",
+      script: e,
+      contextParams: r
+    });
+    if (i.length) {
+      for (let a = 0; a < i.length; a++) {
+        const o = i[a];
+        At(o, n, s);
+      }
+      r = hi(n, s);
+    }
+  }
+}
+var fp = hp;
+function Nr(t) {
+  if (t === null) return !1;
+  const e = t.codePointAt(0);
+  return (
+    // Mongolian Variation Selectors
+    e >= 6155 && e <= 6157 || // Generic Variation Selectors
+    e >= 65024 && e <= 65039 || // Ideographic Variation Sequences
+    e >= 917760 && e <= 917999
+  );
+}
+function pp(t) {
+  const e = t.current, n = t.get(1);
+  return n === null && Nr(e) || Nr(n);
+}
+function dp(t) {
+  const e = t.get(1);
+  return e === null || !Nr(e);
+}
+var gp = {
+  startCheck: pp,
+  endCheck: dp
+};
+function mp(t) {
+  const e = this.query.font, n = this.tokenizer.getRangeTokens(t);
+  if (n[1].setState("deleted", !0), e.tables.cmap && e.tables.cmap.varSelectorList) {
+    const r = n[0].char.codePointAt(0), s = n[1].char.codePointAt(0), i = e.tables.cmap.varSelectorList[s];
+    if (i !== void 0 && i.nonDefaultUVS) {
+      const a = i.nonDefaultUVS.uvsMappings;
+      if (a[r]) {
+        const o = a[r].glyphID;
+        e.glyphs.glyphs[o] !== void 0 && n[0].setState("glyphIndex", o);
+      }
+    }
+  }
+}
+var yp = mp;
+function He(t) {
+  this.baseDir = t || "ltr", this.tokenizer = new wf(), this.featuresTags = {};
+}
+He.prototype.setText = function(t) {
+  this.text = t;
+};
+He.prototype.contextChecks = {
+  ccmpReplacementCheck: Kf,
+  latinWordCheck: tp,
+  arabicWordCheck: Df,
+  arabicSentenceCheck: Uf,
+  thaiWordCheck: ap,
+  unicodeVariationSequenceCheck: gp
+};
+function It(t) {
+  const e = this.contextChecks[`${t}Check`];
+  return this.tokenizer.registerContextChecker(
+    t,
+    e.startCheck,
+    e.endCheck
+  );
+}
+function bp() {
+  return It.call(this, "ccmpReplacement"), It.call(this, "latinWord"), It.call(this, "arabicWord"), It.call(this, "arabicSentence"), It.call(this, "thaiWord"), It.call(this, "unicodeVariationSequence"), this.tokenizer.tokenize(this.text);
+}
+function xp() {
+  const t = this.tokenizer.getContextRanges("arabicSentence");
+  for (let e = 0; e < t.length; e++) {
+    const n = t[e];
+    let r = this.tokenizer.getRangeTokens(n);
+    this.tokenizer.replaceRange(
+      n.startIndex,
+      n.endOffset,
+      r.reverse()
+    );
+  }
+}
+He.prototype.registerFeatures = function(t, e) {
+  const n = e.filter(
+    (r) => this.query.supports({ script: t, tag: r })
+  );
+  Object.prototype.hasOwnProperty.call(this.featuresTags, t) ? this.featuresTags[t] = this.featuresTags[t].concat(n) : this.featuresTags[t] = n;
+};
+He.prototype.applyFeatures = function(t, e) {
+  if (!t) throw new Error(
+    "No valid font was provided to apply features"
+  );
+  this.query || (this.query = new If(t));
+  for (let n = 0; n < e.length; n++) {
+    const r = e[n];
+    this.query.supports({ script: r.script }) && this.registerFeatures(r.script, r.tags);
+  }
+};
+He.prototype.registerModifier = function(t, e, n) {
+  this.tokenizer.registerModifier(t, e, n);
+};
+function cn() {
+  if (this.tokenizer.registeredModifiers.indexOf("glyphIndex") === -1)
+    throw new Error(
+      "glyphIndex modifier is required to apply arabic presentation features."
+    );
+}
+function vp() {
+  if (!Object.prototype.hasOwnProperty.call(this.featuresTags, "arab")) return;
+  cn.call(this);
+  const e = this.tokenizer.getContextRanges("arabicWord");
+  for (let n = 0; n < e.length; n++) {
+    const r = e[n];
+    qf.call(this, r);
+  }
+}
+function Sp() {
+  cn.call(this);
+  const t = this.tokenizer.getContextRanges("ccmpReplacement");
+  for (let e = 0; e < t.length; e++) {
+    const n = t[e];
+    Jf.call(this, n);
+  }
+}
+function wp() {
+  if (!this.hasFeatureEnabled("arab", "rlig")) return;
+  cn.call(this);
+  const t = this.tokenizer.getContextRanges("arabicWord");
+  for (let e = 0; e < t.length; e++) {
+    const n = t[e];
+    $f.call(this, n);
+  }
+}
+function Cp() {
+  if (!this.hasFeatureEnabled("latn", "liga")) return;
+  cn.call(this);
+  const t = this.tokenizer.getContextRanges("latinWord");
+  for (let e = 0; e < t.length; e++) {
+    const n = t[e];
+    rp.call(this, n);
+  }
+}
+function Tp() {
+  const t = this.tokenizer.getContextRanges("unicodeVariationSequence");
+  for (let e = 0; e < t.length; e++) {
+    const n = t[e];
+    yp.call(this, n);
+  }
+}
+function kp() {
+  cn.call(this);
+  const t = this.tokenizer.getContextRanges("thaiWord");
+  for (let e = 0; e < t.length; e++) {
+    const n = t[e];
+    this.hasFeatureEnabled("thai", "liga") && up.call(this, n), this.hasFeatureEnabled("thai", "rlig") && fp.call(this, n), this.hasFeatureEnabled("thai", "ccmp") && cp.call(this, n);
+  }
+}
+He.prototype.checkContextReady = function(t) {
+  return !!this.tokenizer.getContext(t);
+};
+He.prototype.applyFeaturesToContexts = function() {
+  this.checkContextReady("ccmpReplacement") && Sp.call(this), this.checkContextReady("arabicWord") && (vp.call(this), wp.call(this)), this.checkContextReady("latinWord") && Cp.call(this), this.checkContextReady("arabicSentence") && xp.call(this), this.checkContextReady("thaiWord") && kp.call(this), this.checkContextReady("unicodeVariationSequence") && Tp.call(this);
+};
+He.prototype.hasFeatureEnabled = function(t, e) {
+  return (this.featuresTags[t] || []).indexOf(e) !== -1;
+};
+He.prototype.processText = function(t) {
+  (!this.text || this.text !== t) && (this.setText(t), bp.call(this), this.applyFeaturesToContexts());
+};
+He.prototype.getBidiText = function(t) {
+  return this.processText(t), this.tokenizer.getText();
+};
+He.prototype.getTextGlyphs = function(t) {
+  this.processText(t);
+  let e = [];
+  for (let n = 0; n < this.tokenizer.tokens.length; n++) {
+    const r = this.tokenizer.tokens[n];
+    if (r.state.deleted) continue;
+    const s = r.activeState.value;
+    e.push(Array.isArray(s) ? s[0] : s);
+  }
+  return e;
+};
+var Fp = He;
+function or(t) {
+  return {
+    fontFamily: { en: t.familyName || " " },
+    fontSubfamily: { en: t.styleName || " " },
+    fullName: { en: t.fullName || t.familyName + " " + t.styleName },
+    // postScriptName may not contain any whitespace
+    postScriptName: { en: t.postScriptName || (t.familyName + t.styleName).replace(/\s/g, "") },
+    designer: { en: t.designer || " " },
+    designerURL: { en: t.designerURL || " " },
+    manufacturer: { en: t.manufacturer || " " },
+    manufacturerURL: { en: t.manufacturerURL || " " },
+    license: { en: t.license || " " },
+    licenseURL: { en: t.licenseURL || " " },
+    version: { en: t.version || "Version 0.1" },
+    description: { en: t.description || " " },
+    copyright: { en: t.copyright || " " },
+    trademark: { en: t.trademark || " " }
+  };
+}
+function te(t) {
+  if (t = t || {}, t.tables = t.tables || {}, !t.empty) {
+    if (!t.familyName) throw new Error("When creating a new Font object, familyName is required.");
+    if (!t.styleName) throw new Error("When creating a new Font object, styleName is required.");
+    if (!t.unitsPerEm) throw new Error("When creating a new Font object, unitsPerEm is required.");
+    if (!t.ascender) throw new Error("When creating a new Font object, ascender is required.");
+    if (t.descender > 0) throw new Error("When creating a new Font object, negative descender value is required.");
+    this.names = {}, this.names.unicode = or(t), this.names.macintosh = or(t), this.names.windows = or(t), this.unitsPerEm = t.unitsPerEm || 1e3, this.ascender = t.ascender, this.descender = t.descender, this.createdTimestamp = t.createdTimestamp, this.italicAngle = t.italicAngle || 0, this.weightClass = t.weightClass || 0;
+    let e = 0;
+    t.fsSelection ? e = t.fsSelection : (this.italicAngle < 0 ? e |= this.fsSelectionValues.ITALIC : this.italicAngle > 0 && (e |= this.fsSelectionValues.OBLIQUE), this.weightClass >= 600 && (e |= this.fsSelectionValues.BOLD), e === 0 && (e = this.fsSelectionValues.REGULAR)), (!t.panose || !Array.isArray(t.panose)) && (t.panose = [0, 0, 0, 0, 0, 0, 0, 0, 0]), this.tables = Object.assign(t.tables, {
+      os2: Object.assign({
+        usWeightClass: t.weightClass || this.usWeightClasses.MEDIUM,
+        usWidthClass: t.widthClass || this.usWidthClasses.MEDIUM,
+        bFamilyType: t.panose[0] || 0,
+        bSerifStyle: t.panose[1] || 0,
+        bWeight: t.panose[2] || 0,
+        bProportion: t.panose[3] || 0,
+        bContrast: t.panose[4] || 0,
+        bStrokeVariation: t.panose[5] || 0,
+        bArmStyle: t.panose[6] || 0,
+        bLetterform: t.panose[7] || 0,
+        bMidline: t.panose[8] || 0,
+        bXHeight: t.panose[9] || 0,
+        fsSelection: e
+      }, t.tables.os2)
+    });
+  }
+  this.supported = !0, this.glyphs = new Je.GlyphSet(this, t.glyphs || []), this.encoding = new Ea(this), this.position = new vu(this), this.substitution = new Eu(this), this.tables = this.tables || {}, this.tables = new Proxy(this.tables, {
+    set: (e, n, r) => (e[n] = r, e.fvar && (e.gvar || e.cff2) && !this.variation && (this.variation = new zu(this)), !0)
+  }), this.palettes = new so(this), this.layers = new Au(this), this.svgImages = new Ou(this), this._push = null, this._hmtxTableData = {}, Object.defineProperty(this, "hinting", {
+    get: function() {
+      return this._hinting ? this._hinting : this.outlinesFormat === "truetype" ? this._hinting = new xf(this) : null;
+    }
+  });
+}
+te.prototype.hasChar = function(t) {
+  return this.encoding.charToGlyphIndex(t) > 0;
+};
+te.prototype.charToGlyphIndex = function(t) {
+  return this.encoding.charToGlyphIndex(t);
+};
+te.prototype.charToGlyph = function(t) {
+  const e = this.charToGlyphIndex(t);
+  let n = this.glyphs.get(e);
+  return n || (n = this.glyphs.get(0)), n;
+};
+te.prototype.updateFeatures = function(t) {
+  return this.defaultRenderOptions.features.map((e) => e.script === "latn" ? {
+    script: "latn",
+    tags: e.tags.filter((n) => t[n])
+  } : e);
+};
+te.prototype.stringToGlyphIndexes = function(t, e) {
+  const n = new Fp(), r = (i) => this.charToGlyphIndex(i.char);
+  n.registerModifier("glyphIndex", null, r);
+  let s = e ? this.updateFeatures(e.features) : this.defaultRenderOptions.features;
+  return n.applyFeatures(this, s), n.getTextGlyphs(t);
+};
+te.prototype.stringToGlyphs = function(t, e) {
+  const n = this.stringToGlyphIndexes(t, e);
+  let r = n.length;
+  const s = new Array(r), i = this.glyphs.get(0);
+  for (let a = 0; a < r; a += 1)
+    s[a] = this.glyphs.get(n[a]) || i;
+  return s;
+};
+te.prototype.nameToGlyphIndex = function(t) {
+  return this.glyphNames.nameToGlyphIndex(t);
+};
+te.prototype.nameToGlyph = function(t) {
+  const e = this.nameToGlyphIndex(t);
+  let n = this.glyphs.get(e);
+  return n || (n = this.glyphs.get(0)), n;
+};
+te.prototype.glyphIndexToName = function(t) {
+  return this.glyphNames.glyphIndexToName ? this.glyphNames.glyphIndexToName(t) : "";
+};
+te.prototype.getKerningValue = function(t, e) {
+  t = t.index || t, e = e.index || e;
+  const n = this.position.defaultKerningTables;
+  return n ? this.position.getKerningValue(n, t, e) : this.kerningPairs[t + "," + e] || 0;
+};
+te.prototype.defaultRenderOptions = {
+  kerning: !0,
+  features: [
+    /**
+     * these 4 features are required to render Arabic text properly
+     * and shouldn't be turned off when rendering arabic text.
+     */
+    { script: "arab", tags: ["init", "medi", "fina", "rlig"] },
+    { script: "latn", tags: ["liga", "rlig"] },
+    { script: "thai", tags: ["liga", "rlig", "ccmp"] }
+  ],
+  hinting: !1,
+  usePalette: 0,
+  drawLayers: !0,
+  drawSVG: !0
+};
+te.prototype.forEachGlyph = function(t, e, n, r, s, i) {
+  e = e !== void 0 ? e : 0, n = n !== void 0 ? n : 0, r = r !== void 0 ? r : 72, s = Object.assign({}, this.defaultRenderOptions, s);
+  const a = 1 / this.unitsPerEm * r, o = this.stringToGlyphs(t, s);
+  let c;
+  if (s.kerning) {
+    const l = s.script || this.position.getDefaultScriptName();
+    c = this.position.getKerningTables(l, s.language);
+  }
+  for (let l = 0; l < o.length; l += 1) {
+    const u = o[l];
+    if (i.call(this, u, e, n, r, s), u.advanceWidth && (e += u.advanceWidth * a), s.kerning && l < o.length - 1) {
+      const f = c ? this.position.getKerningValue(c, u.index, o[l + 1].index) : this.getKerningValue(u, o[l + 1]);
+      e += f * a;
+    }
+    s.letterSpacing ? e += s.letterSpacing * r : s.tracking && (e += s.tracking / 1e3 * r);
+  }
+  return e;
+};
+te.prototype.getPath = function(t, e, n, r, s) {
+  s = Object.assign({}, this.defaultRenderOptions, s);
+  const i = new Ut();
+  if (i._layers = [], _a(this, i), i.stroke) {
+    const a = 1 / (i.unitsPerEm || 1e3) * r;
+    i.strokeWidth *= a;
+  }
+  return this.forEachGlyph(t, e, n, r, s, (a, o, c, l) => {
+    const u = a.getPath(o, c, l, s, this);
+    if (s.drawSVG || s.drawLayers) {
+      const f = u._layers;
+      if (f && f.length) {
+        for (let h = 0; h < f.length; h++) {
+          const p = f[h];
+          i._layers.push(p);
+        }
+        return;
+      }
+    }
+    i.extend(u);
+  }), i;
+};
+te.prototype.getPaths = function(t, e, n, r, s) {
+  s = Object.assign({}, this.defaultRenderOptions, s);
+  const i = [];
+  return this.forEachGlyph(t, e, n, r, s, function(a, o, c, l) {
+    const u = a.getPath(o, c, l, s, this);
+    i.push(u);
+  }), i;
+};
+te.prototype.getAdvanceWidth = function(t, e, n) {
+  return n = Object.assign({}, this.defaultRenderOptions, n), this.forEachGlyph(t, 0, 0, e, n, function() {
+  });
+};
+te.prototype.draw = function(t, e, n, r, s, i) {
+  this.getPath(e, n, r, s, i).draw(t);
+};
+te.prototype.drawPoints = function(t, e, n, r, s, i) {
+  i = Object.assign({}, this.defaultRenderOptions, i), this.forEachGlyph(e, n, r, s, i, function(a, o, c, l) {
+    a.drawPoints(t, o, c, l, i, this);
+  });
+};
+te.prototype.drawMetrics = function(t, e, n, r, s, i) {
+  i = Object.assign({}, this.defaultRenderOptions, i), this.forEachGlyph(e, n, r, s, i, function(a, o, c, l) {
+    a.drawMetrics(t, o, c, l);
+  });
+};
+te.prototype.getEnglishName = function(t) {
+  const e = (this.names.unicode || this.names.macintosh || this.names.windows)[t];
+  if (e)
+    return e.en;
+};
+te.prototype.validate = function() {
+  const t = [], e = this;
+  function n(s, i) {
+    s || (console.warn(`[opentype.js] ${i}`), t.push(i));
+  }
+  function r(s) {
+    const i = e.getEnglishName(s);
+    n(
+      i && i.trim().length > 0,
+      "No English " + s + " specified."
+    );
+  }
+  if (r("fontFamily"), r("weightName"), r("manufacturer"), r("copyright"), r("version"), n(this.unitsPerEm > 0, "No unitsPerEm specified."), this.tables.colr) {
+    const s = this.tables.colr.baseGlyphRecords;
+    let i = -1;
+    for (let a = 0; a < s.length; a++) {
+      const o = s[a].glyphID;
+      if (n(i < s[a].glyphID, `baseGlyphs must be sorted by GlyphID in ascending order, but glyphID ${o} comes after ${i}`), i > s[a].glyphID)
+        break;
+      i = o;
+    }
+  }
+  return t;
+};
+te.prototype.toTables = function() {
+  return xu.fontToTable(this);
+};
+te.prototype.toBuffer = function() {
+  return console.warn("Font.toBuffer is deprecated. Use Font.toArrayBuffer instead."), this.toArrayBuffer();
+};
+te.prototype.toArrayBuffer = function() {
+  const e = this.toTables().encode(), n = new ArrayBuffer(e.length), r = new Uint8Array(n);
+  for (let s = 0; s < e.length; s++)
+    r[s] = e[s];
+  return n;
+};
+te.prototype.download = function() {
+  console.error("DEPRECATED: platform-specific actions are to be implemented on user-side");
+};
+te.prototype.fsSelectionValues = {
+  ITALIC: 1,
+  //1
+  UNDERSCORE: 2,
+  //2
+  NEGATIVE: 4,
+  //4
+  OUTLINED: 8,
+  //8
+  STRIKEOUT: 16,
+  //16
+  BOLD: 32,
+  //32
+  REGULAR: 64,
+  //64
+  USER_TYPO_METRICS: 128,
+  //128
+  WWS: 256,
+  //256
+  OBLIQUE: 512
+  //512
+};
+te.prototype.macStyleValues = {
+  BOLD: 1,
+  //1
+  ITALIC: 2,
+  //2
+  UNDERLINE: 4,
+  //4
+  OUTLINED: 8,
+  //8
+  SHADOW: 16,
+  //16
+  CONDENSED: 32,
+  //32
+  EXTENDED: 64
+  //64
+};
+te.prototype.usWidthClasses = {
+  ULTRA_CONDENSED: 1,
+  EXTRA_CONDENSED: 2,
+  CONDENSED: 3,
+  SEMI_CONDENSED: 4,
+  MEDIUM: 5,
+  SEMI_EXPANDED: 6,
+  EXPANDED: 7,
+  EXTRA_EXPANDED: 8,
+  ULTRA_EXPANDED: 9
+};
+te.prototype.usWeightClasses = {
+  THIN: 100,
+  EXTRA_LIGHT: 200,
+  LIGHT: 300,
+  NORMAL: 400,
+  MEDIUM: 500,
+  SEMI_BOLD: 600,
+  BOLD: 700,
+  EXTRA_BOLD: 800,
+  BLACK: 900
+};
+var Ep = te;
+function Ap(t, e) {
+  const n = new M.Parser(t, e), r = n.parseUShort(), s = n.parseUShort();
+  r !== 1 && console.warn(`Unsupported hvar table version ${r}.${s}`);
+  const i = [
+    r,
+    s
+  ], a = n.parsePointer32(function() {
+    return this.parseItemVariationStore();
+  }), o = n.parsePointer32(function() {
+    return this.parseDeltaSetIndexMap();
+  }), c = n.parsePointer32(function() {
+    return this.parseDeltaSetIndexMap();
+  }), l = n.parsePointer32(function() {
+    return this.parseDeltaSetIndexMap();
+  });
+  return {
+    version: i,
+    itemVariationStore: a,
+    advanceWidth: o,
+    lsb: c,
+    rsb: l
+  };
+}
+function Op() {
+  console.warn("Writing of hvar tables is not yet supported.");
+}
+var Lp = { make: Op, parse: Ap }, Ip = function() {
+  return {
+    coverage: this.parsePointer(k.coverage),
+    attachPoints: this.parseList(k.pointer(k.uShortList))
+  };
+}, Rp = function() {
+  var t = this.parseUShort();
+  if (H.argument(
+    t === 1 || t === 2 || t === 3,
+    "Unsupported CaretValue table version."
+  ), t === 1)
+    return { coordinate: this.parseShort() };
+  if (t === 2)
+    return { pointindex: this.parseShort() };
+  if (t === 3)
+    return { coordinate: this.parseShort() };
+}, Bp = function() {
+  return this.parseList(k.pointer(Rp));
+}, Dp = function() {
+  return {
+    coverage: this.parsePointer(k.coverage),
+    ligGlyphs: this.parseList(k.pointer(Bp))
+  };
+}, Mp = function() {
+  return this.parseUShort(), this.parseList(k.pointer(k.coverage));
+};
+function _p(t, e) {
+  e = e || 0;
+  const n = new k(t, e), r = n.parseVersion(1);
+  H.argument(
+    r === 1 || r === 1.2 || r === 1.3,
+    "Unsupported GDEF table version."
+  );
+  var s = {
+    version: r,
+    classDef: n.parsePointer(k.classDef),
+    attachList: n.parsePointer(Ip),
+    ligCaretList: n.parsePointer(Dp),
+    markAttachClassDef: n.parsePointer(k.classDef)
+  };
+  return r >= 1.2 && (s.markGlyphSets = n.parsePointer(Mp)), s;
+}
+var Up = { parse: _p }, Ve = new Array(10);
+Ve[1] = function() {
+  const e = this.offset + this.relativeOffset, n = this.parseUShort();
+  if (n === 1)
+    return {
+      posFormat: 1,
+      coverage: this.parsePointer(k.coverage),
+      value: this.parseValueRecord()
+    };
+  if (n === 2)
+    return {
+      posFormat: 2,
+      coverage: this.parsePointer(k.coverage),
+      values: this.parseValueRecordList()
+    };
+  H.assert(!1, "0x" + e.toString(16) + ": GPOS lookup type 1 format must be 1 or 2.");
+};
+Ve[2] = function() {
+  const e = this.offset + this.relativeOffset, n = this.parseUShort();
+  H.assert(n === 1 || n === 2, "0x" + e.toString(16) + ": GPOS lookup type 2 format must be 1 or 2.");
+  const r = this.parsePointer(k.coverage), s = this.parseUShort(), i = this.parseUShort();
+  if (n === 1)
+    return {
+      posFormat: n,
+      coverage: r,
+      valueFormat1: s,
+      valueFormat2: i,
+      pairSets: this.parseList(k.pointer(k.list(function() {
+        return {
+          // pairValueRecord
+          secondGlyph: this.parseUShort(),
+          value1: this.parseValueRecord(s),
+          value2: this.parseValueRecord(i)
+        };
+      })))
+    };
+  if (n === 2) {
+    const a = this.parsePointer(k.classDef), o = this.parsePointer(k.classDef), c = this.parseUShort(), l = this.parseUShort();
+    return {
+      // Class Pair Adjustment
+      posFormat: n,
+      coverage: r,
+      valueFormat1: s,
+      valueFormat2: i,
+      classDef1: a,
+      classDef2: o,
+      class1Count: c,
+      class2Count: l,
+      classRecords: this.parseList(c, k.list(l, function() {
+        return {
+          value1: this.parseValueRecord(s),
+          value2: this.parseValueRecord(i)
+        };
+      }))
+    };
+  }
+};
+Ve[3] = function() {
+  return { error: "GPOS Lookup 3 not supported" };
+};
+Ve[4] = function() {
+  return { error: "GPOS Lookup 4 not supported" };
+};
+Ve[5] = function() {
+  return { error: "GPOS Lookup 5 not supported" };
+};
+Ve[6] = function() {
+  return { error: "GPOS Lookup 6 not supported" };
+};
+Ve[7] = function() {
+  return { error: "GPOS Lookup 7 not supported" };
+};
+Ve[8] = function() {
+  return { error: "GPOS Lookup 8 not supported" };
+};
+Ve[9] = function() {
+  return { error: "GPOS Lookup 9 not supported" };
+};
+function Pp(t, e) {
+  e = e || 0;
+  const n = new k(t, e), r = n.parseVersion(1);
+  return H.argument(r === 1 || r === 1.1, "Unsupported GPOS table version " + r), r === 1 ? {
+    version: r,
+    scripts: n.parseScriptList(),
+    features: n.parseFeatureList(),
+    lookups: n.parseLookupList(Ve)
+  } : {
+    version: r,
+    scripts: n.parseScriptList(),
+    features: n.parseFeatureList(),
+    lookups: n.parseLookupList(Ve),
+    variations: n.parseFeatureVariationsList()
+  };
+}
+var Np = new Array(10);
+function Gp(t) {
+  return new O.Table("GPOS", [
+    { name: "version", type: "ULONG", value: 65536 },
+    { name: "scripts", type: "TABLE", value: new O.ScriptList(t.scripts) },
+    { name: "features", type: "TABLE", value: new O.FeatureList(t.features) },
+    { name: "lookups", type: "TABLE", value: new O.LookupList(t.lookups, Np) }
+  ]);
+}
+var Hp = { parse: Pp, make: Gp };
+function zp(t) {
+  const e = {};
+  t.skip("uShort");
+  const n = t.parseUShort();
+  H.argument(n === 0, "Unsupported kern sub-table version."), t.skip("uShort", 2);
+  const r = t.parseUShort();
+  t.skip("uShort", 3);
+  for (let s = 0; s < r; s += 1) {
+    const i = t.parseUShort(), a = t.parseUShort(), o = t.parseShort();
+    e[i + "," + a] = o;
+  }
+  return e;
+}
+function Wp(t) {
+  const e = {};
+  t.skip("uShort"), t.parseULong() > 1 && console.warn("Only the first kern subtable is supported."), t.skip("uLong");
+  const s = t.parseUShort() & 255;
+  if (t.skip("uShort"), s === 0) {
+    const i = t.parseUShort();
+    t.skip("uShort", 3);
+    for (let a = 0; a < i; a += 1) {
+      const o = t.parseUShort(), c = t.parseUShort(), l = t.parseShort();
+      e[o + "," + c] = l;
+    }
+  }
+  return e;
+}
+function Vp(t, e) {
+  const n = new M.Parser(t, e), r = n.parseUShort();
+  if (r === 0)
+    return zp(n);
+  if (r === 1)
+    return Wp(n);
+  throw new Error("Unsupported kern table version (" + r + ").");
+}
+var qp = { parse: Vp };
+function jp(t, e, n, r) {
+  const s = new M.Parser(t, e), i = r ? s.parseUShort : s.parseULong, a = [];
+  for (let o = 0; o < n + 1; o += 1) {
+    let c = i.call(s);
+    r && (c *= 2), a.push(c);
+  }
+  return a;
+}
+var $p = { parse: jp };
+function fi(t, e) {
+  const n = [];
+  let r = 12;
+  for (let s = 0; s < e; s += 1) {
+    const i = M.getTag(t, r), a = M.getULong(t, r + 4), o = M.getULong(t, r + 8), c = M.getULong(t, r + 12);
+    n.push({ tag: i, checksum: a, offset: o, length: c, compression: !1 }), r += 16;
+  }
+  return n;
+}
+function Yp(t, e) {
+  const n = [];
+  let r = 44;
+  for (let s = 0; s < e; s += 1) {
+    const i = M.getTag(t, r), a = M.getULong(t, r + 4), o = M.getULong(t, r + 8), c = M.getULong(t, r + 12);
+    let l;
+    o < c ? l = "WOFF" : l = !1, n.push({
+      tag: i,
+      offset: a,
+      compression: l,
+      compressedLength: o,
+      length: c
+    }), r += 20;
+  }
+  return n;
+}
+function K(t, e) {
+  if (e.compression === "WOFF") {
+    const n = new Uint8Array(t.buffer, e.offset + 2, e.compressedLength - 2), r = new Uint8Array(e.length);
+    if (ga(n, r), r.byteLength !== e.length)
+      throw new Error("Decompression error: " + e.tag + " decompressed length doesn't match recorded length");
+    return { data: new DataView(r.buffer, 0), offset: 0 };
+  } else
+    return { data: t, offset: e.offset };
+}
+function Xp(t, e = {}) {
+  let n, r;
+  const s = new Ep({ empty: !0 });
+  t.constructor !== ArrayBuffer && (t = new Uint8Array(t).buffer);
+  const i = new DataView(t, 0);
+  let a, o = [];
+  const c = M.getTag(i, 0);
+  if (c === "\0\0\0" || c === "true" || c === "typ1")
+    s.outlinesFormat = "truetype", a = M.getUShort(i, 4), o = fi(i, a);
+  else if (c === "OTTO")
+    s.outlinesFormat = "cff", a = M.getUShort(i, 4), o = fi(i, a);
+  else if (c === "wOFF") {
+    const P = M.getTag(i, 4);
+    if (P === "\0\0\0")
+      s.outlinesFormat = "truetype";
+    else if (P === "OTTO")
+      s.outlinesFormat = "cff";
+    else
+      throw new Error("Unsupported OpenType flavor " + c);
+    a = M.getUShort(i, 12), o = Yp(i, a);
+  } else if (c === "wOF2") {
+    const P = "https://github.com/opentypejs/opentype.js/issues/183#issuecomment-1147228025";
+    throw new Error("WOFF2 require an external decompressor library, see examples at: " + P);
+  } else
+    throw new Error("Unsupported OpenType signature " + c);
+  let l, u, f, h, p, y, g, b, v, w, C, T, E, R, U, W, j, N;
+  for (let P = 0; P < a; P += 1) {
+    const D = o[P];
+    let _;
+    switch (D.tag) {
+      case "avar":
+        g = D;
+        break;
+      case "cmap":
+        _ = K(i, D), s.tables.cmap = Fa.parse(_.data, _.offset), s.encoding = new Aa(s.tables.cmap);
+        break;
+      case "cvt ":
+        _ = K(i, D), N = new M.Parser(_.data, _.offset), s.tables.cvt = N.parseShortList(D.length / 2);
+        break;
+      case "fvar":
+        f = D;
+        break;
+      case "STAT":
+        h = D;
+        break;
+      case "gvar":
+        p = D;
+        break;
+      case "cvar":
+        y = D;
+        break;
+      case "fpgm":
+        _ = K(i, D), N = new M.Parser(_.data, _.offset), s.tables.fpgm = N.parseByteList(D.length);
+        break;
+      case "head":
+        _ = K(i, D), s.tables.head = Na.parse(_.data, _.offset), s.unitsPerEm = s.tables.head.unitsPerEm, n = s.tables.head.indexToLocFormat;
+        break;
+      case "hhea":
+        _ = K(i, D), s.tables.hhea = Ga.parse(_.data, _.offset), s.ascender = s.tables.hhea.ascender, s.descender = s.tables.hhea.descender, s.numberOfHMetrics = s.tables.hhea.numberOfHMetrics;
+        break;
+      case "HVAR":
+        E = D;
+        break;
+      case "hmtx":
+        T = D;
+        break;
+      case "ltag":
+        _ = K(i, D), r = za.parse(_.data, _.offset);
+        break;
+      case "COLR":
+        _ = K(i, D), s.tables.colr = $a.parse(_.data, _.offset);
+        break;
+      case "CPAL":
+        _ = K(i, D), s.tables.cpal = Ra.parse(_.data, _.offset);
+        break;
+      case "maxp":
+        _ = K(i, D), s.tables.maxp = Wa.parse(_.data, _.offset), s.numGlyphs = s.tables.maxp.numGlyphs;
+        break;
+      case "name":
+        W = D;
+        break;
+      case "OS/2":
+        _ = K(i, D), s.tables.os2 = Ur.parse(_.data, _.offset);
+        break;
+      case "post":
+        _ = K(i, D), s.tables.post = Va.parse(_.data, _.offset), s.glyphNames = new Yr(s.tables.post);
+        break;
+      case "prep":
+        _ = K(i, D), N = new M.Parser(_.data, _.offset), s.tables.prep = N.parseByteList(D.length);
+        break;
+      case "glyf":
+        b = D;
+        break;
+      case "loca":
+        U = D;
+        break;
+      case "CFF ":
+        l = D;
+        break;
+      case "CFF2":
+        u = D;
+        break;
+      case "kern":
+        R = D;
+        break;
+      case "GDEF":
+        v = D;
+        break;
+      case "GPOS":
+        w = D;
+        break;
+      case "GSUB":
+        C = D;
+        break;
+      case "meta":
+        j = D;
+        break;
+      case "gasp":
+        try {
+          _ = K(i, D), s.tables.gasp = Qa.parse(_.data, _.offset);
+        } catch (re) {
+          console.warn("Failed to parse gasp table, skipping."), console.warn(re);
+        }
+        break;
+      case "SVG ":
+        _ = K(i, D), s.tables.svg = eo.parse(_.data, _.offset);
+        break;
+    }
+  }
+  const $ = K(i, W);
+  if (s.tables.name = ka.parse($.data, $.offset, r), s.names = s.tables.name, b && U) {
+    const P = n === 0, D = K(i, U), _ = $p.parse(D.data, D.offset, s.numGlyphs, P), re = K(i, b);
+    s.glyphs = oo.parse(re.data, re.offset, _, s, e);
+  } else if (l) {
+    const P = K(i, l);
+    Mr.parse(P.data, P.offset, s, e);
+  } else if (u) {
+    const P = K(i, u);
+    Mr.parse(P.data, P.offset, s, e);
+  } else
+    throw new Error("Font doesn't contain TrueType, CFF or CFF2 outlines.");
+  const ie = K(i, T);
+  if (Ha.parse(s, ie.data, ie.offset, s.numberOfHMetrics, s.numGlyphs, s.glyphs, e), Wc(s, e), R) {
+    const P = K(i, R);
+    s.kerningPairs = qp.parse(P.data, P.offset);
+  } else
+    s.kerningPairs = {};
+  if (v) {
+    const P = K(i, v);
+    s.tables.gdef = Up.parse(P.data, P.offset);
+  }
+  if (w) {
+    const P = K(i, w);
+    s.tables.gpos = Hp.parse(P.data, P.offset), s.position.init();
+  }
+  if (C) {
+    const P = K(i, C);
+    s.tables.gsub = qa.parse(P.data, P.offset);
+  }
+  if (f) {
+    const P = K(i, f);
+    s.tables.fvar = Ya.parse(P.data, P.offset, s.names);
+  }
+  if (h) {
+    const P = K(i, h);
+    s.tables.stat = Xa.parse(P.data, P.offset, s.tables.fvar);
+  }
+  if (p) {
+    f || console.warn("This font provides a gvar table, but no fvar table, which is required for variable fonts."), b || console.warn("This font provides a gvar table, but no glyf table. Glyph variation only works with TrueType outlines.");
+    const P = K(i, p);
+    s.tables.gvar = Ja.parse(P.data, P.offset, s.tables.fvar, s.glyphs);
+  }
+  if (y) {
+    f || console.warn("This font provides a cvar table, but no fvar table, which is required for variable fonts."), s.tables.cvt || console.warn("This font provides a cvar table, but no cvt table which could be made variable."), b || console.warn("This font provides a gvar table, but no glyf table. Glyph variation only works with TrueType outlines.");
+    const P = K(i, y);
+    s.tables.cvar = Za.parse(P.data, P.offset, s.tables.fvar, s.tables.cvt || []);
+  }
+  if (g) {
+    f || console.warn("This font provides an avar table, but no fvar table, which is required for variable fonts.");
+    const P = K(i, g);
+    s.tables.avar = Ka.parse(P.data, P.offset, s.tables.fvar);
+  }
+  if (E) {
+    f || console.warn("This font provides an HVAR table, but no fvar table, which is required for variable fonts."), T || console.warn("This font provides an HVAR table, but no hmtx table to vary.");
+    const P = K(i, E);
+    s.tables.hvar = Lp.parse(P.data, P.offset, s.tables.fvar);
+  }
+  if (j) {
+    const P = K(i, j);
+    s.tables.meta = ja.parse(P.data, P.offset), s.metas = s.tables.meta;
+  }
+  return s.palettes = new so(s), s;
+}
+function Kp(t, e = !1) {
+  const n = t[0].index !== null, r = new Set(Object.keys(t[0].attributes)), s = new Set(Object.keys(t[0].morphAttributes)), i = {}, a = {}, o = t[0].morphTargetsRelative, c = new Ao();
+  let l = 0;
+  for (let u = 0; u < t.length; ++u) {
+    const f = t[u];
+    let h = 0;
+    if (n !== (f.index !== null))
+      return console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + u + ". All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them."), null;
+    for (const p in f.attributes) {
+      if (!r.has(p))
+        return console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + u + '. All geometries must have compatible attributes; make sure "' + p + '" attribute exists among all geometries, or in none of them.'), null;
+      i[p] === void 0 && (i[p] = []), i[p].push(f.attributes[p]), h++;
+    }
+    if (h !== r.size)
+      return console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + u + ". Make sure all geometries have the same number of attributes."), null;
+    if (o !== f.morphTargetsRelative)
+      return console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + u + ". .morphTargetsRelative must be consistent throughout all geometries."), null;
+    for (const p in f.morphAttributes) {
+      if (!s.has(p))
+        return console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + u + ".  .morphAttributes must be consistent throughout all geometries."), null;
+      a[p] === void 0 && (a[p] = []), a[p].push(f.morphAttributes[p]);
+    }
+    if (e) {
+      let p;
+      if (n)
+        p = f.index.count;
+      else if (f.attributes.position !== void 0)
+        p = f.attributes.position.count;
+      else
+        return console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + u + ". The geometry must have either an index or a position attribute"), null;
+      c.addGroup(l, p, u), l += p;
+    }
+  }
+  if (n) {
+    let u = 0;
+    const f = [];
+    for (let h = 0; h < t.length; ++h) {
+      const p = t[h].index;
+      for (let y = 0; y < p.count; ++y)
+        f.push(p.getX(y) + u);
+      u += t[h].attributes.position.count;
+    }
+    c.setIndex(f);
+  }
+  for (const u in i) {
+    const f = pi(i[u]);
+    if (!f)
+      return console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the " + u + " attribute."), null;
+    c.setAttribute(u, f);
+  }
+  for (const u in a) {
+    const f = a[u][0].length;
+    if (f === 0) break;
+    c.morphAttributes = c.morphAttributes || {}, c.morphAttributes[u] = [];
+    for (let h = 0; h < f; ++h) {
+      const p = [];
+      for (let g = 0; g < a[u].length; ++g)
+        p.push(a[u][g][h]);
+      const y = pi(p);
+      if (!y)
+        return console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the " + u + " morphAttribute."), null;
+      c.morphAttributes[u].push(y);
+    }
+  }
+  return c;
+}
+function pi(t) {
+  let e, n, r, s = -1, i = 0;
+  for (let l = 0; l < t.length; ++l) {
+    const u = t[l];
+    if (e === void 0 && (e = u.array.constructor), e !== u.array.constructor)
+      return console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes."), null;
+    if (n === void 0 && (n = u.itemSize), n !== u.itemSize)
+      return console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes."), null;
+    if (r === void 0 && (r = u.normalized), r !== u.normalized)
+      return console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes."), null;
+    if (s === -1 && (s = u.gpuType), s !== u.gpuType)
+      return console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.gpuType must be consistent across matching attributes."), null;
+    i += u.count * n;
+  }
+  const a = new e(i), o = new Oo(a, n, r);
+  let c = 0;
+  for (let l = 0; l < t.length; ++l) {
+    const u = t[l];
+    if (u.isInterleavedBufferAttribute) {
+      const f = c / n;
+      for (let h = 0, p = u.count; h < p; h++)
+        for (let y = 0; y < n; y++) {
+          const g = u.getComponent(h, y);
+          o.setComponent(h + f, y, g);
+        }
+    } else
+      a.set(u.array, c);
+    c += u.count * n;
+  }
+  return s !== void 0 && (o.gpuType = s), o;
+}
+function Zp(t, e = 1e-4) {
+  e = Math.max(e, Number.EPSILON);
+  const n = {}, r = t.getIndex(), s = t.getAttribute("position"), i = r ? r.count : s.count;
+  let a = 0;
+  const o = Object.keys(t.attributes), c = {}, l = {}, u = [], f = ["getX", "getY", "getZ", "getW"], h = ["setX", "setY", "setZ", "setW"];
+  for (let w = 0, C = o.length; w < C; w++) {
+    const T = o[w], E = t.attributes[T];
+    c[T] = new E.constructor(
+      new E.array.constructor(E.count * E.itemSize),
+      E.itemSize,
+      E.normalized
+    );
+    const R = t.morphAttributes[T];
+    R && (l[T] || (l[T] = []), R.forEach((U, W) => {
+      const j = new U.array.constructor(U.count * U.itemSize);
+      l[T][W] = new U.constructor(j, U.itemSize, U.normalized);
+    }));
+  }
+  const p = e * 0.5, y = Math.log10(1 / e), g = Math.pow(10, y), b = p * g;
+  for (let w = 0; w < i; w++) {
+    const C = r ? r.getX(w) : w;
+    let T = "";
+    for (let E = 0, R = o.length; E < R; E++) {
+      const U = o[E], W = t.getAttribute(U), j = W.itemSize;
+      for (let N = 0; N < j; N++)
+        T += `${~~(W[f[N]](C) * g + b)},`;
+    }
+    if (T in n)
+      u.push(n[T]);
+    else {
+      for (let E = 0, R = o.length; E < R; E++) {
+        const U = o[E], W = t.getAttribute(U), j = t.morphAttributes[U], N = W.itemSize, $ = c[U], ie = l[U];
+        for (let P = 0; P < N; P++) {
+          const D = f[P], _ = h[P];
+          if ($[_](a, W[D](C)), j)
+            for (let re = 0, Te = j.length; re < Te; re++)
+              ie[re][_](a, j[re][D](C));
+        }
+      }
+      n[T] = a, u.push(a), a++;
+    }
+  }
+  const v = t.clone();
+  for (const w in t.attributes) {
+    const C = c[w];
+    if (v.setAttribute(w, new C.constructor(
+      C.array.slice(0, a * C.itemSize),
+      C.itemSize,
+      C.normalized
+    )), w in l)
+      for (let T = 0; T < l[w].length; T++) {
+        const E = l[w][T];
+        v.morphAttributes[w][T] = new E.constructor(
+          E.array.slice(0, a * E.itemSize),
+          E.itemSize,
+          E.normalized
+        );
+      }
+  }
+  return v.setIndex(u), v;
+}
+new I.Vector2();
+function di(t) {
+  const e = t.getAttribute("position");
+  if (!e || e.count === 0)
+    return !0;
+  const n = e.array;
+  for (let r = 0; r < n.length; r++)
+    if (!Number.isFinite(n[r]))
+      return !1;
+  return !0;
+}
+class Jp extends ia {
+  constructor(e, n, r) {
+    super(), this.isFound = !1, this.char = e, this.fontSize = n, this.font = r, this.width = this.getCharWidth(e, n, r);
+  }
+  /**
+   * Converts the text shape to a THREE.js geometry.
+   * This is used for 3D rendering of the text.
+   * @returns A THREE.js BufferGeometry representing the text shape
+   */
+  toGeometry() {
+    let e = this.font.cache.getGeometry(
+      this.char.charCodeAt(0),
+      this.fontSize
+    );
+    if (e == null) {
+      const n = this.font.generateShapes(this.char, this.fontSize);
+      if (e = new I.ShapeGeometry(n, 4), !di(e))
+        return e.dispose(), new I.BufferGeometry();
+      e.hasAttribute("uv") && e.deleteAttribute("uv"), e.hasAttribute("normal") && e.deleteAttribute("normal"), e = Zp(e, 1e-6), this.font.cache.setGeometry(this.char.charCodeAt(0), this.fontSize, e);
+    }
+    return di(e) ? e : new I.BufferGeometry();
+  }
+  /** @inheritdoc */
+  hasStrokeGeometry() {
+    return this.isFound && this.width > 0;
+  }
+  /**
+   * Calculates the width of a character in the font.
+   * @param char - The character to calculate width for
+   * @param fontSize - The size of the font in pixels
+   * @param font - The mesh font to use
+   * @returns The width of the character in pixels
+   */
+  getCharWidth(e, n, r) {
+    const s = r.data.glyphs[e];
+    return s ? (this.isFound = !0, s.ha * n / r.data.resolution) : (this.isFound = !1, 0);
+  }
+}
+class Qp {
+  constructor(e) {
+    this.isFont = !0, this.type = "Font", this.data = e;
+  }
+  generateShapes(e, n = 100) {
+    const r = [], s = ed(e, n, this.data);
+    for (let i = 0, a = s.length; i < a; i++)
+      r.push(...s[i].toShapes());
+    return r;
+  }
+}
+function ed(t, e, n) {
+  const r = Array.from(t), s = e / n.resolution, i = (n.boundingBox.yMax - n.boundingBox.yMin + n.underlineThickness) * s, a = [];
+  let o = 0, c = 0;
+  for (let l = 0; l < r.length; l++) {
+    const u = r[l];
+    if (u === `
+`)
+      o = 0, c -= i;
+    else {
+      const f = td(u, s, o, c, n);
+      o += f.offsetX, a.push(f.path);
+    }
+  }
+  return a;
+}
+function td(t, e, n, r, s) {
+  const i = s.glyphs[t] || s.glyphs["?"];
+  if (!i) {
+    console.error('THREE.Font: character "' + t + '" does not exists in font family ' + s.familyName + ".");
+    return;
+  }
+  const a = new Ji();
+  let o, c, l, u, f, h, p, y;
+  if (i.o) {
+    const g = i._cachedOutline || (i._cachedOutline = i.o.split(" "));
+    for (let b = 0, v = g.length; b < v; )
+      switch (g[b++]) {
+        case "m":
+          o = g[b++] * e + n, c = g[b++] * e + r, a.moveTo(o, c);
+          break;
+        case "l":
+          o = g[b++] * e + n, c = g[b++] * e + r, a.lineTo(o, c);
+          break;
+        case "q":
+          l = g[b++] * e + n, u = g[b++] * e + r, f = g[b++] * e + n, h = g[b++] * e + r, a.quadraticCurveTo(f, h, l, u);
+          break;
+        case "b":
+          l = g[b++] * e + n, u = g[b++] * e + r, f = g[b++] * e + n, h = g[b++] * e + r, p = g[b++] * e + n, y = g[b++] * e + r, a.bezierCurveTo(f, h, p, y, l, u);
+          break;
+      }
+  }
+  return { offsetX: i.ha * e, path: a };
+}
+class nd extends Qp {
+  /**
+   * Generates geometry shapes from the given text and size.
+   *
+   * Algorithm overview:
+   * 1. Split the input text into individual characters.
+   * 2. For each character:
+   *    a. Retrieve the glyph data from the font.
+   *    b. Convert the glyph outline commands into a ShapePath.
+   *       - 'm' → moveTo
+   *       - 'l' → lineTo
+   *       - 'q' → quadraticCurveTo
+   *       - 'b' → cubic bezierCurveTo
+   *    c. Apply scaling to match the requested font size.
+   *    d. Apply offsets for proper placement (supports multiple lines and directions).
+   * 3. Handle text direction:
+   *    - 'ltr': left-to-right
+   *    - 'rtl': right-to-left (characters reversed)
+   *    - 'tb': top-to-bottom (vertical layout)
+   * 4. Collect all ShapePaths for the text.
+   * 5. Convert each ShapePath into one or more Shape objects:
+   *    a. Sample points along each subPath to approximate geometry.
+   *    b. Determine which subPaths are outer contours and which are holes:
+   *       - For each subPath, check if it is fully contained inside another polygon.
+   *       - Assign the smallest containing polygon as its parent.
+   *    c. Compute the relative depth of each subPath to handle nested holes.
+   *    d. Reverse curves if necessary to maintain correct clockwise/counterclockwise winding:
+   *       - Outer contours: CCW
+   *       - Holes: CW
+   *    e. Build Shape objects with holes properly assigned.
+   * 6. Return the final array of Shape objects ready for geometry creation.
+   *
+   * This algorithm ensures that complex characters with multiple independent contours
+   * (including intersecting subpaths or holes) are rendered correctly.
+   *
+   * @param text - input string to convert to shapes
+   * @param size - font size in units (default 100)
+   * @param direction - text direction ('ltr', 'rtl', 'tb')
+   * @returns array of Shape objects with proper holes and contours
+   */
+  generateShapes(e, n = 100, r = "ltr") {
+    const s = [];
+    return rd(e, n, this.data, r).forEach((a) => {
+      s.push(...ud(a));
+    }), s;
+  }
+}
+function rd(t, e, n, r = "ltr") {
+  const s = Array.from(t), i = e / n.resolution, a = (n.boundingBox.yMax - n.boundingBox.yMin + n.underlineThickness) * i, o = [];
+  let c = 0, l = 0;
+  (r === "rtl" || r === "tb") && s.reverse();
+  for (const u of s)
+    if (u === `
+`)
+      c = 0, l -= a;
+    else {
+      const f = sd(u, i, c, l, n);
+      if (!f) continue;
+      r === "tb" ? (c = 0, l += n.ascender * i) : c += f.offsetX, o.push(f.path);
+    }
+  return o;
+}
+function sd(t, e, n, r, s) {
+  const i = s.glyphs[t] || s.glyphs["?"];
+  if (!i) {
+    console.error(
+      `THREE.Font: character "${t}" does not exist in font family ${s.familyName}.`
+    );
+    return;
+  }
+  const a = new Ji();
+  if (i.o) {
+    const o = i.o.split(" ");
+    let c = 0;
+    for (; c < o.length; ) {
+      const l = o[c++];
+      let u, f, h, p, y, g, b, v;
+      switch (l) {
+        case "m":
+          u = parseFloat(o[c++]) * e + n, f = parseFloat(o[c++]) * e + r, a.moveTo(u, f);
+          break;
+        case "l":
+          u = parseFloat(o[c++]) * e + n, f = parseFloat(o[c++]) * e + r, a.lineTo(u, f);
+          break;
+        case "q":
+          h = parseFloat(o[c++]) * e + n, p = parseFloat(o[c++]) * e + r, y = parseFloat(o[c++]) * e + n, g = parseFloat(o[c++]) * e + r, a.quadraticCurveTo(y, g, h, p);
+          break;
+        case "b":
+          h = parseFloat(o[c++]) * e + n, p = parseFloat(o[c++]) * e + r, y = parseFloat(o[c++]) * e + n, g = parseFloat(o[c++]) * e + r, b = parseFloat(o[c++]) * e + n, v = parseFloat(o[c++]) * e + r, a.bezierCurveTo(y, g, b, v, h, p);
+          break;
+      }
+    }
+  }
+  return { offsetX: i.ha * e, path: a };
+}
+function id(t, e) {
+  let n = !1;
+  const { x: r, y: s } = t, i = e.length;
+  for (let a = 0, o = i - 1; a < i; o = a++) {
+    const c = e[a].x, l = e[a].y, u = e[o].x, f = e[o].y;
+    l > s != f > s && r < (u - c) * (s - l) / (f - l) + c && (n = !n);
+  }
+  return n;
+}
+function ad(t) {
+  const e = t.length, n = Array(e).fill(null);
+  for (let r = 0; r < e; r++) {
+    let s = null, i = 1 / 0;
+    for (let a = 0; a < e; a++)
+      if (r !== a && t[r].every((o) => id(o, t[a]))) {
+        const o = Math.abs(Qi.area(t[a]));
+        o < i && (i = o, s = a);
+      }
+    n[r] = s;
+  }
+  return n;
+}
+function od(t) {
+  const e = t.length, n = Array.from({ length: e }, () => []);
+  for (let r = 0; r < e; r++) {
+    const s = t[r];
+    s !== null && n[s].push(r);
+  }
+  return n;
+}
+function cd(t) {
+  return t.map((e, n) => e === null ? n : -1).filter((e) => e >= 0);
+}
+function ld(t) {
+  const e = [];
+  for (let n = t.length - 1; n >= 0; n--) {
+    const r = t[n];
+    if (r instanceof $n)
+      e.push(new $n(r.v2.clone(), r.v1.clone()));
+    else if (r instanceof fs)
+      e.push(
+        new fs(r.v2.clone(), r.v1.clone(), r.v0.clone())
+      );
+    else if (r instanceof ps)
+      e.push(
+        new ps(
+          r.v3.clone(),
+          r.v2.clone(),
+          r.v1.clone(),
+          r.v0.clone()
+        )
+      );
+    else if (r instanceof ds)
+      e.push(
+        new ds(
+          r.aX,
+          r.aY,
+          r.xRadius,
+          r.yRadius,
+          r.aEndAngle,
+          r.aStartAngle,
+          !r.aClockwise,
+          r.aRotation
+        )
+      );
+    else if (typeof r.getPoints == "function") {
+      const s = r.getPoints(8);
+      for (let i = s.length - 1; i > 0; i--)
+        e.push(new $n(s[i].clone(), s[i - 1].clone()));
+    }
+  }
+  return e;
+}
+function gi(t, e) {
+  const n = Qi.area(t.getPoints(32)) > 0, r = e === n ? t.curves.slice() : ld(t.curves), s = new Lo();
+  return s.curves.push(...r), s;
+}
+function ud(t, e = 32) {
+  const n = t.subPaths;
+  if (!n || n.length === 0) return [];
+  const r = n.map((p) => p.getPoints(e)), s = ad(r), i = od(s), a = cd(s), o = n.length, c = Array(o).fill(-1), l = Array(o).fill(-1);
+  for (const p of a) {
+    const y = [{ idx: p, d: 0 }];
+    for (; y.length; ) {
+      const g = y.pop();
+      c[g.idx] = g.d, l[g.idx] = p;
+      for (const b of i[g.idx]) y.push({ idx: b, d: g.d + 1 });
+    }
+  }
+  const u = [], f = /* @__PURE__ */ new Set();
+  function h(p) {
+    const y = gi(n[p], !0);
+    f.add(p);
+    for (const g of i[p])
+      if (!f.has(g) && c[g] === c[p] + 1) {
+        const b = gi(n[g], !1);
+        y.holes.push(b), f.add(g);
+      }
+    u.push(y);
+  }
+  for (const p of a) h(p);
+  for (let p = 0; p < o; p++)
+    f.has(p) || h(p);
+  return u;
+}
+const hd = 61440;
+class fd extends sa {
+  /**
+   * Creates a new instance of MeshFont.
+   * @param fontData - Either a MeshFontData object containing font information or an ArrayBuffer containing raw font data
+   */
+  constructor(e) {
+    super(e), this.type = "mesh", this.glyphCache = new zr(512);
+    const n = e.data;
+    if (n instanceof ArrayBuffer) {
+      const r = this.parseMeshFont(n);
+      this.data = r.data, this.opentypeFont = r.font;
+    } else
+      throw new Error(
+        "Invalid font cache data. Please remove font cache database named 'mlightcad' in IndexedDB and try again!"
+      );
+    this.font = new nd(this.data);
+  }
+  /**
+   * Parses a mesh font from raw binary data.
+   * This function converts raw font data (e.g., TTF, OTF, WOFF) into a MeshFontData object
+   * that can be used by the MeshFont class.
+   *
+   * @param data - The raw font data as an ArrayBuffer
+   * @returns An object containing the opentype font and parsed metadata
+   */
+  parseMeshFont(e) {
+    const n = Xp(e), r = Math.round, s = n.charToGlyph("A"), i = s ? n.unitsPerEm / (s.yMax || n.unitsPerEm) : 1, a = {
+      glyphs: {},
+      // Lazy loaded later
+      familyName: n.getEnglishName("fullName"),
+      ascender: r(n.ascender),
+      descender: r(n.descender),
+      underlinePosition: n.tables.post.underlinePosition,
+      underlineThickness: n.tables.post.underlineThickness,
+      boundingBox: {
+        xMin: n.tables.head.xMin,
+        xMax: n.tables.head.xMax,
+        yMin: n.tables.head.yMin,
+        yMax: n.tables.head.yMax
+      },
+      resolution: n.unitsPerEm || 1e3,
+      scaleFactor: i,
+      original_font_information: n.tables.name
+    };
+    return { font: n, data: a };
+  }
+  /**
+   * Resolves the opentype lookup character for a drawing character.
+   * Tries Unicode first, then Symbol encoding (0xF000 + ASCII) for GDT fonts.
+   */
+  opentypeLookupChar(e) {
+    if (!this.opentypeFont || e.length !== 1)
+      return e;
+    const n = e.charCodeAt(0), r = this.opentypeFont.charToGlyphIndex(e);
+    if (r != null && r > 0)
+      return e;
+    if (n >= 32 && n <= 126) {
+      const s = String.fromCharCode(hd + n), i = this.opentypeFont.charToGlyphIndex(s);
+      if (i != null && i > 0)
+        return s;
+    }
+    return e;
+  }
+  /**
+   * Whether opentype maps the character to a real glyph (not .notdef at index 0).
+   *
+   * opentype.js ≤1.3.4: {@link OpenTypeFont.hasChar} used `charToGlyphIndex(c) !== null`,
+   * but CmapEncoding returns 0 for missing code points — see
+   * https://github.com/opentypejs/opentype.js/issues/330 (fixed in 2.0.0).
+   * We keep `index > 0` here so hasChar stays aligned with {@link _loadGlyphIfNeeded}.
+   */
+  opentypeHasGlyph(e) {
+    if (!this.opentypeFont) return !1;
+    const n = this.opentypeLookupChar(e), r = this.opentypeFont.charToGlyphIndex(n);
+    return r != null && r > 0;
+  }
+  /**
+   * Return true if this font contains glyph of the specified character. Otherwise, return false.
+   * @param char - The character to check
+   * @returns True if this font contains glyph of the specified character. Otherwise, return false.
+   */
+  hasChar(e) {
+    return this.opentypeHasGlyph(e);
+  }
+  /**
+   * Return true if this font contains glyph of the specified character code. Otherwise, return false.
+   * @param code - The character code to check
+   * @returns True if this font contains glyph of the specified character code. Otherwise, return false.
+   */
+  hasCode(e) {
+    return this.hasChar(String.fromCodePoint(e));
+  }
+  /**
+   * Loads glyph data lazily when requested.
+   * Parsed glyphs are cached in an LRU cache to limit memory usage.
+   * @param char - The character whose glyph should be loaded
+   */
+  _loadGlyphIfNeeded(e) {
+    if (this.data.glyphs[e] || !this.opentypeFont) return;
+    const n = this.glyphCache.get(e);
+    if (n) {
+      this.data.glyphs[e] = n;
+      return;
+    }
+    if (this.opentypeHasGlyph(e)) {
+      const r = this.opentypeLookupChar(e), s = this.opentypeFont.charToGlyph(r);
+      if (!s || !s.path) return;
+      const i = Math.round, a = {
+        ha: i(s.advanceWidth ?? 0),
+        x_min: i(s.xMin ?? 0),
+        x_max: i(s.xMax ?? 0),
+        o: ""
+      };
+      s.path.commands.forEach((o) => {
+        let c = o.type.toLowerCase();
+        c === "c" && (c = "b"), a.o += c + " ", o.x !== void 0 && o.y !== void 0 && (a.o += i(o.x) + " " + i(o.y) + " "), o.x1 !== void 0 && o.y1 !== void 0 && (a.o += i(o.x1) + " " + i(o.y1) + " "), o.x2 !== void 0 && o.y2 !== void 0 && (a.o += i(o.x2) + " " + i(o.y2) + " ");
+      }), this.data.glyphs[e] = a, this.glyphCache.set(e, a);
+    }
+  }
+  /**
+   * Generates shapes for a text string
+   * @param text - The text to generate shapes for
+   * @param size - The size of the text
+   * @returns Array of shapes representing the text
+   */
+  generateShapes(e, n) {
+    for (const r of e)
+      this._loadGlyphIfNeeded(r);
+    return this.font.generateShapes(e, n);
+  }
+  /**
+   * Gets the shape data for a specific character at a given size.
+   * @param char - The character to get the shape for
+   * @param size - The desired size of the character
+   * @returns The shape data for the character, or undefined if not found
+   */
+  getCharShape(e, n) {
+    if (this._loadGlyphIfNeeded(e), !this.data.glyphs[e]) {
+      this.addUnsupportedChar(e);
+      return;
+    }
+    return new Jp(e, n, this);
+  }
+  /**
+   * Gets the shape data for a specific character unicode at a given size.
+   * @param code - The character unicode to get the shape for
+   * @param size - The desired size of the character
+   * @returns The shape data for the character unicode, or undefined if not found
+   */
+  getCodeShape(e, n) {
+    return this.getCharShape(String.fromCodePoint(e), n);
+  }
+  /**
+   * Gets the scale factor for this font.
+   * This is used to adjust the size of characters when rendering.
+   * @returns The scale factor as a number
+   */
+  getScaleFactor() {
+    return this.scaleFactor == null ? (this.scaleFactor = this.data.scaleFactor, this.scaleFactor) : this.scaleFactor;
+  }
+  /**
+   * Gets the shape to display when a character is not found in the font.
+   * Uses "?" as a replacement character.
+   * @param size - The desired size of the not found shape
+   * @returns The shape data for the not found indicator, or undefined if "?"
+   * cannot be loaded from this font
+   */
+  getNotFoundTextShape(e) {
+    return this.getCharShape("?", e);
+  }
+  /**
+   * Estimates memory used by this mesh font (parsed opentype + glyphs + geometry cache).
+   */
+  estimateMemoryUsage() {
+    var a;
+    const e = this.cache.getStats();
+    let n = 0;
+    const r = Object.keys(this.data.glyphs);
+    for (const o of r)
+      n += Do((a = this.data.glyphs[o]) == null ? void 0 : a.o);
+    const s = Math.round(
+      this.sourceByteLength * Zo
+    ), i = s + n + e.estimatedBytes;
+    return {
+      names: Array.from(this.names),
+      type: "mesh",
+      sourceByteLength: this.sourceByteLength,
+      parsedFontEstimatedBytes: s,
+      charGeometryCache: e,
+      meshGlyphs: {
+        glyphCount: r.length,
+        outlineStringBytes: n
+      },
+      estimatedBytes: i
+    };
+  }
+  /**
+   * Clears glyph and geometry caches. Does not unload the opentype parse until GC.
+   */
+  dispose() {
+    this.glyphCache.clear(), this.data.glyphs = {}, super.dispose();
+  }
+}
+class ke {
+  /**
+   * Converts an unsigned byte to a signed byte as used in SHX format.
+   * Values > 127 are converted to their signed equivalent (-128 to -1).
+   * @param value - The unsigned byte value to convert
+   * @returns The signed byte value
+   */
+  static byteToSByte(e) {
+    return (e & 127) - (e & 128 ? 128 : 0);
+  }
+  /**
+   * Creates a new ShxFileReader instance.
+   * @param arraybuffer - The ArrayBuffer to read from
+   */
+  constructor(e) {
+    this.position = 0, this.data = new DataView(e);
+  }
+  /**
+   * Reads a specified number of bytes from the current position.
+   * @param length - Number of bytes to read (optional)
+   * @returns A Uint8Array containing the read bytes
+   * @throws Error if reading beyond buffer bounds
+   */
+  readBytes(e = 1) {
+    this.data.byteLength < this.position + e && this.throwOutOfRangeError(this.position + e);
+    const n = new Uint8Array(this.data.buffer, this.position, e);
+    return this.position += e, n;
+  }
+  /**
+   * Skips a specified number of bytes from the current position.
+   * @param length - Number of bytes to skip
+   * @throws Error if skipping beyond buffer bounds
+   */
+  skip(e) {
+    this.data.byteLength < this.position + e && this.throwOutOfRangeError(this.position + e), this.position += e;
+  }
+  /**
+   * Reads an unsigned 8-bit integer.
+   * @returns The read uint8 value
+   * @throws Error if reading beyond buffer bounds
+   */
+  readUint8() {
+    this.data.byteLength < this.position + 1 && this.throwOutOfRangeError(this.position + 1);
+    const e = this.data.getUint8(this.position);
+    return this.position += 1, e;
+  }
+  /**
+   * Reads a signed 8-bit integer.
+   * @returns The read int8 value
+   * @throws Error if reading beyond buffer bounds
+   */
+  readInt8() {
+    this.data.byteLength < this.position + 1 && this.throwOutOfRangeError(this.position + 1);
+    const e = this.data.getInt8(this.position);
+    return this.position += 1, e;
+  }
+  /**
+   * Reads an unsigned 16-bit integer.
+   * @param littleEndian If false, a big-endian value should be read.
+   * @returns The read uint16 value
+   * @throws Error if reading beyond buffer bounds
+   */
+  readUint16(e = !0) {
+    this.data.byteLength < this.position + 2 && this.throwOutOfRangeError(this.position + 2);
+    const n = this.data.getUint16(this.position, e);
+    return this.position += 2, n;
+  }
+  /**
+   * Reads a signed 16-bit integer.
+   * @returns The read int16 value
+   * @throws Error if reading beyond buffer bounds
+   */
+  readInt16() {
+    this.data.byteLength < this.position + 2 && this.throwOutOfRangeError(this.position + 2);
+    const e = this.data.getInt16(this.position, !0);
+    return this.position += 2, e;
+  }
+  /**
+   * Reads an unsigned 32-bit integer.
+   * @returns The read uint32 value
+   * @throws Error if reading beyond buffer bounds
+   */
+  readUint32() {
+    this.data.byteLength < this.position + 4 && this.throwOutOfRangeError(this.position + 4);
+    const e = this.data.getUint32(this.position, !0);
+    return this.position += 4, e;
+  }
+  /**
+   * Reads a signed 32-bit integer.
+   * @returns The read int32 value
+   * @throws Error if reading beyond buffer bounds
+   */
+  readInt32() {
+    this.data.byteLength < this.position + 4 && this.throwOutOfRangeError(this.position + 4);
+    const e = this.data.getInt32(this.position, !0);
+    return this.position += 4, e;
+  }
+  /**
+   * Reads a 32-bit floating point number.
+   * @returns The read float32 value
+   * @throws Error if reading beyond buffer bounds
+   */
+  readFloat32() {
+    this.data.byteLength < this.position + 4 && this.throwOutOfRangeError(this.position + 4);
+    const e = this.data.getFloat32(this.position, !0);
+    return this.position += 4, e;
+  }
+  /**
+   * Reads a 64-bit floating point number.
+   * @returns The read float64 value
+   * @throws Error if reading beyond buffer bounds
+   */
+  readFloat64() {
+    this.data.byteLength < this.position + 8 && this.throwOutOfRangeError(this.position + 8);
+    const e = this.data.getFloat64(this.position, !0);
+    return this.position += 8, e;
+  }
+  /**
+   * Sets the current read position in the buffer.
+   * @param position - The new position to set
+   */
+  setPosition(e) {
+    this.data.byteLength < e && this.throwOutOfRangeError(e), this.position = e;
+  }
+  /**
+   * Checks if the current position is at the end of the buffer.
+   * @returns True if at the end of the buffer, false otherwise
+   */
+  isEnd() {
+    return this.position === this.data.byteLength - 1;
+  }
+  /**
+   * Gets the current position in the buffer.
+   * @returns The current position
+   */
+  get currentPosition() {
+    return this.position;
+  }
+  /**
+   * Gets the total length of the buffer.
+   * @returns The buffer length in bytes
+   */
+  get length() {
+    return this.data.byteLength;
+  }
+  /**
+   * Throws an error when attempting to read beyond buffer bounds.
+   * @param position - The position that caused the error
+   * @throws Error with details about the out of range access
+   */
+  throwOutOfRangeError(e) {
+    throw new Error(
+      `Position ${e} is out of range for the data length ${this.data.byteLength}!`
+    );
+  }
+}
+var J = /* @__PURE__ */ ((t) => (t.SHAPES = "shapes", t.BIGFONT = "bigfont", t.UNIFONT = "unifont", t))(J || {});
+class pd {
+  parse(e) {
+    const n = this.parseHeader(e).split(" "), r = n[1].toLocaleLowerCase();
+    if (!Object.values(J).includes(r))
+      throw new Error(`Invalid font type: ${r}`);
+    return {
+      fileHeader: n[0],
+      fontType: r,
+      fileVersion: n[2]
+    };
+  }
+  parseHeader(e) {
+    let n = "", r = 0;
+    for (; e.currentPosition < e.length - 2 && r < 1024; ) {
+      const s = e.readUint8();
+      if (s === 13) {
+        const i = e.currentPosition, a = e.readUint8(), o = e.readUint8();
+        if (a === 10 && o === 26)
+          break;
+        e.setPosition(i), n += String.fromCharCode(s);
+      } else
+        n += String.fromCharCode(s);
+      r++;
+    }
+    return n.trim();
+  }
+}
+const zt = 10, dd = [13, 10, 0];
+function mo(t, e) {
+  if (e === 0) {
+    t.orientation = "horizontal";
+    return;
+  }
+  if (e === 2) {
+    t.orientation = "horizontal", t.dualOrientation = !0;
+    return;
+  }
+  t.orientation = "vertical";
+}
+function yo(t) {
+  const e = {};
+  for (const [n, r] of Object.entries(t))
+    e[r] = n;
+  return e;
+}
+function bo(t) {
+  const e = t.indexOf(0);
+  return e < 0 ? { name: null, bytecode: t } : { name: e > 0 ? new TextDecoder("ascii").decode(t.subarray(0, e)) : null, bytecode: t.subarray(e + 1) };
+}
+class gd {
+  parse(e) {
+    try {
+      e.readBytes(4);
+      const n = e.readInt16();
+      if (n <= 0)
+        throw new Error("Invalid shape count in font file");
+      const r = [];
+      for (let c = 0; c < n; c++) {
+        const l = e.readUint16(), u = e.readUint16();
+        u > 0 && r.push({ code: l, length: u });
+      }
+      const s = {};
+      for (const c of r)
+        try {
+          const l = e.readBytes(c.length);
+          l.length === c.length && (s[c.code] = l);
+        } catch {
+          console.warn(`Failed to read shape data for code ${c.code}`);
+        }
+      const i = {}, a = {};
+      for (const [c, l] of Object.entries(s)) {
+        const u = Number(c);
+        if (u === 0) {
+          i[u] = l;
+          continue;
+        }
+        const { name: f, bytecode: h } = bo(l);
+        i[u] = h, f && (a[f] = u);
+      }
+      const o = {
+        data: i,
+        names: Object.keys(a).length > 0 ? a : void 0,
+        codeToName: Object.keys(a).length > 0 ? yo(a) : void 0,
+        info: "",
+        baseUp: 8,
+        baseDown: 2,
+        height: zt,
+        width: zt,
+        orientation: "horizontal",
+        isExtended: !1
+      };
+      if (0 in i) {
+        const c = i[0];
+        try {
+          const l = new TextDecoder().decode(c);
+          let u = c.findIndex((f) => dd.includes(f));
+          u >= 0 && (o.info = l.substring(0, u), u + 3 < c.length && (o.baseUp = c[u + 1], o.baseDown = c[u + 2], o.height = o.baseDown + o.baseUp, o.width = o.height, mo(o, c[u + 3])));
+        } catch {
+          console.warn("Failed to parse font info block");
+        }
+      }
+      return o;
+    } catch (n) {
+      const r = n instanceof Error ? n.message : String(n);
+      throw new Error(`Failed to parse shape font: ${r}`);
+    }
+  }
+}
+class md {
+  parse(e) {
+    try {
+      e.readInt16();
+      const n = e.readInt16(), r = e.readInt16();
+      if (n <= 0)
+        throw new Error("Invalid character count in font file");
+      e.skip(r * 4);
+      const s = [];
+      for (let o = 0; o < n; o++) {
+        const c = e.readUint16(), l = e.readUint16(), u = e.readUint32();
+        (c !== 0 || l !== 0 || u !== 0) && s.push({ code: c, length: l, offset: u });
+      }
+      const i = {};
+      for (const o of s)
+        try {
+          e.setPosition(o.offset);
+          const c = e.readBytes(o.length);
+          c.length === o.length && (i[o.code] = c);
+        } catch {
+          console.warn(`Failed to read bigfont data for code ${o.code}`);
+        }
+      const a = {
+        data: i,
+        info: "",
+        baseUp: 8,
+        baseDown: 2,
+        height: zt,
+        width: zt,
+        orientation: "horizontal",
+        isExtended: !1
+      };
+      if (0 in i) {
+        const o = i[0];
+        try {
+          const c = this.utf8ArrayToStr(o);
+          if (c.pos >= 0) {
+            let l = c.text;
+            for (; l.length > 0 && l.charCodeAt(l.length - 1) === 0; )
+              l = l.slice(0, -1);
+            a.info = l;
+            const u = this.parseBigfontMetrics(o, c.pos + 1);
+            u && Object.assign(a, u);
+          }
+        } catch {
+          console.warn("Failed to parse bigfont info block");
+        }
+      }
+      return a;
+    } catch (n) {
+      const r = n instanceof Error ? n.message : String(n);
+      throw new Error(`Failed to parse big font: ${r}`);
+    }
+  }
+  parseBigfontMetrics(e, n) {
+    let r = n;
+    for (; r < e.length && e[r] === 0; )
+      r++;
+    const s = e.length - r;
+    if (s <= 0)
+      return null;
+    const i = (a) => a === 0 ? "horizontal" : "vertical";
+    if (s >= 5) {
+      const a = e[r++];
+      r++;
+      const o = i(e[r++]), c = e[r++];
+      return {
+        baseUp: a,
+        baseDown: 0,
+        height: a,
+        width: c,
+        orientation: o,
+        isExtended: !0
+      };
+    }
+    if (s === 4 && e[r + 1] === 0 && e[r + 3] > 0 && e[r + 3] !== e[r]) {
+      const a = e[r++];
+      r++;
+      const o = i(e[r++]), c = e[r];
+      return {
+        baseUp: a,
+        baseDown: 0,
+        height: a,
+        width: c,
+        orientation: o,
+        isExtended: !0
+      };
+    }
+    if (s === 4) {
+      const a = e[r++], o = e[r++], c = i(e[r++]);
+      return {
+        baseUp: a,
+        baseDown: o,
+        height: a + o,
+        width: a + o,
+        orientation: c,
+        isExtended: !1
+      };
+    }
+    if (s === 3) {
+      const a = e[r++], o = e[r++], c = i(o), l = o === 2;
+      return {
+        baseUp: a,
+        baseDown: 0,
+        height: a,
+        width: a,
+        orientation: c,
+        // Dual-orientation vertical bigfonts (modes=2) use composite bytecode.
+        isExtended: l,
+        verticalDualMode: l
+      };
+    }
+    return null;
+  }
+  utf8ArrayToStr(e) {
+    let n = "", r = 0;
+    for (; r < e.length; ) {
+      const s = e[r];
+      switch (s >> 4) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+          n += String.fromCharCode(s);
+          break;
+        case 12:
+        case 13: {
+          const i = e[r++];
+          n += String.fromCharCode((s & 31) << 6 | i & 63);
+          break;
+        }
+        case 14: {
+          const i = e[r++], a = e[r++];
+          n += String.fromCharCode(
+            (s & 15) << 12 | (i & 63) << 6 | (a & 63) << 0
+          );
+          break;
+        }
+      }
+      if (n.charCodeAt(n.length - 1) === 0) break;
+      r++;
+    }
+    return { text: n, pos: r };
+  }
+}
+class yd {
+  parse(e) {
+    try {
+      const n = e.readInt32();
+      if (n <= 0)
+        throw new Error("Invalid character count in font file");
+      const r = e.readInt16(), s = e.readBytes(r), i = {
+        data: {},
+        info: "",
+        baseUp: 8,
+        baseDown: 2,
+        height: zt,
+        width: zt,
+        orientation: "horizontal",
+        isExtended: !1
+      };
+      try {
+        const c = new TextDecoder().decode(s);
+        let l = c.indexOf("\0");
+        l >= 0 && (i.info = c.substring(0, l), l + 3 < s.length && (i.baseUp = s[l + 1], i.baseDown = s[l + 2], i.height = i.baseUp + i.baseDown, i.width = i.height, mo(i, s[l + 3])));
+      } catch {
+        console.warn("Failed to parse unifont info block");
+      }
+      const a = {}, o = {};
+      for (let c = 0; c < n - 1; c++)
+        try {
+          const l = e.readUint16(), u = e.readUint16();
+          if (u > 0) {
+            const f = e.readBytes(u);
+            if (f.length === u) {
+              const { name: h, bytecode: p } = bo(f);
+              p.length > 0 && (a[l] = p, h && (o[h] = l));
+            }
+          }
+        } catch {
+          console.warn("Failed to read unifont character data");
+          break;
+        }
+      return i.data = a, i.names = Object.keys(o).length > 0 ? o : void 0, i.codeToName = Object.keys(o).length > 0 ? yo(o) : void 0, i;
+    } catch (n) {
+      const r = n instanceof Error ? n.message : String(n);
+      throw new Error(`Failed to parse unifont: ${r}`);
+    }
+  }
+}
+class bd {
+  static createParser(e) {
+    switch (e) {
+      case J.SHAPES:
+        return new gd();
+      case J.BIGFONT:
+        return new md();
+      case J.UNIFONT:
+        return new yd();
+      default:
+        throw new Error(`Unsupported font type: ${e}`);
+    }
+  }
+}
+const mi = 0.2;
+class xd {
+  /**
+   * Whether the aligned glyph should store the resolved advance as explicit.
+   * When false, {@link ShxShape.hasExplicitAdvance} is preserved from the source glyph.
+   */
+  markAlignedAdvanceExplicit(e) {
+    return !1;
+  }
+}
+class Pn extends xd {
+  constructor(e = mi) {
+    super(), this.cellWidthFactor = e;
+  }
+  /**
+   * True when ink extends left of the glyph origin (UNIFONT center-cell encoding).
+   */
+  static isCenterOriginGlyph(e) {
+    return e.bbox.minX < -1e-6;
+  }
+  /**
+   * Resolves ink-based advance for a glyph at a scaled cell width.
+   *
+   * Left-origin glyphs (`minX >= 0`): `maxX + cellWidth * factor`.
+   * Center-origin glyphs (`minX < 0`): advance to the right cell edge
+   * (`max(maxX, cellWidth / 2)`) plus padding, so narrow centered punctuation
+   * keeps trailing whitespace instead of colliding with the next glyph.
+   */
+  static computeAdvance(e, n, r = mi) {
+    if (!e.polylines.some((a) => a.length >= 2))
+      return n * r;
+    const s = n * r, { maxX: i } = e.bbox;
+    return Pn.isCenterOriginGlyph(e) ? Math.max(i, n / 2) + s : i + s;
+  }
+  resolve(e, n) {
+    var r;
+    return e.hasExplicitAdvance ? ((r = e.lastPoint) == null ? void 0 : r.x) ?? 0 : Pn.computeAdvance(e, n, this.cellWidthFactor);
+  }
+  markAlignedAdvanceExplicit(e) {
+    return !0;
+  }
+}
+const Vn = new Pn();
+class se {
+  /**
+   * Creates a new Point instance.
+   * @param x - The x-coordinate (defaults to 0)
+   * @param y - The y-coordinate (defaults to 0)
+   */
+  constructor(e = 0, n = 0) {
+    this.x = e, this.y = n;
+  }
+  /**
+   * Sets the coordinates of the point.
+   * @param x - The new x-coordinate
+   * @param y - The new y-coordinate
+   * @returns The point instance for method chaining
+   */
+  set(e, n) {
+    return this.x = e, this.y = n, this;
+  }
+  /**
+   * Calculates the length (magnitude) of the vector from origin to this point.
+   * @returns The length of the vector
+   */
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+  /**
+   * Normalizes the point vector to have a length of 1.
+   * @returns The point instance for method chaining
+   */
+  normalize() {
+    const e = this.length();
+    return e !== 0 && (this.x /= e, this.y /= e), this;
+  }
+  /**
+   * Creates a new Point instance with the same coordinates.
+   * @returns A new Point instance with the same x and y values
+   */
+  clone() {
+    return new se(this.x, this.y);
+  }
+  /**
+   * Adds another point's coordinates to this point.
+   * @param point - The point to add
+   * @returns The point instance for method chaining
+   */
+  add(e) {
+    return this.x += e.x, this.y += e.y, this;
+  }
+  /**
+   * Subtracts another point's coordinates from this point.
+   * @param point - The point to subtract
+   * @returns The point instance for method chaining
+   */
+  subtract(e) {
+    return this.x -= e.x, this.y -= e.y, this;
+  }
+  /**
+   * Multiplies both coordinates by a scalar value.
+   * @param scalar - The scalar value to multiply by
+   * @returns The point instance for method chaining
+   */
+  multiply(e) {
+    return this.x *= e, this.y *= e, this;
+  }
+  /**
+   * Divides both coordinates by a scalar value.
+   * @param scalar - The scalar value to divide by
+   * @returns The point instance for method chaining
+   */
+  divide(e) {
+    return e !== 0 && (this.x /= e, this.y /= e), this;
+  }
+  /**
+   * Multiplies x and y coordinates by different scalar values.
+   * @param xScalar - The scalar value to multiply x-coordinate by
+   * @param yScalar - The scalar value to multiply y-coordinate by
+   * @returns The point instance for method chaining
+   */
+  multiplyScalars(e, n) {
+    return this.x *= e, this.y *= n, this;
+  }
+  /**
+   * Divides x and y coordinates by different scalar values.
+   * @param xScalar - The scalar value to divide x-coordinate by
+   * @param yScalar - The scalar value to divide y-coordinate by
+   * @returns The point instance for method chaining
+   */
+  divideScalars(e, n) {
+    return e !== 0 && (this.x /= e), n !== 0 && (this.y /= n), this;
+  }
+  /**
+   * Calculates the Euclidean distance to another point.
+   * @param point - The point to calculate distance to
+   * @returns The distance between the two points
+   */
+  distanceTo(e) {
+    const n = this.x - e.x, r = this.y - e.y;
+    return Math.sqrt(n * n + r * r);
+  }
+}
+function xo(t) {
+  const { width: e, capHeight: n, descenderHeight: r, origin: s = "baseline" } = t, i = n + r;
+  return s === "top" ? { minX: -e / 2, maxX: e / 2, minY: -i, maxY: 0 } : { minX: 0, maxX: e, minY: -r, maxY: n };
+}
+function vd(t) {
+  return [t.minX, t.minY, t.maxX, t.maxY].every(Number.isFinite);
+}
+function Sd(t, e, n = 1e-6) {
+  return e.minX >= t.minX - n && e.maxX <= t.maxX + n && e.minY >= t.minY - n && e.maxY <= t.maxY + n;
+}
+function wd(t, e) {
+  return {
+    minX: Math.min(t.minX, e.minX),
+    minY: Math.min(t.minY, e.minY),
+    maxX: Math.max(t.maxX, e.maxX),
+    maxY: Math.max(t.maxY, e.maxY)
+  };
+}
+function Cd(t, e, n) {
+  const r = t.maxX - t.minX, s = t.maxY - t.minY;
+  return `<rect x="${t.minX}" y="${-t.maxY}" width="${r}" height="${s}" fill="none" stroke="${e}" stroke-width="${n}"/>`;
+}
+function yi(t, e) {
+  const n = t.maxX - t.minX, r = t.maxY - t.minY;
+  return `<rect x="${t.minX}" y="${-t.maxY}" width="${n}" height="${r}" fill="${e}"/>`;
+}
+function Td(t, e, n, r, s, i, a) {
+  const o = ` stroke-dasharray="${a}"`;
+  return `<line x1="${t}" y1="${-e}" x2="${n}" y2="${-r}" stroke="${s}" stroke-width="${i}"${o}/>`;
+}
+function kd(t, e, n) {
+  const { capHeight: r, descenderHeight: s, origin: i = "baseline" } = t, a = r + s, o = xo(t);
+  let c, l, u;
+  i === "top" ? (r > 0 && (c = { minX: o.minX, maxX: o.maxX, minY: -r, maxY: 0 }), s > 0 && (l = {
+    minX: o.minX,
+    maxX: o.maxX,
+    minY: -a,
+    maxY: -r
+  }), u = -r) : (r > 0 && (c = { minX: o.minX, maxX: o.maxX, minY: 0, maxY: r }), s > 0 && (l = {
+    minX: o.minX,
+    maxX: o.maxX,
+    minY: -s,
+    maxY: 0
+  }), u = 0);
+  const f = [
+    c ? yi(c, "rgba(255, 0, 0, 0.06)") : "",
+    l ? yi(l, "rgba(255, 0, 0, 0.14)") : "",
+    Cd(o, e, n)
+  ];
+  return u !== void 0 && s > 0 && r > 0 && f.push(
+    Td(
+      o.minX,
+      u,
+      o.maxX,
+      u,
+      e,
+      n,
+      "4 2"
+    )
+  ), `<g>${f.join("")}</g>`;
+}
+class Dt {
+  constructor(e, n = [], r = !1) {
+    this.lastPoint = e, this.polylines = n, this.hasExplicitAdvance = r;
+  }
+  /**
+   * Get the bounding box of the shape
+   * @returns Bounding box of the shape
+   */
+  get bbox() {
+    if (this._bbox)
+      return this._bbox;
+    let e = 1 / 0, n = -1 / 0, r = 1 / 0, s = -1 / 0;
+    return this.polylines.forEach((i) => {
+      i.forEach((a) => {
+        e = Math.min(e, a.x), n = Math.max(n, a.x), r = Math.min(r, a.y), s = Math.max(s, a.y);
+      });
+    }), this._bbox = { minX: e, minY: r, maxX: n, maxY: s }, this._bbox;
+  }
+  /**
+   * Offset the shape by a point
+   * @param p The point to offset the shape by
+   * @param isNewInstance Whether to return a new instance of the shape or modify the current instance
+   * @returns The offset shape
+   */
+  offset(e, n = !0) {
+    var r, s;
+    return n ? new Dt(
+      (r = this.lastPoint) == null ? void 0 : r.clone().add(e),
+      this.polylines.map((i) => i.map((a) => a.clone().add(e))),
+      this.hasExplicitAdvance
+    ) : ((s = this.lastPoint) == null || s.add(e), this.polylines.forEach((i) => i.forEach((a) => a.add(e))), this._bbox && (this._bbox.maxX += e.x, this._bbox.minX += e.x, this._bbox.maxY += e.y, this._bbox.minY += e.y), this);
+  }
+  /**
+   * Normalizes a shape so that its bounding box’s bottom-left corner moves to the origin (0,0).
+   * It doesn’t change the size or orientation, only repositions the shape.
+   * @param isNewInstance Whether to return a new instance of the shape or modify the current instance
+   * @returns The offset shape
+   */
+  normalizeToOrigin(e = !1) {
+    const n = this.bbox;
+    return this.offset(new se(-n.minX, -n.minY), e);
+  }
+  /**
+   * Converts the shape to an SVG string
+   * @param options SVG rendering options
+   * @returns SVG string
+   */
+  toSVG(e = {}) {
+    const {
+      strokeWidth: n = "0.5%",
+      strokeColor: r = "black",
+      isAutoFit: s = !1,
+      fontCell: i
+    } = e;
+    let a, o;
+    const c = (l) => this.polylines.map((u) => {
+      let f = "";
+      return u.forEach((h, p) => {
+        const { x: y, y: g } = l(h);
+        f += p === 0 ? `M ${y} ${g} ` : `L ${y} ${g} `;
+      }), `<path d="${f}" stroke="${r}" stroke-width="${n}" fill="none"/>`;
+    }).join("");
+    if (i) {
+      const {
+        padding: l = 0.1,
+        expandToFit: u = !1,
+        showFrame: f = !1,
+        frameColor: h = "red",
+        frameStrokeWidth: p = "0.5%"
+      } = i, y = xo(i), g = this.bbox;
+      let b = y;
+      u && vd(g) && !Sd(y, g) && (b = wd(y, g));
+      const v = b.maxX - b.minX, w = b.maxY - b.minY, C = v * l, T = w * l, E = b.minX - C, R = b.maxX + C, U = b.minY - T, W = b.maxY + T;
+      o = c((N) => ({
+        x: N.x,
+        y: -N.y
+      }));
+      const j = f ? kd(i, h, p) : "";
+      return a = `${E} ${-W} ${R - E} ${W - U}`, `<svg width="100%" height="100%" viewBox="${a}" preserveAspectRatio="xMidYMid meet">${j}${o}</svg>`;
+    } else if (s) {
+      const l = this.bbox, u = 0.2, f = l.maxX - l.minX, h = l.maxY - l.minY, p = f === 0 ? h : f, y = h === 0 ? f : h, g = l.minX - p * u, b = l.maxX + p * u, v = l.minY - y * u, w = l.maxY + y * u;
+      o = c((C) => ({
+        x: C.x,
+        y: -C.y
+      })), a = `${g} ${-w} ${b - g} ${w - v}`;
+    } else
+      a = "0 0 20 20", o = c((l) => ({
+        x: l.x + 5,
+        y: -l.y + 15
+      }));
+    return `<svg width="100%" height="100%" viewBox="${a}" preserveAspectRatio="xMidYMid meet">${o}</svg>`;
+  }
+}
+const bi = 8, xi = 48, Fd = 0.4, Ed = [
+  52164,
+  45795,
+  49829,
+  50150,
+  54992,
+  47610,
+  54754,
+  46532,
+  51906,
+  53947,
+  49332,
+  51706,
+  46532,
+  54224,
+  52946,
+  52714,
+  52219,
+  45755,
+  51403,
+  46532,
+  53947,
+  50410,
+  49332,
+  52219,
+  52141,
+  46532,
+  50150,
+  51120,
+  50150,
+  54992,
+  51663,
+  50119,
+  53186,
+  46532,
+  46525,
+  51365,
+  52149,
+  47016,
+  46532,
+  51889,
+  51706,
+  46025,
+  47037,
+  55031,
+  48122,
+  50935,
+  47531,
+  48122,
+  51965,
+  55e3
+];
+function qn(t, e) {
+  const { height: n, width: r, baseUp: s, baseDown: i } = t, a = n > 0 ? e / n : 1, o = a * s, c = a * i;
+  return {
+    size: e,
+    capHeight: o,
+    descenderHeight: c,
+    cellWidth: a * r,
+    totalHeight: o + c
+  };
+}
+function Ad(t, e, n) {
+  if (t.header.fontType !== J.SHAPES || !(0 in t.content.data))
+    return !1;
+  const r = -(n.descenderHeight + n.capHeight * 0.2);
+  return e.bbox.minY < r;
+}
+function vo(t, e) {
+  const n = -(e.descenderHeight + e.capHeight * 0.05);
+  return !(t.bbox.minY < n || t.bbox.maxY - t.bbox.minY < e.capHeight * 0.05);
+}
+function Od(t, e, n) {
+  if (t.header.fontType !== J.BIGFONT || t.content.baseDown > 0)
+    return 0;
+  const { height: r } = t.content;
+  if (r <= 0)
+    return 0;
+  const s = r * Fd, i = [], a = /* @__PURE__ */ new Set(), o = (l) => {
+    if (a.has(l) || l <= 255 || !(l in t.content.data))
+      return;
+    a.add(l);
+    const u = e(l);
+    if (!u)
+      return;
+    const f = u.bbox.minY;
+    f > 0 && f <= s && i.push(f);
+  };
+  for (const l of Ed)
+    if (o(l), i.length >= xi)
+      break;
+  if (i.length < bi) {
+    for (const l of Object.keys(t.content.data))
+      if (o(Number(l)), i.length >= xi)
+        break;
+  }
+  if (i.length < bi)
+    return 0;
+  i.sort((l, u) => l - u);
+  const c = Math.floor(i.length / 2);
+  return i.length % 2 === 0 ? (i[c - 1] + i[c]) / 2 : i[c];
+}
+function Ld(t, e, n) {
+  if (t.header.fontType !== J.UNIFONT)
+    return !1;
+  if (t.content.dualOrientation)
+    return !0;
+  const r = qn(t.content, n);
+  for (const s of [48, 65, 78, 49]) {
+    if (!(s in t.content.data))
+      continue;
+    const i = e(s);
+    if (i && vo(i, r))
+      return !0;
+  }
+  return !1;
+}
+function Id(t, e, n, r = Vn, s = !1, i = 0) {
+  var a;
+  let o = t;
+  if (e.header.fontType === J.BIGFONT && i > 0) {
+    const u = e.content.height > 0 ? n.size / e.content.height : 1;
+    o = o.offset(new se(0, -i * u), !0);
+  }
+  if (e.header.fontType === J.UNIFONT || Ad(e, t, n)) {
+    const u = e.header.fontType === J.UNIFONT && (s || e.content.dualOrientation || vo(t, n));
+    (e.header.fontType !== J.UNIFONT || !u) && (o = o.offset(new se(0, n.capHeight), !0));
+  }
+  const c = r.resolve(o, n.cellWidth), l = r.markAlignedAdvanceExplicit(o) ? !0 : o.hasExplicitAdvance;
+  return new Dt(
+    new se(c, ((a = o.lastPoint) == null ? void 0 : a.y) ?? 0),
+    o.polylines,
+    l
+  );
+}
+function Rd(t, e, n, r = Vn, s = !1, i = 0) {
+  const a = qn(e.content, n);
+  return Id(
+    t,
+    e,
+    a,
+    r,
+    s,
+    i
+  );
+}
+const vi = Math.PI / 4;
+class en {
+  /**
+   * Creates a bulge-defined arc
+   * @param start Start point
+   * @param end End point
+   * @param bulge Bulge factor (-1 to 1, where 1 is a semicircle)
+   */
+  static fromBulge(e, n, r) {
+    const s = Math.max(-1, Math.min(1, r));
+    return new en({
+      start: e,
+      end: n,
+      bulge: s
+    });
+  }
+  /**
+   * Creates an octant-defined arc
+   * @param center Center point of the arc
+   * @param radius Radius of the arc
+   * @param startOctant Starting octant (0-7)
+   * @param octantCount Number of octants to span (0-8, where 0 means 8 octants)
+   * @param isClockwise Whether the arc goes clockwise
+   */
+  static fromOctant(e, n, r, s, i) {
+    return new en({
+      center: e,
+      radius: n,
+      startOctant: r,
+      octantCount: s,
+      isClockwise: i
+    });
+  }
+  constructor(e) {
+    if (e.start && e.end && e.bulge !== void 0) {
+      this.start = e.start.clone(), this.end = e.end.clone(), this.bulge = e.bulge, this.isClockwise = e.bulge < 0;
+      const n = this.end.clone().subtract(this.start), r = n.length();
+      if (Math.abs(this.bulge) * r / 2 === 0) {
+        this.radius = 0, this.center = this.start.clone(), this.startAngle = Math.atan2(n.y, n.x), this.endAngle = this.startAngle;
+        return;
+      }
+      const s = 4 * Math.atan(Math.abs(this.bulge));
+      this.radius = r / (2 * Math.sin(s / 2));
+      const i = this.start.clone().add(n.clone().divide(2)), a = new se(-n.y, n.x);
+      a.normalize(), a.multiply(Math.abs(this.radius * Math.cos(s / 2))), this.center = i.clone(), this.isClockwise ? this.center.subtract(a) : this.center.add(a), this.startAngle = Math.atan2(this.start.y - this.center.y, this.start.x - this.center.x), this.endAngle = Math.atan2(this.end.y - this.center.y, this.end.x - this.center.x), this.isClockwise ? this.endAngle >= this.startAngle && (this.endAngle -= 2 * Math.PI) : this.endAngle <= this.startAngle && (this.endAngle += 2 * Math.PI);
+    } else if (e.center && e.radius !== void 0 && e.startOctant !== void 0 && e.octantCount !== void 0 && e.isClockwise !== void 0) {
+      this.center = e.center.clone(), this.radius = e.radius, this.isClockwise = e.isClockwise, this.startAngle = e.startOctant * vi;
+      const n = (e.octantCount === 0 ? 8 : e.octantCount) * vi;
+      this.endAngle = this.startAngle + (this.isClockwise ? -n : n), this.start = this.center.clone().add(
+        new se(
+          this.radius * Math.cos(this.startAngle),
+          this.radius * Math.sin(this.startAngle)
+        )
+      ), this.end = this.center.clone().add(
+        new se(this.radius * Math.cos(this.endAngle), this.radius * Math.sin(this.endAngle))
+      );
+    } else
+      throw new Error("Invalid arc parameters");
+  }
+  /**
+   * Tessellates the arc into a series of points that approximate the arc.
+   * @param circleSpan The angle span between tessellated points (default Math.PI / 18)
+   * @returns Array of points representing the tessellated arc
+   */
+  tessellate(e = Math.PI / 18) {
+    if (this.radius === 0)
+      return [this.start.clone(), this.end.clone()];
+    const n = [this.start.clone()], r = Math.abs(this.endAngle - this.startAngle), s = Math.max(1, Math.floor(r / e));
+    for (let i = 1; i < s; i++) {
+      const a = i / s, o = this.isClockwise ? this.startAngle - a * r : this.startAngle + a * r;
+      n.push(
+        this.center.clone().add(new se(this.radius * Math.cos(o), this.radius * Math.sin(o)))
+      );
+    }
+    return n.push(
+      this.end ? this.end.clone() : this.center.clone().add(
+        new se(
+          this.radius * Math.cos(this.endAngle),
+          this.radius * Math.sin(this.endAngle)
+        )
+      )
+    ), n;
+  }
+}
+const Bd = Math.PI / 18, Dd = 1e-6;
+class Md {
+  constructor(e) {
+    this.shapeCache = /* @__PURE__ */ new Map(), this.subshapeCache = /* @__PURE__ */ new Map(), this.shapeData = /* @__PURE__ */ new Map(), this.fontData = e;
+  }
+  /**
+   * Releases parsed shapes and cached shapes
+   */
+  release() {
+    this.shapeCache.clear(), this.subshapeCache.clear(), this.shapeData.clear();
+  }
+  /**
+   * Parses a character's shape with the given font size.
+   * @param code - The character code
+   * @param size - The font size
+   * @returns The parsed shape or undefined if the character is not found
+   */
+  getCharShape(e, n) {
+    const r = this.fontData.header.fontType === J.SHAPES && !(0 in this.fontData.content.data) ? n : n / this.fontData.content.height;
+    return this.parseAndScale(e, { factor: r });
+  }
+  /**
+   * Parses a character's shape with scaling options
+   * @param code - The character code
+   * @param options - Scaling options (factor or height/width)
+   * @returns The parsed shape or undefined if the character is not found
+   */
+  parseAndScale(e, n) {
+    if (e === 0)
+      return;
+    let r;
+    if (this.shapeCache.has(e))
+      r = this.shapeCache.get(e);
+    else {
+      const s = this.fontData.content.data;
+      if (s[e]) {
+        const i = this.prepareBigfontGlyphBytecode(e, s[e]), a = this.fontData.header.fontType !== J.BIGFONT;
+        r = this.parseShape(i, { flushOnEnd: !0, initialPenDown: a }), this.shapeData.set(e, r), this.shapeCache.set(e, r);
+      }
+    }
+    if (r) {
+      if (n.factor !== void 0)
+        return this.scaleShapeByFactor(r, n.factor);
+      if (n.height !== void 0) {
+        const s = n.width ?? n.height;
+        return this.scaleShapeByHeightAndWidth(r, n.height, s);
+      } else
+        return r;
+    }
+  }
+  /** Strips the embedded character-code prefix from dual-byte BIGFONT parent glyphs. */
+  prepareBigfontGlyphBytecode(e, n) {
+    if (this.fontData.header.fontType !== J.BIGFONT || e <= 255)
+      return n;
+    const r = e >> 8 & 255, s = e & 255;
+    if (n.length >= 2 && n[0] === r && n[1] === s) {
+      let i = 2;
+      return n[i] === 0 && i++, n.slice(i);
+    }
+    return n;
+  }
+  /**
+   * Dual-orientation vertical BIGFONT files (e.g. gbcbig.shx) use 0x8e/0x8f markers on
+   * code 7 instead of real subshapes. Only the marker byte is skipped; following setup
+   * commands (push / pen up / xy origin) are executed normally.
+   */
+  isVerticalDualBigfontMarker(e, n, r) {
+    return this.fontData.content.verticalDualMode ? r === "open" ? e[n] === 142 : e[n] === 143 : !1;
+  }
+  /**
+   * Scales a shape according to the given scale factor
+   * @param shape - The shape to scale
+   * @param factor - The scale factor
+   * @returns The scaled shape
+   */
+  scaleShapeByFactor(e, n) {
+    var r;
+    return new Dt(
+      (r = e.lastPoint) == null ? void 0 : r.clone().multiply(n),
+      e.polylines.map((s) => s.map((i) => i.clone().multiply(n))),
+      e.hasExplicitAdvance
+    );
+  }
+  /**
+   * Scales a shape according to the given height and width
+   * @param shape - The shape to scale
+   * @param height - The target height
+   * @param width - The target width
+   * @returns The scaled shape
+   */
+  scaleShapeByHeightAndWidth(e, n, r) {
+    var s;
+    const i = e.bbox, a = i.maxY - i.minY, o = i.maxX - i.minX, c = a > 0 ? n / a : 1, l = o > 0 ? r / o : 1, u = (s = e.lastPoint) == null ? void 0 : s.clone();
+    u && (u.x *= l, u.y *= c);
+    const f = e.polylines.map(
+      (h) => h.map((p) => {
+        const y = p.clone();
+        return y.x *= l, y.y *= c, y;
+      })
+    );
+    return new Dt(u, f, e.hasExplicitAdvance);
+  }
+  /**
+   * Whether code 14 (0x0E) should skip the following command for the current layout.
+   * Defaults to horizontal text layout when no orientation is supplied.
+   */
+  shouldSkipVerticalFlagCommand(e = !1) {
+    const { content: n, header: r } = this.fontData;
+    return r.fontType === J.BIGFONT ? !n.verticalDualMode : n.dualOrientation ? !e : n.orientation === "horizontal";
+  }
+  /** Marks that bytecode explicitly defines horizontal advance. */
+  markAdvanceDefined(e) {
+    e.hasExplicitAdvance = !0;
+  }
+  /** Records a terminal pen-up XY move (codes 8/9). */
+  notePenUpPositioning(e) {
+    e.pendingTerminalAdvance = !0;
+  }
+  /** Clears a pending advance when later bytecode supersedes the prior XY move. */
+  clearPendingAdvance(e) {
+    e.pendingTerminalAdvance = !1;
+  }
+  stateHasInk(e) {
+    return e.currentPolyline.length > 1 ? !0 : e.polylines.some((n) => n.length >= 2);
+  }
+  /**
+   * Confirms terminal pen-up XY (codes 8/9) as advance definition.
+   * Ignores closure moves that return to the origin after drawing (e.g. txt `A`).
+   */
+  finalizeAdvanceFlag(e) {
+    if (!e.pendingTerminalAdvance)
+      return;
+    const n = e.currentPoint.x;
+    if (Math.abs(n) > Dd) {
+      e.hasExplicitAdvance = !0;
+      return;
+    }
+    this.stateHasInk(e) || (e.hasExplicitAdvance = !0);
+  }
+  /**
+   * Parses the shape of a character.
+   * @param data - The data of the character
+   * @param options - Optional parse settings
+   * @returns The parsed shape
+   */
+  parseShape(e, n = {}) {
+    let r = new se();
+    const s = [];
+    let i = [];
+    const a = [];
+    let o = n.initialPenDown ?? !1;
+    o && i.push(r.clone());
+    const c = {
+      currentPoint: r,
+      polylines: s,
+      currentPolyline: i,
+      sp: a,
+      isPenDown: o,
+      scale: 1,
+      // Top-level glyphs flush trailing pen-down strokes at 0x00. Subshape
+      // primitives and inherited-pen unifont subshapes (amgdt %%132) opt in
+      // via flushOnEnd; bigfont subshape cache keeps flush off to avoid regressions.
+      flushEndPolyline: n.flushOnEnd ?? !1,
+      hasExplicitAdvance: !1,
+      pendingTerminalAdvance: !1
+    };
+    for (let l = 0; l < e.length; l++) {
+      const u = e[l];
+      u <= 15 ? l = this.handleSpecialCommand(u, e, l, c) : (this.clearPendingAdvance(c), this.handleVectorCommand(u, c));
+    }
+    return this.finalizeAdvanceFlag(c), this.buildShapeFromState(c);
+  }
+  /** Builds a shape result, including any trailing pen-down polyline. */
+  buildShapeFromState(e) {
+    const n = e.polylines.map((r) => r.map((s) => s.clone()));
+    return e.currentPolyline.length > 1 && n.push(e.currentPolyline.map((r) => r.clone())), new Dt(e.currentPoint.clone(), n, e.hasExplicitAdvance);
+  }
+  /**
+   * Please refer to special codes reference in the following link for more information.
+   * https://help.autodesk.com/view/OARX/2023/ENU/?guid=GUID-06832147-16BE-4A66-A6D0-3ADF98DC8228
+   * @param command - The command byte
+   * @param data - The data of the character
+   * @param index - The index of the command byte
+   * @param state - The state of the parser
+   * @returns The index of the next command byte
+   */
+  handleSpecialCommand(e, n, r, s) {
+    let i = r;
+    switch (e) {
+      case 0:
+        this.finalizeAdvanceFlag(s), s.flushEndPolyline && s.currentPolyline.length > 1 ? (s.polylines.push(s.currentPolyline.slice()), s.currentPolyline = []) : s.flushEndPolyline && (s.currentPolyline = []), s.isPenDown = !1;
+        break;
+      case 1:
+        this.clearPendingAdvance(s), s.isPenDown || s.currentPolyline.push(s.currentPoint.clone()), s.isPenDown = !0;
+        break;
+      case 2:
+        s.isPenDown = !1, s.currentPolyline.length > 1 && s.polylines.push(s.currentPolyline.slice()), s.currentPolyline = [];
+        break;
+      case 3:
+        this.clearPendingAdvance(s), i++, s.scale /= n[i];
+        break;
+      case 4:
+        this.clearPendingAdvance(s), i++, s.scale *= n[i];
+        break;
+      case 5:
+        if (this.clearPendingAdvance(s), s.sp.length === 4)
+          throw new Error("The position stack is only four locations deep");
+        s.sp.push(s.currentPoint.clone());
+        break;
+      case 6:
+        this.clearPendingAdvance(s), s.currentPoint = s.sp.pop() ?? s.currentPoint, s.currentPolyline.length > 1 && (s.polylines.push(s.currentPolyline.slice()), s.currentPolyline = []), s.isPenDown && s.currentPolyline.push(s.currentPoint.clone());
+        break;
+      case 7:
+        this.clearPendingAdvance(s), i = this.handleSubshapeCommand(n, i, s);
+        break;
+      case 8:
+        i = this.handleXYDisplacement(n, i, s);
+        break;
+      case 9:
+        i = this.handleMultipleXYDisplacements(n, i, s);
+        break;
+      case 10:
+        this.clearPendingAdvance(s), i = this.handleOctantArc(n, i, s);
+        break;
+      case 11:
+        this.clearPendingAdvance(s), i = this.handleFractionalArc(n, i, s);
+        break;
+      case 12:
+        this.clearPendingAdvance(s), i = this.handleBulgeArc(n, i, s);
+        break;
+      case 13:
+        this.clearPendingAdvance(s), i = this.handleMultipleBulgeArcs(n, i, s);
+        break;
+      case 14:
+        this.clearPendingAdvance(s), this.shouldSkipVerticalFlagCommand() && (i = this.skipCode(n, ++i));
+        break;
+    }
+    return i;
+  }
+  handleVectorCommand(e, n) {
+    const r = (e & 240) >> 4, s = e & 15, i = this.getVectorForDirection(s);
+    n.currentPoint.add(i.multiply(r * n.scale)), n.isPenDown && n.currentPolyline.push(n.currentPoint.clone());
+  }
+  /**
+   * Get the vector for the given direction code. Please refer to the following link for more information.
+   * https://help.autodesk.com/view/OARX/2023/ENU/?guid=GUID-0A8E12A1-F4AB-44AD-8A9B-2140E0D5FD23
+   * @param dir - The direction code of the vector
+   * @returns Returns the vector for the given direction code
+   */
+  getVectorForDirection(e) {
+    const n = new se();
+    switch (e) {
+      case 0:
+        n.x = 1;
+        break;
+      case 1:
+        n.x = 1, n.y = 0.5;
+        break;
+      case 2:
+        n.x = 1, n.y = 1;
+        break;
+      case 3:
+        n.x = 0.5, n.y = 1;
+        break;
+      case 4:
+        n.y = 1;
+        break;
+      case 5:
+        n.x = -0.5, n.y = 1;
+        break;
+      case 6:
+        n.x = -1, n.y = 1;
+        break;
+      case 7:
+        n.x = -1, n.y = 0.5;
+        break;
+      case 8:
+        n.x = -1;
+        break;
+      case 9:
+        n.x = -1, n.y = -0.5;
+        break;
+      case 10:
+        n.x = -1, n.y = -1;
+        break;
+      case 11:
+        n.x = -0.5, n.y = -1;
+        break;
+      case 12:
+        n.y = -1;
+        break;
+      case 13:
+        n.x = 0.5, n.y = -1;
+        break;
+      case 14:
+        n.x = 1, n.y = -1;
+        break;
+      case 15:
+        n.x = 1, n.y = -0.5;
+        break;
+    }
+    return n;
+  }
+  handleSubshapeCommand(e, n, r) {
+    let s = n, i = 0, a, o = r.scale * this.fontData.content.baseUp, c = o;
+    const l = r.currentPoint.clone();
+    switch (r.currentPolyline.length > 1 && (r.polylines.push(r.currentPolyline.slice()), r.currentPolyline = []), this.fontData.header.fontType) {
+      case J.SHAPES:
+        s++, i = e[s];
+        break;
+      case J.BIGFONT:
+        if (s++, this.isVerticalDualBigfontMarker(e, s, "open"))
+          return s;
+        if (this.isVerticalDualBigfontMarker(e, s, "close"))
+          return s + 1;
+        i = e[s], i === 0 && (s++, i = e[s++] << 8 | e[s++], l.x = ke.byteToSByte(e[s++]) * r.scale, l.y = ke.byteToSByte(e[s++]) * r.scale, this.fontData.content.isExtended ? (c = e[s++] * r.scale, o = e[s] * r.scale) : (o = e[s] * r.scale, c = o));
+        break;
+      case J.UNIFONT:
+        s++, i = e[s++] << 8 | e[s++], s--;
+        break;
+    }
+    if (i !== 0)
+      if (this.fontData.header.fontType === J.UNIFONT) {
+        const u = r.isPenDown;
+        a = this.getScaledSubshapeAtInsertPoint(
+          i,
+          c,
+          o,
+          l,
+          u
+        ), a != null && a.polylines.some((f) => f.length >= 2) && (r.polylines.push(...a.polylines.slice()), a.lastPoint && (r.currentPoint = a.lastPoint.clone()), r.currentPolyline = [], r.isPenDown && r.currentPolyline.push(r.currentPoint.clone()));
+      } else if (this.fontData.header.fontType === J.SHAPES)
+        a = this.getScaledSubshapeAtInsertPoint(
+          i,
+          c,
+          o,
+          l
+        ), a && (r.polylines.push(...a.polylines.slice()), a.lastPoint && (r.currentPoint = a.lastPoint.clone(), a.hasExplicitAdvance && this.markAdvanceDefined(r))), r.currentPolyline = [], r.isPenDown && r.currentPolyline.push(r.currentPoint.clone());
+      else {
+        if (a = this.getScaledSubshapeAtInsertPoint(
+          i,
+          c,
+          o,
+          l
+        ), a && (r.polylines.push(...a.polylines.slice()), i === 2 && a.lastPoint)) {
+          const u = a.lastPoint.x - l.x;
+          u > r.currentPoint.x && (r.currentPoint.x = u), this.markAdvanceDefined(r);
+        }
+        r.currentPolyline = [];
+      }
+    return s;
+  }
+  handleXYDisplacement(e, n, r) {
+    let s = n;
+    const i = new se();
+    return i.x = ke.byteToSByte(e[++s]), i.y = ke.byteToSByte(e[++s]), r.currentPoint.add(i.multiply(r.scale)), r.isPenDown ? r.currentPolyline.push(r.currentPoint.clone()) : this.notePenUpPositioning(r), s;
+  }
+  handleMultipleXYDisplacements(e, n, r) {
+    let s = n;
+    for (; !(s + 1 >= e.length); ) {
+      const i = new se();
+      if (i.x = ke.byteToSByte(e[++s]), i.y = ke.byteToSByte(e[++s]), i.x === 0 && i.y === 0)
+        break;
+      r.currentPoint.add(i.multiply(r.scale)), r.isPenDown ? r.currentPolyline.push(r.currentPoint.clone()) : this.notePenUpPositioning(r);
+    }
+    return s;
+  }
+  handleOctantArc(e, n, r) {
+    let s = n;
+    const i = e[++s] * r.scale, a = ke.byteToSByte(e[++s]), o = (a & 112) >> 4;
+    let c = a & 7;
+    const l = a < 0, u = Math.PI / 4 * o, f = r.currentPoint.clone().subtract(new se(Math.cos(u) * i, Math.sin(u) * i)), h = en.fromOctant(f, i, o, c, l).tessellate();
+    return r.isPenDown && (r.currentPolyline.pop(), r.currentPolyline.push(...h.slice())), r.currentPoint = h[h.length - 1].clone(), s;
+  }
+  handleFractionalArc(e, n, r) {
+    let s = n;
+    const i = e[++s], a = e[++s], o = e[++s], c = e[++s], l = (o * 255 + c) * r.scale, u = ke.byteToSByte(e[++s]), f = (u & 112) >> 4;
+    let h = u & 7;
+    h === 0 && (h = 8), a !== 0 && h--;
+    const p = Math.PI / 4;
+    let y = p * h, g = Bd, b = 1;
+    u < 0 && (g = -g, y = -y, b = -1);
+    let v = p * f, w = v + y;
+    v += p * i / 256 * b, w += p * a / 256 * b;
+    const C = r.currentPoint.clone().subtract(new se(l * Math.cos(v), l * Math.sin(v)));
+    if (r.currentPoint = C.clone().add(new se(l * Math.cos(w), l * Math.sin(w))), r.isPenDown) {
+      let T = v;
+      const E = [];
+      if (E.push(
+        C.clone().add(new se(l * Math.cos(T), l * Math.sin(T)))
+      ), g > 0)
+        for (; T + g < w; )
+          T += g, E.push(
+            C.clone().add(new se(l * Math.cos(T), l * Math.sin(T)))
+          );
+      else
+        for (; T + g > w; )
+          T += g, E.push(
+            C.clone().add(new se(l * Math.cos(T), l * Math.sin(T)))
+          );
+      E.push(C.clone().add(new se(l * Math.cos(w), l * Math.sin(w)))), r.currentPolyline.push(...E);
+    }
+    return s;
+  }
+  handleBulgeArc(e, n, r) {
+    let s = n;
+    const i = new se();
+    i.x = ke.byteToSByte(e[++s]), i.y = ke.byteToSByte(e[++s]);
+    const a = ke.byteToSByte(e[++s]);
+    return r.currentPoint = this.handleArcSegment(
+      r.currentPoint,
+      i,
+      a,
+      r.scale,
+      r.isPenDown,
+      r.currentPolyline
+    ), s;
+  }
+  handleMultipleBulgeArcs(e, n, r) {
+    let s = n;
+    for (; !(s + 1 >= e.length); ) {
+      const i = new se();
+      if (i.x = ke.byteToSByte(e[++s]), i.y = ke.byteToSByte(e[++s]), i.x === 0 && i.y === 0 || s + 1 >= e.length)
+        break;
+      const a = ke.byteToSByte(e[++s]);
+      r.currentPoint = this.handleArcSegment(
+        r.currentPoint,
+        i,
+        a,
+        r.scale,
+        r.isPenDown,
+        r.currentPolyline
+      );
+    }
+    return s;
+  }
+  skipCode(e, n) {
+    switch (e[n]) {
+      case 0:
+        break;
+      case 1:
+        break;
+      case 2:
+        break;
+      case 3:
+      case 4:
+        n++;
+        break;
+      case 5:
+        break;
+      case 6:
+        break;
+      case 7:
+        switch (this.fontData.header.fontType) {
+          case J.SHAPES:
+            n++;
+            break;
+          case J.BIGFONT:
+            n++, this.isVerticalDualBigfontMarker(e, n, "open") ? n++ : this.isVerticalDualBigfontMarker(e, n, "close") ? n += 2 : e[n] === 0 && (n += this.fontData.content.isExtended ? 6 : 5);
+            break;
+          case J.UNIFONT:
+            n += 2;
+            break;
+        }
+        break;
+      case 8:
+        n += 2;
+        break;
+      case 9:
+        for (; n++, !(n >= e.length); ) {
+          const r = e[n];
+          if (n++, n >= e.length)
+            break;
+          const s = e[n];
+          if (r === 0 && s === 0)
+            break;
+        }
+        break;
+      case 10:
+        n += 2;
+        break;
+      case 11:
+        n += 5;
+        break;
+      case 12:
+        n += 3;
+        break;
+      case 13:
+        for (; n++, !(n >= e.length); ) {
+          const r = e[n];
+          if (n++, n >= e.length)
+            break;
+          const s = e[n];
+          if (r === 0 && s === 0)
+            break;
+          n++;
+        }
+        break;
+    }
+    return n;
+  }
+  getScaledSubshapeAtInsertPoint(e, n, r, s, i = !1) {
+    let a;
+    if (i) {
+      const l = this.fontData.content.data[e];
+      if (!l)
+        return;
+      a = this.parseShape(l, { initialPenDown: !0, flushOnEnd: !0 });
+    } else if (a = this.subshapeCache.get(e), !a) {
+      const l = this.fontData.content.data[e];
+      if (!l)
+        return;
+      const u = this.fontData.header.fontType !== J.BIGFONT;
+      a = this.parseShape(l, {
+        flushOnEnd: !1,
+        initialPenDown: u
+      }), this.shapeData.set(e, a), this.subshapeCache.set(e, a);
+    }
+    const o = this.fontData.header.fontType === J.BIGFONT ? void 0 : r / this.fontData.content.baseUp, c = a.polylines.some((l) => l.length > 0);
+    return (o !== void 0 ? this.scaleShapeByFactor(a, o) : this.scaleShapeByHeightAndWidth(
+      c ? a.normalizeToOrigin(!0) : a,
+      r,
+      n
+    )).offset(s, !1);
+  }
+  /**
+   * Handles drawing an arc segment with the given vector and bulge
+   * @param currentPoint The starting point of the arc
+   * @param vec The displacement vector
+   * @param bulge The bulge value (will be normalized by 127.0)
+   * @param scale The current scale factor
+   * @param isPenDown Whether the pen is currently down (drawing)
+   * @param currentPolyline The current polyline being built
+   * @returns The new current point after the arc
+   */
+  handleArcSegment(e, n, r, s, i, a) {
+    n.x *= s, n.y *= s, r < -127 && (r = -127);
+    const o = e.clone();
+    if (i)
+      if (r === 0)
+        a.push(o.clone().add(n));
+      else {
+        const c = o.clone().add(n), l = en.fromBulge(o, c, r / 127).tessellate();
+        a.push(...l.slice(1));
+      }
+    return o.add(n), o;
+  }
+}
+class _d {
+  /**
+   * Creates a new ShxFont instance.
+   * @param data - Either raw binary data of the SHX font file (ArrayBuffer) or pre-parsed font data (ShxFontData)
+   * @throws {Error} If the font data is invalid or cannot be parsed
+   */
+  constructor(e) {
+    if (e instanceof ArrayBuffer) {
+      const n = new ke(e), r = new pd().parse(n), s = bd.createParser(r.fontType).parse(n);
+      this.fontData = {
+        header: r,
+        content: s
+      };
+    } else
+      this.fontData = e;
+    this.shapeParser = new Md(this.fontData);
+  }
+  /**
+   * Return true if this font contains glyph of the specified character. Otherwise, return false.
+   * @param char - The character to check
+   * @returns True if this font contains glyph of the specified character. Otherwise, return false.
+   */
+  hasChar(e) {
+    return this.fontData.content.data[e] !== void 0;
+  }
+  /**
+   * Return true if this font contains a shape with the specified name. Otherwise, return false.
+   * Shape names are matched case-insensitively.
+   * @param name - The shape name to check (for example, "GRS")
+   * @returns True if this font contains the named shape. Otherwise, return false.
+   */
+  hasShape(e) {
+    return this.getShapeCode(e) !== void 0;
+  }
+  /**
+   * Gets the character code for a named shape.
+   * @param name - The shape name to look up
+   * @returns The character code, or undefined if the shape is not found
+   */
+  getShapeCode(e) {
+    const n = this.fontData.content.names;
+    if (n)
+      return n[e.toUpperCase()];
+  }
+  /**
+   * Gets the shape name for a character code, if one is defined.
+   * @param code - The character code to look up
+   * @returns The shape name, or undefined if the code has no name
+   */
+  getShapeName(e) {
+    var n;
+    const r = (n = this.fontData.content.codeToName) == null ? void 0 : n[e];
+    if (r !== void 0)
+      return r;
+    const s = this.fontData.content.names;
+    if (s) {
+      for (const [i, a] of Object.entries(s))
+        if (a === e)
+          return i;
+    }
+  }
+  /**
+   * Returns scaled font metrics for a target render size.
+   * @param size - Target font size in drawing units
+   */
+  getFontMetrics(e) {
+    return qn(this.fontData.content, e);
+  }
+  /**
+   * Returns a layout-ready glyph: scaled geometry with baseline alignment applied.
+   *
+   * Prefer this over {@link ShxFont.getCharShape} when placing text for display.
+   *
+   * @param code - The character code to get the shape for
+   * @param size - The desired font size
+   */
+  getLayoutCharShape(e, n, r = Vn) {
+    const s = this.getCharShape(e, n);
+    if (s)
+      return Rd(
+        s,
+        this.fontData,
+        n,
+        r,
+        this.usesUnifontBaselineOriginFont(n),
+        this.getBigfontBaselineInkPaddingNative()
+      );
+  }
+  /**
+   * Returns the cached median baseline ink padding for BIGFONT layout normalization.
+   *
+   * @returns Padding in native font units from shape #0 height, or 0 when not applicable
+   */
+  getBigfontBaselineInkPaddingNative() {
+    if (this.bigfontBaselineInkPaddingNative === void 0) {
+      const e = this.fontData.content.height;
+      this.bigfontBaselineInkPaddingNative = Od(
+        this.fontData,
+        (n) => this.getCharShape(n, e)
+      );
+    }
+    return this.bigfontBaselineInkPaddingNative;
+  }
+  /**
+   * Returns whether this UNIFONT encodes horizontal glyphs with baseline at y = 0.
+   *
+   * The result is computed once via {@link detectUnifontBaselineOriginFont} and cached,
+   * because baseline-origin detection is independent of render size.
+   *
+   * @param size - Font size used when sampling glyph geometry for detection
+   * @returns True when baseline-origin UNIFONT shifting should be skipped during layout
+   */
+  usesUnifontBaselineOriginFont(e) {
+    return this.unifontBaselineOriginFont === void 0 && (this.unifontBaselineOriginFont = Ld(
+      this.fontData,
+      (n) => this.getCharShape(n, e),
+      e
+    )), this.unifontBaselineOriginFont;
+  }
+  /**
+   * Gets the shape data for a named shape at a given font size.
+   * Shape names are matched case-insensitively.
+   * @param name - The shape name to get the shape for
+   * @param size - The desired font size
+   * @returns The shape data for the named shape, or undefined if it is not found in the font
+   */
+  getShapeByName(e, n) {
+    const r = this.getShapeCode(e);
+    if (r !== void 0)
+      return this.getCharShape(r, n);
+  }
+  /**
+   * Gets the scaled shape geometry for a character code.
+   *
+   * Returns the glyph as encoded in the SHX file, scaled to `size`. Vertical placement
+   * and mixed-font baseline alignment are the responsibility of the text renderer;
+   * see the `textLayout` module and {@link ShxFont.getFontMetrics}.
+   *
+   * @param code - The character code to get the shape for
+   * @param size - The desired font size
+   * @returns The shape data for the character, or undefined if the character is not found in the font
+   */
+  getCharShape(e, n) {
+    return this.shapeParser.getCharShape(e, n);
+  }
+  /**
+   * Releases resources used by the font.
+   * This should be called when the font is no longer needed to free up memory.
+   */
+  release() {
+    this.shapeParser.release();
+  }
+}
+function Ud(t, e, n, r = Vn) {
+  const s = qn(e.content, n);
+  return r.resolve(t, s.cellWidth);
+}
+function Pd(t) {
+  return t && t.__esModule && Object.prototype.hasOwnProperty.call(t, "default") ? t.default : t;
+}
+function Nd(t) {
+  if (t.__esModule) return t;
+  var e = t.default;
+  if (typeof e == "function") {
+    var n = function r() {
+      return this instanceof r ? Reflect.construct(e, arguments, this.constructor) : e.apply(this, arguments);
+    };
+    n.prototype = e.prototype;
+  } else n = {};
+  return Object.defineProperty(n, "__esModule", { value: !0 }), Object.keys(t).forEach(function(r) {
+    var s = Object.getOwnPropertyDescriptor(t, r);
+    Object.defineProperty(n, r, s.get ? s : {
+      enumerable: !0,
+      get: function() {
+        return t[r];
+      }
+    });
+  }), n;
+}
+var So = { exports: {} }, rs = {}, jn = {};
+jn.byteLength = zd;
+jn.toByteArray = Vd;
+jn.fromByteArray = $d;
+var Xe = [], Ue = [], Gd = typeof Uint8Array < "u" ? Uint8Array : Array, cr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+for (var Rt = 0, Hd = cr.length; Rt < Hd; ++Rt)
+  Xe[Rt] = cr[Rt], Ue[cr.charCodeAt(Rt)] = Rt;
+Ue[45] = 62;
+Ue[95] = 63;
+function wo(t) {
+  var e = t.length;
+  if (e % 4 > 0)
+    throw new Error("Invalid string. Length must be a multiple of 4");
+  var n = t.indexOf("=");
+  n === -1 && (n = e);
+  var r = n === e ? 0 : 4 - n % 4;
+  return [n, r];
+}
+function zd(t) {
+  var e = wo(t), n = e[0], r = e[1];
+  return (n + r) * 3 / 4 - r;
+}
+function Wd(t, e, n) {
+  return (e + n) * 3 / 4 - n;
+}
+function Vd(t) {
+  var e, n = wo(t), r = n[0], s = n[1], i = new Gd(Wd(t, r, s)), a = 0, o = s > 0 ? r - 4 : r, c;
+  for (c = 0; c < o; c += 4)
+    e = Ue[t.charCodeAt(c)] << 18 | Ue[t.charCodeAt(c + 1)] << 12 | Ue[t.charCodeAt(c + 2)] << 6 | Ue[t.charCodeAt(c + 3)], i[a++] = e >> 16 & 255, i[a++] = e >> 8 & 255, i[a++] = e & 255;
+  return s === 2 && (e = Ue[t.charCodeAt(c)] << 2 | Ue[t.charCodeAt(c + 1)] >> 4, i[a++] = e & 255), s === 1 && (e = Ue[t.charCodeAt(c)] << 10 | Ue[t.charCodeAt(c + 1)] << 4 | Ue[t.charCodeAt(c + 2)] >> 2, i[a++] = e >> 8 & 255, i[a++] = e & 255), i;
+}
+function qd(t) {
+  return Xe[t >> 18 & 63] + Xe[t >> 12 & 63] + Xe[t >> 6 & 63] + Xe[t & 63];
+}
+function jd(t, e, n) {
+  for (var r, s = [], i = e; i < n; i += 3)
+    r = (t[i] << 16 & 16711680) + (t[i + 1] << 8 & 65280) + (t[i + 2] & 255), s.push(qd(r));
+  return s.join("");
+}
+function $d(t) {
+  for (var e, n = t.length, r = n % 3, s = [], i = 16383, a = 0, o = n - r; a < o; a += i)
+    s.push(jd(t, a, a + i > o ? o : a + i));
+  return r === 1 ? (e = t[n - 1], s.push(
+    Xe[e >> 2] + Xe[e << 4 & 63] + "=="
+  )) : r === 2 && (e = (t[n - 2] << 8) + t[n - 1], s.push(
+    Xe[e >> 10] + Xe[e >> 4 & 63] + Xe[e << 2 & 63] + "="
+  )), s.join("");
+}
+var ss = {};
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+ss.read = function(t, e, n, r, s) {
+  var i, a, o = s * 8 - r - 1, c = (1 << o) - 1, l = c >> 1, u = -7, f = n ? s - 1 : 0, h = n ? -1 : 1, p = t[e + f];
+  for (f += h, i = p & (1 << -u) - 1, p >>= -u, u += o; u > 0; i = i * 256 + t[e + f], f += h, u -= 8)
+    ;
+  for (a = i & (1 << -u) - 1, i >>= -u, u += r; u > 0; a = a * 256 + t[e + f], f += h, u -= 8)
+    ;
+  if (i === 0)
+    i = 1 - l;
+  else {
+    if (i === c)
+      return a ? NaN : (p ? -1 : 1) * (1 / 0);
+    a = a + Math.pow(2, r), i = i - l;
+  }
+  return (p ? -1 : 1) * a * Math.pow(2, i - r);
+};
+ss.write = function(t, e, n, r, s, i) {
+  var a, o, c, l = i * 8 - s - 1, u = (1 << l) - 1, f = u >> 1, h = s === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0, p = r ? 0 : i - 1, y = r ? 1 : -1, g = e < 0 || e === 0 && 1 / e < 0 ? 1 : 0;
+  for (e = Math.abs(e), isNaN(e) || e === 1 / 0 ? (o = isNaN(e) ? 1 : 0, a = u) : (a = Math.floor(Math.log(e) / Math.LN2), e * (c = Math.pow(2, -a)) < 1 && (a--, c *= 2), a + f >= 1 ? e += h / c : e += h * Math.pow(2, 1 - f), e * c >= 2 && (a++, c /= 2), a + f >= u ? (o = 0, a = u) : a + f >= 1 ? (o = (e * c - 1) * Math.pow(2, s), a = a + f) : (o = e * Math.pow(2, f - 1) * Math.pow(2, s), a = 0)); s >= 8; t[n + p] = o & 255, p += y, o /= 256, s -= 8)
+    ;
+  for (a = a << s | o, l += s; l > 0; t[n + p] = a & 255, p += y, a /= 256, l -= 8)
+    ;
+  t[n + p - y] |= g * 128;
+};
+/*!
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <https://feross.org>
+ * @license  MIT
+ */
+(function(t) {
+  var e = jn, n = ss, r = typeof Symbol == "function" && typeof Symbol.for == "function" ? Symbol.for("nodejs.util.inspect.custom") : null;
+  t.Buffer = o, t.SlowBuffer = w, t.INSPECT_MAX_BYTES = 50;
+  var s = 2147483647;
+  t.kMaxLength = s, o.TYPED_ARRAY_SUPPORT = i(), !o.TYPED_ARRAY_SUPPORT && typeof console < "u" && typeof console.error == "function" && console.error(
+    "This browser lacks typed array (Uint8Array) support which is required by `buffer` v5.x. Use `buffer` v4.x if you require old browser support."
+  );
+  function i() {
+    try {
+      var x = new Uint8Array(1), d = { foo: function() {
+        return 42;
+      } };
+      return Object.setPrototypeOf(d, Uint8Array.prototype), Object.setPrototypeOf(x, d), x.foo() === 42;
+    } catch {
+      return !1;
+    }
+  }
+  Object.defineProperty(o.prototype, "parent", {
+    enumerable: !0,
+    get: function() {
+      if (o.isBuffer(this))
+        return this.buffer;
+    }
+  }), Object.defineProperty(o.prototype, "offset", {
+    enumerable: !0,
+    get: function() {
+      if (o.isBuffer(this))
+        return this.byteOffset;
+    }
+  });
+  function a(x) {
+    if (x > s)
+      throw new RangeError('The value "' + x + '" is invalid for option "size"');
+    var d = new Uint8Array(x);
+    return Object.setPrototypeOf(d, o.prototype), d;
+  }
+  function o(x, d, m) {
+    if (typeof x == "number") {
+      if (typeof d == "string")
+        throw new TypeError(
+          'The "string" argument must be of type string. Received type number'
+        );
+      return f(x);
+    }
+    return c(x, d, m);
+  }
+  o.poolSize = 8192;
+  function c(x, d, m) {
+    if (typeof x == "string")
+      return h(x, d);
+    if (ArrayBuffer.isView(x))
+      return y(x);
+    if (x == null)
+      throw new TypeError(
+        "The first argument must be one of type string, Buffer, ArrayBuffer, Array, or Array-like Object. Received type " + typeof x
+      );
+    if (Re(x, ArrayBuffer) || x && Re(x.buffer, ArrayBuffer) || typeof SharedArrayBuffer < "u" && (Re(x, SharedArrayBuffer) || x && Re(x.buffer, SharedArrayBuffer)))
+      return g(x, d, m);
+    if (typeof x == "number")
+      throw new TypeError(
+        'The "value" argument must not be of type number. Received type number'
+      );
+    var S = x.valueOf && x.valueOf();
+    if (S != null && S !== x)
+      return o.from(S, d, m);
+    var F = b(x);
+    if (F) return F;
+    if (typeof Symbol < "u" && Symbol.toPrimitive != null && typeof x[Symbol.toPrimitive] == "function")
+      return o.from(
+        x[Symbol.toPrimitive]("string"),
+        d,
+        m
+      );
+    throw new TypeError(
+      "The first argument must be one of type string, Buffer, ArrayBuffer, Array, or Array-like Object. Received type " + typeof x
+    );
+  }
+  o.from = function(x, d, m) {
+    return c(x, d, m);
+  }, Object.setPrototypeOf(o.prototype, Uint8Array.prototype), Object.setPrototypeOf(o, Uint8Array);
+  function l(x) {
+    if (typeof x != "number")
+      throw new TypeError('"size" argument must be of type number');
+    if (x < 0)
+      throw new RangeError('The value "' + x + '" is invalid for option "size"');
+  }
+  function u(x, d, m) {
+    return l(x), x <= 0 ? a(x) : d !== void 0 ? typeof m == "string" ? a(x).fill(d, m) : a(x).fill(d) : a(x);
+  }
+  o.alloc = function(x, d, m) {
+    return u(x, d, m);
+  };
+  function f(x) {
+    return l(x), a(x < 0 ? 0 : v(x) | 0);
+  }
+  o.allocUnsafe = function(x) {
+    return f(x);
+  }, o.allocUnsafeSlow = function(x) {
+    return f(x);
+  };
+  function h(x, d) {
+    if ((typeof d != "string" || d === "") && (d = "utf8"), !o.isEncoding(d))
+      throw new TypeError("Unknown encoding: " + d);
+    var m = C(x, d) | 0, S = a(m), F = S.write(x, d);
+    return F !== m && (S = S.slice(0, F)), S;
+  }
+  function p(x) {
+    for (var d = x.length < 0 ? 0 : v(x.length) | 0, m = a(d), S = 0; S < d; S += 1)
+      m[S] = x[S] & 255;
+    return m;
+  }
+  function y(x) {
+    if (Re(x, Uint8Array)) {
+      var d = new Uint8Array(x);
+      return g(d.buffer, d.byteOffset, d.byteLength);
+    }
+    return p(x);
+  }
+  function g(x, d, m) {
+    if (d < 0 || x.byteLength < d)
+      throw new RangeError('"offset" is outside of buffer bounds');
+    if (x.byteLength < d + (m || 0))
+      throw new RangeError('"length" is outside of buffer bounds');
+    var S;
+    return d === void 0 && m === void 0 ? S = new Uint8Array(x) : m === void 0 ? S = new Uint8Array(x, d) : S = new Uint8Array(x, d, m), Object.setPrototypeOf(S, o.prototype), S;
+  }
+  function b(x) {
+    if (o.isBuffer(x)) {
+      var d = v(x.length) | 0, m = a(d);
+      return m.length === 0 || x.copy(m, 0, 0, d), m;
+    }
+    if (x.length !== void 0)
+      return typeof x.length != "number" || ve(x.length) ? a(0) : p(x);
+    if (x.type === "Buffer" && Array.isArray(x.data))
+      return p(x.data);
+  }
+  function v(x) {
+    if (x >= s)
+      throw new RangeError("Attempt to allocate Buffer larger than maximum size: 0x" + s.toString(16) + " bytes");
+    return x | 0;
+  }
+  function w(x) {
+    return +x != x && (x = 0), o.alloc(+x);
+  }
+  o.isBuffer = function(d) {
+    return d != null && d._isBuffer === !0 && d !== o.prototype;
+  }, o.compare = function(d, m) {
+    if (Re(d, Uint8Array) && (d = o.from(d, d.offset, d.byteLength)), Re(m, Uint8Array) && (m = o.from(m, m.offset, m.byteLength)), !o.isBuffer(d) || !o.isBuffer(m))
+      throw new TypeError(
+        'The "buf1", "buf2" arguments must be one of type Buffer or Uint8Array'
+      );
+    if (d === m) return 0;
+    for (var S = d.length, F = m.length, A = 0, L = Math.min(S, F); A < L; ++A)
+      if (d[A] !== m[A]) {
+        S = d[A], F = m[A];
+        break;
+      }
+    return S < F ? -1 : F < S ? 1 : 0;
+  }, o.isEncoding = function(d) {
+    switch (String(d).toLowerCase()) {
+      case "hex":
+      case "utf8":
+      case "utf-8":
+      case "ascii":
+      case "latin1":
+      case "binary":
+      case "base64":
+      case "ucs2":
+      case "ucs-2":
+      case "utf16le":
+      case "utf-16le":
+        return !0;
+      default:
+        return !1;
+    }
+  }, o.concat = function(d, m) {
+    if (!Array.isArray(d))
+      throw new TypeError('"list" argument must be an Array of Buffers');
+    if (d.length === 0)
+      return o.alloc(0);
+    var S;
+    if (m === void 0)
+      for (m = 0, S = 0; S < d.length; ++S)
+        m += d[S].length;
+    var F = o.allocUnsafe(m), A = 0;
+    for (S = 0; S < d.length; ++S) {
+      var L = d[S];
+      if (Re(L, Uint8Array))
+        A + L.length > F.length ? o.from(L).copy(F, A) : Uint8Array.prototype.set.call(
+          F,
+          L,
+          A
+        );
+      else if (o.isBuffer(L))
+        L.copy(F, A);
+      else
+        throw new TypeError('"list" argument must be an Array of Buffers');
+      A += L.length;
+    }
+    return F;
+  };
+  function C(x, d) {
+    if (o.isBuffer(x))
+      return x.length;
+    if (ArrayBuffer.isView(x) || Re(x, ArrayBuffer))
+      return x.byteLength;
+    if (typeof x != "string")
+      throw new TypeError(
+        'The "string" argument must be one of type string, Buffer, or ArrayBuffer. Received type ' + typeof x
+      );
+    var m = x.length, S = arguments.length > 2 && arguments[2] === !0;
+    if (!S && m === 0) return 0;
+    for (var F = !1; ; )
+      switch (d) {
+        case "ascii":
+        case "latin1":
+        case "binary":
+          return m;
+        case "utf8":
+        case "utf-8":
+          return X(x).length;
+        case "ucs2":
+        case "ucs-2":
+        case "utf16le":
+        case "utf-16le":
+          return m * 2;
+        case "hex":
+          return m >>> 1;
+        case "base64":
+          return Ae(x).length;
+        default:
+          if (F)
+            return S ? -1 : X(x).length;
+          d = ("" + d).toLowerCase(), F = !0;
+      }
+  }
+  o.byteLength = C;
+  function T(x, d, m) {
+    var S = !1;
+    if ((d === void 0 || d < 0) && (d = 0), d > this.length || ((m === void 0 || m > this.length) && (m = this.length), m <= 0) || (m >>>= 0, d >>>= 0, m <= d))
+      return "";
+    for (x || (x = "utf8"); ; )
+      switch (x) {
+        case "hex":
+          return _e(this, d, m);
+        case "utf8":
+        case "utf-8":
+          return D(this, d, m);
+        case "ascii":
+          return Te(this, d, m);
+        case "latin1":
+        case "binary":
+          return Qe(this, d, m);
+        case "base64":
+          return P(this, d, m);
+        case "ucs2":
+        case "ucs-2":
+        case "utf16le":
+        case "utf-16le":
+          return fe(this, d, m);
+        default:
+          if (S) throw new TypeError("Unknown encoding: " + x);
+          x = (x + "").toLowerCase(), S = !0;
+      }
+  }
+  o.prototype._isBuffer = !0;
+  function E(x, d, m) {
+    var S = x[d];
+    x[d] = x[m], x[m] = S;
+  }
+  o.prototype.swap16 = function() {
+    var d = this.length;
+    if (d % 2 !== 0)
+      throw new RangeError("Buffer size must be a multiple of 16-bits");
+    for (var m = 0; m < d; m += 2)
+      E(this, m, m + 1);
+    return this;
+  }, o.prototype.swap32 = function() {
+    var d = this.length;
+    if (d % 4 !== 0)
+      throw new RangeError("Buffer size must be a multiple of 32-bits");
+    for (var m = 0; m < d; m += 4)
+      E(this, m, m + 3), E(this, m + 1, m + 2);
+    return this;
+  }, o.prototype.swap64 = function() {
+    var d = this.length;
+    if (d % 8 !== 0)
+      throw new RangeError("Buffer size must be a multiple of 64-bits");
+    for (var m = 0; m < d; m += 8)
+      E(this, m, m + 7), E(this, m + 1, m + 6), E(this, m + 2, m + 5), E(this, m + 3, m + 4);
+    return this;
+  }, o.prototype.toString = function() {
+    var d = this.length;
+    return d === 0 ? "" : arguments.length === 0 ? D(this, 0, d) : T.apply(this, arguments);
+  }, o.prototype.toLocaleString = o.prototype.toString, o.prototype.equals = function(d) {
+    if (!o.isBuffer(d)) throw new TypeError("Argument must be a Buffer");
+    return this === d ? !0 : o.compare(this, d) === 0;
+  }, o.prototype.inspect = function() {
+    var d = "", m = t.INSPECT_MAX_BYTES;
+    return d = this.toString("hex", 0, m).replace(/(.{2})/g, "$1 ").trim(), this.length > m && (d += " ... "), "<Buffer " + d + ">";
+  }, r && (o.prototype[r] = o.prototype.inspect), o.prototype.compare = function(d, m, S, F, A) {
+    if (Re(d, Uint8Array) && (d = o.from(d, d.offset, d.byteLength)), !o.isBuffer(d))
+      throw new TypeError(
+        'The "target" argument must be one of type Buffer or Uint8Array. Received type ' + typeof d
+      );
+    if (m === void 0 && (m = 0), S === void 0 && (S = d ? d.length : 0), F === void 0 && (F = 0), A === void 0 && (A = this.length), m < 0 || S > d.length || F < 0 || A > this.length)
+      throw new RangeError("out of range index");
+    if (F >= A && m >= S)
+      return 0;
+    if (F >= A)
+      return -1;
+    if (m >= S)
+      return 1;
+    if (m >>>= 0, S >>>= 0, F >>>= 0, A >>>= 0, this === d) return 0;
+    for (var L = A - F, q = S - m, V = Math.min(L, q), ae = this.slice(F, A), Se = d.slice(m, S), le = 0; le < V; ++le)
+      if (ae[le] !== Se[le]) {
+        L = ae[le], q = Se[le];
+        break;
+      }
+    return L < q ? -1 : q < L ? 1 : 0;
+  };
+  function R(x, d, m, S, F) {
+    if (x.length === 0) return -1;
+    if (typeof m == "string" ? (S = m, m = 0) : m > 2147483647 ? m = 2147483647 : m < -2147483648 && (m = -2147483648), m = +m, ve(m) && (m = F ? 0 : x.length - 1), m < 0 && (m = x.length + m), m >= x.length) {
+      if (F) return -1;
+      m = x.length - 1;
+    } else if (m < 0)
+      if (F) m = 0;
+      else return -1;
+    if (typeof d == "string" && (d = o.from(d, S)), o.isBuffer(d))
+      return d.length === 0 ? -1 : U(x, d, m, S, F);
+    if (typeof d == "number")
+      return d = d & 255, typeof Uint8Array.prototype.indexOf == "function" ? F ? Uint8Array.prototype.indexOf.call(x, d, m) : Uint8Array.prototype.lastIndexOf.call(x, d, m) : U(x, [d], m, S, F);
+    throw new TypeError("val must be string, number or Buffer");
+  }
+  function U(x, d, m, S, F) {
+    var A = 1, L = x.length, q = d.length;
+    if (S !== void 0 && (S = String(S).toLowerCase(), S === "ucs2" || S === "ucs-2" || S === "utf16le" || S === "utf-16le")) {
+      if (x.length < 2 || d.length < 2)
+        return -1;
+      A = 2, L /= 2, q /= 2, m /= 2;
+    }
+    function V(us, hs) {
+      return A === 1 ? us[hs] : us.readUInt16BE(hs * A);
+    }
+    var ae;
+    if (F) {
+      var Se = -1;
+      for (ae = m; ae < L; ae++)
+        if (V(x, ae) === V(d, Se === -1 ? 0 : ae - Se)) {
+          if (Se === -1 && (Se = ae), ae - Se + 1 === q) return Se * A;
+        } else
+          Se !== -1 && (ae -= ae - Se), Se = -1;
+    } else
+      for (m + q > L && (m = L - q), ae = m; ae >= 0; ae--) {
+        for (var le = !0, un = 0; un < q; un++)
+          if (V(x, ae + un) !== V(d, un)) {
+            le = !1;
+            break;
+          }
+        if (le) return ae;
+      }
+    return -1;
+  }
+  o.prototype.includes = function(d, m, S) {
+    return this.indexOf(d, m, S) !== -1;
+  }, o.prototype.indexOf = function(d, m, S) {
+    return R(this, d, m, S, !0);
+  }, o.prototype.lastIndexOf = function(d, m, S) {
+    return R(this, d, m, S, !1);
+  };
+  function W(x, d, m, S) {
+    m = Number(m) || 0;
+    var F = x.length - m;
+    S ? (S = Number(S), S > F && (S = F)) : S = F;
+    var A = d.length;
+    S > A / 2 && (S = A / 2);
+    for (var L = 0; L < S; ++L) {
+      var q = parseInt(d.substr(L * 2, 2), 16);
+      if (ve(q)) return L;
+      x[m + L] = q;
+    }
+    return L;
+  }
+  function j(x, d, m, S) {
+    return Oe(X(d, x.length - m), x, m, S);
+  }
+  function N(x, d, m, S) {
+    return Oe(xe(d), x, m, S);
+  }
+  function $(x, d, m, S) {
+    return Oe(Ae(d), x, m, S);
+  }
+  function ie(x, d, m, S) {
+    return Oe(Ee(d, x.length - m), x, m, S);
+  }
+  o.prototype.write = function(d, m, S, F) {
+    if (m === void 0)
+      F = "utf8", S = this.length, m = 0;
+    else if (S === void 0 && typeof m == "string")
+      F = m, S = this.length, m = 0;
+    else if (isFinite(m))
+      m = m >>> 0, isFinite(S) ? (S = S >>> 0, F === void 0 && (F = "utf8")) : (F = S, S = void 0);
+    else
+      throw new Error(
+        "Buffer.write(string, encoding, offset[, length]) is no longer supported"
+      );
+    var A = this.length - m;
+    if ((S === void 0 || S > A) && (S = A), d.length > 0 && (S < 0 || m < 0) || m > this.length)
+      throw new RangeError("Attempt to write outside buffer bounds");
+    F || (F = "utf8");
+    for (var L = !1; ; )
+      switch (F) {
+        case "hex":
+          return W(this, d, m, S);
+        case "utf8":
+        case "utf-8":
+          return j(this, d, m, S);
+        case "ascii":
+        case "latin1":
+        case "binary":
+          return N(this, d, m, S);
+        case "base64":
+          return $(this, d, m, S);
+        case "ucs2":
+        case "ucs-2":
+        case "utf16le":
+        case "utf-16le":
+          return ie(this, d, m, S);
+        default:
+          if (L) throw new TypeError("Unknown encoding: " + F);
+          F = ("" + F).toLowerCase(), L = !0;
+      }
+  }, o.prototype.toJSON = function() {
+    return {
+      type: "Buffer",
+      data: Array.prototype.slice.call(this._arr || this, 0)
+    };
+  };
+  function P(x, d, m) {
+    return d === 0 && m === x.length ? e.fromByteArray(x) : e.fromByteArray(x.slice(d, m));
+  }
+  function D(x, d, m) {
+    m = Math.min(x.length, m);
+    for (var S = [], F = d; F < m; ) {
+      var A = x[F], L = null, q = A > 239 ? 4 : A > 223 ? 3 : A > 191 ? 2 : 1;
+      if (F + q <= m) {
+        var V, ae, Se, le;
+        switch (q) {
+          case 1:
+            A < 128 && (L = A);
+            break;
+          case 2:
+            V = x[F + 1], (V & 192) === 128 && (le = (A & 31) << 6 | V & 63, le > 127 && (L = le));
+            break;
+          case 3:
+            V = x[F + 1], ae = x[F + 2], (V & 192) === 128 && (ae & 192) === 128 && (le = (A & 15) << 12 | (V & 63) << 6 | ae & 63, le > 2047 && (le < 55296 || le > 57343) && (L = le));
+            break;
+          case 4:
+            V = x[F + 1], ae = x[F + 2], Se = x[F + 3], (V & 192) === 128 && (ae & 192) === 128 && (Se & 192) === 128 && (le = (A & 15) << 18 | (V & 63) << 12 | (ae & 63) << 6 | Se & 63, le > 65535 && le < 1114112 && (L = le));
+        }
+      }
+      L === null ? (L = 65533, q = 1) : L > 65535 && (L -= 65536, S.push(L >>> 10 & 1023 | 55296), L = 56320 | L & 1023), S.push(L), F += q;
+    }
+    return re(S);
+  }
+  var _ = 4096;
+  function re(x) {
+    var d = x.length;
+    if (d <= _)
+      return String.fromCharCode.apply(String, x);
+    for (var m = "", S = 0; S < d; )
+      m += String.fromCharCode.apply(
+        String,
+        x.slice(S, S += _)
+      );
+    return m;
+  }
+  function Te(x, d, m) {
+    var S = "";
+    m = Math.min(x.length, m);
+    for (var F = d; F < m; ++F)
+      S += String.fromCharCode(x[F] & 127);
+    return S;
+  }
+  function Qe(x, d, m) {
+    var S = "";
+    m = Math.min(x.length, m);
+    for (var F = d; F < m; ++F)
+      S += String.fromCharCode(x[F]);
+    return S;
+  }
+  function _e(x, d, m) {
+    var S = x.length;
+    (!d || d < 0) && (d = 0), (!m || m < 0 || m > S) && (m = S);
+    for (var F = "", A = d; A < m; ++A)
+      F += et[x[A]];
+    return F;
+  }
+  function fe(x, d, m) {
+    for (var S = x.slice(d, m), F = "", A = 0; A < S.length - 1; A += 2)
+      F += String.fromCharCode(S[A] + S[A + 1] * 256);
+    return F;
+  }
+  o.prototype.slice = function(d, m) {
+    var S = this.length;
+    d = ~~d, m = m === void 0 ? S : ~~m, d < 0 ? (d += S, d < 0 && (d = 0)) : d > S && (d = S), m < 0 ? (m += S, m < 0 && (m = 0)) : m > S && (m = S), m < d && (m = d);
+    var F = this.subarray(d, m);
+    return Object.setPrototypeOf(F, o.prototype), F;
+  };
+  function Y(x, d, m) {
+    if (x % 1 !== 0 || x < 0) throw new RangeError("offset is not uint");
+    if (x + d > m) throw new RangeError("Trying to access beyond buffer length");
+  }
+  o.prototype.readUintLE = o.prototype.readUIntLE = function(d, m, S) {
+    d = d >>> 0, m = m >>> 0, S || Y(d, m, this.length);
+    for (var F = this[d], A = 1, L = 0; ++L < m && (A *= 256); )
+      F += this[d + L] * A;
+    return F;
+  }, o.prototype.readUintBE = o.prototype.readUIntBE = function(d, m, S) {
+    d = d >>> 0, m = m >>> 0, S || Y(d, m, this.length);
+    for (var F = this[d + --m], A = 1; m > 0 && (A *= 256); )
+      F += this[d + --m] * A;
+    return F;
+  }, o.prototype.readUint8 = o.prototype.readUInt8 = function(d, m) {
+    return d = d >>> 0, m || Y(d, 1, this.length), this[d];
+  }, o.prototype.readUint16LE = o.prototype.readUInt16LE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 2, this.length), this[d] | this[d + 1] << 8;
+  }, o.prototype.readUint16BE = o.prototype.readUInt16BE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 2, this.length), this[d] << 8 | this[d + 1];
+  }, o.prototype.readUint32LE = o.prototype.readUInt32LE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 4, this.length), (this[d] | this[d + 1] << 8 | this[d + 2] << 16) + this[d + 3] * 16777216;
+  }, o.prototype.readUint32BE = o.prototype.readUInt32BE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 4, this.length), this[d] * 16777216 + (this[d + 1] << 16 | this[d + 2] << 8 | this[d + 3]);
+  }, o.prototype.readIntLE = function(d, m, S) {
+    d = d >>> 0, m = m >>> 0, S || Y(d, m, this.length);
+    for (var F = this[d], A = 1, L = 0; ++L < m && (A *= 256); )
+      F += this[d + L] * A;
+    return A *= 128, F >= A && (F -= Math.pow(2, 8 * m)), F;
+  }, o.prototype.readIntBE = function(d, m, S) {
+    d = d >>> 0, m = m >>> 0, S || Y(d, m, this.length);
+    for (var F = m, A = 1, L = this[d + --F]; F > 0 && (A *= 256); )
+      L += this[d + --F] * A;
+    return A *= 128, L >= A && (L -= Math.pow(2, 8 * m)), L;
+  }, o.prototype.readInt8 = function(d, m) {
+    return d = d >>> 0, m || Y(d, 1, this.length), this[d] & 128 ? (255 - this[d] + 1) * -1 : this[d];
+  }, o.prototype.readInt16LE = function(d, m) {
+    d = d >>> 0, m || Y(d, 2, this.length);
+    var S = this[d] | this[d + 1] << 8;
+    return S & 32768 ? S | 4294901760 : S;
+  }, o.prototype.readInt16BE = function(d, m) {
+    d = d >>> 0, m || Y(d, 2, this.length);
+    var S = this[d + 1] | this[d] << 8;
+    return S & 32768 ? S | 4294901760 : S;
+  }, o.prototype.readInt32LE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 4, this.length), this[d] | this[d + 1] << 8 | this[d + 2] << 16 | this[d + 3] << 24;
+  }, o.prototype.readInt32BE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 4, this.length), this[d] << 24 | this[d + 1] << 16 | this[d + 2] << 8 | this[d + 3];
+  }, o.prototype.readFloatLE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 4, this.length), n.read(this, d, !0, 23, 4);
+  }, o.prototype.readFloatBE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 4, this.length), n.read(this, d, !1, 23, 4);
+  }, o.prototype.readDoubleLE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 8, this.length), n.read(this, d, !0, 52, 8);
+  }, o.prototype.readDoubleBE = function(d, m) {
+    return d = d >>> 0, m || Y(d, 8, this.length), n.read(this, d, !1, 52, 8);
+  };
+  function ne(x, d, m, S, F, A) {
+    if (!o.isBuffer(x)) throw new TypeError('"buffer" argument must be a Buffer instance');
+    if (d > F || d < A) throw new RangeError('"value" argument is out of bounds');
+    if (m + S > x.length) throw new RangeError("Index out of range");
+  }
+  o.prototype.writeUintLE = o.prototype.writeUIntLE = function(d, m, S, F) {
+    if (d = +d, m = m >>> 0, S = S >>> 0, !F) {
+      var A = Math.pow(2, 8 * S) - 1;
+      ne(this, d, m, S, A, 0);
+    }
+    var L = 1, q = 0;
+    for (this[m] = d & 255; ++q < S && (L *= 256); )
+      this[m + q] = d / L & 255;
+    return m + S;
+  }, o.prototype.writeUintBE = o.prototype.writeUIntBE = function(d, m, S, F) {
+    if (d = +d, m = m >>> 0, S = S >>> 0, !F) {
+      var A = Math.pow(2, 8 * S) - 1;
+      ne(this, d, m, S, A, 0);
+    }
+    var L = S - 1, q = 1;
+    for (this[m + L] = d & 255; --L >= 0 && (q *= 256); )
+      this[m + L] = d / q & 255;
+    return m + S;
+  }, o.prototype.writeUint8 = o.prototype.writeUInt8 = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 1, 255, 0), this[m] = d & 255, m + 1;
+  }, o.prototype.writeUint16LE = o.prototype.writeUInt16LE = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 2, 65535, 0), this[m] = d & 255, this[m + 1] = d >>> 8, m + 2;
+  }, o.prototype.writeUint16BE = o.prototype.writeUInt16BE = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 2, 65535, 0), this[m] = d >>> 8, this[m + 1] = d & 255, m + 2;
+  }, o.prototype.writeUint32LE = o.prototype.writeUInt32LE = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 4, 4294967295, 0), this[m + 3] = d >>> 24, this[m + 2] = d >>> 16, this[m + 1] = d >>> 8, this[m] = d & 255, m + 4;
+  }, o.prototype.writeUint32BE = o.prototype.writeUInt32BE = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 4, 4294967295, 0), this[m] = d >>> 24, this[m + 1] = d >>> 16, this[m + 2] = d >>> 8, this[m + 3] = d & 255, m + 4;
+  }, o.prototype.writeIntLE = function(d, m, S, F) {
+    if (d = +d, m = m >>> 0, !F) {
+      var A = Math.pow(2, 8 * S - 1);
+      ne(this, d, m, S, A - 1, -A);
+    }
+    var L = 0, q = 1, V = 0;
+    for (this[m] = d & 255; ++L < S && (q *= 256); )
+      d < 0 && V === 0 && this[m + L - 1] !== 0 && (V = 1), this[m + L] = (d / q >> 0) - V & 255;
+    return m + S;
+  }, o.prototype.writeIntBE = function(d, m, S, F) {
+    if (d = +d, m = m >>> 0, !F) {
+      var A = Math.pow(2, 8 * S - 1);
+      ne(this, d, m, S, A - 1, -A);
+    }
+    var L = S - 1, q = 1, V = 0;
+    for (this[m + L] = d & 255; --L >= 0 && (q *= 256); )
+      d < 0 && V === 0 && this[m + L + 1] !== 0 && (V = 1), this[m + L] = (d / q >> 0) - V & 255;
+    return m + S;
+  }, o.prototype.writeInt8 = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 1, 127, -128), d < 0 && (d = 255 + d + 1), this[m] = d & 255, m + 1;
+  }, o.prototype.writeInt16LE = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 2, 32767, -32768), this[m] = d & 255, this[m + 1] = d >>> 8, m + 2;
+  }, o.prototype.writeInt16BE = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 2, 32767, -32768), this[m] = d >>> 8, this[m + 1] = d & 255, m + 2;
+  }, o.prototype.writeInt32LE = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 4, 2147483647, -2147483648), this[m] = d & 255, this[m + 1] = d >>> 8, this[m + 2] = d >>> 16, this[m + 3] = d >>> 24, m + 4;
+  }, o.prototype.writeInt32BE = function(d, m, S) {
+    return d = +d, m = m >>> 0, S || ne(this, d, m, 4, 2147483647, -2147483648), d < 0 && (d = 4294967295 + d + 1), this[m] = d >>> 24, this[m + 1] = d >>> 16, this[m + 2] = d >>> 8, this[m + 3] = d & 255, m + 4;
+  };
+  function de(x, d, m, S, F, A) {
+    if (m + S > x.length) throw new RangeError("Index out of range");
+    if (m < 0) throw new RangeError("Index out of range");
+  }
+  function be(x, d, m, S, F) {
+    return d = +d, m = m >>> 0, F || de(x, d, m, 4), n.write(x, d, m, S, 23, 4), m + 4;
+  }
+  o.prototype.writeFloatLE = function(d, m, S) {
+    return be(this, d, m, !0, S);
+  }, o.prototype.writeFloatBE = function(d, m, S) {
+    return be(this, d, m, !1, S);
+  };
+  function me(x, d, m, S, F) {
+    return d = +d, m = m >>> 0, F || de(x, d, m, 8), n.write(x, d, m, S, 52, 8), m + 8;
+  }
+  o.prototype.writeDoubleLE = function(d, m, S) {
+    return me(this, d, m, !0, S);
+  }, o.prototype.writeDoubleBE = function(d, m, S) {
+    return me(this, d, m, !1, S);
+  }, o.prototype.copy = function(d, m, S, F) {
+    if (!o.isBuffer(d)) throw new TypeError("argument should be a Buffer");
+    if (S || (S = 0), !F && F !== 0 && (F = this.length), m >= d.length && (m = d.length), m || (m = 0), F > 0 && F < S && (F = S), F === S || d.length === 0 || this.length === 0) return 0;
+    if (m < 0)
+      throw new RangeError("targetStart out of bounds");
+    if (S < 0 || S >= this.length) throw new RangeError("Index out of range");
+    if (F < 0) throw new RangeError("sourceEnd out of bounds");
+    F > this.length && (F = this.length), d.length - m < F - S && (F = d.length - m + S);
+    var A = F - S;
+    return this === d && typeof Uint8Array.prototype.copyWithin == "function" ? this.copyWithin(m, S, F) : Uint8Array.prototype.set.call(
+      d,
+      this.subarray(S, F),
+      m
+    ), A;
+  }, o.prototype.fill = function(d, m, S, F) {
+    if (typeof d == "string") {
+      if (typeof m == "string" ? (F = m, m = 0, S = this.length) : typeof S == "string" && (F = S, S = this.length), F !== void 0 && typeof F != "string")
+        throw new TypeError("encoding must be a string");
+      if (typeof F == "string" && !o.isEncoding(F))
+        throw new TypeError("Unknown encoding: " + F);
+      if (d.length === 1) {
+        var A = d.charCodeAt(0);
+        (F === "utf8" && A < 128 || F === "latin1") && (d = A);
+      }
+    } else typeof d == "number" ? d = d & 255 : typeof d == "boolean" && (d = Number(d));
+    if (m < 0 || this.length < m || this.length < S)
+      throw new RangeError("Out of range index");
+    if (S <= m)
+      return this;
+    m = m >>> 0, S = S === void 0 ? this.length : S >>> 0, d || (d = 0);
+    var L;
+    if (typeof d == "number")
+      for (L = m; L < S; ++L)
+        this[L] = d;
+    else {
+      var q = o.isBuffer(d) ? d : o.from(d, F), V = q.length;
+      if (V === 0)
+        throw new TypeError('The value "' + d + '" is invalid for argument "value"');
+      for (L = 0; L < S - m; ++L)
+        this[L + m] = q[L % V];
+    }
+    return this;
+  };
+  var ye = /[^+/0-9A-Za-z-_]/g;
+  function ce(x) {
+    if (x = x.split("=")[0], x = x.trim().replace(ye, ""), x.length < 2) return "";
+    for (; x.length % 4 !== 0; )
+      x = x + "=";
+    return x;
+  }
+  function X(x, d) {
+    d = d || 1 / 0;
+    for (var m, S = x.length, F = null, A = [], L = 0; L < S; ++L) {
+      if (m = x.charCodeAt(L), m > 55295 && m < 57344) {
+        if (!F) {
+          if (m > 56319) {
+            (d -= 3) > -1 && A.push(239, 191, 189);
+            continue;
+          } else if (L + 1 === S) {
+            (d -= 3) > -1 && A.push(239, 191, 189);
+            continue;
+          }
+          F = m;
+          continue;
+        }
+        if (m < 56320) {
+          (d -= 3) > -1 && A.push(239, 191, 189), F = m;
+          continue;
+        }
+        m = (F - 55296 << 10 | m - 56320) + 65536;
+      } else F && (d -= 3) > -1 && A.push(239, 191, 189);
+      if (F = null, m < 128) {
+        if ((d -= 1) < 0) break;
+        A.push(m);
+      } else if (m < 2048) {
+        if ((d -= 2) < 0) break;
+        A.push(
+          m >> 6 | 192,
+          m & 63 | 128
+        );
+      } else if (m < 65536) {
+        if ((d -= 3) < 0) break;
+        A.push(
+          m >> 12 | 224,
+          m >> 6 & 63 | 128,
+          m & 63 | 128
+        );
+      } else if (m < 1114112) {
+        if ((d -= 4) < 0) break;
+        A.push(
+          m >> 18 | 240,
+          m >> 12 & 63 | 128,
+          m >> 6 & 63 | 128,
+          m & 63 | 128
+        );
+      } else
+        throw new Error("Invalid code point");
+    }
+    return A;
+  }
+  function xe(x) {
+    for (var d = [], m = 0; m < x.length; ++m)
+      d.push(x.charCodeAt(m) & 255);
+    return d;
+  }
+  function Ee(x, d) {
+    for (var m, S, F, A = [], L = 0; L < x.length && !((d -= 2) < 0); ++L)
+      m = x.charCodeAt(L), S = m >> 8, F = m % 256, A.push(F), A.push(S);
+    return A;
+  }
+  function Ae(x) {
+    return e.toByteArray(ce(x));
+  }
+  function Oe(x, d, m, S) {
+    for (var F = 0; F < S && !(F + m >= d.length || F >= x.length); ++F)
+      d[F + m] = x[F];
+    return F;
+  }
+  function Re(x, d) {
+    return x instanceof d || x != null && x.constructor != null && x.constructor.name != null && x.constructor.name === d.name;
+  }
+  function ve(x) {
+    return x !== x;
+  }
+  var et = function() {
+    for (var x = "0123456789abcdef", d = new Array(256), m = 0; m < 16; ++m)
+      for (var S = m * 16, F = 0; F < 16; ++F)
+        d[S + F] = x[m] + x[F];
+    return d;
+  }();
+})(rs);
+var Cn = rs, Mt = Cn.Buffer, Pe = {}, Ne;
+for (Ne in Cn)
+  Cn.hasOwnProperty(Ne) && (Ne === "SlowBuffer" || Ne === "Buffer" || (Pe[Ne] = Cn[Ne]));
+var _t = Pe.Buffer = {};
+for (Ne in Mt)
+  Mt.hasOwnProperty(Ne) && (Ne === "allocUnsafe" || Ne === "allocUnsafeSlow" || (_t[Ne] = Mt[Ne]));
+Pe.Buffer.prototype = Mt.prototype;
+(!_t.from || _t.from === Uint8Array.from) && (_t.from = function(t, e, n) {
+  if (typeof t == "number")
+    throw new TypeError('The "value" argument must not be of type number. Received type ' + typeof t);
+  if (t && typeof t.length > "u")
+    throw new TypeError("The first argument must be one of type string, Buffer, ArrayBuffer, Array, or Array-like Object. Received type " + typeof t);
+  return Mt(t, e, n);
+});
+_t.alloc || (_t.alloc = function(t, e, n) {
+  if (typeof t != "number")
+    throw new TypeError('The "size" argument must be of type number. Received type ' + typeof t);
+  if (t < 0 || t >= 2 * (1 << 30))
+    throw new RangeError('The value "' + t + '" is invalid for option "size"');
+  var r = Mt(t);
+  return !e || e.length === 0 ? r.fill(0) : typeof n == "string" ? r.fill(e, n) : r.fill(e), r;
+});
+if (!Pe.kStringMaxLength)
+  try {
+    Pe.kStringMaxLength = process.binding("buffer").kStringMaxLength;
+  } catch {
+  }
+Pe.constants || (Pe.constants = {
+  MAX_LENGTH: Pe.kMaxLength
+}, Pe.kStringMaxLength && (Pe.constants.MAX_STRING_LENGTH = Pe.kStringMaxLength));
+var xt = Pe, is = {}, Co = "\uFEFF";
+is.PrependBOM = as;
+function as(t, e) {
+  this.encoder = t, this.addBOM = !0;
+}
+as.prototype.write = function(t) {
+  return this.addBOM && (t = Co + t, this.addBOM = !1), this.encoder.write(t);
+};
+as.prototype.end = function() {
+  return this.encoder.end();
+};
+is.StripBOM = os;
+function os(t, e) {
+  this.decoder = t, this.pass = !1, this.options = e || {};
+}
+os.prototype.write = function(t) {
+  var e = this.decoder.write(t);
+  return this.pass || !e || (e[0] === Co && (e = e.slice(1), typeof this.options.stripBOM == "function" && this.options.stripBOM()), this.pass = !0), e;
+};
+os.prototype.end = function() {
+  return this.decoder.end();
+};
+var Yd = typeof Object.hasOwn > "u" ? Function.call.bind(Object.prototype.hasOwnProperty) : Object.hasOwn;
+function Xd(t, e) {
+  for (var n in e)
+    Yd(e, n) && (t[n] = e[n]);
+}
+var To = Xd, lr = {}, ur = {}, mn = { exports: {} };
+/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+var Si;
+function Kd() {
+  return Si || (Si = 1, function(t, e) {
+    var n = rs, r = n.Buffer;
+    function s(a, o) {
+      for (var c in a)
+        o[c] = a[c];
+    }
+    r.from && r.alloc && r.allocUnsafe && r.allocUnsafeSlow ? t.exports = n : (s(n, e), e.Buffer = i);
+    function i(a, o, c) {
+      return r(a, o, c);
+    }
+    i.prototype = Object.create(r.prototype), s(r, i), i.from = function(a, o, c) {
+      if (typeof a == "number")
+        throw new TypeError("Argument must not be a number");
+      return r(a, o, c);
+    }, i.alloc = function(a, o, c) {
+      if (typeof a != "number")
+        throw new TypeError("Argument must be a number");
+      var l = r(a);
+      return o !== void 0 ? typeof c == "string" ? l.fill(o, c) : l.fill(o) : l.fill(0), l;
+    }, i.allocUnsafe = function(a) {
+      if (typeof a != "number")
+        throw new TypeError("Argument must be a number");
+      return r(a);
+    }, i.allocUnsafeSlow = function(a) {
+      if (typeof a != "number")
+        throw new TypeError("Argument must be a number");
+      return n.SlowBuffer(a);
+    };
+  }(mn, mn.exports)), mn.exports;
+}
+var wi;
+function Zd() {
+  if (wi) return ur;
+  wi = 1;
+  var t = Kd().Buffer, e = t.isEncoding || function(v) {
+    switch (v = "" + v, v && v.toLowerCase()) {
+      case "hex":
+      case "utf8":
+      case "utf-8":
+      case "ascii":
+      case "binary":
+      case "base64":
+      case "ucs2":
+      case "ucs-2":
+      case "utf16le":
+      case "utf-16le":
+      case "raw":
+        return !0;
+      default:
+        return !1;
+    }
+  };
+  function n(v) {
+    if (!v) return "utf8";
+    for (var w; ; )
+      switch (v) {
+        case "utf8":
+        case "utf-8":
+          return "utf8";
+        case "ucs2":
+        case "ucs-2":
+        case "utf16le":
+        case "utf-16le":
+          return "utf16le";
+        case "latin1":
+        case "binary":
+          return "latin1";
+        case "base64":
+        case "ascii":
+        case "hex":
+          return v;
+        default:
+          if (w) return;
+          v = ("" + v).toLowerCase(), w = !0;
+      }
+  }
+  function r(v) {
+    var w = n(v);
+    if (typeof w != "string" && (t.isEncoding === e || !e(v))) throw new Error("Unknown encoding: " + v);
+    return w || v;
+  }
+  ur.StringDecoder = s;
+  function s(v) {
+    this.encoding = r(v);
+    var w;
+    switch (this.encoding) {
+      case "utf16le":
+        this.text = f, this.end = h, w = 4;
+        break;
+      case "utf8":
+        this.fillLast = c, w = 4;
+        break;
+      case "base64":
+        this.text = p, this.end = y, w = 3;
+        break;
+      default:
+        this.write = g, this.end = b;
+        return;
+    }
+    this.lastNeed = 0, this.lastTotal = 0, this.lastChar = t.allocUnsafe(w);
+  }
+  s.prototype.write = function(v) {
+    if (v.length === 0) return "";
+    var w, C;
+    if (this.lastNeed) {
+      if (w = this.fillLast(v), w === void 0) return "";
+      C = this.lastNeed, this.lastNeed = 0;
+    } else
+      C = 0;
+    return C < v.length ? w ? w + this.text(v, C) : this.text(v, C) : w || "";
+  }, s.prototype.end = u, s.prototype.text = l, s.prototype.fillLast = function(v) {
+    if (this.lastNeed <= v.length)
+      return v.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed), this.lastChar.toString(this.encoding, 0, this.lastTotal);
+    v.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, v.length), this.lastNeed -= v.length;
+  };
+  function i(v) {
+    return v <= 127 ? 0 : v >> 5 === 6 ? 2 : v >> 4 === 14 ? 3 : v >> 3 === 30 ? 4 : v >> 6 === 2 ? -1 : -2;
+  }
+  function a(v, w, C) {
+    var T = w.length - 1;
+    if (T < C) return 0;
+    var E = i(w[T]);
+    return E >= 0 ? (E > 0 && (v.lastNeed = E - 1), E) : --T < C || E === -2 ? 0 : (E = i(w[T]), E >= 0 ? (E > 0 && (v.lastNeed = E - 2), E) : --T < C || E === -2 ? 0 : (E = i(w[T]), E >= 0 ? (E > 0 && (E === 2 ? E = 0 : v.lastNeed = E - 3), E) : 0));
+  }
+  function o(v, w, C) {
+    if ((w[0] & 192) !== 128)
+      return v.lastNeed = 0, "�";
+    if (v.lastNeed > 1 && w.length > 1) {
+      if ((w[1] & 192) !== 128)
+        return v.lastNeed = 1, "�";
+      if (v.lastNeed > 2 && w.length > 2 && (w[2] & 192) !== 128)
+        return v.lastNeed = 2, "�";
+    }
+  }
+  function c(v) {
+    var w = this.lastTotal - this.lastNeed, C = o(this, v);
+    if (C !== void 0) return C;
+    if (this.lastNeed <= v.length)
+      return v.copy(this.lastChar, w, 0, this.lastNeed), this.lastChar.toString(this.encoding, 0, this.lastTotal);
+    v.copy(this.lastChar, w, 0, v.length), this.lastNeed -= v.length;
+  }
+  function l(v, w) {
+    var C = a(this, v, w);
+    if (!this.lastNeed) return v.toString("utf8", w);
+    this.lastTotal = C;
+    var T = v.length - (C - this.lastNeed);
+    return v.copy(this.lastChar, 0, T), v.toString("utf8", w, T);
+  }
+  function u(v) {
+    var w = v && v.length ? this.write(v) : "";
+    return this.lastNeed ? w + "�" : w;
+  }
+  function f(v, w) {
+    if ((v.length - w) % 2 === 0) {
+      var C = v.toString("utf16le", w);
+      if (C) {
+        var T = C.charCodeAt(C.length - 1);
+        if (T >= 55296 && T <= 56319)
+          return this.lastNeed = 2, this.lastTotal = 4, this.lastChar[0] = v[v.length - 2], this.lastChar[1] = v[v.length - 1], C.slice(0, -1);
+      }
+      return C;
+    }
+    return this.lastNeed = 1, this.lastTotal = 2, this.lastChar[0] = v[v.length - 1], v.toString("utf16le", w, v.length - 1);
+  }
+  function h(v) {
+    var w = v && v.length ? this.write(v) : "";
+    if (this.lastNeed) {
+      var C = this.lastTotal - this.lastNeed;
+      return w + this.lastChar.toString("utf16le", 0, C);
+    }
+    return w;
+  }
+  function p(v, w) {
+    var C = (v.length - w) % 3;
+    return C === 0 ? v.toString("base64", w) : (this.lastNeed = 3 - C, this.lastTotal = 3, C === 1 ? this.lastChar[0] = v[v.length - 1] : (this.lastChar[0] = v[v.length - 2], this.lastChar[1] = v[v.length - 1]), v.toString("base64", w, v.length - C));
+  }
+  function y(v) {
+    var w = v && v.length ? this.write(v) : "";
+    return this.lastNeed ? w + this.lastChar.toString("base64", 0, 3 - this.lastNeed) : w;
+  }
+  function g(v) {
+    return v.toString(this.encoding);
+  }
+  function b(v) {
+    return v && v.length ? this.write(v) : "";
+  }
+  return ur;
+}
+var hr, Ci;
+function Jd() {
+  if (Ci) return hr;
+  Ci = 1;
+  var t = xt.Buffer;
+  hr = {
+    // Encodings
+    utf8: { type: "_internal", bomAware: !0 },
+    cesu8: { type: "_internal", bomAware: !0 },
+    unicode11utf8: "utf8",
+    ucs2: { type: "_internal", bomAware: !0 },
+    utf16le: "ucs2",
+    binary: { type: "_internal" },
+    base64: { type: "_internal" },
+    hex: { type: "_internal" },
+    // Codec.
+    _internal: e
+  };
+  function e(l, u) {
+    this.enc = l.encodingName, this.bomAware = l.bomAware, this.enc === "base64" ? this.encoder = i : this.enc === "utf8" ? this.encoder = c : this.enc === "cesu8" && (this.enc = "utf8", this.encoder = a, t.from("eda0bdedb2a9", "hex").toString() !== "💩" && (this.decoder = o, this.defaultCharUnicode = u.defaultCharUnicode));
+  }
+  e.prototype.encoder = s, e.prototype.decoder = r;
+  var n = Zd().StringDecoder;
+  function r(l, u) {
+    this.decoder = new n(u.enc);
+  }
+  r.prototype.write = function(l) {
+    return t.isBuffer(l) || (l = t.from(l)), this.decoder.write(l);
+  }, r.prototype.end = function() {
+    return this.decoder.end();
+  };
+  function s(l, u) {
+    this.enc = u.enc;
+  }
+  s.prototype.write = function(l) {
+    return t.from(l, this.enc);
+  }, s.prototype.end = function() {
+  };
+  function i(l, u) {
+    this.prevStr = "";
+  }
+  i.prototype.write = function(l) {
+    l = this.prevStr + l;
+    var u = l.length - l.length % 4;
+    return this.prevStr = l.slice(u), l = l.slice(0, u), t.from(l, "base64");
+  }, i.prototype.end = function() {
+    return t.from(this.prevStr, "base64");
+  };
+  function a(l, u) {
+  }
+  a.prototype.write = function(l) {
+    for (var u = t.alloc(l.length * 3), f = 0, h = 0; h < l.length; h++) {
+      var p = l.charCodeAt(h);
+      p < 128 ? u[f++] = p : p < 2048 ? (u[f++] = 192 + (p >>> 6), u[f++] = 128 + (p & 63)) : (u[f++] = 224 + (p >>> 12), u[f++] = 128 + (p >>> 6 & 63), u[f++] = 128 + (p & 63));
+    }
+    return u.slice(0, f);
+  }, a.prototype.end = function() {
+  };
+  function o(l, u) {
+    this.acc = 0, this.contBytes = 0, this.accBytes = 0, this.defaultCharUnicode = u.defaultCharUnicode;
+  }
+  o.prototype.write = function(l) {
+    for (var u = this.acc, f = this.contBytes, h = this.accBytes, p = "", y = 0; y < l.length; y++) {
+      var g = l[y];
+      (g & 192) !== 128 ? (f > 0 && (p += this.defaultCharUnicode, f = 0), g < 128 ? p += String.fromCharCode(g) : g < 224 ? (u = g & 31, f = 1, h = 1) : g < 240 ? (u = g & 15, f = 2, h = 1) : p += this.defaultCharUnicode) : f > 0 ? (u = u << 6 | g & 63, f--, h++, f === 0 && (h === 2 && u < 128 && u > 0 ? p += this.defaultCharUnicode : h === 3 && u < 2048 ? p += this.defaultCharUnicode : p += String.fromCharCode(u))) : p += this.defaultCharUnicode;
+    }
+    return this.acc = u, this.contBytes = f, this.accBytes = h, p;
+  }, o.prototype.end = function() {
+    var l = 0;
+    return this.contBytes > 0 && (l += this.defaultCharUnicode), l;
+  };
+  function c(l, u) {
+    this.highSurrogate = "";
+  }
+  return c.prototype.write = function(l) {
+    if (this.highSurrogate && (l = this.highSurrogate + l, this.highSurrogate = ""), l.length > 0) {
+      var u = l.charCodeAt(l.length - 1);
+      u >= 55296 && u < 56320 && (this.highSurrogate = l[l.length - 1], l = l.slice(0, l.length - 1));
+    }
+    return t.from(l, this.enc);
+  }, c.prototype.end = function() {
+    if (this.highSurrogate) {
+      var l = this.highSurrogate;
+      return this.highSurrogate = "", t.from(l, this.enc);
+    }
+  }, hr;
+}
+var tt = {}, Ti;
+function Qd() {
+  if (Ti) return tt;
+  Ti = 1;
+  var t = xt.Buffer;
+  tt._utf32 = e;
+  function e(l, u) {
+    this.iconv = u, this.bomAware = !0, this.isLE = l.isLE;
+  }
+  tt.utf32le = { type: "_utf32", isLE: !0 }, tt.utf32be = { type: "_utf32", isLE: !1 }, tt.ucs4le = "utf32le", tt.ucs4be = "utf32be", e.prototype.encoder = n, e.prototype.decoder = r;
+  function n(l, u) {
+    this.isLE = u.isLE, this.highSurrogate = 0;
+  }
+  n.prototype.write = function(l) {
+    for (var u = t.from(l, "ucs2"), f = t.alloc(u.length * 2), h = this.isLE ? f.writeUInt32LE : f.writeUInt32BE, p = 0, y = 0; y < u.length; y += 2) {
+      var g = u.readUInt16LE(y), b = g >= 55296 && g < 56320, v = g >= 56320 && g < 57344;
+      if (this.highSurrogate)
+        if (b || !v)
+          h.call(f, this.highSurrogate, p), p += 4;
+        else {
+          var w = (this.highSurrogate - 55296 << 10 | g - 56320) + 65536;
+          h.call(f, w, p), p += 4, this.highSurrogate = 0;
+          continue;
+        }
+      b ? this.highSurrogate = g : (h.call(f, g, p), p += 4, this.highSurrogate = 0);
+    }
+    return p < f.length && (f = f.slice(0, p)), f;
+  }, n.prototype.end = function() {
+    if (this.highSurrogate) {
+      var l = t.alloc(4);
+      return this.isLE ? l.writeUInt32LE(this.highSurrogate, 0) : l.writeUInt32BE(this.highSurrogate, 0), this.highSurrogate = 0, l;
+    }
+  };
+  function r(l, u) {
+    this.isLE = u.isLE, this.badChar = u.iconv.defaultCharUnicode.charCodeAt(0), this.overflow = [];
+  }
+  r.prototype.write = function(l) {
+    if (l.length === 0)
+      return "";
+    var u = 0, f = 0, h = t.alloc(l.length + 4), p = 0, y = this.isLE, g = this.overflow, b = this.badChar;
+    if (g.length > 0) {
+      for (; u < l.length && g.length < 4; u++)
+        g.push(l[u]);
+      g.length === 4 && (y ? f = g[u] | g[u + 1] << 8 | g[u + 2] << 16 | g[u + 3] << 24 : f = g[u + 3] | g[u + 2] << 8 | g[u + 1] << 16 | g[u] << 24, g.length = 0, p = s(h, p, f, b));
+    }
+    for (; u < l.length - 3; u += 4)
+      y ? f = l[u] | l[u + 1] << 8 | l[u + 2] << 16 | l[u + 3] << 24 : f = l[u + 3] | l[u + 2] << 8 | l[u + 1] << 16 | l[u] << 24, p = s(h, p, f, b);
+    for (; u < l.length; u++)
+      g.push(l[u]);
+    return h.slice(0, p).toString("ucs2");
+  };
+  function s(l, u, f, h) {
+    if ((f < 0 || f > 1114111) && (f = h), f >= 65536) {
+      f -= 65536;
+      var p = 55296 | f >> 10;
+      l[u++] = p & 255, l[u++] = p >> 8;
+      var f = 56320 | f & 1023;
+    }
+    return l[u++] = f & 255, l[u++] = f >> 8, u;
+  }
+  r.prototype.end = function() {
+    this.overflow.length = 0;
+  }, tt.utf32 = i, tt.ucs4 = "utf32";
+  function i(l, u) {
+    this.iconv = u;
+  }
+  i.prototype.encoder = a, i.prototype.decoder = o;
+  function a(l, u) {
+    l = l || {}, l.addBOM === void 0 && (l.addBOM = !0), this.encoder = u.iconv.getEncoder(l.defaultEncoding || "utf-32le", l);
+  }
+  a.prototype.write = function(l) {
+    return this.encoder.write(l);
+  }, a.prototype.end = function() {
+    return this.encoder.end();
+  };
+  function o(l, u) {
+    this.decoder = null, this.initialBufs = [], this.initialBufsLen = 0, this.options = l || {}, this.iconv = u.iconv;
+  }
+  o.prototype.write = function(l) {
+    if (!this.decoder) {
+      if (this.initialBufs.push(l), this.initialBufsLen += l.length, this.initialBufsLen < 32)
+        return "";
+      var u = c(this.initialBufs, this.options.defaultEncoding);
+      this.decoder = this.iconv.getDecoder(u, this.options);
+      for (var f = "", h = 0; h < this.initialBufs.length; h++)
+        f += this.decoder.write(this.initialBufs[h]);
+      return this.initialBufs.length = this.initialBufsLen = 0, f;
+    }
+    return this.decoder.write(l);
+  }, o.prototype.end = function() {
+    if (!this.decoder) {
+      var l = c(this.initialBufs, this.options.defaultEncoding);
+      this.decoder = this.iconv.getDecoder(l, this.options);
+      for (var u = "", f = 0; f < this.initialBufs.length; f++)
+        u += this.decoder.write(this.initialBufs[f]);
+      var h = this.decoder.end();
+      return h && (u += h), this.initialBufs.length = this.initialBufsLen = 0, u;
+    }
+    return this.decoder.end();
+  };
+  function c(l, u) {
+    var f = [], h = 0, p = 0, y = 0, g = 0, b = 0;
+    e:
+      for (var v = 0; v < l.length; v++)
+        for (var w = l[v], C = 0; C < w.length; C++)
+          if (f.push(w[C]), f.length === 4) {
+            if (h === 0) {
+              if (f[0] === 255 && f[1] === 254 && f[2] === 0 && f[3] === 0)
+                return "utf-32le";
+              if (f[0] === 0 && f[1] === 0 && f[2] === 254 && f[3] === 255)
+                return "utf-32be";
+            }
+            if ((f[0] !== 0 || f[1] > 16) && y++, (f[3] !== 0 || f[2] > 16) && p++, f[0] === 0 && f[1] === 0 && (f[2] !== 0 || f[3] !== 0) && b++, (f[0] !== 0 || f[1] !== 0) && f[2] === 0 && f[3] === 0 && g++, f.length = 0, h++, h >= 100)
+              break e;
+          }
+    return b - y > g - p ? "utf-32be" : b - y < g - p ? "utf-32le" : u || "utf-32le";
+  }
+  return tt;
+}
+var yn = {}, ki;
+function e0() {
+  if (ki) return yn;
+  ki = 1;
+  var t = xt.Buffer;
+  yn.utf16be = e;
+  function e() {
+  }
+  e.prototype.encoder = n, e.prototype.decoder = r, e.prototype.bomAware = !0;
+  function n() {
+  }
+  n.prototype.write = function(c) {
+    for (var l = t.from(c, "ucs2"), u = 0; u < l.length; u += 2) {
+      var f = l[u];
+      l[u] = l[u + 1], l[u + 1] = f;
+    }
+    return l;
+  }, n.prototype.end = function() {
+  };
+  function r() {
+    this.overflowByte = -1;
+  }
+  r.prototype.write = function(c) {
+    if (c.length == 0)
+      return "";
+    var l = t.alloc(c.length + 1), u = 0, f = 0;
+    for (this.overflowByte !== -1 && (l[0] = c[0], l[1] = this.overflowByte, u = 1, f = 2); u < c.length - 1; u += 2, f += 2)
+      l[f] = c[u + 1], l[f + 1] = c[u];
+    return this.overflowByte = u == c.length - 1 ? c[c.length - 1] : -1, l.slice(0, f).toString("ucs2");
+  }, r.prototype.end = function() {
+    this.overflowByte = -1;
+  }, yn.utf16 = s;
+  function s(c, l) {
+    this.iconv = l;
+  }
+  s.prototype.encoder = i, s.prototype.decoder = a;
+  function i(c, l) {
+    c = c || {}, c.addBOM === void 0 && (c.addBOM = !0), this.encoder = l.iconv.getEncoder("utf-16le", c);
+  }
+  i.prototype.write = function(c) {
+    return this.encoder.write(c);
+  }, i.prototype.end = function() {
+    return this.encoder.end();
+  };
+  function a(c, l) {
+    this.decoder = null, this.initialBufs = [], this.initialBufsLen = 0, this.options = c || {}, this.iconv = l.iconv;
+  }
+  a.prototype.write = function(c) {
+    if (!this.decoder) {
+      if (this.initialBufs.push(c), this.initialBufsLen += c.length, this.initialBufsLen < 16)
+        return "";
+      var l = o(this.initialBufs, this.options.defaultEncoding);
+      this.decoder = this.iconv.getDecoder(l, this.options);
+      for (var u = "", f = 0; f < this.initialBufs.length; f++)
+        u += this.decoder.write(this.initialBufs[f]);
+      return this.initialBufs.length = this.initialBufsLen = 0, u;
+    }
+    return this.decoder.write(c);
+  }, a.prototype.end = function() {
+    if (!this.decoder) {
+      var c = o(this.initialBufs, this.options.defaultEncoding);
+      this.decoder = this.iconv.getDecoder(c, this.options);
+      for (var l = "", u = 0; u < this.initialBufs.length; u++)
+        l += this.decoder.write(this.initialBufs[u]);
+      var f = this.decoder.end();
+      return f && (l += f), this.initialBufs.length = this.initialBufsLen = 0, l;
+    }
+    return this.decoder.end();
+  };
+  function o(c, l) {
+    var u = [], f = 0, h = 0, p = 0;
+    e:
+      for (var y = 0; y < c.length; y++)
+        for (var g = c[y], b = 0; b < g.length; b++)
+          if (u.push(g[b]), u.length === 2) {
+            if (f === 0) {
+              if (u[0] === 255 && u[1] === 254) return "utf-16le";
+              if (u[0] === 254 && u[1] === 255) return "utf-16be";
+            }
+            if (u[0] === 0 && u[1] !== 0 && p++, u[0] !== 0 && u[1] === 0 && h++, u.length = 0, f++, f >= 100)
+              break e;
+          }
+    return p > h ? "utf-16be" : p < h ? "utf-16le" : l || "utf-16le";
+  }
+  return yn;
+}
+var qt = {}, Fi;
+function t0() {
+  if (Fi) return qt;
+  Fi = 1;
+  var t = xt.Buffer;
+  qt.utf7 = e, qt.unicode11utf7 = "utf7";
+  function e(g, b) {
+    this.iconv = b;
+  }
+  e.prototype.encoder = r, e.prototype.decoder = s, e.prototype.bomAware = !0;
+  var n = /[^A-Za-z0-9'\(\),-\.\/:\? \n\r\t]+/g;
+  function r(g, b) {
+    this.iconv = b.iconv;
+  }
+  r.prototype.write = function(g) {
+    return t.from(g.replace(n, (function(b) {
+      return "+" + (b === "+" ? "" : this.iconv.encode(b, "utf16-be").toString("base64").replace(/=+$/, "")) + "-";
+    }).bind(this)));
+  }, r.prototype.end = function() {
+  };
+  function s(g, b) {
+    this.iconv = b.iconv, this.inBase64 = !1, this.base64Accum = "";
+  }
+  for (var i = /[A-Za-z0-9\/+]/, a = [], o = 0; o < 256; o++)
+    a[o] = i.test(String.fromCharCode(o));
+  var c = 43, l = 45, u = 38;
+  s.prototype.write = function(g) {
+    for (var b = "", v = 0, w = this.inBase64, C = this.base64Accum, T = 0; T < g.length; T++)
+      if (!w)
+        g[T] == c && (b += this.iconv.decode(g.slice(v, T), "ascii"), v = T + 1, w = !0);
+      else if (!a[g[T]]) {
+        if (T == v && g[T] == l)
+          b += "+";
+        else {
+          var E = C + this.iconv.decode(g.slice(v, T), "ascii");
+          b += this.iconv.decode(t.from(E, "base64"), "utf16-be");
+        }
+        g[T] != l && T--, v = T + 1, w = !1, C = "";
+      }
+    if (!w)
+      b += this.iconv.decode(g.slice(v), "ascii");
+    else {
+      var E = C + this.iconv.decode(g.slice(v), "ascii"), R = E.length - E.length % 8;
+      C = E.slice(R), E = E.slice(0, R), b += this.iconv.decode(t.from(E, "base64"), "utf16-be");
+    }
+    return this.inBase64 = w, this.base64Accum = C, b;
+  }, s.prototype.end = function() {
+    var g = "";
+    return this.inBase64 && this.base64Accum.length > 0 && (g = this.iconv.decode(t.from(this.base64Accum, "base64"), "utf16-be")), this.inBase64 = !1, this.base64Accum = "", g;
+  }, qt.utf7imap = f;
+  function f(g, b) {
+    this.iconv = b;
+  }
+  f.prototype.encoder = h, f.prototype.decoder = p, f.prototype.bomAware = !0;
+  function h(g, b) {
+    this.iconv = b.iconv, this.inBase64 = !1, this.base64Accum = t.alloc(6), this.base64AccumIdx = 0;
+  }
+  h.prototype.write = function(g) {
+    for (var b = this.inBase64, v = this.base64Accum, w = this.base64AccumIdx, C = t.alloc(g.length * 5 + 10), T = 0, E = 0; E < g.length; E++) {
+      var R = g.charCodeAt(E);
+      R >= 32 && R <= 126 ? (b && (w > 0 && (T += C.write(v.slice(0, w).toString("base64").replace(/\//g, ",").replace(/=+$/, ""), T), w = 0), C[T++] = l, b = !1), b || (C[T++] = R, R === u && (C[T++] = l))) : (b || (C[T++] = u, b = !0), b && (v[w++] = R >> 8, v[w++] = R & 255, w == v.length && (T += C.write(v.toString("base64").replace(/\//g, ","), T), w = 0)));
+    }
+    return this.inBase64 = b, this.base64AccumIdx = w, C.slice(0, T);
+  }, h.prototype.end = function() {
+    var g = t.alloc(10), b = 0;
+    return this.inBase64 && (this.base64AccumIdx > 0 && (b += g.write(this.base64Accum.slice(0, this.base64AccumIdx).toString("base64").replace(/\//g, ",").replace(/=+$/, ""), b), this.base64AccumIdx = 0), g[b++] = l, this.inBase64 = !1), g.slice(0, b);
+  };
+  function p(g, b) {
+    this.iconv = b.iconv, this.inBase64 = !1, this.base64Accum = "";
+  }
+  var y = a.slice();
+  return y[44] = !0, p.prototype.write = function(g) {
+    for (var b = "", v = 0, w = this.inBase64, C = this.base64Accum, T = 0; T < g.length; T++)
+      if (!w)
+        g[T] == u && (b += this.iconv.decode(g.slice(v, T), "ascii"), v = T + 1, w = !0);
+      else if (!y[g[T]]) {
+        if (T == v && g[T] == l)
+          b += "&";
+        else {
+          var E = C + this.iconv.decode(g.slice(v, T), "ascii").replace(/,/g, "/");
+          b += this.iconv.decode(t.from(E, "base64"), "utf16-be");
+        }
+        g[T] != l && T--, v = T + 1, w = !1, C = "";
+      }
+    if (!w)
+      b += this.iconv.decode(g.slice(v), "ascii");
+    else {
+      var E = C + this.iconv.decode(g.slice(v), "ascii").replace(/,/g, "/"), R = E.length - E.length % 8;
+      C = E.slice(R), E = E.slice(0, R), b += this.iconv.decode(t.from(E, "base64"), "utf16-be");
+    }
+    return this.inBase64 = w, this.base64Accum = C, b;
+  }, p.prototype.end = function() {
+    var g = "";
+    return this.inBase64 && this.base64Accum.length > 0 && (g = this.iconv.decode(t.from(this.base64Accum, "base64"), "utf16-be")), this.inBase64 = !1, this.base64Accum = "", g;
+  }, qt;
+}
+var fr = {}, Ei;
+function n0() {
+  if (Ei) return fr;
+  Ei = 1;
+  var t = xt.Buffer;
+  fr._sbcs = e;
+  function e(s, i) {
+    if (!s)
+      throw new Error("SBCS codec is called without the data.");
+    if (!s.chars || s.chars.length !== 128 && s.chars.length !== 256)
+      throw new Error("Encoding '" + s.type + "' has incorrect 'chars' (must be of len 128 or 256)");
+    if (s.chars.length === 128) {
+      for (var a = "", o = 0; o < 128; o++)
+        a += String.fromCharCode(o);
+      s.chars = a + s.chars;
+    }
+    this.decodeBuf = t.from(s.chars, "ucs2");
+    for (var c = t.alloc(65536, i.defaultCharSingleByte.charCodeAt(0)), o = 0; o < s.chars.length; o++)
+      c[s.chars.charCodeAt(o)] = o;
+    this.encodeBuf = c;
+  }
+  e.prototype.encoder = n, e.prototype.decoder = r;
+  function n(s, i) {
+    this.encodeBuf = i.encodeBuf;
+  }
+  n.prototype.write = function(s) {
+    for (var i = t.alloc(s.length), a = 0; a < s.length; a++)
+      i[a] = this.encodeBuf[s.charCodeAt(a)];
+    return i;
+  }, n.prototype.end = function() {
+  };
+  function r(s, i) {
+    this.decodeBuf = i.decodeBuf;
+  }
+  return r.prototype.write = function(s) {
+    for (var i = this.decodeBuf, a = t.alloc(s.length * 2), o = 0, c = 0, l = 0; l < s.length; l++)
+      o = s[l] * 2, c = l * 2, a[c] = i[o], a[c + 1] = i[o + 1];
+    return a.toString("ucs2");
+  }, r.prototype.end = function() {
+  }, fr;
+}
+var pr, Ai;
+function r0() {
+  return Ai || (Ai = 1, pr = {
+    // Not supported by iconv, not sure why.
+    10029: "maccenteuro",
+    maccenteuro: {
+      type: "_sbcs",
+      chars: "ÄĀāÉĄÖÜáąČäčĆćéŹźĎíďĒēĖóėôöõúĚěü†°Ę£§•¶ß®©™ę¨≠ģĮįĪ≤≥īĶ∂∑łĻļĽľĹĺŅņŃ¬√ńŇ∆«»… ňŐÕőŌ–—“”‘’÷◊ōŔŕŘ‹›řŖŗŠ‚„šŚśÁŤťÍŽžŪÓÔūŮÚůŰűŲųÝýķŻŁżĢˇ"
+    },
+    808: "cp808",
+    ibm808: "cp808",
+    cp808: {
+      type: "_sbcs",
+      chars: "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмноп░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀рстуфхцчшщъыьэюяЁёЄєЇїЎў°∙·√№€■ "
+    },
+    mik: {
+      type: "_sbcs",
+      chars: "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя└┴┬├─┼╣║╚╔╩╦╠═╬┐░▒▓│┤№§╗╝┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ "
+    },
+    cp720: {
+      type: "_sbcs",
+      chars: "éâàçêëèïîّْô¤ـûùءآأؤ£إئابةتثجحخدذرزسشص«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀ضطظعغفµقكلمنهوىي≡ًٌٍَُِ≈°∙·√ⁿ²■ "
+    },
+    // Aliases of generated encodings.
+    ascii8bit: "ascii",
+    usascii: "ascii",
+    ansix34: "ascii",
+    ansix341968: "ascii",
+    ansix341986: "ascii",
+    csascii: "ascii",
+    cp367: "ascii",
+    ibm367: "ascii",
+    isoir6: "ascii",
+    iso646us: "ascii",
+    iso646irv: "ascii",
+    us: "ascii",
+    latin1: "iso88591",
+    latin2: "iso88592",
+    latin3: "iso88593",
+    latin4: "iso88594",
+    latin5: "iso88599",
+    latin6: "iso885910",
+    latin7: "iso885913",
+    latin8: "iso885914",
+    latin9: "iso885915",
+    latin10: "iso885916",
+    csisolatin1: "iso88591",
+    csisolatin2: "iso88592",
+    csisolatin3: "iso88593",
+    csisolatin4: "iso88594",
+    csisolatincyrillic: "iso88595",
+    csisolatinarabic: "iso88596",
+    csisolatingreek: "iso88597",
+    csisolatinhebrew: "iso88598",
+    csisolatin5: "iso88599",
+    csisolatin6: "iso885910",
+    l1: "iso88591",
+    l2: "iso88592",
+    l3: "iso88593",
+    l4: "iso88594",
+    l5: "iso88599",
+    l6: "iso885910",
+    l7: "iso885913",
+    l8: "iso885914",
+    l9: "iso885915",
+    l10: "iso885916",
+    isoir14: "iso646jp",
+    isoir57: "iso646cn",
+    isoir100: "iso88591",
+    isoir101: "iso88592",
+    isoir109: "iso88593",
+    isoir110: "iso88594",
+    isoir144: "iso88595",
+    isoir127: "iso88596",
+    isoir126: "iso88597",
+    isoir138: "iso88598",
+    isoir148: "iso88599",
+    isoir157: "iso885910",
+    isoir166: "tis620",
+    isoir179: "iso885913",
+    isoir199: "iso885914",
+    isoir203: "iso885915",
+    isoir226: "iso885916",
+    cp819: "iso88591",
+    ibm819: "iso88591",
+    cyrillic: "iso88595",
+    arabic: "iso88596",
+    arabic8: "iso88596",
+    ecma114: "iso88596",
+    asmo708: "iso88596",
+    greek: "iso88597",
+    greek8: "iso88597",
+    ecma118: "iso88597",
+    elot928: "iso88597",
+    hebrew: "iso88598",
+    hebrew8: "iso88598",
+    turkish: "iso88599",
+    turkish8: "iso88599",
+    thai: "iso885911",
+    thai8: "iso885911",
+    celtic: "iso885914",
+    celtic8: "iso885914",
+    isoceltic: "iso885914",
+    tis6200: "tis620",
+    tis62025291: "tis620",
+    tis62025330: "tis620",
+    1e4: "macroman",
+    10006: "macgreek",
+    10007: "maccyrillic",
+    10079: "maciceland",
+    10081: "macturkish",
+    cspc8codepage437: "cp437",
+    cspc775baltic: "cp775",
+    cspc850multilingual: "cp850",
+    cspcp852: "cp852",
+    cspc862latinhebrew: "cp862",
+    cpgr: "cp869",
+    msee: "cp1250",
+    mscyrl: "cp1251",
+    msansi: "cp1252",
+    msgreek: "cp1253",
+    msturk: "cp1254",
+    mshebr: "cp1255",
+    msarab: "cp1256",
+    winbaltrim: "cp1257",
+    cp20866: "koi8r",
+    20866: "koi8r",
+    ibm878: "koi8r",
+    cskoi8r: "koi8r",
+    cp21866: "koi8u",
+    21866: "koi8u",
+    ibm1168: "koi8u",
+    strk10482002: "rk1048",
+    tcvn5712: "tcvn",
+    tcvn57121: "tcvn",
+    gb198880: "iso646cn",
+    cn: "iso646cn",
+    csiso14jisc6220ro: "iso646jp",
+    jisc62201969ro: "iso646jp",
+    jp: "iso646jp",
+    cshproman8: "hproman8",
+    r8: "hproman8",
+    roman8: "hproman8",
+    xroman8: "hproman8",
+    ibm1051: "hproman8",
+    mac: "macintosh",
+    csmacintosh: "macintosh"
+  }), pr;
+}
+var dr, Oi;
+function s0() {
+  return Oi || (Oi = 1, dr = {
+    437: "cp437",
+    737: "cp737",
+    775: "cp775",
+    850: "cp850",
+    852: "cp852",
+    855: "cp855",
+    856: "cp856",
+    857: "cp857",
+    858: "cp858",
+    860: "cp860",
+    861: "cp861",
+    862: "cp862",
+    863: "cp863",
+    864: "cp864",
+    865: "cp865",
+    866: "cp866",
+    869: "cp869",
+    874: "windows874",
+    922: "cp922",
+    1046: "cp1046",
+    1124: "cp1124",
+    1125: "cp1125",
+    1129: "cp1129",
+    1133: "cp1133",
+    1161: "cp1161",
+    1162: "cp1162",
+    1163: "cp1163",
+    1250: "windows1250",
+    1251: "windows1251",
+    1252: "windows1252",
+    1253: "windows1253",
+    1254: "windows1254",
+    1255: "windows1255",
+    1256: "windows1256",
+    1257: "windows1257",
+    1258: "windows1258",
+    28591: "iso88591",
+    28592: "iso88592",
+    28593: "iso88593",
+    28594: "iso88594",
+    28595: "iso88595",
+    28596: "iso88596",
+    28597: "iso88597",
+    28598: "iso88598",
+    28599: "iso88599",
+    28600: "iso885910",
+    28601: "iso885911",
+    28603: "iso885913",
+    28604: "iso885914",
+    28605: "iso885915",
+    28606: "iso885916",
+    windows874: {
+      type: "_sbcs",
+      chars: "€����…�����������‘’“”•–—�������� กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืฺุู����฿เแโใไๅๆ็่้๊๋์ํ๎๏๐๑๒๓๔๕๖๗๘๙๚๛����"
+    },
+    win874: "windows874",
+    cp874: "windows874",
+    windows1250: {
+      type: "_sbcs",
+      chars: "€�‚�„…†‡�‰Š‹ŚŤŽŹ�‘’“”•–—�™š›śťžź ˇ˘Ł¤Ą¦§¨©Ş«¬­®Ż°±˛ł´µ¶·¸ąş»Ľ˝ľżŔÁÂĂÄĹĆÇČÉĘËĚÍÎĎĐŃŇÓÔŐÖ×ŘŮÚŰÜÝŢßŕáâăäĺćçčéęëěíîďđńňóôőö÷řůúűüýţ˙"
+    },
+    win1250: "windows1250",
+    cp1250: "windows1250",
+    windows1251: {
+      type: "_sbcs",
+      chars: "ЂЃ‚ѓ„…†‡€‰Љ‹ЊЌЋЏђ‘’“”•–—�™љ›њќћџ ЎўЈ¤Ґ¦§Ё©Є«¬­®Ї°±Ііґµ¶·ё№є»јЅѕїАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя"
+    },
+    win1251: "windows1251",
+    cp1251: "windows1251",
+    windows1252: {
+      type: "_sbcs",
+      chars: "€�‚ƒ„…†‡ˆ‰Š‹Œ�Ž��‘’“”•–—˜™š›œ�žŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+    },
+    win1252: "windows1252",
+    cp1252: "windows1252",
+    windows1253: {
+      type: "_sbcs",
+      chars: "€�‚ƒ„…†‡�‰�‹�����‘’“”•–—�™�›���� ΅Ά£¤¥¦§¨©�«¬­®―°±²³΄µ¶·ΈΉΊ»Ό½ΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡ�ΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώ�"
+    },
+    win1253: "windows1253",
+    cp1253: "windows1253",
+    windows1254: {
+      type: "_sbcs",
+      chars: "€�‚ƒ„…†‡ˆ‰Š‹Œ����‘’“”•–—˜™š›œ��Ÿ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ"
+    },
+    win1254: "windows1254",
+    cp1254: "windows1254",
+    windows1255: {
+      type: "_sbcs",
+      chars: "€�‚ƒ„…†‡ˆ‰�‹�����‘’“”•–—˜™�›���� ¡¢£₪¥¦§¨©×«¬­®¯°±²³´µ¶·¸¹÷»¼½¾¿ְֱֲֳִֵֶַָֹֺֻּֽ־ֿ׀ׁׂ׃װױײ׳״�������אבגדהוזחטיךכלםמןנסעףפץצקרשת��‎‏�"
+    },
+    win1255: "windows1255",
+    cp1255: "windows1255",
+    windows1256: {
+      type: "_sbcs",
+      chars: "€پ‚ƒ„…†‡ˆ‰ٹ‹Œچژڈگ‘’“”•–—ک™ڑ›œ‌‍ں ،¢£¤¥¦§¨©ھ«¬­®¯°±²³´µ¶·¸¹؛»¼½¾؟ہءآأؤإئابةتثجحخدذرزسشصض×طظعغـفقكàلâمنهوçèéêëىيîïًٌٍَôُِ÷ّùْûü‎‏ے"
+    },
+    win1256: "windows1256",
+    cp1256: "windows1256",
+    windows1257: {
+      type: "_sbcs",
+      chars: "€�‚�„…†‡�‰�‹�¨ˇ¸�‘’“”•–—�™�›�¯˛� �¢£¤�¦§Ø©Ŗ«¬­®Æ°±²³´µ¶·ø¹ŗ»¼½¾æĄĮĀĆÄÅĘĒČÉŹĖĢĶĪĻŠŃŅÓŌÕÖ×ŲŁŚŪÜŻŽßąįāćäåęēčéźėģķīļšńņóōõö÷ųłśūüżž˙"
+    },
+    win1257: "windows1257",
+    cp1257: "windows1257",
+    windows1258: {
+      type: "_sbcs",
+      chars: "€�‚ƒ„…†‡ˆ‰�‹Œ����‘’“”•–—˜™�›œ��Ÿ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂĂÄÅÆÇÈÉÊË̀ÍÎÏĐÑ̉ÓÔƠÖ×ØÙÚÛÜỮßàáâăäåæçèéêë́íîïđṇ̃óôơö÷øùúûüư₫ÿ"
+    },
+    win1258: "windows1258",
+    cp1258: "windows1258",
+    iso88591: {
+      type: "_sbcs",
+      chars: " ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+    },
+    cp28591: "iso88591",
+    iso88592: {
+      type: "_sbcs",
+      chars: " Ą˘Ł¤ĽŚ§¨ŠŞŤŹ­ŽŻ°ą˛ł´ľśˇ¸šşťź˝žżŔÁÂĂÄĹĆÇČÉĘËĚÍÎĎĐŃŇÓÔŐÖ×ŘŮÚŰÜÝŢßŕáâăäĺćçčéęëěíîďđńňóôőö÷řůúűüýţ˙"
+    },
+    cp28592: "iso88592",
+    iso88593: {
+      type: "_sbcs",
+      chars: " Ħ˘£¤�Ĥ§¨İŞĞĴ­�Ż°ħ²³´µĥ·¸ışğĵ½�żÀÁÂ�ÄĊĈÇÈÉÊËÌÍÎÏ�ÑÒÓÔĠÖ×ĜÙÚÛÜŬŜßàáâ�äċĉçèéêëìíîï�ñòóôġö÷ĝùúûüŭŝ˙"
+    },
+    cp28593: "iso88593",
+    iso88594: {
+      type: "_sbcs",
+      chars: " ĄĸŖ¤ĨĻ§¨ŠĒĢŦ­Ž¯°ą˛ŗ´ĩļˇ¸šēģŧŊžŋĀÁÂÃÄÅÆĮČÉĘËĖÍÎĪĐŅŌĶÔÕÖ×ØŲÚÛÜŨŪßāáâãäåæįčéęëėíîīđņōķôõö÷øųúûüũū˙"
+    },
+    cp28594: "iso88594",
+    iso88595: {
+      type: "_sbcs",
+      chars: " ЁЂЃЄЅІЇЈЉЊЋЌ­ЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя№ёђѓєѕіїјљњћќ§ўџ"
+    },
+    cp28595: "iso88595",
+    iso88596: {
+      type: "_sbcs",
+      chars: " ���¤�������،­�������������؛���؟�ءآأؤإئابةتثجحخدذرزسشصضطظعغ�����ـفقكلمنهوىيًٌٍَُِّْ�������������"
+    },
+    cp28596: "iso88596",
+    iso88597: {
+      type: "_sbcs",
+      chars: " ‘’£€₯¦§¨©ͺ«¬­�―°±²³΄΅Ά·ΈΉΊ»Ό½ΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡ�ΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώ�"
+    },
+    cp28597: "iso88597",
+    iso88598: {
+      type: "_sbcs",
+      chars: " �¢£¤¥¦§¨©×«¬­®¯°±²³´µ¶·¸¹÷»¼½¾��������������������������������‗אבגדהוזחטיךכלםמןנסעףפץצקרשת��‎‏�"
+    },
+    cp28598: "iso88598",
+    iso88599: {
+      type: "_sbcs",
+      chars: " ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ"
+    },
+    cp28599: "iso88599",
+    iso885910: {
+      type: "_sbcs",
+      chars: " ĄĒĢĪĨĶ§ĻĐŠŦŽ­ŪŊ°ąēģīĩķ·ļđšŧž―ūŋĀÁÂÃÄÅÆĮČÉĘËĖÍÎÏÐŅŌÓÔÕÖŨØŲÚÛÜÝÞßāáâãäåæįčéęëėíîïðņōóôõöũøųúûüýþĸ"
+    },
+    cp28600: "iso885910",
+    iso885911: {
+      type: "_sbcs",
+      chars: " กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืฺุู����฿เแโใไๅๆ็่้๊๋์ํ๎๏๐๑๒๓๔๕๖๗๘๙๚๛����"
+    },
+    cp28601: "iso885911",
+    iso885913: {
+      type: "_sbcs",
+      chars: " ”¢£¤„¦§Ø©Ŗ«¬­®Æ°±²³“µ¶·ø¹ŗ»¼½¾æĄĮĀĆÄÅĘĒČÉŹĖĢĶĪĻŠŃŅÓŌÕÖ×ŲŁŚŪÜŻŽßąįāćäåęēčéźėģķīļšńņóōõö÷ųłśūüżž’"
+    },
+    cp28603: "iso885913",
+    iso885914: {
+      type: "_sbcs",
+      chars: " Ḃḃ£ĊċḊ§Ẁ©ẂḋỲ­®ŸḞḟĠġṀṁ¶ṖẁṗẃṠỳẄẅṡÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏŴÑÒÓÔÕÖṪØÙÚÛÜÝŶßàáâãäåæçèéêëìíîïŵñòóôõöṫøùúûüýŷÿ"
+    },
+    cp28604: "iso885914",
+    iso885915: {
+      type: "_sbcs",
+      chars: " ¡¢£€¥Š§š©ª«¬­®¯°±²³Žµ¶·ž¹º»ŒœŸ¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+    },
+    cp28605: "iso885915",
+    iso885916: {
+      type: "_sbcs",
+      chars: " ĄąŁ€„Š§š©Ș«Ź­źŻ°±ČłŽ”¶·žčș»ŒœŸżÀÁÂĂÄĆÆÇÈÉÊËÌÍÎÏĐŃÒÓÔŐÖŚŰÙÚÛÜĘȚßàáâăäćæçèéêëìíîïđńòóôőöśűùúûüęțÿ"
+    },
+    cp28606: "iso885916",
+    cp437: {
+      type: "_sbcs",
+      chars: "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ "
+    },
+    ibm437: "cp437",
+    csibm437: "cp437",
+    cp737: {
+      type: "_sbcs",
+      chars: "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψ░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀ωάέήϊίόύϋώΆΈΉΊΌΎΏ±≥≤ΪΫ÷≈°∙·√ⁿ²■ "
+    },
+    ibm737: "cp737",
+    csibm737: "cp737",
+    cp775: {
+      type: "_sbcs",
+      chars: "ĆüéāäģåćłēŖŗīŹÄÅÉæÆōöĢ¢ŚśÖÜø£Ø×¤ĀĪóŻżź”¦©®¬½¼Ł«»░▒▓│┤ĄČĘĖ╣║╗╝ĮŠ┐└┴┬├─┼ŲŪ╚╔╩╦╠═╬Žąčęėįšųūž┘┌█▄▌▐▀ÓßŌŃõÕµńĶķĻļņĒŅ’­±“¾¶§÷„°∙·¹³²■ "
+    },
+    ibm775: "cp775",
+    csibm775: "cp775",
+    cp850: {
+      type: "_sbcs",
+      chars: "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜø£Ø×ƒáíóúñÑªº¿®¬½¼¡«»░▒▓│┤ÁÂÀ©╣║╗╝¢¥┐└┴┬├─┼ãÃ╚╔╩╦╠═╬¤ðÐÊËÈıÍÎÏ┘┌█▄¦Ì▀ÓßÔÒõÕµþÞÚÛÙýÝ¯´­±‗¾¶§÷¸°¨·¹³²■ "
+    },
+    ibm850: "cp850",
+    csibm850: "cp850",
+    cp852: {
+      type: "_sbcs",
+      chars: "ÇüéâäůćçłëŐőîŹÄĆÉĹĺôöĽľŚśÖÜŤťŁ×čáíóúĄąŽžĘę¬źČş«»░▒▓│┤ÁÂĚŞ╣║╗╝Żż┐└┴┬├─┼Ăă╚╔╩╦╠═╬¤đĐĎËďŇÍÎě┘┌█▄ŢŮ▀ÓßÔŃńňŠšŔÚŕŰýÝţ´­˝˛ˇ˘§÷¸°¨˙űŘř■ "
+    },
+    ibm852: "cp852",
+    csibm852: "cp852",
+    cp855: {
+      type: "_sbcs",
+      chars: "ђЂѓЃёЁєЄѕЅіІїЇјЈљЉњЊћЋќЌўЎџЏюЮъЪаАбБцЦдДеЕфФгГ«»░▒▓│┤хХиИ╣║╗╝йЙ┐└┴┬├─┼кК╚╔╩╦╠═╬¤лЛмМнНоОп┘┌█▄Пя▀ЯрРсСтТуУжЖвВьЬ№­ыЫзЗшШэЭщЩчЧ§■ "
+    },
+    ibm855: "cp855",
+    csibm855: "cp855",
+    cp856: {
+      type: "_sbcs",
+      chars: "אבגדהוזחטיךכלםמןנסעףפץצקרשת�£�×����������®¬½¼�«»░▒▓│┤���©╣║╗╝¢¥┐└┴┬├─┼��╚╔╩╦╠═╬¤���������┘┌█▄¦�▀������µ�������¯´­±‗¾¶§÷¸°¨·¹³²■ "
+    },
+    ibm856: "cp856",
+    csibm856: "cp856",
+    cp857: {
+      type: "_sbcs",
+      chars: "ÇüéâäàåçêëèïîıÄÅÉæÆôöòûùİÖÜø£ØŞşáíóúñÑĞğ¿®¬½¼¡«»░▒▓│┤ÁÂÀ©╣║╗╝¢¥┐└┴┬├─┼ãÃ╚╔╩╦╠═╬¤ºªÊËÈ�ÍÎÏ┘┌█▄¦Ì▀ÓßÔÒõÕµ�×ÚÛÙìÿ¯´­±�¾¶§÷¸°¨·¹³²■ "
+    },
+    ibm857: "cp857",
+    csibm857: "cp857",
+    cp858: {
+      type: "_sbcs",
+      chars: "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜø£Ø×ƒáíóúñÑªº¿®¬½¼¡«»░▒▓│┤ÁÂÀ©╣║╗╝¢¥┐└┴┬├─┼ãÃ╚╔╩╦╠═╬¤ðÐÊËÈ€ÍÎÏ┘┌█▄¦Ì▀ÓßÔÒõÕµþÞÚÛÙýÝ¯´­±‗¾¶§÷¸°¨·¹³²■ "
+    },
+    ibm858: "cp858",
+    csibm858: "cp858",
+    cp860: {
+      type: "_sbcs",
+      chars: "ÇüéâãàÁçêÊèÍÔìÃÂÉÀÈôõòÚùÌÕÜ¢£Ù₧ÓáíóúñÑªº¿Ò¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ "
+    },
+    ibm860: "cp860",
+    csibm860: "cp860",
+    cp861: {
+      type: "_sbcs",
+      chars: "ÇüéâäàåçêëèÐðÞÄÅÉæÆôöþûÝýÖÜø£Ø₧ƒáíóúÁÍÓÚ¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ "
+    },
+    ibm861: "cp861",
+    csibm861: "cp861",
+    cp862: {
+      type: "_sbcs",
+      chars: "אבגדהוזחטיךכלםמןנסעףפץצקרשת¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ "
+    },
+    ibm862: "cp862",
+    csibm862: "cp862",
+    cp863: {
+      type: "_sbcs",
+      chars: "ÇüéâÂà¶çêëèïî‗À§ÉÈÊôËÏûù¤ÔÜ¢£ÙÛƒ¦´óú¨¸³¯Î⌐¬½¼¾«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ "
+    },
+    ibm863: "cp863",
+    csibm863: "cp863",
+    cp864: {
+      type: "_sbcs",
+      chars: `\0\x07\b	
+\v\f\r\x1B !"#$٪&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~°·∙√▒─│┼┤┬├┴┐┌└┘β∞φ±½¼≈«»ﻷﻸ��ﻻﻼ� ­ﺂ£¤ﺄ��ﺎﺏﺕﺙ،ﺝﺡﺥ٠١٢٣٤٥٦٧٨٩ﻑ؛ﺱﺵﺹ؟¢ﺀﺁﺃﺅﻊﺋﺍﺑﺓﺗﺛﺟﺣﺧﺩﺫﺭﺯﺳﺷﺻﺿﻁﻅﻋﻏ¦¬÷×ﻉـﻓﻗﻛﻟﻣﻧﻫﻭﻯﻳﺽﻌﻎﻍﻡﹽّﻥﻩﻬﻰﻲﻐﻕﻵﻶﻝﻙﻱ■�`
+    },
+    ibm864: "cp864",
+    csibm864: "cp864",
+    cp865: {
+      type: "_sbcs",
+      chars: "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜø£Ø₧ƒáíóúñÑªº¿⌐¬½¼¡«¤░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ "
+    },
+    ibm865: "cp865",
+    csibm865: "cp865",
+    cp866: {
+      type: "_sbcs",
+      chars: "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмноп░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀рстуфхцчшщъыьэюяЁёЄєЇїЎў°∙·√№¤■ "
+    },
+    ibm866: "cp866",
+    csibm866: "cp866",
+    cp869: {
+      type: "_sbcs",
+      chars: "������Ά�·¬¦‘’Έ―ΉΊΪΌ��ΎΫ©Ώ²³ά£έήίϊΐόύΑΒΓΔΕΖΗ½ΘΙ«»░▒▓│┤ΚΛΜΝ╣║╗╝ΞΟ┐└┴┬├─┼ΠΡ╚╔╩╦╠═╬ΣΤΥΦΧΨΩαβγ┘┌█▄δε▀ζηθικλμνξοπρσςτ΄­±υφχ§ψ΅°¨ωϋΰώ■ "
+    },
+    ibm869: "cp869",
+    csibm869: "cp869",
+    cp922: {
+      type: "_sbcs",
+      chars: " ¡¢£¤¥¦§¨©ª«¬­®‾°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏŠÑÒÓÔÕÖ×ØÙÚÛÜÝŽßàáâãäåæçèéêëìíîïšñòóôõö÷øùúûüýžÿ"
+    },
+    ibm922: "cp922",
+    csibm922: "cp922",
+    cp1046: {
+      type: "_sbcs",
+      chars: "ﺈ×÷ﹱ■│─┐┌└┘ﹹﹻﹽﹿﹷﺊﻰﻳﻲﻎﻏﻐﻶﻸﻺﻼ ¤ﺋﺑﺗﺛﺟﺣ،­ﺧﺳ٠١٢٣٤٥٦٧٨٩ﺷ؛ﺻﺿﻊ؟ﻋءآأؤإئابةتثجحخدذرزسشصضطﻇعغﻌﺂﺄﺎﻓـفقكلمنهوىيًٌٍَُِّْﻗﻛﻟﻵﻷﻹﻻﻣﻧﻬﻩ�"
+    },
+    ibm1046: "cp1046",
+    csibm1046: "cp1046",
+    cp1124: {
+      type: "_sbcs",
+      chars: " ЁЂҐЄЅІЇЈЉЊЋЌ­ЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя№ёђґєѕіїјљњћќ§ўџ"
+    },
+    ibm1124: "cp1124",
+    csibm1124: "cp1124",
+    cp1125: {
+      type: "_sbcs",
+      chars: "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмноп░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀рстуфхцчшщъыьэюяЁёҐґЄєІіЇї·√№¤■ "
+    },
+    ibm1125: "cp1125",
+    csibm1125: "cp1125",
+    cp1129: {
+      type: "_sbcs",
+      chars: " ¡¢£¤¥¦§œ©ª«¬­®¯°±²³Ÿµ¶·Œ¹º»¼½¾¿ÀÁÂĂÄÅÆÇÈÉÊË̀ÍÎÏĐÑ̉ÓÔƠÖ×ØÙÚÛÜỮßàáâăäåæçèéêë́íîïđṇ̃óôơö÷øùúûüư₫ÿ"
+    },
+    ibm1129: "cp1129",
+    csibm1129: "cp1129",
+    cp1133: {
+      type: "_sbcs",
+      chars: " ກຂຄງຈສຊຍດຕຖທນບປຜຝພຟມຢຣລວຫອຮ���ຯະາຳິີຶືຸູຼັົຽ���ເແໂໃໄ່້໊໋໌ໍໆ�ໜໝ₭����������������໐໑໒໓໔໕໖໗໘໙��¢¬¦�"
+    },
+    ibm1133: "cp1133",
+    csibm1133: "cp1133",
+    cp1161: {
+      type: "_sbcs",
+      chars: "��������������������������������่กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืฺุู้๊๋€฿เแโใไๅๆ็่้๊๋์ํ๎๏๐๑๒๓๔๕๖๗๘๙๚๛¢¬¦ "
+    },
+    ibm1161: "cp1161",
+    csibm1161: "cp1161",
+    cp1162: {
+      type: "_sbcs",
+      chars: "€…‘’“”•–— กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืฺุู����฿เแโใไๅๆ็่้๊๋์ํ๎๏๐๑๒๓๔๕๖๗๘๙๚๛����"
+    },
+    ibm1162: "cp1162",
+    csibm1162: "cp1162",
+    cp1163: {
+      type: "_sbcs",
+      chars: " ¡¢£€¥¦§œ©ª«¬­®¯°±²³Ÿµ¶·Œ¹º»¼½¾¿ÀÁÂĂÄÅÆÇÈÉÊË̀ÍÎÏĐÑ̉ÓÔƠÖ×ØÙÚÛÜỮßàáâăäåæçèéêë́íîïđṇ̃óôơö÷øùúûüư₫ÿ"
+    },
+    ibm1163: "cp1163",
+    csibm1163: "cp1163",
+    maccroatian: {
+      type: "_sbcs",
+      chars: "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®Š™´¨≠ŽØ∞±≤≥∆µ∂∑∏š∫ªºΩžø¿¡¬√ƒ≈Ć«Č… ÀÃÕŒœĐ—“”‘’÷◊�©⁄¤‹›Æ»–·‚„‰ÂćÁčÈÍÎÏÌÓÔđÒÚÛÙıˆ˜¯πË˚¸Êæˇ"
+    },
+    maccyrillic: {
+      type: "_sbcs",
+      chars: "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ†°¢£§•¶І®©™Ђђ≠Ѓѓ∞±≤≥іµ∂ЈЄєЇїЉљЊњјЅ¬√ƒ≈∆«»… ЋћЌќѕ–—“”‘’÷„ЎўЏџ№Ёёяабвгдежзийклмнопрстуфхцчшщъыьэю¤"
+    },
+    macgreek: {
+      type: "_sbcs",
+      chars: "Ä¹²É³ÖÜ΅àâä΄¨çéèêë£™îï•½‰ôö¦­ùûü†ΓΔΘΛΞΠß®©ΣΪ§≠°·Α±≤≥¥ΒΕΖΗΙΚΜΦΫΨΩάΝ¬ΟΡ≈Τ«»… ΥΧΆΈœ–―“”‘’÷ΉΊΌΎέήίόΏύαβψδεφγηιξκλμνοπώρστθωςχυζϊϋΐΰ�"
+    },
+    maciceland: {
+      type: "_sbcs",
+      chars: "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûüÝ°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄¤ÐðÞþý·‚„‰ÂÊÁËÈÍÎÏÌÓÔ�ÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"
+    },
+    macroman: {
+      type: "_sbcs",
+      chars: "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄¤‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔ�ÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"
+    },
+    macromania: {
+      type: "_sbcs",
+      chars: "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ĂŞ∞±≤≥¥µ∂∑∏π∫ªºΩăş¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄¤‹›Ţţ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔ�ÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"
+    },
+    macthai: {
+      type: "_sbcs",
+      chars: "«»…“”�•‘’� กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืฺุู\uFEFF​–—฿เแโใไๅๆ็่้๊๋์ํ™๏๐๑๒๓๔๕๖๗๘๙®©����"
+    },
+    macturkish: {
+      type: "_sbcs",
+      chars: "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸĞğİıŞş‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔ�ÒÚÛÙ�ˆ˜¯˘˙˚¸˝˛ˇ"
+    },
+    macukraine: {
+      type: "_sbcs",
+      chars: "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ†°Ґ£§•¶І®©™Ђђ≠Ѓѓ∞±≤≥іµґЈЄєЇїЉљЊњјЅ¬√ƒ≈∆«»… ЋћЌќѕ–—“”‘’÷„ЎўЏџ№Ёёяабвгдежзийклмнопрстуфхцчшщъыьэю¤"
+    },
+    koi8r: {
+      type: "_sbcs",
+      chars: "─│┌┐└┘├┤┬┴┼▀▄█▌▐░▒▓⌠■∙√≈≤≥ ⌡°²·÷═║╒ё╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡Ё╢╣╤╥╦╧╨╩╪╫╬©юабцдефгхийклмнопярстужвьызшэщчъЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧЪ"
+    },
+    koi8u: {
+      type: "_sbcs",
+      chars: "─│┌┐└┘├┤┬┴┼▀▄█▌▐░▒▓⌠■∙√≈≤≥ ⌡°²·÷═║╒ёє╔ії╗╘╙╚╛ґ╝╞╟╠╡ЁЄ╣ІЇ╦╧╨╩╪Ґ╬©юабцдефгхийклмнопярстужвьызшэщчъЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧЪ"
+    },
+    koi8ru: {
+      type: "_sbcs",
+      chars: "─│┌┐└┘├┤┬┴┼▀▄█▌▐░▒▓⌠■∙√≈≤≥ ⌡°²·÷═║╒ёє╔ії╗╘╙╚╛ґў╞╟╠╡ЁЄ╣ІЇ╦╧╨╩╪ҐЎ©юабцдефгхийклмнопярстужвьызшэщчъЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧЪ"
+    },
+    koi8t: {
+      type: "_sbcs",
+      chars: "қғ‚Ғ„…†‡�‰ҳ‹ҲҷҶ�Қ‘’“”•–—�™�›�����ӯӮё¤ӣ¦§���«¬­®�°±²Ё�Ӣ¶·�№�»���©юабцдефгхийклмнопярстужвьызшэщчъЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧЪ"
+    },
+    armscii8: {
+      type: "_sbcs",
+      chars: " �և։)(»«—.՝,-֊…՜՛՞ԱաԲբԳգԴդԵեԶզԷէԸըԹթԺժԻիԼլԽխԾծԿկՀհՁձՂղՃճՄմՅյՆնՇշՈոՉչՊպՋջՌռՍսՎվՏտՐրՑցՒւՓփՔքՕօՖֆ՚�"
+    },
+    rk1048: {
+      type: "_sbcs",
+      chars: "ЂЃ‚ѓ„…†‡€‰Љ‹ЊҚҺЏђ‘’“”•–—�™љ›њқһџ ҰұӘ¤Ө¦§Ё©Ғ«¬­®Ү°±Ііөµ¶·ё№ғ»әҢңүАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя"
+    },
+    tcvn: {
+      type: "_sbcs",
+      chars: `\0ÚỤỪỬỮ\x07\b	
+\v\f\rỨỰỲỶỸÝỴ\x1B !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~ÀẢÃÁẠẶẬÈẺẼÉẸỆÌỈĨÍỊÒỎÕÓỌỘỜỞỠỚỢÙỦŨ ĂÂÊÔƠƯĐăâêôơưđẶ̀̀̉̃́àảãáạẲằẳẵắẴẮẦẨẪẤỀặầẩẫấậèỂẻẽéẹềểễếệìỉỄẾỒĩíịòỔỏõóọồổỗốộờởỡớợùỖủũúụừửữứựỳỷỹýỵỐ`
+    },
+    georgianacademy: {
+      type: "_sbcs",
+      chars: "‚ƒ„…†‡ˆ‰Š‹Œ‘’“”•–—˜™š›œŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰჱჲჳჴჵჶçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+    },
+    georgianps: {
+      type: "_sbcs",
+      chars: "‚ƒ„…†‡ˆ‰Š‹Œ‘’“”•–—˜™š›œŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿აბგდევზჱთიკლმნჲოპჟრსტჳუფქღყშჩცძწჭხჴჯჰჵæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+    },
+    pt154: {
+      type: "_sbcs",
+      chars: "ҖҒӮғ„…ҶҮҲүҠӢҢҚҺҸҗ‘’“”•–—ҳҷҡӣңқһҹ ЎўЈӨҘҰ§Ё©Ә«¬ӯ®Ҝ°ұІіҙө¶·ё№ә»јҪҫҝАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя"
+    },
+    viscii: {
+      type: "_sbcs",
+      chars: `\0ẲẴẪ\x07\b	
+\v\f\rỶỸ\x1BỴ !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~ẠẮẰẶẤẦẨẬẼẸẾỀỂỄỆỐỒỔỖỘỢỚỜỞỊỎỌỈỦŨỤỲÕắằặấầẩậẽẹếềểễệốồổỗỠƠộờởịỰỨỪỬơớƯÀÁÂÃẢĂẳẵÈÉÊẺÌÍĨỳĐứÒÓÔạỷừửÙÚỹỵÝỡưàáâãảăữẫèéêẻìíĩỉđựòóôõỏọụùúũủýợỮ`
+    },
+    iso646cn: {
+      type: "_sbcs",
+      chars: `\0\x07\b	
+\v\f\r\x1B !"#¥%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}‾��������������������������������������������������������������������������������������������������������������������������������`
+    },
+    iso646jp: {
+      type: "_sbcs",
+      chars: `\0\x07\b	
+\v\f\r\x1B !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[¥]^_\`abcdefghijklmnopqrstuvwxyz{|}‾��������������������������������������������������������������������������������������������������������������������������������`
+    },
+    hproman8: {
+      type: "_sbcs",
+      chars: " ÀÂÈÊËÎÏ´ˋˆ¨˜ÙÛ₤¯Ýý°ÇçÑñ¡¿¤£¥§ƒ¢âêôûáéóúàèòùäëöüÅîØÆåíøæÄìÖÜÉïßÔÁÃãÐðÍÌÓÒÕõŠšÚŸÿÞþ·µ¶¾—¼½ªº«■»±�"
+    },
+    macintosh: {
+      type: "_sbcs",
+      chars: "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄¤‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔ�ÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"
+    },
+    ascii: {
+      type: "_sbcs",
+      chars: "��������������������������������������������������������������������������������������������������������������������������������"
+    },
+    tis620: {
+      type: "_sbcs",
+      chars: "���������������������������������กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืฺุู����฿เแโใไๅๆ็่้๊๋์ํ๎๏๐๑๒๓๔๕๖๗๘๙๚๛����"
+    }
+  }), dr;
+}
+var gr = {}, Li;
+function i0() {
+  if (Li) return gr;
+  Li = 1;
+  var t = xt.Buffer;
+  gr._dbcs = c;
+  for (var e = -1, n = -2, r = -10, s = -1e3, i = new Array(256), a = -1, o = 0; o < 256; o++)
+    i[o] = e;
+  function c(h, p) {
+    if (this.encodingName = h.encodingName, !h)
+      throw new Error("DBCS codec is called without the data.");
+    if (!h.table)
+      throw new Error("Encoding '" + this.encodingName + "' has no data.");
+    var y = h.table();
+    this.decodeTables = [], this.decodeTables[0] = i.slice(0), this.decodeTableSeq = [];
+    for (var g = 0; g < y.length; g++)
+      this._addDecodeChunk(y[g]);
+    if (typeof h.gb18030 == "function") {
+      this.gb18030 = h.gb18030();
+      var b = this.decodeTables.length;
+      this.decodeTables.push(i.slice(0));
+      var v = this.decodeTables.length;
+      this.decodeTables.push(i.slice(0));
+      for (var w = this.decodeTables[0], g = 129; g <= 254; g++)
+        for (var C = this.decodeTables[s - w[g]], T = 48; T <= 57; T++) {
+          if (C[T] === e)
+            C[T] = s - b;
+          else if (C[T] > s)
+            throw new Error("gb18030 decode tables conflict at byte 2");
+          for (var E = this.decodeTables[s - C[T]], R = 129; R <= 254; R++) {
+            if (E[R] === e)
+              E[R] = s - v;
+            else {
+              if (E[R] === s - v)
+                continue;
+              if (E[R] > s)
+                throw new Error("gb18030 decode tables conflict at byte 3");
+            }
+            for (var U = this.decodeTables[s - E[R]], W = 48; W <= 57; W++)
+              U[W] === e && (U[W] = n);
+          }
+        }
+    }
+    this.defaultCharUnicode = p.defaultCharUnicode, this.encodeTable = [], this.encodeTableSeq = [];
+    var j = {};
+    if (h.encodeSkipVals)
+      for (var g = 0; g < h.encodeSkipVals.length; g++) {
+        var N = h.encodeSkipVals[g];
+        if (typeof N == "number")
+          j[N] = !0;
+        else
+          for (var T = N.from; T <= N.to; T++)
+            j[T] = !0;
+      }
+    if (this._fillEncodeTable(0, 0, j), h.encodeAdd)
+      for (var $ in h.encodeAdd)
+        Object.prototype.hasOwnProperty.call(h.encodeAdd, $) && this._setEncodeChar($.charCodeAt(0), h.encodeAdd[$]);
+    this.defCharSB = this.encodeTable[0][p.defaultCharSingleByte.charCodeAt(0)], this.defCharSB === e && (this.defCharSB = this.encodeTable[0]["?"]), this.defCharSB === e && (this.defCharSB = 63);
+  }
+  c.prototype.encoder = l, c.prototype.decoder = u, c.prototype._getDecodeTrieNode = function(h) {
+    for (var p = []; h > 0; h >>>= 8)
+      p.push(h & 255);
+    p.length == 0 && p.push(0);
+    for (var y = this.decodeTables[0], g = p.length - 1; g > 0; g--) {
+      var b = y[p[g]];
+      if (b == e)
+        y[p[g]] = s - this.decodeTables.length, this.decodeTables.push(y = i.slice(0));
+      else if (b <= s)
+        y = this.decodeTables[s - b];
+      else
+        throw new Error("Overwrite byte in " + this.encodingName + ", addr: " + h.toString(16));
+    }
+    return y;
+  }, c.prototype._addDecodeChunk = function(h) {
+    var p = parseInt(h[0], 16), y = this._getDecodeTrieNode(p);
+    p = p & 255;
+    for (var g = 1; g < h.length; g++) {
+      var b = h[g];
+      if (typeof b == "string")
+        for (var v = 0; v < b.length; ) {
+          var w = b.charCodeAt(v++);
+          if (w >= 55296 && w < 56320) {
+            var C = b.charCodeAt(v++);
+            if (C >= 56320 && C < 57344)
+              y[p++] = 65536 + (w - 55296) * 1024 + (C - 56320);
+            else
+              throw new Error("Incorrect surrogate pair in " + this.encodingName + " at chunk " + h[0]);
+          } else if (w > 4080 && w <= 4095) {
+            for (var T = 4095 - w + 2, E = [], R = 0; R < T; R++)
+              E.push(b.charCodeAt(v++));
+            y[p++] = r - this.decodeTableSeq.length, this.decodeTableSeq.push(E);
+          } else
+            y[p++] = w;
+        }
+      else if (typeof b == "number")
+        for (var U = y[p - 1] + 1, v = 0; v < b; v++)
+          y[p++] = U++;
+      else
+        throw new Error("Incorrect type '" + typeof b + "' given in " + this.encodingName + " at chunk " + h[0]);
+    }
+    if (p > 255)
+      throw new Error("Incorrect chunk in " + this.encodingName + " at addr " + h[0] + ": too long" + p);
+  }, c.prototype._getEncodeBucket = function(h) {
+    var p = h >> 8;
+    return this.encodeTable[p] === void 0 && (this.encodeTable[p] = i.slice(0)), this.encodeTable[p];
+  }, c.prototype._setEncodeChar = function(h, p) {
+    var y = this._getEncodeBucket(h), g = h & 255;
+    y[g] <= r ? this.encodeTableSeq[r - y[g]][a] = p : y[g] == e && (y[g] = p);
+  }, c.prototype._setEncodeSequence = function(h, p) {
+    var y = h[0], g = this._getEncodeBucket(y), b = y & 255, v;
+    g[b] <= r ? v = this.encodeTableSeq[r - g[b]] : (v = {}, g[b] !== e && (v[a] = g[b]), g[b] = r - this.encodeTableSeq.length, this.encodeTableSeq.push(v));
+    for (var w = 1; w < h.length - 1; w++) {
+      var C = v[y];
+      typeof C == "object" ? v = C : (v = v[y] = {}, C !== void 0 && (v[a] = C));
+    }
+    y = h[h.length - 1], v[y] = p;
+  }, c.prototype._fillEncodeTable = function(h, p, y) {
+    for (var g = this.decodeTables[h], b = !1, v = {}, w = 0; w < 256; w++) {
+      var C = g[w], T = p + w;
+      if (!y[T])
+        if (C >= 0)
+          this._setEncodeChar(C, T), b = !0;
+        else if (C <= s) {
+          var E = s - C;
+          if (!v[E]) {
+            var R = T << 8 >>> 0;
+            this._fillEncodeTable(E, R, y) ? b = !0 : v[E] = !0;
+          }
+        } else C <= r && (this._setEncodeSequence(this.decodeTableSeq[r - C], T), b = !0);
+    }
+    return b;
+  };
+  function l(h, p) {
+    this.leadSurrogate = -1, this.seqObj = void 0, this.encodeTable = p.encodeTable, this.encodeTableSeq = p.encodeTableSeq, this.defaultCharSingleByte = p.defCharSB, this.gb18030 = p.gb18030;
+  }
+  l.prototype.write = function(h) {
+    for (var p = t.alloc(h.length * (this.gb18030 ? 4 : 3)), y = this.leadSurrogate, g = this.seqObj, b = -1, v = 0, w = 0; ; ) {
+      if (b === -1) {
+        if (v == h.length) break;
+        var C = h.charCodeAt(v++);
+      } else {
+        var C = b;
+        b = -1;
+      }
+      if (C >= 55296 && C < 57344)
+        if (C < 56320)
+          if (y === -1) {
+            y = C;
+            continue;
+          } else
+            y = C, C = e;
+        else
+          y !== -1 ? (C = 65536 + (y - 55296) * 1024 + (C - 56320), y = -1) : C = e;
+      else y !== -1 && (b = C, C = e, y = -1);
+      var T = e;
+      if (g !== void 0 && C != e) {
+        var E = g[C];
+        if (typeof E == "object") {
+          g = E;
+          continue;
+        } else typeof E == "number" ? T = E : E == null && (E = g[a], E !== void 0 && (T = E, b = C));
+        g = void 0;
+      } else if (C >= 0) {
+        var R = this.encodeTable[C >> 8];
+        if (R !== void 0 && (T = R[C & 255]), T <= r) {
+          g = this.encodeTableSeq[r - T];
+          continue;
+        }
+        if (T == e && this.gb18030) {
+          var U = f(this.gb18030.uChars, C);
+          if (U != -1) {
+            var T = this.gb18030.gbChars[U] + (C - this.gb18030.uChars[U]);
+            p[w++] = 129 + Math.floor(T / 12600), T = T % 12600, p[w++] = 48 + Math.floor(T / 1260), T = T % 1260, p[w++] = 129 + Math.floor(T / 10), T = T % 10, p[w++] = 48 + T;
+            continue;
+          }
+        }
+      }
+      T === e && (T = this.defaultCharSingleByte), T < 256 ? p[w++] = T : T < 65536 ? (p[w++] = T >> 8, p[w++] = T & 255) : T < 16777216 ? (p[w++] = T >> 16, p[w++] = T >> 8 & 255, p[w++] = T & 255) : (p[w++] = T >>> 24, p[w++] = T >>> 16 & 255, p[w++] = T >>> 8 & 255, p[w++] = T & 255);
+    }
+    return this.seqObj = g, this.leadSurrogate = y, p.slice(0, w);
+  }, l.prototype.end = function() {
+    if (!(this.leadSurrogate === -1 && this.seqObj === void 0)) {
+      var h = t.alloc(10), p = 0;
+      if (this.seqObj) {
+        var y = this.seqObj[a];
+        y !== void 0 && (y < 256 ? h[p++] = y : (h[p++] = y >> 8, h[p++] = y & 255)), this.seqObj = void 0;
+      }
+      return this.leadSurrogate !== -1 && (h[p++] = this.defaultCharSingleByte, this.leadSurrogate = -1), h.slice(0, p);
+    }
+  }, l.prototype.findIdx = f;
+  function u(h, p) {
+    this.nodeIdx = 0, this.prevBytes = [], this.decodeTables = p.decodeTables, this.decodeTableSeq = p.decodeTableSeq, this.defaultCharUnicode = p.defaultCharUnicode, this.gb18030 = p.gb18030;
+  }
+  u.prototype.write = function(h) {
+    for (var p = t.alloc(h.length * 2), y = this.nodeIdx, g = this.prevBytes, b = this.prevBytes.length, v = -this.prevBytes.length, w, C = 0, T = 0; C < h.length; C++) {
+      var E = C >= 0 ? h[C] : g[C + b], w = this.decodeTables[y][E];
+      if (!(w >= 0)) if (w === e)
+        w = this.defaultCharUnicode.charCodeAt(0), C = v;
+      else if (w === n) {
+        if (C >= 3)
+          var R = (h[C - 3] - 129) * 12600 + (h[C - 2] - 48) * 1260 + (h[C - 1] - 129) * 10 + (E - 48);
+        else
+          var R = (g[C - 3 + b] - 129) * 12600 + ((C - 2 >= 0 ? h[C - 2] : g[C - 2 + b]) - 48) * 1260 + ((C - 1 >= 0 ? h[C - 1] : g[C - 1 + b]) - 129) * 10 + (E - 48);
+        var U = f(this.gb18030.gbChars, R);
+        w = this.gb18030.uChars[U] + R - this.gb18030.gbChars[U];
+      } else if (w <= s) {
+        y = s - w;
+        continue;
+      } else if (w <= r) {
+        for (var W = this.decodeTableSeq[r - w], j = 0; j < W.length - 1; j++)
+          w = W[j], p[T++] = w & 255, p[T++] = w >> 8;
+        w = W[W.length - 1];
+      } else
+        throw new Error("iconv-lite internal error: invalid decoding table value " + w + " at " + y + "/" + E);
+      if (w >= 65536) {
+        w -= 65536;
+        var N = 55296 | w >> 10;
+        p[T++] = N & 255, p[T++] = N >> 8, w = 56320 | w & 1023;
+      }
+      p[T++] = w & 255, p[T++] = w >> 8, y = 0, v = C + 1;
+    }
+    return this.nodeIdx = y, this.prevBytes = v >= 0 ? Array.prototype.slice.call(h, v) : g.slice(v + b).concat(Array.prototype.slice.call(h)), p.slice(0, T).toString("ucs2");
+  }, u.prototype.end = function() {
+    for (var h = ""; this.prevBytes.length > 0; ) {
+      h += this.defaultCharUnicode;
+      var p = this.prevBytes.slice(1);
+      this.prevBytes = [], this.nodeIdx = 0, p.length > 0 && (h += this.write(p));
+    }
+    return this.prevBytes = [], this.nodeIdx = 0, h;
+  };
+  function f(h, p) {
+    if (h[0] > p)
+      return -1;
+    for (var y = 0, g = h.length; y < g - 1; ) {
+      var b = y + (g - y + 1 >> 1);
+      h[b] <= p ? y = b : g = b;
+    }
+    return y;
+  }
+  return gr;
+}
+const a0 = [
+  [
+    "0",
+    "\0",
+    128
+  ],
+  [
+    "a1",
+    "｡",
+    62
+  ],
+  [
+    "8140",
+    "　、。，．・：；？！゛゜´｀¨＾￣＿ヽヾゝゞ〃仝々〆〇ー―‐／＼～∥｜…‥‘’“”（）〔〕［］｛｝〈",
+    9,
+    "＋－±×"
+  ],
+  [
+    "8180",
+    "÷＝≠＜＞≦≧∞∴♂♀°′″℃￥＄￠￡％＃＆＊＠§☆★○●◎◇◆□■△▲▽▼※〒→←↑↓〓"
+  ],
+  [
+    "81b8",
+    "∈∋⊆⊇⊂⊃∪∩"
+  ],
+  [
+    "81c8",
+    "∧∨￢⇒⇔∀∃"
+  ],
+  [
+    "81da",
+    "∠⊥⌒∂∇≡≒≪≫√∽∝∵∫∬"
+  ],
+  [
+    "81f0",
+    "Å‰♯♭♪†‡¶"
+  ],
+  [
+    "81fc",
+    "◯"
+  ],
+  [
+    "824f",
+    "０",
+    9
+  ],
+  [
+    "8260",
+    "Ａ",
+    25
+  ],
+  [
+    "8281",
+    "ａ",
+    25
+  ],
+  [
+    "829f",
+    "ぁ",
+    82
+  ],
+  [
+    "8340",
+    "ァ",
+    62
+  ],
+  [
+    "8380",
+    "ム",
+    22
+  ],
+  [
+    "839f",
+    "Α",
+    16,
+    "Σ",
+    6
+  ],
+  [
+    "83bf",
+    "α",
+    16,
+    "σ",
+    6
+  ],
+  [
+    "8440",
+    "А",
+    5,
+    "ЁЖ",
+    25
+  ],
+  [
+    "8470",
+    "а",
+    5,
+    "ёж",
+    7
+  ],
+  [
+    "8480",
+    "о",
+    17
+  ],
+  [
+    "849f",
+    "─│┌┐┘└├┬┤┴┼━┃┏┓┛┗┣┳┫┻╋┠┯┨┷┿┝┰┥┸╂"
+  ],
+  [
+    "8740",
+    "①",
+    19,
+    "Ⅰ",
+    9
+  ],
+  [
+    "875f",
+    "㍉㌔㌢㍍㌘㌧㌃㌶㍑㍗㌍㌦㌣㌫㍊㌻㎜㎝㎞㎎㎏㏄㎡"
+  ],
+  [
+    "877e",
+    "㍻"
+  ],
+  [
+    "8780",
+    "〝〟№㏍℡㊤",
+    4,
+    "㈱㈲㈹㍾㍽㍼≒≡∫∮∑√⊥∠∟⊿∵∩∪"
+  ],
+  [
+    "889f",
+    "亜唖娃阿哀愛挨姶逢葵茜穐悪握渥旭葦芦鯵梓圧斡扱宛姐虻飴絢綾鮎或粟袷安庵按暗案闇鞍杏以伊位依偉囲夷委威尉惟意慰易椅為畏異移維緯胃萎衣謂違遺医井亥域育郁磯一壱溢逸稲茨芋鰯允印咽員因姻引飲淫胤蔭"
+  ],
+  [
+    "8940",
+    "院陰隠韻吋右宇烏羽迂雨卯鵜窺丑碓臼渦嘘唄欝蔚鰻姥厩浦瓜閏噂云運雲荏餌叡営嬰影映曳栄永泳洩瑛盈穎頴英衛詠鋭液疫益駅悦謁越閲榎厭円"
+  ],
+  [
+    "8980",
+    "園堰奄宴延怨掩援沿演炎焔煙燕猿縁艶苑薗遠鉛鴛塩於汚甥凹央奥往応押旺横欧殴王翁襖鴬鴎黄岡沖荻億屋憶臆桶牡乙俺卸恩温穏音下化仮何伽価佳加可嘉夏嫁家寡科暇果架歌河火珂禍禾稼箇花苛茄荷華菓蝦課嘩貨迦過霞蚊俄峨我牙画臥芽蛾賀雅餓駕介会解回塊壊廻快怪悔恢懐戒拐改"
+  ],
+  [
+    "8a40",
+    "魁晦械海灰界皆絵芥蟹開階貝凱劾外咳害崖慨概涯碍蓋街該鎧骸浬馨蛙垣柿蛎鈎劃嚇各廓拡撹格核殻獲確穫覚角赫較郭閣隔革学岳楽額顎掛笠樫"
+  ],
+  [
+    "8a80",
+    "橿梶鰍潟割喝恰括活渇滑葛褐轄且鰹叶椛樺鞄株兜竃蒲釜鎌噛鴨栢茅萱粥刈苅瓦乾侃冠寒刊勘勧巻喚堪姦完官寛干幹患感慣憾換敢柑桓棺款歓汗漢澗潅環甘監看竿管簡緩缶翰肝艦莞観諌貫還鑑間閑関陥韓館舘丸含岸巌玩癌眼岩翫贋雁頑顔願企伎危喜器基奇嬉寄岐希幾忌揮机旗既期棋棄"
+  ],
+  [
+    "8b40",
+    "機帰毅気汽畿祈季稀紀徽規記貴起軌輝飢騎鬼亀偽儀妓宜戯技擬欺犠疑祇義蟻誼議掬菊鞠吉吃喫桔橘詰砧杵黍却客脚虐逆丘久仇休及吸宮弓急救"
+  ],
+  [
+    "8b80",
+    "朽求汲泣灸球究窮笈級糾給旧牛去居巨拒拠挙渠虚許距鋸漁禦魚亨享京供侠僑兇競共凶協匡卿叫喬境峡強彊怯恐恭挟教橋況狂狭矯胸脅興蕎郷鏡響饗驚仰凝尭暁業局曲極玉桐粁僅勤均巾錦斤欣欽琴禁禽筋緊芹菌衿襟謹近金吟銀九倶句区狗玖矩苦躯駆駈駒具愚虞喰空偶寓遇隅串櫛釧屑屈"
+  ],
+  [
+    "8c40",
+    "掘窟沓靴轡窪熊隈粂栗繰桑鍬勲君薫訓群軍郡卦袈祁係傾刑兄啓圭珪型契形径恵慶慧憩掲携敬景桂渓畦稽系経継繋罫茎荊蛍計詣警軽頚鶏芸迎鯨"
+  ],
+  [
+    "8c80",
+    "劇戟撃激隙桁傑欠決潔穴結血訣月件倹倦健兼券剣喧圏堅嫌建憲懸拳捲検権牽犬献研硯絹県肩見謙賢軒遣鍵険顕験鹸元原厳幻弦減源玄現絃舷言諺限乎個古呼固姑孤己庫弧戸故枯湖狐糊袴股胡菰虎誇跨鈷雇顧鼓五互伍午呉吾娯後御悟梧檎瑚碁語誤護醐乞鯉交佼侯候倖光公功効勾厚口向"
+  ],
+  [
+    "8d40",
+    "后喉坑垢好孔孝宏工巧巷幸広庚康弘恒慌抗拘控攻昂晃更杭校梗構江洪浩港溝甲皇硬稿糠紅紘絞綱耕考肯肱腔膏航荒行衡講貢購郊酵鉱砿鋼閤降"
+  ],
+  [
+    "8d80",
+    "項香高鴻剛劫号合壕拷濠豪轟麹克刻告国穀酷鵠黒獄漉腰甑忽惚骨狛込此頃今困坤墾婚恨懇昏昆根梱混痕紺艮魂些佐叉唆嵯左差査沙瑳砂詐鎖裟坐座挫債催再最哉塞妻宰彩才採栽歳済災采犀砕砦祭斎細菜裁載際剤在材罪財冴坂阪堺榊肴咲崎埼碕鷺作削咋搾昨朔柵窄策索錯桜鮭笹匙冊刷"
+  ],
+  [
+    "8e40",
+    "察拶撮擦札殺薩雑皐鯖捌錆鮫皿晒三傘参山惨撒散桟燦珊産算纂蚕讃賛酸餐斬暫残仕仔伺使刺司史嗣四士始姉姿子屍市師志思指支孜斯施旨枝止"
+  ],
+  [
+    "8e80",
+    "死氏獅祉私糸紙紫肢脂至視詞詩試誌諮資賜雌飼歯事似侍児字寺慈持時次滋治爾璽痔磁示而耳自蒔辞汐鹿式識鴫竺軸宍雫七叱執失嫉室悉湿漆疾質実蔀篠偲柴芝屡蕊縞舎写射捨赦斜煮社紗者謝車遮蛇邪借勺尺杓灼爵酌釈錫若寂弱惹主取守手朱殊狩珠種腫趣酒首儒受呪寿授樹綬需囚収周"
+  ],
+  [
+    "8f40",
+    "宗就州修愁拾洲秀秋終繍習臭舟蒐衆襲讐蹴輯週酋酬集醜什住充十従戎柔汁渋獣縦重銃叔夙宿淑祝縮粛塾熟出術述俊峻春瞬竣舜駿准循旬楯殉淳"
+  ],
+  [
+    "8f80",
+    "準潤盾純巡遵醇順処初所暑曙渚庶緒署書薯藷諸助叙女序徐恕鋤除傷償勝匠升召哨商唱嘗奨妾娼宵将小少尚庄床廠彰承抄招掌捷昇昌昭晶松梢樟樵沼消渉湘焼焦照症省硝礁祥称章笑粧紹肖菖蒋蕉衝裳訟証詔詳象賞醤鉦鍾鐘障鞘上丈丞乗冗剰城場壌嬢常情擾条杖浄状畳穣蒸譲醸錠嘱埴飾"
+  ],
+  [
+    "9040",
+    "拭植殖燭織職色触食蝕辱尻伸信侵唇娠寝審心慎振新晋森榛浸深申疹真神秦紳臣芯薪親診身辛進針震人仁刃塵壬尋甚尽腎訊迅陣靭笥諏須酢図厨"
+  ],
+  [
+    "9080",
+    "逗吹垂帥推水炊睡粋翠衰遂酔錐錘随瑞髄崇嵩数枢趨雛据杉椙菅頗雀裾澄摺寸世瀬畝是凄制勢姓征性成政整星晴棲栖正清牲生盛精聖声製西誠誓請逝醒青静斉税脆隻席惜戚斥昔析石積籍績脊責赤跡蹟碩切拙接摂折設窃節説雪絶舌蝉仙先千占宣専尖川戦扇撰栓栴泉浅洗染潜煎煽旋穿箭線"
+  ],
+  [
+    "9140",
+    "繊羨腺舛船薦詮賎践選遷銭銑閃鮮前善漸然全禅繕膳糎噌塑岨措曾曽楚狙疏疎礎祖租粗素組蘇訴阻遡鼠僧創双叢倉喪壮奏爽宋層匝惣想捜掃挿掻"
+  ],
+  [
+    "9180",
+    "操早曹巣槍槽漕燥争痩相窓糟総綜聡草荘葬蒼藻装走送遭鎗霜騒像増憎臓蔵贈造促側則即息捉束測足速俗属賊族続卒袖其揃存孫尊損村遜他多太汰詑唾堕妥惰打柁舵楕陀駄騨体堆対耐岱帯待怠態戴替泰滞胎腿苔袋貸退逮隊黛鯛代台大第醍題鷹滝瀧卓啄宅托択拓沢濯琢託鐸濁諾茸凧蛸只"
+  ],
+  [
+    "9240",
+    "叩但達辰奪脱巽竪辿棚谷狸鱈樽誰丹単嘆坦担探旦歎淡湛炭短端箪綻耽胆蛋誕鍛団壇弾断暖檀段男談値知地弛恥智池痴稚置致蜘遅馳築畜竹筑蓄"
+  ],
+  [
+    "9280",
+    "逐秩窒茶嫡着中仲宙忠抽昼柱注虫衷註酎鋳駐樗瀦猪苧著貯丁兆凋喋寵帖帳庁弔張彫徴懲挑暢朝潮牒町眺聴脹腸蝶調諜超跳銚長頂鳥勅捗直朕沈珍賃鎮陳津墜椎槌追鎚痛通塚栂掴槻佃漬柘辻蔦綴鍔椿潰坪壷嬬紬爪吊釣鶴亭低停偵剃貞呈堤定帝底庭廷弟悌抵挺提梯汀碇禎程締艇訂諦蹄逓"
+  ],
+  [
+    "9340",
+    "邸鄭釘鼎泥摘擢敵滴的笛適鏑溺哲徹撤轍迭鉄典填天展店添纏甜貼転顛点伝殿澱田電兎吐堵塗妬屠徒斗杜渡登菟賭途都鍍砥砺努度土奴怒倒党冬"
+  ],
+  [
+    "9380",
+    "凍刀唐塔塘套宕島嶋悼投搭東桃梼棟盗淘湯涛灯燈当痘祷等答筒糖統到董蕩藤討謄豆踏逃透鐙陶頭騰闘働動同堂導憧撞洞瞳童胴萄道銅峠鴇匿得徳涜特督禿篤毒独読栃橡凸突椴届鳶苫寅酉瀞噸屯惇敦沌豚遁頓呑曇鈍奈那内乍凪薙謎灘捺鍋楢馴縄畷南楠軟難汝二尼弐迩匂賑肉虹廿日乳入"
+  ],
+  [
+    "9440",
+    "如尿韮任妊忍認濡禰祢寧葱猫熱年念捻撚燃粘乃廼之埜嚢悩濃納能脳膿農覗蚤巴把播覇杷波派琶破婆罵芭馬俳廃拝排敗杯盃牌背肺輩配倍培媒梅"
+  ],
+  [
+    "9480",
+    "楳煤狽買売賠陪這蝿秤矧萩伯剥博拍柏泊白箔粕舶薄迫曝漠爆縛莫駁麦函箱硲箸肇筈櫨幡肌畑畠八鉢溌発醗髪伐罰抜筏閥鳩噺塙蛤隼伴判半反叛帆搬斑板氾汎版犯班畔繁般藩販範釆煩頒飯挽晩番盤磐蕃蛮匪卑否妃庇彼悲扉批披斐比泌疲皮碑秘緋罷肥被誹費避非飛樋簸備尾微枇毘琵眉美"
+  ],
+  [
+    "9540",
+    "鼻柊稗匹疋髭彦膝菱肘弼必畢筆逼桧姫媛紐百謬俵彪標氷漂瓢票表評豹廟描病秒苗錨鋲蒜蛭鰭品彬斌浜瀕貧賓頻敏瓶不付埠夫婦富冨布府怖扶敷"
+  ],
+  [
+    "9580",
+    "斧普浮父符腐膚芙譜負賦赴阜附侮撫武舞葡蕪部封楓風葺蕗伏副復幅服福腹複覆淵弗払沸仏物鮒分吻噴墳憤扮焚奮粉糞紛雰文聞丙併兵塀幣平弊柄並蔽閉陛米頁僻壁癖碧別瞥蔑箆偏変片篇編辺返遍便勉娩弁鞭保舗鋪圃捕歩甫補輔穂募墓慕戊暮母簿菩倣俸包呆報奉宝峰峯崩庖抱捧放方朋"
+  ],
+  [
+    "9640",
+    "法泡烹砲縫胞芳萌蓬蜂褒訪豊邦鋒飽鳳鵬乏亡傍剖坊妨帽忘忙房暴望某棒冒紡肪膨謀貌貿鉾防吠頬北僕卜墨撲朴牧睦穆釦勃没殆堀幌奔本翻凡盆"
+  ],
+  [
+    "9680",
+    "摩磨魔麻埋妹昧枚毎哩槙幕膜枕鮪柾鱒桝亦俣又抹末沫迄侭繭麿万慢満漫蔓味未魅巳箕岬密蜜湊蓑稔脈妙粍民眠務夢無牟矛霧鵡椋婿娘冥名命明盟迷銘鳴姪牝滅免棉綿緬面麺摸模茂妄孟毛猛盲網耗蒙儲木黙目杢勿餅尤戻籾貰問悶紋門匁也冶夜爺耶野弥矢厄役約薬訳躍靖柳薮鑓愉愈油癒"
+  ],
+  [
+    "9740",
+    "諭輸唯佑優勇友宥幽悠憂揖有柚湧涌猶猷由祐裕誘遊邑郵雄融夕予余与誉輿預傭幼妖容庸揚揺擁曜楊様洋溶熔用窯羊耀葉蓉要謡踊遥陽養慾抑欲"
+  ],
+  [
+    "9780",
+    "沃浴翌翼淀羅螺裸来莱頼雷洛絡落酪乱卵嵐欄濫藍蘭覧利吏履李梨理璃痢裏裡里離陸律率立葎掠略劉流溜琉留硫粒隆竜龍侶慮旅虜了亮僚両凌寮料梁涼猟療瞭稜糧良諒遼量陵領力緑倫厘林淋燐琳臨輪隣鱗麟瑠塁涙累類令伶例冷励嶺怜玲礼苓鈴隷零霊麗齢暦歴列劣烈裂廉恋憐漣煉簾練聯"
+  ],
+  [
+    "9840",
+    "蓮連錬呂魯櫓炉賂路露労婁廊弄朗楼榔浪漏牢狼篭老聾蝋郎六麓禄肋録論倭和話歪賄脇惑枠鷲亙亘鰐詫藁蕨椀湾碗腕"
+  ],
+  [
+    "989f",
+    "弌丐丕个丱丶丼丿乂乖乘亂亅豫亊舒弍于亞亟亠亢亰亳亶从仍仄仆仂仗仞仭仟价伉佚估佛佝佗佇佶侈侏侘佻佩佰侑佯來侖儘俔俟俎俘俛俑俚俐俤俥倚倨倔倪倥倅伜俶倡倩倬俾俯們倆偃假會偕偐偈做偖偬偸傀傚傅傴傲"
+  ],
+  [
+    "9940",
+    "僉僊傳僂僖僞僥僭僣僮價僵儉儁儂儖儕儔儚儡儺儷儼儻儿兀兒兌兔兢竸兩兪兮冀冂囘册冉冏冑冓冕冖冤冦冢冩冪冫决冱冲冰况冽凅凉凛几處凩凭"
+  ],
+  [
+    "9980",
+    "凰凵凾刄刋刔刎刧刪刮刳刹剏剄剋剌剞剔剪剴剩剳剿剽劍劔劒剱劈劑辨辧劬劭劼劵勁勍勗勞勣勦飭勠勳勵勸勹匆匈甸匍匐匏匕匚匣匯匱匳匸區卆卅丗卉卍凖卞卩卮夘卻卷厂厖厠厦厥厮厰厶參簒雙叟曼燮叮叨叭叺吁吽呀听吭吼吮吶吩吝呎咏呵咎呟呱呷呰咒呻咀呶咄咐咆哇咢咸咥咬哄哈咨"
+  ],
+  [
+    "9a40",
+    "咫哂咤咾咼哘哥哦唏唔哽哮哭哺哢唹啀啣啌售啜啅啖啗唸唳啝喙喀咯喊喟啻啾喘喞單啼喃喩喇喨嗚嗅嗟嗄嗜嗤嗔嘔嗷嘖嗾嗽嘛嗹噎噐營嘴嘶嘲嘸"
+  ],
+  [
+    "9a80",
+    "噫噤嘯噬噪嚆嚀嚊嚠嚔嚏嚥嚮嚶嚴囂嚼囁囃囀囈囎囑囓囗囮囹圀囿圄圉圈國圍圓團圖嗇圜圦圷圸坎圻址坏坩埀垈坡坿垉垓垠垳垤垪垰埃埆埔埒埓堊埖埣堋堙堝塲堡塢塋塰毀塒堽塹墅墹墟墫墺壞墻墸墮壅壓壑壗壙壘壥壜壤壟壯壺壹壻壼壽夂夊夐夛梦夥夬夭夲夸夾竒奕奐奎奚奘奢奠奧奬奩"
+  ],
+  [
+    "9b40",
+    "奸妁妝佞侫妣妲姆姨姜妍姙姚娥娟娑娜娉娚婀婬婉娵娶婢婪媚媼媾嫋嫂媽嫣嫗嫦嫩嫖嫺嫻嬌嬋嬖嬲嫐嬪嬶嬾孃孅孀孑孕孚孛孥孩孰孳孵學斈孺宀"
+  ],
+  [
+    "9b80",
+    "它宦宸寃寇寉寔寐寤實寢寞寥寫寰寶寳尅將專對尓尠尢尨尸尹屁屆屎屓屐屏孱屬屮乢屶屹岌岑岔妛岫岻岶岼岷峅岾峇峙峩峽峺峭嶌峪崋崕崗嵜崟崛崑崔崢崚崙崘嵌嵒嵎嵋嵬嵳嵶嶇嶄嶂嶢嶝嶬嶮嶽嶐嶷嶼巉巍巓巒巖巛巫已巵帋帚帙帑帛帶帷幄幃幀幎幗幔幟幢幤幇幵并幺麼广庠廁廂廈廐廏"
+  ],
+  [
+    "9c40",
+    "廖廣廝廚廛廢廡廨廩廬廱廳廰廴廸廾弃弉彝彜弋弑弖弩弭弸彁彈彌彎弯彑彖彗彙彡彭彳彷徃徂彿徊很徑徇從徙徘徠徨徭徼忖忻忤忸忱忝悳忿怡恠"
+  ],
+  [
+    "9c80",
+    "怙怐怩怎怱怛怕怫怦怏怺恚恁恪恷恟恊恆恍恣恃恤恂恬恫恙悁悍惧悃悚悄悛悖悗悒悧悋惡悸惠惓悴忰悽惆悵惘慍愕愆惶惷愀惴惺愃愡惻惱愍愎慇愾愨愧慊愿愼愬愴愽慂慄慳慷慘慙慚慫慴慯慥慱慟慝慓慵憙憖憇憬憔憚憊憑憫憮懌懊應懷懈懃懆憺懋罹懍懦懣懶懺懴懿懽懼懾戀戈戉戍戌戔戛"
+  ],
+  [
+    "9d40",
+    "戞戡截戮戰戲戳扁扎扞扣扛扠扨扼抂抉找抒抓抖拔抃抔拗拑抻拏拿拆擔拈拜拌拊拂拇抛拉挌拮拱挧挂挈拯拵捐挾捍搜捏掖掎掀掫捶掣掏掉掟掵捫"
+  ],
+  [
+    "9d80",
+    "捩掾揩揀揆揣揉插揶揄搖搴搆搓搦搶攝搗搨搏摧摯摶摎攪撕撓撥撩撈撼據擒擅擇撻擘擂擱擧舉擠擡抬擣擯攬擶擴擲擺攀擽攘攜攅攤攣攫攴攵攷收攸畋效敖敕敍敘敞敝敲數斂斃變斛斟斫斷旃旆旁旄旌旒旛旙无旡旱杲昊昃旻杳昵昶昴昜晏晄晉晁晞晝晤晧晨晟晢晰暃暈暎暉暄暘暝曁暹曉暾暼"
+  ],
+  [
+    "9e40",
+    "曄暸曖曚曠昿曦曩曰曵曷朏朖朞朦朧霸朮朿朶杁朸朷杆杞杠杙杣杤枉杰枩杼杪枌枋枦枡枅枷柯枴柬枳柩枸柤柞柝柢柮枹柎柆柧檜栞框栩桀桍栲桎"
+  ],
+  [
+    "9e80",
+    "梳栫桙档桷桿梟梏梭梔條梛梃檮梹桴梵梠梺椏梍桾椁棊椈棘椢椦棡椌棍棔棧棕椶椒椄棗棣椥棹棠棯椨椪椚椣椡棆楹楷楜楸楫楔楾楮椹楴椽楙椰楡楞楝榁楪榲榮槐榿槁槓榾槎寨槊槝榻槃榧樮榑榠榜榕榴槞槨樂樛槿權槹槲槧樅榱樞槭樔槫樊樒櫁樣樓橄樌橲樶橸橇橢橙橦橈樸樢檐檍檠檄檢檣"
+  ],
+  [
+    "9f40",
+    "檗蘗檻櫃櫂檸檳檬櫞櫑櫟檪櫚櫪櫻欅蘖櫺欒欖鬱欟欸欷盜欹飮歇歃歉歐歙歔歛歟歡歸歹歿殀殄殃殍殘殕殞殤殪殫殯殲殱殳殷殼毆毋毓毟毬毫毳毯"
+  ],
+  [
+    "9f80",
+    "麾氈氓气氛氤氣汞汕汢汪沂沍沚沁沛汾汨汳沒沐泄泱泓沽泗泅泝沮沱沾沺泛泯泙泪洟衍洶洫洽洸洙洵洳洒洌浣涓浤浚浹浙涎涕濤涅淹渕渊涵淇淦涸淆淬淞淌淨淒淅淺淙淤淕淪淮渭湮渮渙湲湟渾渣湫渫湶湍渟湃渺湎渤滿渝游溂溪溘滉溷滓溽溯滄溲滔滕溏溥滂溟潁漑灌滬滸滾漿滲漱滯漲滌"
+  ],
+  [
+    "e040",
+    "漾漓滷澆潺潸澁澀潯潛濳潭澂潼潘澎澑濂潦澳澣澡澤澹濆澪濟濕濬濔濘濱濮濛瀉瀋濺瀑瀁瀏濾瀛瀚潴瀝瀘瀟瀰瀾瀲灑灣炙炒炯烱炬炸炳炮烟烋烝"
+  ],
+  [
+    "e080",
+    "烙焉烽焜焙煥煕熈煦煢煌煖煬熏燻熄熕熨熬燗熹熾燒燉燔燎燠燬燧燵燼燹燿爍爐爛爨爭爬爰爲爻爼爿牀牆牋牘牴牾犂犁犇犒犖犢犧犹犲狃狆狄狎狒狢狠狡狹狷倏猗猊猜猖猝猴猯猩猥猾獎獏默獗獪獨獰獸獵獻獺珈玳珎玻珀珥珮珞璢琅瑯琥珸琲琺瑕琿瑟瑙瑁瑜瑩瑰瑣瑪瑶瑾璋璞璧瓊瓏瓔珱"
+  ],
+  [
+    "e140",
+    "瓠瓣瓧瓩瓮瓲瓰瓱瓸瓷甄甃甅甌甎甍甕甓甞甦甬甼畄畍畊畉畛畆畚畩畤畧畫畭畸當疆疇畴疊疉疂疔疚疝疥疣痂疳痃疵疽疸疼疱痍痊痒痙痣痞痾痿"
+  ],
+  [
+    "e180",
+    "痼瘁痰痺痲痳瘋瘍瘉瘟瘧瘠瘡瘢瘤瘴瘰瘻癇癈癆癜癘癡癢癨癩癪癧癬癰癲癶癸發皀皃皈皋皎皖皓皙皚皰皴皸皹皺盂盍盖盒盞盡盥盧盪蘯盻眈眇眄眩眤眞眥眦眛眷眸睇睚睨睫睛睥睿睾睹瞎瞋瞑瞠瞞瞰瞶瞹瞿瞼瞽瞻矇矍矗矚矜矣矮矼砌砒礦砠礪硅碎硴碆硼碚碌碣碵碪碯磑磆磋磔碾碼磅磊磬"
+  ],
+  [
+    "e240",
+    "磧磚磽磴礇礒礑礙礬礫祀祠祗祟祚祕祓祺祿禊禝禧齋禪禮禳禹禺秉秕秧秬秡秣稈稍稘稙稠稟禀稱稻稾稷穃穗穉穡穢穩龝穰穹穽窈窗窕窘窖窩竈窰"
+  ],
+  [
+    "e280",
+    "窶竅竄窿邃竇竊竍竏竕竓站竚竝竡竢竦竭竰笂笏笊笆笳笘笙笞笵笨笶筐筺笄筍笋筌筅筵筥筴筧筰筱筬筮箝箘箟箍箜箚箋箒箏筝箙篋篁篌篏箴篆篝篩簑簔篦篥籠簀簇簓篳篷簗簍篶簣簧簪簟簷簫簽籌籃籔籏籀籐籘籟籤籖籥籬籵粃粐粤粭粢粫粡粨粳粲粱粮粹粽糀糅糂糘糒糜糢鬻糯糲糴糶糺紆"
+  ],
+  [
+    "e340",
+    "紂紜紕紊絅絋紮紲紿紵絆絳絖絎絲絨絮絏絣經綉絛綏絽綛綺綮綣綵緇綽綫總綢綯緜綸綟綰緘緝緤緞緻緲緡縅縊縣縡縒縱縟縉縋縢繆繦縻縵縹繃縷"
+  ],
+  [
+    "e380",
+    "縲縺繧繝繖繞繙繚繹繪繩繼繻纃緕繽辮繿纈纉續纒纐纓纔纖纎纛纜缸缺罅罌罍罎罐网罕罔罘罟罠罨罩罧罸羂羆羃羈羇羌羔羞羝羚羣羯羲羹羮羶羸譱翅翆翊翕翔翡翦翩翳翹飜耆耄耋耒耘耙耜耡耨耿耻聊聆聒聘聚聟聢聨聳聲聰聶聹聽聿肄肆肅肛肓肚肭冐肬胛胥胙胝胄胚胖脉胯胱脛脩脣脯腋"
+  ],
+  [
+    "e440",
+    "隋腆脾腓腑胼腱腮腥腦腴膃膈膊膀膂膠膕膤膣腟膓膩膰膵膾膸膽臀臂膺臉臍臑臙臘臈臚臟臠臧臺臻臾舁舂舅與舊舍舐舖舩舫舸舳艀艙艘艝艚艟艤"
+  ],
+  [
+    "e480",
+    "艢艨艪艫舮艱艷艸艾芍芒芫芟芻芬苡苣苟苒苴苳苺莓范苻苹苞茆苜茉苙茵茴茖茲茱荀茹荐荅茯茫茗茘莅莚莪莟莢莖茣莎莇莊荼莵荳荵莠莉莨菴萓菫菎菽萃菘萋菁菷萇菠菲萍萢萠莽萸蔆菻葭萪萼蕚蒄葷葫蒭葮蒂葩葆萬葯葹萵蓊葢蒹蒿蒟蓙蓍蒻蓚蓐蓁蓆蓖蒡蔡蓿蓴蔗蔘蔬蔟蔕蔔蓼蕀蕣蕘蕈"
+  ],
+  [
+    "e540",
+    "蕁蘂蕋蕕薀薤薈薑薊薨蕭薔薛藪薇薜蕷蕾薐藉薺藏薹藐藕藝藥藜藹蘊蘓蘋藾藺蘆蘢蘚蘰蘿虍乕虔號虧虱蚓蚣蚩蚪蚋蚌蚶蚯蛄蛆蚰蛉蠣蚫蛔蛞蛩蛬"
+  ],
+  [
+    "e580",
+    "蛟蛛蛯蜒蜆蜈蜀蜃蛻蜑蜉蜍蛹蜊蜴蜿蜷蜻蜥蜩蜚蝠蝟蝸蝌蝎蝴蝗蝨蝮蝙蝓蝣蝪蠅螢螟螂螯蟋螽蟀蟐雖螫蟄螳蟇蟆螻蟯蟲蟠蠏蠍蟾蟶蟷蠎蟒蠑蠖蠕蠢蠡蠱蠶蠹蠧蠻衄衂衒衙衞衢衫袁衾袞衵衽袵衲袂袗袒袮袙袢袍袤袰袿袱裃裄裔裘裙裝裹褂裼裴裨裲褄褌褊褓襃褞褥褪褫襁襄褻褶褸襌褝襠襞"
+  ],
+  [
+    "e640",
+    "襦襤襭襪襯襴襷襾覃覈覊覓覘覡覩覦覬覯覲覺覽覿觀觚觜觝觧觴觸訃訖訐訌訛訝訥訶詁詛詒詆詈詼詭詬詢誅誂誄誨誡誑誥誦誚誣諄諍諂諚諫諳諧"
+  ],
+  [
+    "e680",
+    "諤諱謔諠諢諷諞諛謌謇謚諡謖謐謗謠謳鞫謦謫謾謨譁譌譏譎證譖譛譚譫譟譬譯譴譽讀讌讎讒讓讖讙讚谺豁谿豈豌豎豐豕豢豬豸豺貂貉貅貊貍貎貔豼貘戝貭貪貽貲貳貮貶賈賁賤賣賚賽賺賻贄贅贊贇贏贍贐齎贓賍贔贖赧赭赱赳趁趙跂趾趺跏跚跖跌跛跋跪跫跟跣跼踈踉跿踝踞踐踟蹂踵踰踴蹊"
+  ],
+  [
+    "e740",
+    "蹇蹉蹌蹐蹈蹙蹤蹠踪蹣蹕蹶蹲蹼躁躇躅躄躋躊躓躑躔躙躪躡躬躰軆躱躾軅軈軋軛軣軼軻軫軾輊輅輕輒輙輓輜輟輛輌輦輳輻輹轅轂輾轌轉轆轎轗轜"
+  ],
+  [
+    "e780",
+    "轢轣轤辜辟辣辭辯辷迚迥迢迪迯邇迴逅迹迺逑逕逡逍逞逖逋逧逶逵逹迸遏遐遑遒逎遉逾遖遘遞遨遯遶隨遲邂遽邁邀邊邉邏邨邯邱邵郢郤扈郛鄂鄒鄙鄲鄰酊酖酘酣酥酩酳酲醋醉醂醢醫醯醪醵醴醺釀釁釉釋釐釖釟釡釛釼釵釶鈞釿鈔鈬鈕鈑鉞鉗鉅鉉鉤鉈銕鈿鉋鉐銜銖銓銛鉚鋏銹銷鋩錏鋺鍄錮"
+  ],
+  [
+    "e840",
+    "錙錢錚錣錺錵錻鍜鍠鍼鍮鍖鎰鎬鎭鎔鎹鏖鏗鏨鏥鏘鏃鏝鏐鏈鏤鐚鐔鐓鐃鐇鐐鐶鐫鐵鐡鐺鑁鑒鑄鑛鑠鑢鑞鑪鈩鑰鑵鑷鑽鑚鑼鑾钁鑿閂閇閊閔閖閘閙"
+  ],
+  [
+    "e880",
+    "閠閨閧閭閼閻閹閾闊濶闃闍闌闕闔闖關闡闥闢阡阨阮阯陂陌陏陋陷陜陞陝陟陦陲陬隍隘隕隗險隧隱隲隰隴隶隸隹雎雋雉雍襍雜霍雕雹霄霆霈霓霎霑霏霖霙霤霪霰霹霽霾靄靆靈靂靉靜靠靤靦靨勒靫靱靹鞅靼鞁靺鞆鞋鞏鞐鞜鞨鞦鞣鞳鞴韃韆韈韋韜韭齏韲竟韶韵頏頌頸頤頡頷頽顆顏顋顫顯顰"
+  ],
+  [
+    "e940",
+    "顱顴顳颪颯颱颶飄飃飆飩飫餃餉餒餔餘餡餝餞餤餠餬餮餽餾饂饉饅饐饋饑饒饌饕馗馘馥馭馮馼駟駛駝駘駑駭駮駱駲駻駸騁騏騅駢騙騫騷驅驂驀驃"
+  ],
+  [
+    "e980",
+    "騾驕驍驛驗驟驢驥驤驩驫驪骭骰骼髀髏髑髓體髞髟髢髣髦髯髫髮髴髱髷髻鬆鬘鬚鬟鬢鬣鬥鬧鬨鬩鬪鬮鬯鬲魄魃魏魍魎魑魘魴鮓鮃鮑鮖鮗鮟鮠鮨鮴鯀鯊鮹鯆鯏鯑鯒鯣鯢鯤鯔鯡鰺鯲鯱鯰鰕鰔鰉鰓鰌鰆鰈鰒鰊鰄鰮鰛鰥鰤鰡鰰鱇鰲鱆鰾鱚鱠鱧鱶鱸鳧鳬鳰鴉鴈鳫鴃鴆鴪鴦鶯鴣鴟鵄鴕鴒鵁鴿鴾鵆鵈"
+  ],
+  [
+    "ea40",
+    "鵝鵞鵤鵑鵐鵙鵲鶉鶇鶫鵯鵺鶚鶤鶩鶲鷄鷁鶻鶸鶺鷆鷏鷂鷙鷓鷸鷦鷭鷯鷽鸚鸛鸞鹵鹹鹽麁麈麋麌麒麕麑麝麥麩麸麪麭靡黌黎黏黐黔黜點黝黠黥黨黯"
+  ],
+  [
+    "ea80",
+    "黴黶黷黹黻黼黽鼇鼈皷鼕鼡鼬鼾齊齒齔齣齟齠齡齦齧齬齪齷齲齶龕龜龠堯槇遙瑤凜熙"
+  ],
+  [
+    "ed40",
+    "纊褜鍈銈蓜俉炻昱棈鋹曻彅丨仡仼伀伃伹佖侒侊侚侔俍偀倢俿倞偆偰偂傔僴僘兊兤冝冾凬刕劜劦勀勛匀匇匤卲厓厲叝﨎咜咊咩哿喆坙坥垬埈埇﨏"
+  ],
+  [
+    "ed80",
+    "塚增墲夋奓奛奝奣妤妺孖寀甯寘寬尞岦岺峵崧嵓﨑嵂嵭嶸嶹巐弡弴彧德忞恝悅悊惞惕愠惲愑愷愰憘戓抦揵摠撝擎敎昀昕昻昉昮昞昤晥晗晙晴晳暙暠暲暿曺朎朗杦枻桒柀栁桄棏﨓楨﨔榘槢樰橫橆橳橾櫢櫤毖氿汜沆汯泚洄涇浯涖涬淏淸淲淼渹湜渧渼溿澈澵濵瀅瀇瀨炅炫焏焄煜煆煇凞燁燾犱"
+  ],
+  [
+    "ee40",
+    "犾猤猪獷玽珉珖珣珒琇珵琦琪琩琮瑢璉璟甁畯皂皜皞皛皦益睆劯砡硎硤硺礰礼神祥禔福禛竑竧靖竫箞精絈絜綷綠緖繒罇羡羽茁荢荿菇菶葈蒴蕓蕙"
+  ],
+  [
+    "ee80",
+    "蕫﨟薰蘒﨡蠇裵訒訷詹誧誾諟諸諶譓譿賰賴贒赶﨣軏﨤逸遧郞都鄕鄧釚釗釞釭釮釤釥鈆鈐鈊鈺鉀鈼鉎鉙鉑鈹鉧銧鉷鉸鋧鋗鋙鋐﨧鋕鋠鋓錥錡鋻﨨錞鋿錝錂鍰鍗鎤鏆鏞鏸鐱鑅鑈閒隆﨩隝隯霳霻靃靍靏靑靕顗顥飯飼餧館馞驎髙髜魵魲鮏鮱鮻鰀鵰鵫鶴鸙黑"
+  ],
+  [
+    "eeef",
+    "ⅰ",
+    9,
+    "￢￤＇＂"
+  ],
+  [
+    "f040",
+    "",
+    62
+  ],
+  [
+    "f080",
+    "",
+    124
+  ],
+  [
+    "f140",
+    "",
+    62
+  ],
+  [
+    "f180",
+    "",
+    124
+  ],
+  [
+    "f240",
+    "",
+    62
+  ],
+  [
+    "f280",
+    "",
+    124
+  ],
+  [
+    "f340",
+    "",
+    62
+  ],
+  [
+    "f380",
+    "",
+    124
+  ],
+  [
+    "f440",
+    "",
+    62
+  ],
+  [
+    "f480",
+    "",
+    124
+  ],
+  [
+    "f540",
+    "",
+    62
+  ],
+  [
+    "f580",
+    "",
+    124
+  ],
+  [
+    "f640",
+    "",
+    62
+  ],
+  [
+    "f680",
+    "",
+    124
+  ],
+  [
+    "f740",
+    "",
+    62
+  ],
+  [
+    "f780",
+    "",
+    124
+  ],
+  [
+    "f840",
+    "",
+    62
+  ],
+  [
+    "f880",
+    "",
+    124
+  ],
+  [
+    "f940",
+    ""
+  ],
+  [
+    "fa40",
+    "ⅰ",
+    9,
+    "Ⅰ",
+    9,
+    "￢￤＇＂㈱№℡∵纊褜鍈銈蓜俉炻昱棈鋹曻彅丨仡仼伀伃伹佖侒侊侚侔俍偀倢俿倞偆偰偂傔僴僘兊"
+  ],
+  [
+    "fa80",
+    "兤冝冾凬刕劜劦勀勛匀匇匤卲厓厲叝﨎咜咊咩哿喆坙坥垬埈埇﨏塚增墲夋奓奛奝奣妤妺孖寀甯寘寬尞岦岺峵崧嵓﨑嵂嵭嶸嶹巐弡弴彧德忞恝悅悊惞惕愠惲愑愷愰憘戓抦揵摠撝擎敎昀昕昻昉昮昞昤晥晗晙晴晳暙暠暲暿曺朎朗杦枻桒柀栁桄棏﨓楨﨔榘槢樰橫橆橳橾櫢櫤毖氿汜沆汯泚洄涇浯"
+  ],
+  [
+    "fb40",
+    "涖涬淏淸淲淼渹湜渧渼溿澈澵濵瀅瀇瀨炅炫焏焄煜煆煇凞燁燾犱犾猤猪獷玽珉珖珣珒琇珵琦琪琩琮瑢璉璟甁畯皂皜皞皛皦益睆劯砡硎硤硺礰礼神"
+  ],
+  [
+    "fb80",
+    "祥禔福禛竑竧靖竫箞精絈絜綷綠緖繒罇羡羽茁荢荿菇菶葈蒴蕓蕙蕫﨟薰蘒﨡蠇裵訒訷詹誧誾諟諸諶譓譿賰賴贒赶﨣軏﨤逸遧郞都鄕鄧釚釗釞釭釮釤釥鈆鈐鈊鈺鉀鈼鉎鉙鉑鈹鉧銧鉷鉸鋧鋗鋙鋐﨧鋕鋠鋓錥錡鋻﨨錞鋿錝錂鍰鍗鎤鏆鏞鏸鐱鑅鑈閒隆﨩隝隯霳霻靃靍靏靑靕顗顥飯飼餧館馞驎髙"
+  ],
+  [
+    "fc40",
+    "髜魵魲鮏鮱鮻鰀鵰鵫鶴鸙黑"
+  ]
+], o0 = [
+  [
+    "0",
+    "\0",
+    127
+  ],
+  [
+    "8ea1",
+    "｡",
+    62
+  ],
+  [
+    "a1a1",
+    "　、。，．・：；？！゛゜´｀¨＾￣＿ヽヾゝゞ〃仝々〆〇ー―‐／＼～∥｜…‥‘’“”（）〔〕［］｛｝〈",
+    9,
+    "＋－±×÷＝≠＜＞≦≧∞∴♂♀°′″℃￥＄￠￡％＃＆＊＠§☆★○●◎◇"
+  ],
+  [
+    "a2a1",
+    "◆□■△▲▽▼※〒→←↑↓〓"
+  ],
+  [
+    "a2ba",
+    "∈∋⊆⊇⊂⊃∪∩"
+  ],
+  [
+    "a2ca",
+    "∧∨￢⇒⇔∀∃"
+  ],
+  [
+    "a2dc",
+    "∠⊥⌒∂∇≡≒≪≫√∽∝∵∫∬"
+  ],
+  [
+    "a2f2",
+    "Å‰♯♭♪†‡¶"
+  ],
+  [
+    "a2fe",
+    "◯"
+  ],
+  [
+    "a3b0",
+    "０",
+    9
+  ],
+  [
+    "a3c1",
+    "Ａ",
+    25
+  ],
+  [
+    "a3e1",
+    "ａ",
+    25
+  ],
+  [
+    "a4a1",
+    "ぁ",
+    82
+  ],
+  [
+    "a5a1",
+    "ァ",
+    85
+  ],
+  [
+    "a6a1",
+    "Α",
+    16,
+    "Σ",
+    6
+  ],
+  [
+    "a6c1",
+    "α",
+    16,
+    "σ",
+    6
+  ],
+  [
+    "a7a1",
+    "А",
+    5,
+    "ЁЖ",
+    25
+  ],
+  [
+    "a7d1",
+    "а",
+    5,
+    "ёж",
+    25
+  ],
+  [
+    "a8a1",
+    "─│┌┐┘└├┬┤┴┼━┃┏┓┛┗┣┳┫┻╋┠┯┨┷┿┝┰┥┸╂"
+  ],
+  [
+    "ada1",
+    "①",
+    19,
+    "Ⅰ",
+    9
+  ],
+  [
+    "adc0",
+    "㍉㌔㌢㍍㌘㌧㌃㌶㍑㍗㌍㌦㌣㌫㍊㌻㎜㎝㎞㎎㎏㏄㎡"
+  ],
+  [
+    "addf",
+    "㍻〝〟№㏍℡㊤",
+    4,
+    "㈱㈲㈹㍾㍽㍼≒≡∫∮∑√⊥∠∟⊿∵∩∪"
+  ],
+  [
+    "b0a1",
+    "亜唖娃阿哀愛挨姶逢葵茜穐悪握渥旭葦芦鯵梓圧斡扱宛姐虻飴絢綾鮎或粟袷安庵按暗案闇鞍杏以伊位依偉囲夷委威尉惟意慰易椅為畏異移維緯胃萎衣謂違遺医井亥域育郁磯一壱溢逸稲茨芋鰯允印咽員因姻引飲淫胤蔭"
+  ],
+  [
+    "b1a1",
+    "院陰隠韻吋右宇烏羽迂雨卯鵜窺丑碓臼渦嘘唄欝蔚鰻姥厩浦瓜閏噂云運雲荏餌叡営嬰影映曳栄永泳洩瑛盈穎頴英衛詠鋭液疫益駅悦謁越閲榎厭円園堰奄宴延怨掩援沿演炎焔煙燕猿縁艶苑薗遠鉛鴛塩於汚甥凹央奥往応"
+  ],
+  [
+    "b2a1",
+    "押旺横欧殴王翁襖鴬鴎黄岡沖荻億屋憶臆桶牡乙俺卸恩温穏音下化仮何伽価佳加可嘉夏嫁家寡科暇果架歌河火珂禍禾稼箇花苛茄荷華菓蝦課嘩貨迦過霞蚊俄峨我牙画臥芽蛾賀雅餓駕介会解回塊壊廻快怪悔恢懐戒拐改"
+  ],
+  [
+    "b3a1",
+    "魁晦械海灰界皆絵芥蟹開階貝凱劾外咳害崖慨概涯碍蓋街該鎧骸浬馨蛙垣柿蛎鈎劃嚇各廓拡撹格核殻獲確穫覚角赫較郭閣隔革学岳楽額顎掛笠樫橿梶鰍潟割喝恰括活渇滑葛褐轄且鰹叶椛樺鞄株兜竃蒲釜鎌噛鴨栢茅萱"
+  ],
+  [
+    "b4a1",
+    "粥刈苅瓦乾侃冠寒刊勘勧巻喚堪姦完官寛干幹患感慣憾換敢柑桓棺款歓汗漢澗潅環甘監看竿管簡緩缶翰肝艦莞観諌貫還鑑間閑関陥韓館舘丸含岸巌玩癌眼岩翫贋雁頑顔願企伎危喜器基奇嬉寄岐希幾忌揮机旗既期棋棄"
+  ],
+  [
+    "b5a1",
+    "機帰毅気汽畿祈季稀紀徽規記貴起軌輝飢騎鬼亀偽儀妓宜戯技擬欺犠疑祇義蟻誼議掬菊鞠吉吃喫桔橘詰砧杵黍却客脚虐逆丘久仇休及吸宮弓急救朽求汲泣灸球究窮笈級糾給旧牛去居巨拒拠挙渠虚許距鋸漁禦魚亨享京"
+  ],
+  [
+    "b6a1",
+    "供侠僑兇競共凶協匡卿叫喬境峡強彊怯恐恭挟教橋況狂狭矯胸脅興蕎郷鏡響饗驚仰凝尭暁業局曲極玉桐粁僅勤均巾錦斤欣欽琴禁禽筋緊芹菌衿襟謹近金吟銀九倶句区狗玖矩苦躯駆駈駒具愚虞喰空偶寓遇隅串櫛釧屑屈"
+  ],
+  [
+    "b7a1",
+    "掘窟沓靴轡窪熊隈粂栗繰桑鍬勲君薫訓群軍郡卦袈祁係傾刑兄啓圭珪型契形径恵慶慧憩掲携敬景桂渓畦稽系経継繋罫茎荊蛍計詣警軽頚鶏芸迎鯨劇戟撃激隙桁傑欠決潔穴結血訣月件倹倦健兼券剣喧圏堅嫌建憲懸拳捲"
+  ],
+  [
+    "b8a1",
+    "検権牽犬献研硯絹県肩見謙賢軒遣鍵険顕験鹸元原厳幻弦減源玄現絃舷言諺限乎個古呼固姑孤己庫弧戸故枯湖狐糊袴股胡菰虎誇跨鈷雇顧鼓五互伍午呉吾娯後御悟梧檎瑚碁語誤護醐乞鯉交佼侯候倖光公功効勾厚口向"
+  ],
+  [
+    "b9a1",
+    "后喉坑垢好孔孝宏工巧巷幸広庚康弘恒慌抗拘控攻昂晃更杭校梗構江洪浩港溝甲皇硬稿糠紅紘絞綱耕考肯肱腔膏航荒行衡講貢購郊酵鉱砿鋼閤降項香高鴻剛劫号合壕拷濠豪轟麹克刻告国穀酷鵠黒獄漉腰甑忽惚骨狛込"
+  ],
+  [
+    "baa1",
+    "此頃今困坤墾婚恨懇昏昆根梱混痕紺艮魂些佐叉唆嵯左差査沙瑳砂詐鎖裟坐座挫債催再最哉塞妻宰彩才採栽歳済災采犀砕砦祭斎細菜裁載際剤在材罪財冴坂阪堺榊肴咲崎埼碕鷺作削咋搾昨朔柵窄策索錯桜鮭笹匙冊刷"
+  ],
+  [
+    "bba1",
+    "察拶撮擦札殺薩雑皐鯖捌錆鮫皿晒三傘参山惨撒散桟燦珊産算纂蚕讃賛酸餐斬暫残仕仔伺使刺司史嗣四士始姉姿子屍市師志思指支孜斯施旨枝止死氏獅祉私糸紙紫肢脂至視詞詩試誌諮資賜雌飼歯事似侍児字寺慈持時"
+  ],
+  [
+    "bca1",
+    "次滋治爾璽痔磁示而耳自蒔辞汐鹿式識鴫竺軸宍雫七叱執失嫉室悉湿漆疾質実蔀篠偲柴芝屡蕊縞舎写射捨赦斜煮社紗者謝車遮蛇邪借勺尺杓灼爵酌釈錫若寂弱惹主取守手朱殊狩珠種腫趣酒首儒受呪寿授樹綬需囚収周"
+  ],
+  [
+    "bda1",
+    "宗就州修愁拾洲秀秋終繍習臭舟蒐衆襲讐蹴輯週酋酬集醜什住充十従戎柔汁渋獣縦重銃叔夙宿淑祝縮粛塾熟出術述俊峻春瞬竣舜駿准循旬楯殉淳準潤盾純巡遵醇順処初所暑曙渚庶緒署書薯藷諸助叙女序徐恕鋤除傷償"
+  ],
+  [
+    "bea1",
+    "勝匠升召哨商唱嘗奨妾娼宵将小少尚庄床廠彰承抄招掌捷昇昌昭晶松梢樟樵沼消渉湘焼焦照症省硝礁祥称章笑粧紹肖菖蒋蕉衝裳訟証詔詳象賞醤鉦鍾鐘障鞘上丈丞乗冗剰城場壌嬢常情擾条杖浄状畳穣蒸譲醸錠嘱埴飾"
+  ],
+  [
+    "bfa1",
+    "拭植殖燭織職色触食蝕辱尻伸信侵唇娠寝審心慎振新晋森榛浸深申疹真神秦紳臣芯薪親診身辛進針震人仁刃塵壬尋甚尽腎訊迅陣靭笥諏須酢図厨逗吹垂帥推水炊睡粋翠衰遂酔錐錘随瑞髄崇嵩数枢趨雛据杉椙菅頗雀裾"
+  ],
+  [
+    "c0a1",
+    "澄摺寸世瀬畝是凄制勢姓征性成政整星晴棲栖正清牲生盛精聖声製西誠誓請逝醒青静斉税脆隻席惜戚斥昔析石積籍績脊責赤跡蹟碩切拙接摂折設窃節説雪絶舌蝉仙先千占宣専尖川戦扇撰栓栴泉浅洗染潜煎煽旋穿箭線"
+  ],
+  [
+    "c1a1",
+    "繊羨腺舛船薦詮賎践選遷銭銑閃鮮前善漸然全禅繕膳糎噌塑岨措曾曽楚狙疏疎礎祖租粗素組蘇訴阻遡鼠僧創双叢倉喪壮奏爽宋層匝惣想捜掃挿掻操早曹巣槍槽漕燥争痩相窓糟総綜聡草荘葬蒼藻装走送遭鎗霜騒像増憎"
+  ],
+  [
+    "c2a1",
+    "臓蔵贈造促側則即息捉束測足速俗属賊族続卒袖其揃存孫尊損村遜他多太汰詑唾堕妥惰打柁舵楕陀駄騨体堆対耐岱帯待怠態戴替泰滞胎腿苔袋貸退逮隊黛鯛代台大第醍題鷹滝瀧卓啄宅托択拓沢濯琢託鐸濁諾茸凧蛸只"
+  ],
+  [
+    "c3a1",
+    "叩但達辰奪脱巽竪辿棚谷狸鱈樽誰丹単嘆坦担探旦歎淡湛炭短端箪綻耽胆蛋誕鍛団壇弾断暖檀段男談値知地弛恥智池痴稚置致蜘遅馳築畜竹筑蓄逐秩窒茶嫡着中仲宙忠抽昼柱注虫衷註酎鋳駐樗瀦猪苧著貯丁兆凋喋寵"
+  ],
+  [
+    "c4a1",
+    "帖帳庁弔張彫徴懲挑暢朝潮牒町眺聴脹腸蝶調諜超跳銚長頂鳥勅捗直朕沈珍賃鎮陳津墜椎槌追鎚痛通塚栂掴槻佃漬柘辻蔦綴鍔椿潰坪壷嬬紬爪吊釣鶴亭低停偵剃貞呈堤定帝底庭廷弟悌抵挺提梯汀碇禎程締艇訂諦蹄逓"
+  ],
+  [
+    "c5a1",
+    "邸鄭釘鼎泥摘擢敵滴的笛適鏑溺哲徹撤轍迭鉄典填天展店添纏甜貼転顛点伝殿澱田電兎吐堵塗妬屠徒斗杜渡登菟賭途都鍍砥砺努度土奴怒倒党冬凍刀唐塔塘套宕島嶋悼投搭東桃梼棟盗淘湯涛灯燈当痘祷等答筒糖統到"
+  ],
+  [
+    "c6a1",
+    "董蕩藤討謄豆踏逃透鐙陶頭騰闘働動同堂導憧撞洞瞳童胴萄道銅峠鴇匿得徳涜特督禿篤毒独読栃橡凸突椴届鳶苫寅酉瀞噸屯惇敦沌豚遁頓呑曇鈍奈那内乍凪薙謎灘捺鍋楢馴縄畷南楠軟難汝二尼弐迩匂賑肉虹廿日乳入"
+  ],
+  [
+    "c7a1",
+    "如尿韮任妊忍認濡禰祢寧葱猫熱年念捻撚燃粘乃廼之埜嚢悩濃納能脳膿農覗蚤巴把播覇杷波派琶破婆罵芭馬俳廃拝排敗杯盃牌背肺輩配倍培媒梅楳煤狽買売賠陪這蝿秤矧萩伯剥博拍柏泊白箔粕舶薄迫曝漠爆縛莫駁麦"
+  ],
+  [
+    "c8a1",
+    "函箱硲箸肇筈櫨幡肌畑畠八鉢溌発醗髪伐罰抜筏閥鳩噺塙蛤隼伴判半反叛帆搬斑板氾汎版犯班畔繁般藩販範釆煩頒飯挽晩番盤磐蕃蛮匪卑否妃庇彼悲扉批披斐比泌疲皮碑秘緋罷肥被誹費避非飛樋簸備尾微枇毘琵眉美"
+  ],
+  [
+    "c9a1",
+    "鼻柊稗匹疋髭彦膝菱肘弼必畢筆逼桧姫媛紐百謬俵彪標氷漂瓢票表評豹廟描病秒苗錨鋲蒜蛭鰭品彬斌浜瀕貧賓頻敏瓶不付埠夫婦富冨布府怖扶敷斧普浮父符腐膚芙譜負賦赴阜附侮撫武舞葡蕪部封楓風葺蕗伏副復幅服"
+  ],
+  [
+    "caa1",
+    "福腹複覆淵弗払沸仏物鮒分吻噴墳憤扮焚奮粉糞紛雰文聞丙併兵塀幣平弊柄並蔽閉陛米頁僻壁癖碧別瞥蔑箆偏変片篇編辺返遍便勉娩弁鞭保舗鋪圃捕歩甫補輔穂募墓慕戊暮母簿菩倣俸包呆報奉宝峰峯崩庖抱捧放方朋"
+  ],
+  [
+    "cba1",
+    "法泡烹砲縫胞芳萌蓬蜂褒訪豊邦鋒飽鳳鵬乏亡傍剖坊妨帽忘忙房暴望某棒冒紡肪膨謀貌貿鉾防吠頬北僕卜墨撲朴牧睦穆釦勃没殆堀幌奔本翻凡盆摩磨魔麻埋妹昧枚毎哩槙幕膜枕鮪柾鱒桝亦俣又抹末沫迄侭繭麿万慢満"
+  ],
+  [
+    "cca1",
+    "漫蔓味未魅巳箕岬密蜜湊蓑稔脈妙粍民眠務夢無牟矛霧鵡椋婿娘冥名命明盟迷銘鳴姪牝滅免棉綿緬面麺摸模茂妄孟毛猛盲網耗蒙儲木黙目杢勿餅尤戻籾貰問悶紋門匁也冶夜爺耶野弥矢厄役約薬訳躍靖柳薮鑓愉愈油癒"
+  ],
+  [
+    "cda1",
+    "諭輸唯佑優勇友宥幽悠憂揖有柚湧涌猶猷由祐裕誘遊邑郵雄融夕予余与誉輿預傭幼妖容庸揚揺擁曜楊様洋溶熔用窯羊耀葉蓉要謡踊遥陽養慾抑欲沃浴翌翼淀羅螺裸来莱頼雷洛絡落酪乱卵嵐欄濫藍蘭覧利吏履李梨理璃"
+  ],
+  [
+    "cea1",
+    "痢裏裡里離陸律率立葎掠略劉流溜琉留硫粒隆竜龍侶慮旅虜了亮僚両凌寮料梁涼猟療瞭稜糧良諒遼量陵領力緑倫厘林淋燐琳臨輪隣鱗麟瑠塁涙累類令伶例冷励嶺怜玲礼苓鈴隷零霊麗齢暦歴列劣烈裂廉恋憐漣煉簾練聯"
+  ],
+  [
+    "cfa1",
+    "蓮連錬呂魯櫓炉賂路露労婁廊弄朗楼榔浪漏牢狼篭老聾蝋郎六麓禄肋録論倭和話歪賄脇惑枠鷲亙亘鰐詫藁蕨椀湾碗腕"
+  ],
+  [
+    "d0a1",
+    "弌丐丕个丱丶丼丿乂乖乘亂亅豫亊舒弍于亞亟亠亢亰亳亶从仍仄仆仂仗仞仭仟价伉佚估佛佝佗佇佶侈侏侘佻佩佰侑佯來侖儘俔俟俎俘俛俑俚俐俤俥倚倨倔倪倥倅伜俶倡倩倬俾俯們倆偃假會偕偐偈做偖偬偸傀傚傅傴傲"
+  ],
+  [
+    "d1a1",
+    "僉僊傳僂僖僞僥僭僣僮價僵儉儁儂儖儕儔儚儡儺儷儼儻儿兀兒兌兔兢竸兩兪兮冀冂囘册冉冏冑冓冕冖冤冦冢冩冪冫决冱冲冰况冽凅凉凛几處凩凭凰凵凾刄刋刔刎刧刪刮刳刹剏剄剋剌剞剔剪剴剩剳剿剽劍劔劒剱劈劑辨"
+  ],
+  [
+    "d2a1",
+    "辧劬劭劼劵勁勍勗勞勣勦飭勠勳勵勸勹匆匈甸匍匐匏匕匚匣匯匱匳匸區卆卅丗卉卍凖卞卩卮夘卻卷厂厖厠厦厥厮厰厶參簒雙叟曼燮叮叨叭叺吁吽呀听吭吼吮吶吩吝呎咏呵咎呟呱呷呰咒呻咀呶咄咐咆哇咢咸咥咬哄哈咨"
+  ],
+  [
+    "d3a1",
+    "咫哂咤咾咼哘哥哦唏唔哽哮哭哺哢唹啀啣啌售啜啅啖啗唸唳啝喙喀咯喊喟啻啾喘喞單啼喃喩喇喨嗚嗅嗟嗄嗜嗤嗔嘔嗷嘖嗾嗽嘛嗹噎噐營嘴嘶嘲嘸噫噤嘯噬噪嚆嚀嚊嚠嚔嚏嚥嚮嚶嚴囂嚼囁囃囀囈囎囑囓囗囮囹圀囿圄圉"
+  ],
+  [
+    "d4a1",
+    "圈國圍圓團圖嗇圜圦圷圸坎圻址坏坩埀垈坡坿垉垓垠垳垤垪垰埃埆埔埒埓堊埖埣堋堙堝塲堡塢塋塰毀塒堽塹墅墹墟墫墺壞墻墸墮壅壓壑壗壙壘壥壜壤壟壯壺壹壻壼壽夂夊夐夛梦夥夬夭夲夸夾竒奕奐奎奚奘奢奠奧奬奩"
+  ],
+  [
+    "d5a1",
+    "奸妁妝佞侫妣妲姆姨姜妍姙姚娥娟娑娜娉娚婀婬婉娵娶婢婪媚媼媾嫋嫂媽嫣嫗嫦嫩嫖嫺嫻嬌嬋嬖嬲嫐嬪嬶嬾孃孅孀孑孕孚孛孥孩孰孳孵學斈孺宀它宦宸寃寇寉寔寐寤實寢寞寥寫寰寶寳尅將專對尓尠尢尨尸尹屁屆屎屓"
+  ],
+  [
+    "d6a1",
+    "屐屏孱屬屮乢屶屹岌岑岔妛岫岻岶岼岷峅岾峇峙峩峽峺峭嶌峪崋崕崗嵜崟崛崑崔崢崚崙崘嵌嵒嵎嵋嵬嵳嵶嶇嶄嶂嶢嶝嶬嶮嶽嶐嶷嶼巉巍巓巒巖巛巫已巵帋帚帙帑帛帶帷幄幃幀幎幗幔幟幢幤幇幵并幺麼广庠廁廂廈廐廏"
+  ],
+  [
+    "d7a1",
+    "廖廣廝廚廛廢廡廨廩廬廱廳廰廴廸廾弃弉彝彜弋弑弖弩弭弸彁彈彌彎弯彑彖彗彙彡彭彳彷徃徂彿徊很徑徇從徙徘徠徨徭徼忖忻忤忸忱忝悳忿怡恠怙怐怩怎怱怛怕怫怦怏怺恚恁恪恷恟恊恆恍恣恃恤恂恬恫恙悁悍惧悃悚"
+  ],
+  [
+    "d8a1",
+    "悄悛悖悗悒悧悋惡悸惠惓悴忰悽惆悵惘慍愕愆惶惷愀惴惺愃愡惻惱愍愎慇愾愨愧慊愿愼愬愴愽慂慄慳慷慘慙慚慫慴慯慥慱慟慝慓慵憙憖憇憬憔憚憊憑憫憮懌懊應懷懈懃懆憺懋罹懍懦懣懶懺懴懿懽懼懾戀戈戉戍戌戔戛"
+  ],
+  [
+    "d9a1",
+    "戞戡截戮戰戲戳扁扎扞扣扛扠扨扼抂抉找抒抓抖拔抃抔拗拑抻拏拿拆擔拈拜拌拊拂拇抛拉挌拮拱挧挂挈拯拵捐挾捍搜捏掖掎掀掫捶掣掏掉掟掵捫捩掾揩揀揆揣揉插揶揄搖搴搆搓搦搶攝搗搨搏摧摯摶摎攪撕撓撥撩撈撼"
+  ],
+  [
+    "daa1",
+    "據擒擅擇撻擘擂擱擧舉擠擡抬擣擯攬擶擴擲擺攀擽攘攜攅攤攣攫攴攵攷收攸畋效敖敕敍敘敞敝敲數斂斃變斛斟斫斷旃旆旁旄旌旒旛旙无旡旱杲昊昃旻杳昵昶昴昜晏晄晉晁晞晝晤晧晨晟晢晰暃暈暎暉暄暘暝曁暹曉暾暼"
+  ],
+  [
+    "dba1",
+    "曄暸曖曚曠昿曦曩曰曵曷朏朖朞朦朧霸朮朿朶杁朸朷杆杞杠杙杣杤枉杰枩杼杪枌枋枦枡枅枷柯枴柬枳柩枸柤柞柝柢柮枹柎柆柧檜栞框栩桀桍栲桎梳栫桙档桷桿梟梏梭梔條梛梃檮梹桴梵梠梺椏梍桾椁棊椈棘椢椦棡椌棍"
+  ],
+  [
+    "dca1",
+    "棔棧棕椶椒椄棗棣椥棹棠棯椨椪椚椣椡棆楹楷楜楸楫楔楾楮椹楴椽楙椰楡楞楝榁楪榲榮槐榿槁槓榾槎寨槊槝榻槃榧樮榑榠榜榕榴槞槨樂樛槿權槹槲槧樅榱樞槭樔槫樊樒櫁樣樓橄樌橲樶橸橇橢橙橦橈樸樢檐檍檠檄檢檣"
+  ],
+  [
+    "dda1",
+    "檗蘗檻櫃櫂檸檳檬櫞櫑櫟檪櫚櫪櫻欅蘖櫺欒欖鬱欟欸欷盜欹飮歇歃歉歐歙歔歛歟歡歸歹歿殀殄殃殍殘殕殞殤殪殫殯殲殱殳殷殼毆毋毓毟毬毫毳毯麾氈氓气氛氤氣汞汕汢汪沂沍沚沁沛汾汨汳沒沐泄泱泓沽泗泅泝沮沱沾"
+  ],
+  [
+    "dea1",
+    "沺泛泯泙泪洟衍洶洫洽洸洙洵洳洒洌浣涓浤浚浹浙涎涕濤涅淹渕渊涵淇淦涸淆淬淞淌淨淒淅淺淙淤淕淪淮渭湮渮渙湲湟渾渣湫渫湶湍渟湃渺湎渤滿渝游溂溪溘滉溷滓溽溯滄溲滔滕溏溥滂溟潁漑灌滬滸滾漿滲漱滯漲滌"
+  ],
+  [
+    "dfa1",
+    "漾漓滷澆潺潸澁澀潯潛濳潭澂潼潘澎澑濂潦澳澣澡澤澹濆澪濟濕濬濔濘濱濮濛瀉瀋濺瀑瀁瀏濾瀛瀚潴瀝瀘瀟瀰瀾瀲灑灣炙炒炯烱炬炸炳炮烟烋烝烙焉烽焜焙煥煕熈煦煢煌煖煬熏燻熄熕熨熬燗熹熾燒燉燔燎燠燬燧燵燼"
+  ],
+  [
+    "e0a1",
+    "燹燿爍爐爛爨爭爬爰爲爻爼爿牀牆牋牘牴牾犂犁犇犒犖犢犧犹犲狃狆狄狎狒狢狠狡狹狷倏猗猊猜猖猝猴猯猩猥猾獎獏默獗獪獨獰獸獵獻獺珈玳珎玻珀珥珮珞璢琅瑯琥珸琲琺瑕琿瑟瑙瑁瑜瑩瑰瑣瑪瑶瑾璋璞璧瓊瓏瓔珱"
+  ],
+  [
+    "e1a1",
+    "瓠瓣瓧瓩瓮瓲瓰瓱瓸瓷甄甃甅甌甎甍甕甓甞甦甬甼畄畍畊畉畛畆畚畩畤畧畫畭畸當疆疇畴疊疉疂疔疚疝疥疣痂疳痃疵疽疸疼疱痍痊痒痙痣痞痾痿痼瘁痰痺痲痳瘋瘍瘉瘟瘧瘠瘡瘢瘤瘴瘰瘻癇癈癆癜癘癡癢癨癩癪癧癬癰"
+  ],
+  [
+    "e2a1",
+    "癲癶癸發皀皃皈皋皎皖皓皙皚皰皴皸皹皺盂盍盖盒盞盡盥盧盪蘯盻眈眇眄眩眤眞眥眦眛眷眸睇睚睨睫睛睥睿睾睹瞎瞋瞑瞠瞞瞰瞶瞹瞿瞼瞽瞻矇矍矗矚矜矣矮矼砌砒礦砠礪硅碎硴碆硼碚碌碣碵碪碯磑磆磋磔碾碼磅磊磬"
+  ],
+  [
+    "e3a1",
+    "磧磚磽磴礇礒礑礙礬礫祀祠祗祟祚祕祓祺祿禊禝禧齋禪禮禳禹禺秉秕秧秬秡秣稈稍稘稙稠稟禀稱稻稾稷穃穗穉穡穢穩龝穰穹穽窈窗窕窘窖窩竈窰窶竅竄窿邃竇竊竍竏竕竓站竚竝竡竢竦竭竰笂笏笊笆笳笘笙笞笵笨笶筐"
+  ],
+  [
+    "e4a1",
+    "筺笄筍笋筌筅筵筥筴筧筰筱筬筮箝箘箟箍箜箚箋箒箏筝箙篋篁篌篏箴篆篝篩簑簔篦篥籠簀簇簓篳篷簗簍篶簣簧簪簟簷簫簽籌籃籔籏籀籐籘籟籤籖籥籬籵粃粐粤粭粢粫粡粨粳粲粱粮粹粽糀糅糂糘糒糜糢鬻糯糲糴糶糺紆"
+  ],
+  [
+    "e5a1",
+    "紂紜紕紊絅絋紮紲紿紵絆絳絖絎絲絨絮絏絣經綉絛綏絽綛綺綮綣綵緇綽綫總綢綯緜綸綟綰緘緝緤緞緻緲緡縅縊縣縡縒縱縟縉縋縢繆繦縻縵縹繃縷縲縺繧繝繖繞繙繚繹繪繩繼繻纃緕繽辮繿纈纉續纒纐纓纔纖纎纛纜缸缺"
+  ],
+  [
+    "e6a1",
+    "罅罌罍罎罐网罕罔罘罟罠罨罩罧罸羂羆羃羈羇羌羔羞羝羚羣羯羲羹羮羶羸譱翅翆翊翕翔翡翦翩翳翹飜耆耄耋耒耘耙耜耡耨耿耻聊聆聒聘聚聟聢聨聳聲聰聶聹聽聿肄肆肅肛肓肚肭冐肬胛胥胙胝胄胚胖脉胯胱脛脩脣脯腋"
+  ],
+  [
+    "e7a1",
+    "隋腆脾腓腑胼腱腮腥腦腴膃膈膊膀膂膠膕膤膣腟膓膩膰膵膾膸膽臀臂膺臉臍臑臙臘臈臚臟臠臧臺臻臾舁舂舅與舊舍舐舖舩舫舸舳艀艙艘艝艚艟艤艢艨艪艫舮艱艷艸艾芍芒芫芟芻芬苡苣苟苒苴苳苺莓范苻苹苞茆苜茉苙"
+  ],
+  [
+    "e8a1",
+    "茵茴茖茲茱荀茹荐荅茯茫茗茘莅莚莪莟莢莖茣莎莇莊荼莵荳荵莠莉莨菴萓菫菎菽萃菘萋菁菷萇菠菲萍萢萠莽萸蔆菻葭萪萼蕚蒄葷葫蒭葮蒂葩葆萬葯葹萵蓊葢蒹蒿蒟蓙蓍蒻蓚蓐蓁蓆蓖蒡蔡蓿蓴蔗蔘蔬蔟蔕蔔蓼蕀蕣蕘蕈"
+  ],
+  [
+    "e9a1",
+    "蕁蘂蕋蕕薀薤薈薑薊薨蕭薔薛藪薇薜蕷蕾薐藉薺藏薹藐藕藝藥藜藹蘊蘓蘋藾藺蘆蘢蘚蘰蘿虍乕虔號虧虱蚓蚣蚩蚪蚋蚌蚶蚯蛄蛆蚰蛉蠣蚫蛔蛞蛩蛬蛟蛛蛯蜒蜆蜈蜀蜃蛻蜑蜉蜍蛹蜊蜴蜿蜷蜻蜥蜩蜚蝠蝟蝸蝌蝎蝴蝗蝨蝮蝙"
+  ],
+  [
+    "eaa1",
+    "蝓蝣蝪蠅螢螟螂螯蟋螽蟀蟐雖螫蟄螳蟇蟆螻蟯蟲蟠蠏蠍蟾蟶蟷蠎蟒蠑蠖蠕蠢蠡蠱蠶蠹蠧蠻衄衂衒衙衞衢衫袁衾袞衵衽袵衲袂袗袒袮袙袢袍袤袰袿袱裃裄裔裘裙裝裹褂裼裴裨裲褄褌褊褓襃褞褥褪褫襁襄褻褶褸襌褝襠襞"
+  ],
+  [
+    "eba1",
+    "襦襤襭襪襯襴襷襾覃覈覊覓覘覡覩覦覬覯覲覺覽覿觀觚觜觝觧觴觸訃訖訐訌訛訝訥訶詁詛詒詆詈詼詭詬詢誅誂誄誨誡誑誥誦誚誣諄諍諂諚諫諳諧諤諱謔諠諢諷諞諛謌謇謚諡謖謐謗謠謳鞫謦謫謾謨譁譌譏譎證譖譛譚譫"
+  ],
+  [
+    "eca1",
+    "譟譬譯譴譽讀讌讎讒讓讖讙讚谺豁谿豈豌豎豐豕豢豬豸豺貂貉貅貊貍貎貔豼貘戝貭貪貽貲貳貮貶賈賁賤賣賚賽賺賻贄贅贊贇贏贍贐齎贓賍贔贖赧赭赱赳趁趙跂趾趺跏跚跖跌跛跋跪跫跟跣跼踈踉跿踝踞踐踟蹂踵踰踴蹊"
+  ],
+  [
+    "eda1",
+    "蹇蹉蹌蹐蹈蹙蹤蹠踪蹣蹕蹶蹲蹼躁躇躅躄躋躊躓躑躔躙躪躡躬躰軆躱躾軅軈軋軛軣軼軻軫軾輊輅輕輒輙輓輜輟輛輌輦輳輻輹轅轂輾轌轉轆轎轗轜轢轣轤辜辟辣辭辯辷迚迥迢迪迯邇迴逅迹迺逑逕逡逍逞逖逋逧逶逵逹迸"
+  ],
+  [
+    "eea1",
+    "遏遐遑遒逎遉逾遖遘遞遨遯遶隨遲邂遽邁邀邊邉邏邨邯邱邵郢郤扈郛鄂鄒鄙鄲鄰酊酖酘酣酥酩酳酲醋醉醂醢醫醯醪醵醴醺釀釁釉釋釐釖釟釡釛釼釵釶鈞釿鈔鈬鈕鈑鉞鉗鉅鉉鉤鉈銕鈿鉋鉐銜銖銓銛鉚鋏銹銷鋩錏鋺鍄錮"
+  ],
+  [
+    "efa1",
+    "錙錢錚錣錺錵錻鍜鍠鍼鍮鍖鎰鎬鎭鎔鎹鏖鏗鏨鏥鏘鏃鏝鏐鏈鏤鐚鐔鐓鐃鐇鐐鐶鐫鐵鐡鐺鑁鑒鑄鑛鑠鑢鑞鑪鈩鑰鑵鑷鑽鑚鑼鑾钁鑿閂閇閊閔閖閘閙閠閨閧閭閼閻閹閾闊濶闃闍闌闕闔闖關闡闥闢阡阨阮阯陂陌陏陋陷陜陞"
+  ],
+  [
+    "f0a1",
+    "陝陟陦陲陬隍隘隕隗險隧隱隲隰隴隶隸隹雎雋雉雍襍雜霍雕雹霄霆霈霓霎霑霏霖霙霤霪霰霹霽霾靄靆靈靂靉靜靠靤靦靨勒靫靱靹鞅靼鞁靺鞆鞋鞏鞐鞜鞨鞦鞣鞳鞴韃韆韈韋韜韭齏韲竟韶韵頏頌頸頤頡頷頽顆顏顋顫顯顰"
+  ],
+  [
+    "f1a1",
+    "顱顴顳颪颯颱颶飄飃飆飩飫餃餉餒餔餘餡餝餞餤餠餬餮餽餾饂饉饅饐饋饑饒饌饕馗馘馥馭馮馼駟駛駝駘駑駭駮駱駲駻駸騁騏騅駢騙騫騷驅驂驀驃騾驕驍驛驗驟驢驥驤驩驫驪骭骰骼髀髏髑髓體髞髟髢髣髦髯髫髮髴髱髷"
+  ],
+  [
+    "f2a1",
+    "髻鬆鬘鬚鬟鬢鬣鬥鬧鬨鬩鬪鬮鬯鬲魄魃魏魍魎魑魘魴鮓鮃鮑鮖鮗鮟鮠鮨鮴鯀鯊鮹鯆鯏鯑鯒鯣鯢鯤鯔鯡鰺鯲鯱鯰鰕鰔鰉鰓鰌鰆鰈鰒鰊鰄鰮鰛鰥鰤鰡鰰鱇鰲鱆鰾鱚鱠鱧鱶鱸鳧鳬鳰鴉鴈鳫鴃鴆鴪鴦鶯鴣鴟鵄鴕鴒鵁鴿鴾鵆鵈"
+  ],
+  [
+    "f3a1",
+    "鵝鵞鵤鵑鵐鵙鵲鶉鶇鶫鵯鵺鶚鶤鶩鶲鷄鷁鶻鶸鶺鷆鷏鷂鷙鷓鷸鷦鷭鷯鷽鸚鸛鸞鹵鹹鹽麁麈麋麌麒麕麑麝麥麩麸麪麭靡黌黎黏黐黔黜點黝黠黥黨黯黴黶黷黹黻黼黽鼇鼈皷鼕鼡鼬鼾齊齒齔齣齟齠齡齦齧齬齪齷齲齶龕龜龠"
+  ],
+  [
+    "f4a1",
+    "堯槇遙瑤凜熙"
+  ],
+  [
+    "f9a1",
+    "纊褜鍈銈蓜俉炻昱棈鋹曻彅丨仡仼伀伃伹佖侒侊侚侔俍偀倢俿倞偆偰偂傔僴僘兊兤冝冾凬刕劜劦勀勛匀匇匤卲厓厲叝﨎咜咊咩哿喆坙坥垬埈埇﨏塚增墲夋奓奛奝奣妤妺孖寀甯寘寬尞岦岺峵崧嵓﨑嵂嵭嶸嶹巐弡弴彧德"
+  ],
+  [
+    "faa1",
+    "忞恝悅悊惞惕愠惲愑愷愰憘戓抦揵摠撝擎敎昀昕昻昉昮昞昤晥晗晙晴晳暙暠暲暿曺朎朗杦枻桒柀栁桄棏﨓楨﨔榘槢樰橫橆橳橾櫢櫤毖氿汜沆汯泚洄涇浯涖涬淏淸淲淼渹湜渧渼溿澈澵濵瀅瀇瀨炅炫焏焄煜煆煇凞燁燾犱"
+  ],
+  [
+    "fba1",
+    "犾猤猪獷玽珉珖珣珒琇珵琦琪琩琮瑢璉璟甁畯皂皜皞皛皦益睆劯砡硎硤硺礰礼神祥禔福禛竑竧靖竫箞精絈絜綷綠緖繒罇羡羽茁荢荿菇菶葈蒴蕓蕙蕫﨟薰蘒﨡蠇裵訒訷詹誧誾諟諸諶譓譿賰賴贒赶﨣軏﨤逸遧郞都鄕鄧釚"
+  ],
+  [
+    "fca1",
+    "釗釞釭釮釤釥鈆鈐鈊鈺鉀鈼鉎鉙鉑鈹鉧銧鉷鉸鋧鋗鋙鋐﨧鋕鋠鋓錥錡鋻﨨錞鋿錝錂鍰鍗鎤鏆鏞鏸鐱鑅鑈閒隆﨩隝隯霳霻靃靍靏靑靕顗顥飯飼餧館馞驎髙髜魵魲鮏鮱鮻鰀鵰鵫鶴鸙黑"
+  ],
+  [
+    "fcf1",
+    "ⅰ",
+    9,
+    "￢￤＇＂"
+  ],
+  [
+    "8fa2af",
+    "˘ˇ¸˙˝¯˛˚～΄΅"
+  ],
+  [
+    "8fa2c2",
+    "¡¦¿"
+  ],
+  [
+    "8fa2eb",
+    "ºª©®™¤№"
+  ],
+  [
+    "8fa6e1",
+    "ΆΈΉΊΪ"
+  ],
+  [
+    "8fa6e7",
+    "Ό"
+  ],
+  [
+    "8fa6e9",
+    "ΎΫ"
+  ],
+  [
+    "8fa6ec",
+    "Ώ"
+  ],
+  [
+    "8fa6f1",
+    "άέήίϊΐόςύϋΰώ"
+  ],
+  [
+    "8fa7c2",
+    "Ђ",
+    10,
+    "ЎЏ"
+  ],
+  [
+    "8fa7f2",
+    "ђ",
+    10,
+    "ўџ"
+  ],
+  [
+    "8fa9a1",
+    "ÆĐ"
+  ],
+  [
+    "8fa9a4",
+    "Ħ"
+  ],
+  [
+    "8fa9a6",
+    "Ĳ"
+  ],
+  [
+    "8fa9a8",
+    "ŁĿ"
+  ],
+  [
+    "8fa9ab",
+    "ŊØŒ"
+  ],
+  [
+    "8fa9af",
+    "ŦÞ"
+  ],
+  [
+    "8fa9c1",
+    "æđðħıĳĸłŀŉŋøœßŧþ"
+  ],
+  [
+    "8faaa1",
+    "ÁÀÄÂĂǍĀĄÅÃĆĈČÇĊĎÉÈËÊĚĖĒĘ"
+  ],
+  [
+    "8faaba",
+    "ĜĞĢĠĤÍÌÏÎǏİĪĮĨĴĶĹĽĻŃŇŅÑÓÒÖÔǑŐŌÕŔŘŖŚŜŠŞŤŢÚÙÜÛŬǓŰŪŲŮŨǗǛǙǕŴÝŸŶŹŽŻ"
+  ],
+  [
+    "8faba1",
+    "áàäâăǎāąåãćĉčçċďéèëêěėēęǵĝğ"
+  ],
+  [
+    "8fabbd",
+    "ġĥíìïîǐ"
+  ],
+  [
+    "8fabc5",
+    "īįĩĵķĺľļńňņñóòöôǒőōõŕřŗśŝšşťţúùüûŭǔűūųůũǘǜǚǖŵýÿŷźžż"
+  ],
+  [
+    "8fb0a1",
+    "丂丄丅丌丒丟丣两丨丫丮丯丰丵乀乁乄乇乑乚乜乣乨乩乴乵乹乿亍亖亗亝亯亹仃仐仚仛仠仡仢仨仯仱仳仵份仾仿伀伂伃伈伋伌伒伕伖众伙伮伱你伳伵伷伹伻伾佀佂佈佉佋佌佒佔佖佘佟佣佪佬佮佱佷佸佹佺佽佾侁侂侄"
+  ],
+  [
+    "8fb1a1",
+    "侅侉侊侌侎侐侒侓侔侗侙侚侞侟侲侷侹侻侼侽侾俀俁俅俆俈俉俋俌俍俏俒俜俠俢俰俲俼俽俿倀倁倄倇倊倌倎倐倓倗倘倛倜倝倞倢倧倮倰倲倳倵偀偁偂偅偆偊偌偎偑偒偓偗偙偟偠偢偣偦偧偪偭偰偱倻傁傃傄傆傊傎傏傐"
+  ],
+  [
+    "8fb2a1",
+    "傒傓傔傖傛傜傞",
+    4,
+    "傪傯傰傹傺傽僀僃僄僇僌僎僐僓僔僘僜僝僟僢僤僦僨僩僯僱僶僺僾儃儆儇儈儋儌儍儎僲儐儗儙儛儜儝儞儣儧儨儬儭儯儱儳儴儵儸儹兂兊兏兓兕兗兘兟兤兦兾冃冄冋冎冘冝冡冣冭冸冺冼冾冿凂"
+  ],
+  [
+    "8fb3a1",
+    "凈减凑凒凓凕凘凞凢凥凮凲凳凴凷刁刂刅划刓刕刖刘刢刨刱刲刵刼剅剉剕剗剘剚剜剟剠剡剦剮剷剸剹劀劂劅劊劌劓劕劖劗劘劚劜劤劥劦劧劯劰劶劷劸劺劻劽勀勄勆勈勌勏勑勔勖勛勜勡勥勨勩勪勬勰勱勴勶勷匀匃匊匋"
+  ],
+  [
+    "8fb4a1",
+    "匌匑匓匘匛匜匞匟匥匧匨匩匫匬匭匰匲匵匼匽匾卂卌卋卙卛卡卣卥卬卭卲卹卾厃厇厈厎厓厔厙厝厡厤厪厫厯厲厴厵厷厸厺厽叀叅叏叒叓叕叚叝叞叠另叧叵吂吓吚吡吧吨吪启吱吴吵呃呄呇呍呏呞呢呤呦呧呩呫呭呮呴呿"
+  ],
+  [
+    "8fb5a1",
+    "咁咃咅咈咉咍咑咕咖咜咟咡咦咧咩咪咭咮咱咷咹咺咻咿哆哊响哎哠哪哬哯哶哼哾哿唀唁唅唈唉唌唍唎唕唪唫唲唵唶唻唼唽啁啇啉啊啍啐啑啘啚啛啞啠啡啤啦啿喁喂喆喈喎喏喑喒喓喔喗喣喤喭喲喿嗁嗃嗆嗉嗋嗌嗎嗑嗒"
+  ],
+  [
+    "8fb6a1",
+    "嗓嗗嗘嗛嗞嗢嗩嗶嗿嘅嘈嘊嘍",
+    5,
+    "嘙嘬嘰嘳嘵嘷嘹嘻嘼嘽嘿噀噁噃噄噆噉噋噍噏噔噞噠噡噢噣噦噩噭噯噱噲噵嚄嚅嚈嚋嚌嚕嚙嚚嚝嚞嚟嚦嚧嚨嚩嚫嚬嚭嚱嚳嚷嚾囅囉囊囋囏囐囌囍囙囜囝囟囡囤",
+    4,
+    "囱囫园"
+  ],
+  [
+    "8fb7a1",
+    "囶囷圁圂圇圊圌圑圕圚圛圝圠圢圣圤圥圩圪圬圮圯圳圴圽圾圿坅坆坌坍坒坢坥坧坨坫坭",
+    4,
+    "坳坴坵坷坹坺坻坼坾垁垃垌垔垗垙垚垜垝垞垟垡垕垧垨垩垬垸垽埇埈埌埏埕埝埞埤埦埧埩埭埰埵埶埸埽埾埿堃堄堈堉埡"
+  ],
+  [
+    "8fb8a1",
+    "堌堍堛堞堟堠堦堧堭堲堹堿塉塌塍塏塐塕塟塡塤塧塨塸塼塿墀墁墇墈墉墊墌墍墏墐墔墖墝墠墡墢墦墩墱墲壄墼壂壈壍壎壐壒壔壖壚壝壡壢壩壳夅夆夋夌夒夓夔虁夝夡夣夤夨夯夰夳夵夶夿奃奆奒奓奙奛奝奞奟奡奣奫奭"
+  ],
+  [
+    "8fb9a1",
+    "奯奲奵奶她奻奼妋妌妎妒妕妗妟妤妧妭妮妯妰妳妷妺妼姁姃姄姈姊姍姒姝姞姟姣姤姧姮姯姱姲姴姷娀娄娌娍娎娒娓娞娣娤娧娨娪娭娰婄婅婇婈婌婐婕婞婣婥婧婭婷婺婻婾媋媐媓媖媙媜媞媟媠媢媧媬媱媲媳媵媸媺媻媿"
+  ],
+  [
+    "8fbaa1",
+    "嫄嫆嫈嫏嫚嫜嫠嫥嫪嫮嫵嫶嫽嬀嬁嬈嬗嬴嬙嬛嬝嬡嬥嬭嬸孁孋孌孒孖孞孨孮孯孼孽孾孿宁宄宆宊宎宐宑宓宔宖宨宩宬宭宯宱宲宷宺宼寀寁寍寏寖",
+    4,
+    "寠寯寱寴寽尌尗尞尟尣尦尩尫尬尮尰尲尵尶屙屚屜屢屣屧屨屩"
+  ],
+  [
+    "8fbba1",
+    "屭屰屴屵屺屻屼屽岇岈岊岏岒岝岟岠岢岣岦岪岲岴岵岺峉峋峒峝峗峮峱峲峴崁崆崍崒崫崣崤崦崧崱崴崹崽崿嵂嵃嵆嵈嵕嵑嵙嵊嵟嵠嵡嵢嵤嵪嵭嵰嵹嵺嵾嵿嶁嶃嶈嶊嶒嶓嶔嶕嶙嶛嶟嶠嶧嶫嶰嶴嶸嶹巃巇巋巐巎巘巙巠巤"
+  ],
+  [
+    "8fbca1",
+    "巩巸巹帀帇帍帒帔帕帘帟帠帮帨帲帵帾幋幐幉幑幖幘幛幜幞幨幪",
+    4,
+    "幰庀庋庎庢庤庥庨庪庬庱庳庽庾庿廆廌廋廎廑廒廔廕廜廞廥廫异弆弇弈弎弙弜弝弡弢弣弤弨弫弬弮弰弴弶弻弽弿彀彄彅彇彍彐彔彘彛彠彣彤彧"
+  ],
+  [
+    "8fbda1",
+    "彯彲彴彵彸彺彽彾徉徍徏徖徜徝徢徧徫徤徬徯徰徱徸忄忇忈忉忋忐",
+    4,
+    "忞忡忢忨忩忪忬忭忮忯忲忳忶忺忼怇怊怍怓怔怗怘怚怟怤怭怳怵恀恇恈恉恌恑恔恖恗恝恡恧恱恾恿悂悆悈悊悎悑悓悕悘悝悞悢悤悥您悰悱悷"
+  ],
+  [
+    "8fbea1",
+    "悻悾惂惄惈惉惊惋惎惏惔惕惙惛惝惞惢惥惲惵惸惼惽愂愇愊愌愐",
+    4,
+    "愖愗愙愜愞愢愪愫愰愱愵愶愷愹慁慅慆慉慞慠慬慲慸慻慼慿憀憁憃憄憋憍憒憓憗憘憜憝憟憠憥憨憪憭憸憹憼懀懁懂懎懏懕懜懝懞懟懡懢懧懩懥"
+  ],
+  [
+    "8fbfa1",
+    "懬懭懯戁戃戄戇戓戕戜戠戢戣戧戩戫戹戽扂扃扄扆扌扐扑扒扔扖扚扜扤扭扯扳扺扽抍抎抏抐抦抨抳抶抷抺抾抿拄拎拕拖拚拪拲拴拼拽挃挄挊挋挍挐挓挖挘挩挪挭挵挶挹挼捁捂捃捄捆捊捋捎捒捓捔捘捛捥捦捬捭捱捴捵"
+  ],
+  [
+    "8fc0a1",
+    "捸捼捽捿掂掄掇掊掐掔掕掙掚掞掤掦掭掮掯掽揁揅揈揎揑揓揔揕揜揠揥揪揬揲揳揵揸揹搉搊搐搒搔搘搞搠搢搤搥搩搪搯搰搵搽搿摋摏摑摒摓摔摚摛摜摝摟摠摡摣摭摳摴摻摽撅撇撏撐撑撘撙撛撝撟撡撣撦撨撬撳撽撾撿"
+  ],
+  [
+    "8fc1a1",
+    "擄擉擊擋擌擎擐擑擕擗擤擥擩擪擭擰擵擷擻擿攁攄攈攉攊攏攓攔攖攙攛攞攟攢攦攩攮攱攺攼攽敃敇敉敐敒敔敟敠敧敫敺敽斁斅斊斒斕斘斝斠斣斦斮斲斳斴斿旂旈旉旎旐旔旖旘旟旰旲旴旵旹旾旿昀昄昈昉昍昑昒昕昖昝"
+  ],
+  [
+    "8fc2a1",
+    "昞昡昢昣昤昦昩昪昫昬昮昰昱昳昹昷晀晅晆晊晌晑晎晗晘晙晛晜晠晡曻晪晫晬晾晳晵晿晷晸晹晻暀晼暋暌暍暐暒暙暚暛暜暟暠暤暭暱暲暵暻暿曀曂曃曈曌曎曏曔曛曟曨曫曬曮曺朅朇朎朓朙朜朠朢朳朾杅杇杈杌杔杕杝"
+  ],
+  [
+    "8fc3a1",
+    "杦杬杮杴杶杻极构枎枏枑枓枖枘枙枛枰枱枲枵枻枼枽柹柀柂柃柅柈柉柒柗柙柜柡柦柰柲柶柷桒栔栙栝栟栨栧栬栭栯栰栱栳栻栿桄桅桊桌桕桗桘桛桫桮",
+    4,
+    "桵桹桺桻桼梂梄梆梈梖梘梚梜梡梣梥梩梪梮梲梻棅棈棌棏"
+  ],
+  [
+    "8fc4a1",
+    "棐棑棓棖棙棜棝棥棨棪棫棬棭棰棱棵棶棻棼棽椆椉椊椐椑椓椖椗椱椳椵椸椻楂楅楉楎楗楛楣楤楥楦楨楩楬楰楱楲楺楻楿榀榍榒榖榘榡榥榦榨榫榭榯榷榸榺榼槅槈槑槖槗槢槥槮槯槱槳槵槾樀樁樃樏樑樕樚樝樠樤樨樰樲"
+  ],
+  [
+    "8fc5a1",
+    "樴樷樻樾樿橅橆橉橊橎橐橑橒橕橖橛橤橧橪橱橳橾檁檃檆檇檉檋檑檛檝檞檟檥檫檯檰檱檴檽檾檿櫆櫉櫈櫌櫐櫔櫕櫖櫜櫝櫤櫧櫬櫰櫱櫲櫼櫽欂欃欆欇欉欏欐欑欗欛欞欤欨欫欬欯欵欶欻欿歆歊歍歒歖歘歝歠歧歫歮歰歵歽"
+  ],
+  [
+    "8fc6a1",
+    "歾殂殅殗殛殟殠殢殣殨殩殬殭殮殰殸殹殽殾毃毄毉毌毖毚毡毣毦毧毮毱毷毹毿氂氄氅氉氍氎氐氒氙氟氦氧氨氬氮氳氵氶氺氻氿汊汋汍汏汒汔汙汛汜汫汭汯汴汶汸汹汻沅沆沇沉沔沕沗沘沜沟沰沲沴泂泆泍泏泐泑泒泔泖"
+  ],
+  [
+    "8fc7a1",
+    "泚泜泠泧泩泫泬泮泲泴洄洇洊洎洏洑洓洚洦洧洨汧洮洯洱洹洼洿浗浞浟浡浥浧浯浰浼涂涇涑涒涔涖涗涘涪涬涴涷涹涽涿淄淈淊淎淏淖淛淝淟淠淢淥淩淯淰淴淶淼渀渄渞渢渧渲渶渹渻渼湄湅湈湉湋湏湑湒湓湔湗湜湝湞"
+  ],
+  [
+    "8fc8a1",
+    "湢湣湨湳湻湽溍溓溙溠溧溭溮溱溳溻溿滀滁滃滇滈滊滍滎滏滫滭滮滹滻滽漄漈漊漌漍漖漘漚漛漦漩漪漯漰漳漶漻漼漭潏潑潒潓潗潙潚潝潞潡潢潨潬潽潾澃澇澈澋澌澍澐澒澓澔澖澚澟澠澥澦澧澨澮澯澰澵澶澼濅濇濈濊"
+  ],
+  [
+    "8fc9a1",
+    "濚濞濨濩濰濵濹濼濽瀀瀅瀆瀇瀍瀗瀠瀣瀯瀴瀷瀹瀼灃灄灈灉灊灋灔灕灝灞灎灤灥灬灮灵灶灾炁炅炆炔",
+    4,
+    "炛炤炫炰炱炴炷烊烑烓烔烕烖烘烜烤烺焃",
+    4,
+    "焋焌焏焞焠焫焭焯焰焱焸煁煅煆煇煊煋煐煒煗煚煜煞煠"
+  ],
+  [
+    "8fcaa1",
+    "煨煹熀熅熇熌熒熚熛熠熢熯熰熲熳熺熿燀燁燄燋燌燓燖燙燚燜燸燾爀爇爈爉爓爗爚爝爟爤爫爯爴爸爹牁牂牃牅牎牏牐牓牕牖牚牜牞牠牣牨牫牮牯牱牷牸牻牼牿犄犉犍犎犓犛犨犭犮犱犴犾狁狇狉狌狕狖狘狟狥狳狴狺狻"
+  ],
+  [
+    "8fcba1",
+    "狾猂猄猅猇猋猍猒猓猘猙猞猢猤猧猨猬猱猲猵猺猻猽獃獍獐獒獖獘獝獞獟獠獦獧獩獫獬獮獯獱獷獹獼玀玁玃玅玆玎玐玓玕玗玘玜玞玟玠玢玥玦玪玫玭玵玷玹玼玽玿珅珆珉珋珌珏珒珓珖珙珝珡珣珦珧珩珴珵珷珹珺珻珽"
+  ],
+  [
+    "8fcca1",
+    "珿琀琁琄琇琊琑琚琛琤琦琨",
+    9,
+    "琹瑀瑃瑄瑆瑇瑋瑍瑑瑒瑗瑝瑢瑦瑧瑨瑫瑭瑮瑱瑲璀璁璅璆璇璉璏璐璑璒璘璙璚璜璟璠璡璣璦璨璩璪璫璮璯璱璲璵璹璻璿瓈瓉瓌瓐瓓瓘瓚瓛瓞瓟瓤瓨瓪瓫瓯瓴瓺瓻瓼瓿甆"
+  ],
+  [
+    "8fcda1",
+    "甒甖甗甠甡甤甧甩甪甯甶甹甽甾甿畀畃畇畈畎畐畒畗畞畟畡畯畱畹",
+    5,
+    "疁疅疐疒疓疕疙疜疢疤疴疺疿痀痁痄痆痌痎痏痗痜痟痠痡痤痧痬痮痯痱痹瘀瘂瘃瘄瘇瘈瘊瘌瘏瘒瘓瘕瘖瘙瘛瘜瘝瘞瘣瘥瘦瘩瘭瘲瘳瘵瘸瘹"
+  ],
+  [
+    "8fcea1",
+    "瘺瘼癊癀癁癃癄癅癉癋癕癙癟癤癥癭癮癯癱癴皁皅皌皍皕皛皜皝皟皠皢",
+    6,
+    "皪皭皽盁盅盉盋盌盎盔盙盠盦盨盬盰盱盶盹盼眀眆眊眎眒眔眕眗眙眚眜眢眨眭眮眯眴眵眶眹眽眾睂睅睆睊睍睎睏睒睖睗睜睞睟睠睢"
+  ],
+  [
+    "8fcfa1",
+    "睤睧睪睬睰睲睳睴睺睽瞀瞄瞌瞍瞔瞕瞖瞚瞟瞢瞧瞪瞮瞯瞱瞵瞾矃矉矑矒矕矙矞矟矠矤矦矪矬矰矱矴矸矻砅砆砉砍砎砑砝砡砢砣砭砮砰砵砷硃硄硇硈硌硎硒硜硞硠硡硣硤硨硪确硺硾碊碏碔碘碡碝碞碟碤碨碬碭碰碱碲碳"
+  ],
+  [
+    "8fd0a1",
+    "碻碽碿磇磈磉磌磎磒磓磕磖磤磛磟磠磡磦磪磲磳礀磶磷磺磻磿礆礌礐礚礜礞礟礠礥礧礩礭礱礴礵礻礽礿祄祅祆祊祋祏祑祔祘祛祜祧祩祫祲祹祻祼祾禋禌禑禓禔禕禖禘禛禜禡禨禩禫禯禱禴禸离秂秄秇秈秊秏秔秖秚秝秞"
+  ],
+  [
+    "8fd1a1",
+    "秠秢秥秪秫秭秱秸秼稂稃稇稉稊稌稑稕稛稞稡稧稫稭稯稰稴稵稸稹稺穄穅穇穈穌穕穖穙穜穝穟穠穥穧穪穭穵穸穾窀窂窅窆窊窋窐窑窔窞窠窣窬窳窵窹窻窼竆竉竌竎竑竛竨竩竫竬竱竴竻竽竾笇笔笟笣笧笩笪笫笭笮笯笰"
+  ],
+  [
+    "8fd2a1",
+    "笱笴笽笿筀筁筇筎筕筠筤筦筩筪筭筯筲筳筷箄箉箎箐箑箖箛箞箠箥箬箯箰箲箵箶箺箻箼箽篂篅篈篊篔篖篗篙篚篛篨篪篲篴篵篸篹篺篼篾簁簂簃簄簆簉簋簌簎簏簙簛簠簥簦簨簬簱簳簴簶簹簺籆籊籕籑籒籓籙",
+    5
+  ],
+  [
+    "8fd3a1",
+    "籡籣籧籩籭籮籰籲籹籼籽粆粇粏粔粞粠粦粰粶粷粺粻粼粿糄糇糈糉糍糏糓糔糕糗糙糚糝糦糩糫糵紃紇紈紉紏紑紒紓紖紝紞紣紦紪紭紱紼紽紾絀絁絇絈絍絑絓絗絙絚絜絝絥絧絪絰絸絺絻絿綁綂綃綅綆綈綋綌綍綑綖綗綝"
+  ],
+  [
+    "8fd4a1",
+    "綞綦綧綪綳綶綷綹緂",
+    4,
+    "緌緍緎緗緙縀緢緥緦緪緫緭緱緵緶緹緺縈縐縑縕縗縜縝縠縧縨縬縭縯縳縶縿繄繅繇繎繐繒繘繟繡繢繥繫繮繯繳繸繾纁纆纇纊纍纑纕纘纚纝纞缼缻缽缾缿罃罄罇罏罒罓罛罜罝罡罣罤罥罦罭"
+  ],
+  [
+    "8fd5a1",
+    "罱罽罾罿羀羋羍羏羐羑羖羗羜羡羢羦羪羭羴羼羿翀翃翈翎翏翛翟翣翥翨翬翮翯翲翺翽翾翿耇耈耊耍耎耏耑耓耔耖耝耞耟耠耤耦耬耮耰耴耵耷耹耺耼耾聀聄聠聤聦聭聱聵肁肈肎肜肞肦肧肫肸肹胈胍胏胒胔胕胗胘胠胭胮"
+  ],
+  [
+    "8fd6a1",
+    "胰胲胳胶胹胺胾脃脋脖脗脘脜脞脠脤脧脬脰脵脺脼腅腇腊腌腒腗腠腡腧腨腩腭腯腷膁膐膄膅膆膋膎膖膘膛膞膢膮膲膴膻臋臃臅臊臎臏臕臗臛臝臞臡臤臫臬臰臱臲臵臶臸臹臽臿舀舃舏舓舔舙舚舝舡舢舨舲舴舺艃艄艅艆"
+  ],
+  [
+    "8fd7a1",
+    "艋艎艏艑艖艜艠艣艧艭艴艻艽艿芀芁芃芄芇芉芊芎芑芔芖芘芚芛芠芡芣芤芧芨芩芪芮芰芲芴芷芺芼芾芿苆苐苕苚苠苢苤苨苪苭苯苶苷苽苾茀茁茇茈茊茋荔茛茝茞茟茡茢茬茭茮茰茳茷茺茼茽荂荃荄荇荍荎荑荕荖荗荰荸"
+  ],
+  [
+    "8fd8a1",
+    "荽荿莀莂莄莆莍莒莔莕莘莙莛莜莝莦莧莩莬莾莿菀菇菉菏菐菑菔菝荓菨菪菶菸菹菼萁萆萊萏萑萕萙莭萯萹葅葇葈葊葍葏葑葒葖葘葙葚葜葠葤葥葧葪葰葳葴葶葸葼葽蒁蒅蒒蒓蒕蒞蒦蒨蒩蒪蒯蒱蒴蒺蒽蒾蓀蓂蓇蓈蓌蓏蓓"
+  ],
+  [
+    "8fd9a1",
+    "蓜蓧蓪蓯蓰蓱蓲蓷蔲蓺蓻蓽蔂蔃蔇蔌蔎蔐蔜蔞蔢蔣蔤蔥蔧蔪蔫蔯蔳蔴蔶蔿蕆蕏",
+    4,
+    "蕖蕙蕜",
+    6,
+    "蕤蕫蕯蕹蕺蕻蕽蕿薁薅薆薉薋薌薏薓薘薝薟薠薢薥薧薴薶薷薸薼薽薾薿藂藇藊藋藎薭藘藚藟藠藦藨藭藳藶藼"
+  ],
+  [
+    "8fdaa1",
+    "藿蘀蘄蘅蘍蘎蘐蘑蘒蘘蘙蘛蘞蘡蘧蘩蘶蘸蘺蘼蘽虀虂虆虒虓虖虗虘虙虝虠",
+    4,
+    "虩虬虯虵虶虷虺蚍蚑蚖蚘蚚蚜蚡蚦蚧蚨蚭蚱蚳蚴蚵蚷蚸蚹蚿蛀蛁蛃蛅蛑蛒蛕蛗蛚蛜蛠蛣蛥蛧蚈蛺蛼蛽蜄蜅蜇蜋蜎蜏蜐蜓蜔蜙蜞蜟蜡蜣"
+  ],
+  [
+    "8fdba1",
+    "蜨蜮蜯蜱蜲蜹蜺蜼蜽蜾蝀蝃蝅蝍蝘蝝蝡蝤蝥蝯蝱蝲蝻螃",
+    6,
+    "螋螌螐螓螕螗螘螙螞螠螣螧螬螭螮螱螵螾螿蟁蟈蟉蟊蟎蟕蟖蟙蟚蟜蟟蟢蟣蟤蟪蟫蟭蟱蟳蟸蟺蟿蠁蠃蠆蠉蠊蠋蠐蠙蠒蠓蠔蠘蠚蠛蠜蠞蠟蠨蠭蠮蠰蠲蠵"
+  ],
+  [
+    "8fdca1",
+    "蠺蠼衁衃衅衈衉衊衋衎衑衕衖衘衚衜衟衠衤衩衱衹衻袀袘袚袛袜袟袠袨袪袺袽袾裀裊",
+    4,
+    "裑裒裓裛裞裧裯裰裱裵裷褁褆褍褎褏褕褖褘褙褚褜褠褦褧褨褰褱褲褵褹褺褾襀襂襅襆襉襏襒襗襚襛襜襡襢襣襫襮襰襳襵襺"
+  ],
+  [
+    "8fdda1",
+    "襻襼襽覉覍覐覔覕覛覜覟覠覥覰覴覵覶覷覼觔",
+    4,
+    "觥觩觫觭觱觳觶觹觽觿訄訅訇訏訑訒訔訕訞訠訢訤訦訫訬訯訵訷訽訾詀詃詅詇詉詍詎詓詖詗詘詜詝詡詥詧詵詶詷詹詺詻詾詿誀誃誆誋誏誐誒誖誗誙誟誧誩誮誯誳"
+  ],
+  [
+    "8fdea1",
+    "誶誷誻誾諃諆諈諉諊諑諓諔諕諗諝諟諬諰諴諵諶諼諿謅謆謋謑謜謞謟謊謭謰謷謼譂",
+    4,
+    "譈譒譓譔譙譍譞譣譭譶譸譹譼譾讁讄讅讋讍讏讔讕讜讞讟谸谹谽谾豅豇豉豋豏豑豓豔豗豘豛豝豙豣豤豦豨豩豭豳豵豶豻豾貆"
+  ],
+  [
+    "8fdfa1",
+    "貇貋貐貒貓貙貛貜貤貹貺賅賆賉賋賏賖賕賙賝賡賨賬賯賰賲賵賷賸賾賿贁贃贉贒贗贛赥赩赬赮赿趂趄趈趍趐趑趕趞趟趠趦趫趬趯趲趵趷趹趻跀跅跆跇跈跊跎跑跔跕跗跙跤跥跧跬跰趼跱跲跴跽踁踄踅踆踋踑踔踖踠踡踢"
+  ],
+  [
+    "8fe0a1",
+    "踣踦踧踱踳踶踷踸踹踽蹀蹁蹋蹍蹎蹏蹔蹛蹜蹝蹞蹡蹢蹩蹬蹭蹯蹰蹱蹹蹺蹻躂躃躉躐躒躕躚躛躝躞躢躧躩躭躮躳躵躺躻軀軁軃軄軇軏軑軔軜軨軮軰軱軷軹軺軭輀輂輇輈輏輐輖輗輘輞輠輡輣輥輧輨輬輭輮輴輵輶輷輺轀轁"
+  ],
+  [
+    "8fe1a1",
+    "轃轇轏轑",
+    4,
+    "轘轝轞轥辝辠辡辤辥辦辵辶辸达迀迁迆迊迋迍运迒迓迕迠迣迤迨迮迱迵迶迻迾适逄逈逌逘逛逨逩逯逪逬逭逳逴逷逿遃遄遌遛遝遢遦遧遬遰遴遹邅邈邋邌邎邐邕邗邘邙邛邠邡邢邥邰邲邳邴邶邽郌邾郃"
+  ],
+  [
+    "8fe2a1",
+    "郄郅郇郈郕郗郘郙郜郝郟郥郒郶郫郯郰郴郾郿鄀鄄鄅鄆鄈鄍鄐鄔鄖鄗鄘鄚鄜鄞鄠鄥鄢鄣鄧鄩鄮鄯鄱鄴鄶鄷鄹鄺鄼鄽酃酇酈酏酓酗酙酚酛酡酤酧酭酴酹酺酻醁醃醅醆醊醎醑醓醔醕醘醞醡醦醨醬醭醮醰醱醲醳醶醻醼醽醿"
+  ],
+  [
+    "8fe3a1",
+    "釂釃釅釓釔釗釙釚釞釤釥釩釪釬",
+    5,
+    "釷釹釻釽鈀鈁鈄鈅鈆鈇鈉鈊鈌鈐鈒鈓鈖鈘鈜鈝鈣鈤鈥鈦鈨鈮鈯鈰鈳鈵鈶鈸鈹鈺鈼鈾鉀鉂鉃鉆鉇鉊鉍鉎鉏鉑鉘鉙鉜鉝鉠鉡鉥鉧鉨鉩鉮鉯鉰鉵",
+    4,
+    "鉻鉼鉽鉿銈銉銊銍銎銒銗"
+  ],
+  [
+    "8fe4a1",
+    "銙銟銠銤銥銧銨銫銯銲銶銸銺銻銼銽銿",
+    4,
+    "鋅鋆鋇鋈鋋鋌鋍鋎鋐鋓鋕鋗鋘鋙鋜鋝鋟鋠鋡鋣鋥鋧鋨鋬鋮鋰鋹鋻鋿錀錂錈錍錑錔錕錜錝錞錟錡錤錥錧錩錪錳錴錶錷鍇鍈鍉鍐鍑鍒鍕鍗鍘鍚鍞鍤鍥鍧鍩鍪鍭鍯鍰鍱鍳鍴鍶"
+  ],
+  [
+    "8fe5a1",
+    "鍺鍽鍿鎀鎁鎂鎈鎊鎋鎍鎏鎒鎕鎘鎛鎞鎡鎣鎤鎦鎨鎫鎴鎵鎶鎺鎩鏁鏄鏅鏆鏇鏉",
+    4,
+    "鏓鏙鏜鏞鏟鏢鏦鏧鏹鏷鏸鏺鏻鏽鐁鐂鐄鐈鐉鐍鐎鐏鐕鐖鐗鐟鐮鐯鐱鐲鐳鐴鐻鐿鐽鑃鑅鑈鑊鑌鑕鑙鑜鑟鑡鑣鑨鑫鑭鑮鑯鑱鑲钄钃镸镹"
+  ],
+  [
+    "8fe6a1",
+    "镾閄閈閌閍閎閝閞閟閡閦閩閫閬閴閶閺閽閿闆闈闉闋闐闑闒闓闙闚闝闞闟闠闤闦阝阞阢阤阥阦阬阱阳阷阸阹阺阼阽陁陒陔陖陗陘陡陮陴陻陼陾陿隁隂隃隄隉隑隖隚隝隟隤隥隦隩隮隯隳隺雊雒嶲雘雚雝雞雟雩雯雱雺霂"
+  ],
+  [
+    "8fe7a1",
+    "霃霅霉霚霛霝霡霢霣霨霱霳靁靃靊靎靏靕靗靘靚靛靣靧靪靮靳靶靷靸靻靽靿鞀鞉鞕鞖鞗鞙鞚鞞鞟鞢鞬鞮鞱鞲鞵鞶鞸鞹鞺鞼鞾鞿韁韄韅韇韉韊韌韍韎韐韑韔韗韘韙韝韞韠韛韡韤韯韱韴韷韸韺頇頊頙頍頎頔頖頜頞頠頣頦"
+  ],
+  [
+    "8fe8a1",
+    "頫頮頯頰頲頳頵頥頾顄顇顊顑顒顓顖顗顙顚顢顣顥顦顪顬颫颭颮颰颴颷颸颺颻颿飂飅飈飌飡飣飥飦飧飪飳飶餂餇餈餑餕餖餗餚餛餜餟餢餦餧餫餱",
+    4,
+    "餹餺餻餼饀饁饆饇饈饍饎饔饘饙饛饜饞饟饠馛馝馟馦馰馱馲馵"
+  ],
+  [
+    "8fe9a1",
+    "馹馺馽馿駃駉駓駔駙駚駜駞駧駪駫駬駰駴駵駹駽駾騂騃騄騋騌騐騑騖騞騠騢騣騤騧騭騮騳騵騶騸驇驁驄驊驋驌驎驑驔驖驝骪骬骮骯骲骴骵骶骹骻骾骿髁髃髆髈髎髐髒髕髖髗髛髜髠髤髥髧髩髬髲髳髵髹髺髽髿",
+    4
+  ],
+  [
+    "8feaa1",
+    "鬄鬅鬈鬉鬋鬌鬍鬎鬐鬒鬖鬙鬛鬜鬠鬦鬫鬭鬳鬴鬵鬷鬹鬺鬽魈魋魌魕魖魗魛魞魡魣魥魦魨魪",
+    4,
+    "魳魵魷魸魹魿鮀鮄鮅鮆鮇鮉鮊鮋鮍鮏鮐鮔鮚鮝鮞鮦鮧鮩鮬鮰鮱鮲鮷鮸鮻鮼鮾鮿鯁鯇鯈鯎鯐鯗鯘鯝鯟鯥鯧鯪鯫鯯鯳鯷鯸"
+  ],
+  [
+    "8feba1",
+    "鯹鯺鯽鯿鰀鰂鰋鰏鰑鰖鰘鰙鰚鰜鰞鰢鰣鰦",
+    4,
+    "鰱鰵鰶鰷鰽鱁鱃鱄鱅鱉鱊鱎鱏鱐鱓鱔鱖鱘鱛鱝鱞鱟鱣鱩鱪鱜鱫鱨鱮鱰鱲鱵鱷鱻鳦鳲鳷鳹鴋鴂鴑鴗鴘鴜鴝鴞鴯鴰鴲鴳鴴鴺鴼鵅鴽鵂鵃鵇鵊鵓鵔鵟鵣鵢鵥鵩鵪鵫鵰鵶鵷鵻"
+  ],
+  [
+    "8feca1",
+    "鵼鵾鶃鶄鶆鶊鶍鶎鶒鶓鶕鶖鶗鶘鶡鶪鶬鶮鶱鶵鶹鶼鶿鷃鷇鷉鷊鷔鷕鷖鷗鷚鷞鷟鷠鷥鷧鷩鷫鷮鷰鷳鷴鷾鸊鸂鸇鸎鸐鸑鸒鸕鸖鸙鸜鸝鹺鹻鹼麀麂麃麄麅麇麎麏麖麘麛麞麤麨麬麮麯麰麳麴麵黆黈黋黕黟黤黧黬黭黮黰黱黲黵"
+  ],
+  [
+    "8feda1",
+    "黸黿鼂鼃鼉鼏鼐鼑鼒鼔鼖鼗鼙鼚鼛鼟鼢鼦鼪鼫鼯鼱鼲鼴鼷鼹鼺鼼鼽鼿齁齃",
+    4,
+    "齓齕齖齗齘齚齝齞齨齩齭",
+    4,
+    "齳齵齺齽龏龐龑龒龔龖龗龞龡龢龣龥"
+  ]
+], mr = [
+  [
+    "0",
+    "\0",
+    127,
+    "€"
+  ],
+  [
+    "8140",
+    "丂丄丅丆丏丒丗丟丠両丣並丩丮丯丱丳丵丷丼乀乁乂乄乆乊乑乕乗乚乛乢乣乤乥乧乨乪",
+    5,
+    "乲乴",
+    9,
+    "乿",
+    6,
+    "亇亊"
+  ],
+  [
+    "8180",
+    "亐亖亗亙亜亝亞亣亪亯亰亱亴亶亷亸亹亼亽亾仈仌仏仐仒仚仛仜仠仢仦仧仩仭仮仯仱仴仸仹仺仼仾伀伂",
+    6,
+    "伋伌伒",
+    4,
+    "伜伝伡伣伨伩伬伭伮伱伳伵伷伹伻伾",
+    4,
+    "佄佅佇",
+    5,
+    "佒佔佖佡佢佦佨佪佫佭佮佱佲併佷佸佹佺佽侀侁侂侅來侇侊侌侎侐侒侓侕侖侘侙侚侜侞侟価侢"
+  ],
+  [
+    "8240",
+    "侤侫侭侰",
+    4,
+    "侶",
+    8,
+    "俀俁係俆俇俈俉俋俌俍俒",
+    4,
+    "俙俛俠俢俤俥俧俫俬俰俲俴俵俶俷俹俻俼俽俿",
+    11
+  ],
+  [
+    "8280",
+    "個倎倐們倓倕倖倗倛倝倞倠倢倣値倧倫倯",
+    10,
+    "倻倽倿偀偁偂偄偅偆偉偊偋偍偐",
+    4,
+    "偖偗偘偙偛偝",
+    7,
+    "偦",
+    5,
+    "偭",
+    8,
+    "偸偹偺偼偽傁傂傃傄傆傇傉傊傋傌傎",
+    20,
+    "傤傦傪傫傭",
+    4,
+    "傳",
+    6,
+    "傼"
+  ],
+  [
+    "8340",
+    "傽",
+    17,
+    "僐",
+    5,
+    "僗僘僙僛",
+    10,
+    "僨僩僪僫僯僰僱僲僴僶",
+    4,
+    "僼",
+    9,
+    "儈"
+  ],
+  [
+    "8380",
+    "儉儊儌",
+    5,
+    "儓",
+    13,
+    "儢",
+    28,
+    "兂兇兊兌兎兏児兒兓兗兘兙兛兝",
+    4,
+    "兣兤兦內兩兪兯兲兺兾兿冃冄円冇冊冋冎冏冐冑冓冔冘冚冝冞冟冡冣冦",
+    4,
+    "冭冮冴冸冹冺冾冿凁凂凃凅凈凊凍凎凐凒",
+    5
+  ],
+  [
+    "8440",
+    "凘凙凚凜凞凟凢凣凥",
+    5,
+    "凬凮凱凲凴凷凾刄刅刉刋刌刏刐刓刔刕刜刞刟刡刢刣別刦刧刪刬刯刱刲刴刵刼刾剄",
+    5,
+    "剋剎剏剒剓剕剗剘"
+  ],
+  [
+    "8480",
+    "剙剚剛剝剟剠剢剣剤剦剨剫剬剭剮剰剱剳",
+    9,
+    "剾劀劃",
+    4,
+    "劉",
+    6,
+    "劑劒劔",
+    6,
+    "劜劤劥劦劧劮劯劰労",
+    9,
+    "勀勁勂勄勅勆勈勊勌勍勎勏勑勓勔動勗務",
+    5,
+    "勠勡勢勣勥",
+    10,
+    "勱",
+    7,
+    "勻勼勽匁匂匃匄匇匉匊匋匌匎"
+  ],
+  [
+    "8540",
+    "匑匒匓匔匘匛匜匞匟匢匤匥匧匨匩匫匬匭匯",
+    9,
+    "匼匽區卂卄卆卋卌卍卐協単卙卛卝卥卨卪卬卭卲卶卹卻卼卽卾厀厁厃厇厈厊厎厏"
+  ],
+  [
+    "8580",
+    "厐",
+    4,
+    "厖厗厙厛厜厞厠厡厤厧厪厫厬厭厯",
+    6,
+    "厷厸厹厺厼厽厾叀參",
+    4,
+    "収叏叐叒叓叕叚叜叝叞叡叢叧叴叺叾叿吀吂吅吇吋吔吘吙吚吜吢吤吥吪吰吳吶吷吺吽吿呁呂呄呅呇呉呌呍呎呏呑呚呝",
+    4,
+    "呣呥呧呩",
+    7,
+    "呴呹呺呾呿咁咃咅咇咈咉咊咍咑咓咗咘咜咞咟咠咡"
+  ],
+  [
+    "8640",
+    "咢咥咮咰咲咵咶咷咹咺咼咾哃哅哊哋哖哘哛哠",
+    4,
+    "哫哬哯哰哱哴",
+    5,
+    "哻哾唀唂唃唄唅唈唊",
+    4,
+    "唒唓唕",
+    5,
+    "唜唝唞唟唡唥唦"
+  ],
+  [
+    "8680",
+    "唨唩唫唭唲唴唵唶唸唹唺唻唽啀啂啅啇啈啋",
+    4,
+    "啑啒啓啔啗",
+    4,
+    "啝啞啟啠啢啣啨啩啫啯",
+    5,
+    "啹啺啽啿喅喆喌喍喎喐喒喓喕喖喗喚喛喞喠",
+    6,
+    "喨",
+    8,
+    "喲喴営喸喺喼喿",
+    4,
+    "嗆嗇嗈嗊嗋嗎嗏嗐嗕嗗",
+    4,
+    "嗞嗠嗢嗧嗩嗭嗮嗰嗱嗴嗶嗸",
+    4,
+    "嗿嘂嘃嘄嘅"
+  ],
+  [
+    "8740",
+    "嘆嘇嘊嘋嘍嘐",
+    7,
+    "嘙嘚嘜嘝嘠嘡嘢嘥嘦嘨嘩嘪嘫嘮嘯嘰嘳嘵嘷嘸嘺嘼嘽嘾噀",
+    11,
+    "噏",
+    4,
+    "噕噖噚噛噝",
+    4
+  ],
+  [
+    "8780",
+    "噣噥噦噧噭噮噯噰噲噳噴噵噷噸噹噺噽",
+    7,
+    "嚇",
+    6,
+    "嚐嚑嚒嚔",
+    14,
+    "嚤",
+    10,
+    "嚰",
+    6,
+    "嚸嚹嚺嚻嚽",
+    12,
+    "囋",
+    8,
+    "囕囖囘囙囜団囥",
+    5,
+    "囬囮囯囲図囶囷囸囻囼圀圁圂圅圇國",
+    6
+  ],
+  [
+    "8840",
+    "園",
+    9,
+    "圝圞圠圡圢圤圥圦圧圫圱圲圴",
+    4,
+    "圼圽圿坁坃坄坅坆坈坉坋坒",
+    4,
+    "坘坙坢坣坥坧坬坮坰坱坲坴坵坸坹坺坽坾坿垀"
+  ],
+  [
+    "8880",
+    "垁垇垈垉垊垍",
+    4,
+    "垔",
+    6,
+    "垜垝垞垟垥垨垪垬垯垰垱垳垵垶垷垹",
+    8,
+    "埄",
+    6,
+    "埌埍埐埑埓埖埗埛埜埞埡埢埣埥",
+    7,
+    "埮埰埱埲埳埵埶執埻埼埾埿堁堃堄堅堈堉堊堌堎堏堐堒堓堔堖堗堘堚堛堜堝堟堢堣堥",
+    4,
+    "堫",
+    4,
+    "報堲堳場堶",
+    7
+  ],
+  [
+    "8940",
+    "堾",
+    5,
+    "塅",
+    6,
+    "塎塏塐塒塓塕塖塗塙",
+    4,
+    "塟",
+    5,
+    "塦",
+    4,
+    "塭",
+    16,
+    "塿墂墄墆墇墈墊墋墌"
+  ],
+  [
+    "8980",
+    "墍",
+    4,
+    "墔",
+    4,
+    "墛墜墝墠",
+    7,
+    "墪",
+    17,
+    "墽墾墿壀壂壃壄壆",
+    10,
+    "壒壓壔壖",
+    13,
+    "壥",
+    5,
+    "壭壯壱売壴壵壷壸壺",
+    7,
+    "夃夅夆夈",
+    4,
+    "夎夐夑夒夓夗夘夛夝夞夠夡夢夣夦夨夬夰夲夳夵夶夻"
+  ],
+  [
+    "8a40",
+    "夽夾夿奀奃奅奆奊奌奍奐奒奓奙奛",
+    4,
+    "奡奣奤奦",
+    12,
+    "奵奷奺奻奼奾奿妀妅妉妋妌妎妏妐妑妔妕妘妚妛妜妝妟妠妡妢妦"
+  ],
+  [
+    "8a80",
+    "妧妬妭妰妱妳",
+    5,
+    "妺妼妽妿",
+    6,
+    "姇姈姉姌姍姎姏姕姖姙姛姞",
+    4,
+    "姤姦姧姩姪姫姭",
+    11,
+    "姺姼姽姾娀娂娊娋娍娎娏娐娒娔娕娖娗娙娚娛娝娞娡娢娤娦娧娨娪",
+    6,
+    "娳娵娷",
+    4,
+    "娽娾娿婁",
+    4,
+    "婇婈婋",
+    9,
+    "婖婗婘婙婛",
+    5
+  ],
+  [
+    "8b40",
+    "婡婣婤婥婦婨婩婫",
+    8,
+    "婸婹婻婼婽婾媀",
+    17,
+    "媓",
+    6,
+    "媜",
+    13,
+    "媫媬"
+  ],
+  [
+    "8b80",
+    "媭",
+    4,
+    "媴媶媷媹",
+    4,
+    "媿嫀嫃",
+    5,
+    "嫊嫋嫍",
+    4,
+    "嫓嫕嫗嫙嫚嫛嫝嫞嫟嫢嫤嫥嫧嫨嫪嫬",
+    4,
+    "嫲",
+    22,
+    "嬊",
+    11,
+    "嬘",
+    25,
+    "嬳嬵嬶嬸",
+    7,
+    "孁",
+    6
+  ],
+  [
+    "8c40",
+    "孈",
+    7,
+    "孒孖孞孠孡孧孨孫孭孮孯孲孴孶孷學孹孻孼孾孿宂宆宊宍宎宐宑宒宔宖実宧宨宩宬宭宮宯宱宲宷宺宻宼寀寁寃寈寉寊寋寍寎寏"
+  ],
+  [
+    "8c80",
+    "寑寔",
+    8,
+    "寠寢寣實寧審",
+    4,
+    "寯寱",
+    6,
+    "寽対尀専尃尅將專尋尌對導尐尒尓尗尙尛尞尟尠尡尣尦尨尩尪尫尭尮尯尰尲尳尵尶尷屃屄屆屇屌屍屒屓屔屖屗屘屚屛屜屝屟屢層屧",
+    6,
+    "屰屲",
+    6,
+    "屻屼屽屾岀岃",
+    4,
+    "岉岊岋岎岏岒岓岕岝",
+    4,
+    "岤",
+    4
+  ],
+  [
+    "8d40",
+    "岪岮岯岰岲岴岶岹岺岻岼岾峀峂峃峅",
+    5,
+    "峌",
+    5,
+    "峓",
+    5,
+    "峚",
+    6,
+    "峢峣峧峩峫峬峮峯峱",
+    9,
+    "峼",
+    4
+  ],
+  [
+    "8d80",
+    "崁崄崅崈",
+    5,
+    "崏",
+    4,
+    "崕崗崘崙崚崜崝崟",
+    4,
+    "崥崨崪崫崬崯",
+    4,
+    "崵",
+    7,
+    "崿",
+    7,
+    "嵈嵉嵍",
+    10,
+    "嵙嵚嵜嵞",
+    10,
+    "嵪嵭嵮嵰嵱嵲嵳嵵",
+    12,
+    "嶃",
+    21,
+    "嶚嶛嶜嶞嶟嶠"
+  ],
+  [
+    "8e40",
+    "嶡",
+    21,
+    "嶸",
+    12,
+    "巆",
+    6,
+    "巎",
+    12,
+    "巜巟巠巣巤巪巬巭"
+  ],
+  [
+    "8e80",
+    "巰巵巶巸",
+    4,
+    "巿帀帄帇帉帊帋帍帎帒帓帗帞",
+    7,
+    "帨",
+    4,
+    "帯帰帲",
+    4,
+    "帹帺帾帿幀幁幃幆",
+    5,
+    "幍",
+    6,
+    "幖",
+    4,
+    "幜幝幟幠幣",
+    14,
+    "幵幷幹幾庁庂広庅庈庉庌庍庎庒庘庛庝庡庢庣庤庨",
+    4,
+    "庮",
+    4,
+    "庴庺庻庼庽庿",
+    6
+  ],
+  [
+    "8f40",
+    "廆廇廈廋",
+    5,
+    "廔廕廗廘廙廚廜",
+    11,
+    "廩廫",
+    8,
+    "廵廸廹廻廼廽弅弆弇弉弌弍弎弐弒弔弖弙弚弜弝弞弡弢弣弤"
+  ],
+  [
+    "8f80",
+    "弨弫弬弮弰弲",
+    6,
+    "弻弽弾弿彁",
+    14,
+    "彑彔彙彚彛彜彞彟彠彣彥彧彨彫彮彯彲彴彵彶彸彺彽彾彿徃徆徍徎徏徑従徔徖徚徛徝從徟徠徢",
+    5,
+    "復徫徬徯",
+    5,
+    "徶徸徹徺徻徾",
+    4,
+    "忇忈忊忋忎忓忔忕忚忛応忞忟忢忣忥忦忨忩忬忯忰忲忳忴忶忷忹忺忼怇"
+  ],
+  [
+    "9040",
+    "怈怉怋怌怐怑怓怗怘怚怞怟怢怣怤怬怭怮怰",
+    4,
+    "怶",
+    4,
+    "怽怾恀恄",
+    6,
+    "恌恎恏恑恓恔恖恗恘恛恜恞恟恠恡恥恦恮恱恲恴恵恷恾悀"
+  ],
+  [
+    "9080",
+    "悁悂悅悆悇悈悊悋悎悏悐悑悓悕悗悘悙悜悞悡悢悤悥悧悩悪悮悰悳悵悶悷悹悺悽",
+    7,
+    "惇惈惉惌",
+    4,
+    "惒惓惔惖惗惙惛惞惡",
+    4,
+    "惪惱惲惵惷惸惻",
+    4,
+    "愂愃愄愅愇愊愋愌愐",
+    4,
+    "愖愗愘愙愛愜愝愞愡愢愥愨愩愪愬",
+    18,
+    "慀",
+    6
+  ],
+  [
+    "9140",
+    "慇慉態慍慏慐慒慓慔慖",
+    6,
+    "慞慟慠慡慣慤慥慦慩",
+    6,
+    "慱慲慳慴慶慸",
+    18,
+    "憌憍憏",
+    4,
+    "憕"
+  ],
+  [
+    "9180",
+    "憖",
+    6,
+    "憞",
+    8,
+    "憪憫憭",
+    9,
+    "憸",
+    5,
+    "憿懀懁懃",
+    4,
+    "應懌",
+    4,
+    "懓懕",
+    16,
+    "懧",
+    13,
+    "懶",
+    8,
+    "戀",
+    5,
+    "戇戉戓戔戙戜戝戞戠戣戦戧戨戩戫戭戯戰戱戲戵戶戸",
+    4,
+    "扂扄扅扆扊"
+  ],
+  [
+    "9240",
+    "扏扐払扖扗扙扚扜",
+    6,
+    "扤扥扨扱扲扴扵扷扸扺扻扽抁抂抃抅抆抇抈抋",
+    5,
+    "抔抙抜抝択抣抦抧抩抪抭抮抯抰抲抳抴抶抷抸抺抾拀拁"
+  ],
+  [
+    "9280",
+    "拃拋拏拑拕拝拞拠拡拤拪拫拰拲拵拸拹拺拻挀挃挄挅挆挊挋挌挍挏挐挒挓挔挕挗挘挙挜挦挧挩挬挭挮挰挱挳",
+    5,
+    "挻挼挾挿捀捁捄捇捈捊捑捒捓捔捖",
+    7,
+    "捠捤捥捦捨捪捫捬捯捰捲捳捴捵捸捹捼捽捾捿掁掃掄掅掆掋掍掑掓掔掕掗掙",
+    6,
+    "採掤掦掫掯掱掲掵掶掹掻掽掿揀"
+  ],
+  [
+    "9340",
+    "揁揂揃揅揇揈揊揋揌揑揓揔揕揗",
+    6,
+    "揟揢揤",
+    4,
+    "揫揬揮揯揰揱揳揵揷揹揺揻揼揾搃搄搆",
+    4,
+    "損搎搑搒搕",
+    5,
+    "搝搟搢搣搤"
+  ],
+  [
+    "9380",
+    "搥搧搨搩搫搮",
+    5,
+    "搵",
+    4,
+    "搻搼搾摀摂摃摉摋",
+    6,
+    "摓摕摖摗摙",
+    4,
+    "摟",
+    7,
+    "摨摪摫摬摮",
+    9,
+    "摻",
+    6,
+    "撃撆撈",
+    8,
+    "撓撔撗撘撚撛撜撝撟",
+    4,
+    "撥撦撧撨撪撫撯撱撲撳撴撶撹撻撽撾撿擁擃擄擆",
+    6,
+    "擏擑擓擔擕擖擙據"
+  ],
+  [
+    "9440",
+    "擛擜擝擟擠擡擣擥擧",
+    24,
+    "攁",
+    7,
+    "攊",
+    7,
+    "攓",
+    4,
+    "攙",
+    8
+  ],
+  [
+    "9480",
+    "攢攣攤攦",
+    4,
+    "攬攭攰攱攲攳攷攺攼攽敀",
+    4,
+    "敆敇敊敋敍敎敐敒敓敔敗敘敚敜敟敠敡敤敥敧敨敩敪敭敮敯敱敳敵敶數",
+    14,
+    "斈斉斊斍斎斏斒斔斕斖斘斚斝斞斠斢斣斦斨斪斬斮斱",
+    7,
+    "斺斻斾斿旀旂旇旈旉旊旍旐旑旓旔旕旘",
+    7,
+    "旡旣旤旪旫"
+  ],
+  [
+    "9540",
+    "旲旳旴旵旸旹旻",
+    4,
+    "昁昄昅昇昈昉昋昍昐昑昒昖昗昘昚昛昜昞昡昢昣昤昦昩昪昫昬昮昰昲昳昷",
+    4,
+    "昽昿晀時晄",
+    6,
+    "晍晎晐晑晘"
+  ],
+  [
+    "9580",
+    "晙晛晜晝晞晠晢晣晥晧晩",
+    4,
+    "晱晲晳晵晸晹晻晼晽晿暀暁暃暅暆暈暉暊暋暍暎暏暐暒暓暔暕暘",
+    4,
+    "暞",
+    8,
+    "暩",
+    4,
+    "暯",
+    4,
+    "暵暶暷暸暺暻暼暽暿",
+    25,
+    "曚曞",
+    7,
+    "曧曨曪",
+    5,
+    "曱曵曶書曺曻曽朁朂會"
+  ],
+  [
+    "9640",
+    "朄朅朆朇朌朎朏朑朒朓朖朘朙朚朜朞朠",
+    5,
+    "朧朩朮朰朲朳朶朷朸朹朻朼朾朿杁杄杅杇杊杋杍杒杔杕杗",
+    4,
+    "杝杢杣杤杦杧杫杬杮東杴杶"
+  ],
+  [
+    "9680",
+    "杸杹杺杻杽枀枂枃枅枆枈枊枌枍枎枏枑枒枓枔枖枙枛枟枠枡枤枦枩枬枮枱枲枴枹",
+    7,
+    "柂柅",
+    9,
+    "柕柖柗柛柟柡柣柤柦柧柨柪柫柭柮柲柵",
+    7,
+    "柾栁栂栃栄栆栍栐栒栔栕栘",
+    4,
+    "栞栟栠栢",
+    6,
+    "栫",
+    6,
+    "栴栵栶栺栻栿桇桋桍桏桒桖",
+    5
+  ],
+  [
+    "9740",
+    "桜桝桞桟桪桬",
+    7,
+    "桵桸",
+    8,
+    "梂梄梇",
+    7,
+    "梐梑梒梔梕梖梘",
+    9,
+    "梣梤梥梩梪梫梬梮梱梲梴梶梷梸"
+  ],
+  [
+    "9780",
+    "梹",
+    6,
+    "棁棃",
+    5,
+    "棊棌棎棏棐棑棓棔棖棗棙棛",
+    4,
+    "棡棢棤",
+    9,
+    "棯棲棳棴棶棷棸棻棽棾棿椀椂椃椄椆",
+    4,
+    "椌椏椑椓",
+    11,
+    "椡椢椣椥",
+    7,
+    "椮椯椱椲椳椵椶椷椸椺椻椼椾楀楁楃",
+    16,
+    "楕楖楘楙楛楜楟"
+  ],
+  [
+    "9840",
+    "楡楢楤楥楧楨楩楪楬業楯楰楲",
+    4,
+    "楺楻楽楾楿榁榃榅榊榋榌榎",
+    5,
+    "榖榗榙榚榝",
+    9,
+    "榩榪榬榮榯榰榲榳榵榶榸榹榺榼榽"
+  ],
+  [
+    "9880",
+    "榾榿槀槂",
+    7,
+    "構槍槏槑槒槓槕",
+    5,
+    "槜槝槞槡",
+    11,
+    "槮槯槰槱槳",
+    9,
+    "槾樀",
+    9,
+    "樋",
+    11,
+    "標",
+    5,
+    "樠樢",
+    5,
+    "権樫樬樭樮樰樲樳樴樶",
+    6,
+    "樿",
+    4,
+    "橅橆橈",
+    7,
+    "橑",
+    6,
+    "橚"
+  ],
+  [
+    "9940",
+    "橜",
+    4,
+    "橢橣橤橦",
+    10,
+    "橲",
+    6,
+    "橺橻橽橾橿檁檂檃檅",
+    8,
+    "檏檒",
+    4,
+    "檘",
+    7,
+    "檡",
+    5
+  ],
+  [
+    "9980",
+    "檧檨檪檭",
+    114,
+    "欥欦欨",
+    6
+  ],
+  [
+    "9a40",
+    "欯欰欱欳欴欵欶欸欻欼欽欿歀歁歂歄歅歈歊歋歍",
+    11,
+    "歚",
+    7,
+    "歨歩歫",
+    13,
+    "歺歽歾歿殀殅殈"
+  ],
+  [
+    "9a80",
+    "殌殎殏殐殑殔殕殗殘殙殜",
+    4,
+    "殢",
+    7,
+    "殫",
+    7,
+    "殶殸",
+    6,
+    "毀毃毄毆",
+    4,
+    "毌毎毐毑毘毚毜",
+    4,
+    "毢",
+    7,
+    "毬毭毮毰毱毲毴毶毷毸毺毻毼毾",
+    6,
+    "氈",
+    4,
+    "氎氒気氜氝氞氠氣氥氫氬氭氱氳氶氷氹氺氻氼氾氿汃汄汅汈汋",
+    4,
+    "汑汒汓汖汘"
+  ],
+  [
+    "9b40",
+    "汙汚汢汣汥汦汧汫",
+    4,
+    "汱汳汵汷汸決汻汼汿沀沄沇沊沋沍沎沑沒沕沖沗沘沚沜沝沞沠沢沨沬沯沰沴沵沶沷沺泀況泂泃泆泇泈泋泍泎泏泑泒泘"
+  ],
+  [
+    "9b80",
+    "泙泚泜泝泟泤泦泧泩泬泭泲泴泹泿洀洂洃洅洆洈洉洊洍洏洐洑洓洔洕洖洘洜洝洟",
+    5,
+    "洦洨洩洬洭洯洰洴洶洷洸洺洿浀浂浄浉浌浐浕浖浗浘浛浝浟浡浢浤浥浧浨浫浬浭浰浱浲浳浵浶浹浺浻浽",
+    4,
+    "涃涄涆涇涊涋涍涏涐涒涖",
+    4,
+    "涜涢涥涬涭涰涱涳涴涶涷涹",
+    5,
+    "淁淂淃淈淉淊"
+  ],
+  [
+    "9c40",
+    "淍淎淏淐淒淓淔淕淗淚淛淜淟淢淣淥淧淨淩淪淭淯淰淲淴淵淶淸淺淽",
+    7,
+    "渆渇済渉渋渏渒渓渕渘渙減渜渞渟渢渦渧渨渪測渮渰渱渳渵"
+  ],
+  [
+    "9c80",
+    "渶渷渹渻",
+    7,
+    "湅",
+    7,
+    "湏湐湑湒湕湗湙湚湜湝湞湠",
+    10,
+    "湬湭湯",
+    14,
+    "満溁溂溄溇溈溊",
+    4,
+    "溑",
+    6,
+    "溙溚溛溝溞溠溡溣溤溦溨溩溫溬溭溮溰溳溵溸溹溼溾溿滀滃滄滅滆滈滉滊滌滍滎滐滒滖滘滙滛滜滝滣滧滪",
+    5
+  ],
+  [
+    "9d40",
+    "滰滱滲滳滵滶滷滸滺",
+    7,
+    "漃漄漅漇漈漊",
+    4,
+    "漐漑漒漖",
+    9,
+    "漡漢漣漥漦漧漨漬漮漰漲漴漵漷",
+    6,
+    "漿潀潁潂"
+  ],
+  [
+    "9d80",
+    "潃潄潅潈潉潊潌潎",
+    9,
+    "潙潚潛潝潟潠潡潣潤潥潧",
+    5,
+    "潯潰潱潳潵潶潷潹潻潽",
+    6,
+    "澅澆澇澊澋澏",
+    12,
+    "澝澞澟澠澢",
+    4,
+    "澨",
+    10,
+    "澴澵澷澸澺",
+    5,
+    "濁濃",
+    5,
+    "濊",
+    6,
+    "濓",
+    10,
+    "濟濢濣濤濥"
+  ],
+  [
+    "9e40",
+    "濦",
+    7,
+    "濰",
+    32,
+    "瀒",
+    7,
+    "瀜",
+    6,
+    "瀤",
+    6
+  ],
+  [
+    "9e80",
+    "瀫",
+    9,
+    "瀶瀷瀸瀺",
+    17,
+    "灍灎灐",
+    13,
+    "灟",
+    11,
+    "灮灱灲灳灴灷灹灺灻災炁炂炃炄炆炇炈炋炌炍炏炐炑炓炗炘炚炛炞",
+    12,
+    "炰炲炴炵炶為炾炿烄烅烆烇烉烋",
+    12,
+    "烚"
+  ],
+  [
+    "9f40",
+    "烜烝烞烠烡烢烣烥烪烮烰",
+    6,
+    "烸烺烻烼烾",
+    10,
+    "焋",
+    4,
+    "焑焒焔焗焛",
+    10,
+    "焧",
+    7,
+    "焲焳焴"
+  ],
+  [
+    "9f80",
+    "焵焷",
+    13,
+    "煆煇煈煉煋煍煏",
+    12,
+    "煝煟",
+    4,
+    "煥煩",
+    4,
+    "煯煰煱煴煵煶煷煹煻煼煾",
+    5,
+    "熅",
+    4,
+    "熋熌熍熎熐熑熒熓熕熖熗熚",
+    4,
+    "熡",
+    6,
+    "熩熪熫熭",
+    5,
+    "熴熶熷熸熺",
+    8,
+    "燄",
+    9,
+    "燏",
+    4
+  ],
+  [
+    "a040",
+    "燖",
+    9,
+    "燡燢燣燤燦燨",
+    5,
+    "燯",
+    9,
+    "燺",
+    11,
+    "爇",
+    19
+  ],
+  [
+    "a080",
+    "爛爜爞",
+    9,
+    "爩爫爭爮爯爲爳爴爺爼爾牀",
+    6,
+    "牉牊牋牎牏牐牑牓牔牕牗牘牚牜牞牠牣牤牥牨牪牫牬牭牰牱牳牴牶牷牸牻牼牽犂犃犅",
+    4,
+    "犌犎犐犑犓",
+    11,
+    "犠",
+    11,
+    "犮犱犲犳犵犺",
+    6,
+    "狅狆狇狉狊狋狌狏狑狓狔狕狖狘狚狛"
+  ],
+  [
+    "a1a1",
+    "　、。·ˉˇ¨〃々—～‖…‘’“”〔〕〈",
+    7,
+    "〖〗【】±×÷∶∧∨∑∏∪∩∈∷√⊥∥∠⌒⊙∫∮≡≌≈∽∝≠≮≯≤≥∞∵∴♂♀°′″℃＄¤￠￡‰§№☆★○●◎◇◆□■△▲※→←↑↓〓"
+  ],
+  [
+    "a2a1",
+    "ⅰ",
+    9
+  ],
+  [
+    "a2b1",
+    "⒈",
+    19,
+    "⑴",
+    19,
+    "①",
+    9
+  ],
+  [
+    "a2e5",
+    "㈠",
+    9
+  ],
+  [
+    "a2f1",
+    "Ⅰ",
+    11
+  ],
+  [
+    "a3a1",
+    "！＂＃￥％",
+    88,
+    "￣"
+  ],
+  [
+    "a4a1",
+    "ぁ",
+    82
+  ],
+  [
+    "a5a1",
+    "ァ",
+    85
+  ],
+  [
+    "a6a1",
+    "Α",
+    16,
+    "Σ",
+    6
+  ],
+  [
+    "a6c1",
+    "α",
+    16,
+    "σ",
+    6
+  ],
+  [
+    "a6e0",
+    "︵︶︹︺︿﹀︽︾﹁﹂﹃﹄"
+  ],
+  [
+    "a6ee",
+    "︻︼︷︸︱"
+  ],
+  [
+    "a6f4",
+    "︳︴"
+  ],
+  [
+    "a7a1",
+    "А",
+    5,
+    "ЁЖ",
+    25
+  ],
+  [
+    "a7d1",
+    "а",
+    5,
+    "ёж",
+    25
+  ],
+  [
+    "a840",
+    "ˊˋ˙–―‥‵℅℉↖↗↘↙∕∟∣≒≦≧⊿═",
+    35,
+    "▁",
+    6
+  ],
+  [
+    "a880",
+    "█",
+    7,
+    "▓▔▕▼▽◢◣◤◥☉⊕〒〝〞"
+  ],
+  [
+    "a8a1",
+    "āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüêɑ"
+  ],
+  [
+    "a8bd",
+    "ńň"
+  ],
+  [
+    "a8c0",
+    "ɡ"
+  ],
+  [
+    "a8c5",
+    "ㄅ",
+    36
+  ],
+  [
+    "a940",
+    "〡",
+    8,
+    "㊣㎎㎏㎜㎝㎞㎡㏄㏎㏑㏒㏕︰￢￤"
+  ],
+  [
+    "a959",
+    "℡㈱"
+  ],
+  [
+    "a95c",
+    "‐"
+  ],
+  [
+    "a960",
+    "ー゛゜ヽヾ〆ゝゞ﹉",
+    9,
+    "﹔﹕﹖﹗﹙",
+    8
+  ],
+  [
+    "a980",
+    "﹢",
+    4,
+    "﹨﹩﹪﹫"
+  ],
+  [
+    "a996",
+    "〇"
+  ],
+  [
+    "a9a4",
+    "─",
+    75
+  ],
+  [
+    "aa40",
+    "狜狝狟狢",
+    5,
+    "狪狫狵狶狹狽狾狿猀猂猄",
+    5,
+    "猋猌猍猏猐猑猒猔猘猙猚猟猠猣猤猦猧猨猭猯猰猲猳猵猶猺猻猼猽獀",
+    8
+  ],
+  [
+    "aa80",
+    "獉獊獋獌獎獏獑獓獔獕獖獘",
+    7,
+    "獡",
+    10,
+    "獮獰獱"
+  ],
+  [
+    "ab40",
+    "獲",
+    11,
+    "獿",
+    4,
+    "玅玆玈玊玌玍玏玐玒玓玔玕玗玘玙玚玜玝玞玠玡玣",
+    5,
+    "玪玬玭玱玴玵玶玸玹玼玽玾玿珁珃",
+    4
+  ],
+  [
+    "ab80",
+    "珋珌珎珒",
+    6,
+    "珚珛珜珝珟珡珢珣珤珦珨珪珫珬珮珯珰珱珳",
+    4
+  ],
+  [
+    "ac40",
+    "珸",
+    10,
+    "琄琇琈琋琌琍琎琑",
+    8,
+    "琜",
+    5,
+    "琣琤琧琩琫琭琯琱琲琷",
+    4,
+    "琽琾琿瑀瑂",
+    11
+  ],
+  [
+    "ac80",
+    "瑎",
+    6,
+    "瑖瑘瑝瑠",
+    12,
+    "瑮瑯瑱",
+    4,
+    "瑸瑹瑺"
+  ],
+  [
+    "ad40",
+    "瑻瑼瑽瑿璂璄璅璆璈璉璊璌璍璏璑",
+    10,
+    "璝璟",
+    7,
+    "璪",
+    15,
+    "璻",
+    12
+  ],
+  [
+    "ad80",
+    "瓈",
+    9,
+    "瓓",
+    8,
+    "瓝瓟瓡瓥瓧",
+    6,
+    "瓰瓱瓲"
+  ],
+  [
+    "ae40",
+    "瓳瓵瓸",
+    6,
+    "甀甁甂甃甅",
+    7,
+    "甎甐甒甔甕甖甗甛甝甞甠",
+    4,
+    "甦甧甪甮甴甶甹甼甽甿畁畂畃畄畆畇畉畊畍畐畑畒畓畕畖畗畘"
+  ],
+  [
+    "ae80",
+    "畝",
+    7,
+    "畧畨畩畫",
+    6,
+    "畳畵當畷畺",
+    4,
+    "疀疁疂疄疅疇"
+  ],
+  [
+    "af40",
+    "疈疉疊疌疍疎疐疓疕疘疛疜疞疢疦",
+    4,
+    "疭疶疷疺疻疿痀痁痆痋痌痎痏痐痑痓痗痙痚痜痝痟痠痡痥痩痬痭痮痯痲痳痵痶痷痸痺痻痽痾瘂瘄瘆瘇"
+  ],
+  [
+    "af80",
+    "瘈瘉瘋瘍瘎瘏瘑瘒瘓瘔瘖瘚瘜瘝瘞瘡瘣瘧瘨瘬瘮瘯瘱瘲瘶瘷瘹瘺瘻瘽癁療癄"
+  ],
+  [
+    "b040",
+    "癅",
+    6,
+    "癎",
+    5,
+    "癕癗",
+    4,
+    "癝癟癠癡癢癤",
+    6,
+    "癬癭癮癰",
+    7,
+    "癹発發癿皀皁皃皅皉皊皌皍皏皐皒皔皕皗皘皚皛"
+  ],
+  [
+    "b080",
+    "皜",
+    7,
+    "皥",
+    8,
+    "皯皰皳皵",
+    9,
+    "盀盁盃啊阿埃挨哎唉哀皑癌蔼矮艾碍爱隘鞍氨安俺按暗岸胺案肮昂盎凹敖熬翱袄傲奥懊澳芭捌扒叭吧笆八疤巴拔跋靶把耙坝霸罢爸白柏百摆佰败拜稗斑班搬扳般颁板版扮拌伴瓣半办绊邦帮梆榜膀绑棒磅蚌镑傍谤苞胞包褒剥"
+  ],
+  [
+    "b140",
+    "盄盇盉盋盌盓盕盙盚盜盝盞盠",
+    4,
+    "盦",
+    7,
+    "盰盳盵盶盷盺盻盽盿眀眂眃眅眆眊県眎",
+    10,
+    "眛眜眝眞眡眣眤眥眧眪眫"
+  ],
+  [
+    "b180",
+    "眬眮眰",
+    4,
+    "眹眻眽眾眿睂睄睅睆睈",
+    7,
+    "睒",
+    7,
+    "睜薄雹保堡饱宝抱报暴豹鲍爆杯碑悲卑北辈背贝钡倍狈备惫焙被奔苯本笨崩绷甭泵蹦迸逼鼻比鄙笔彼碧蓖蔽毕毙毖币庇痹闭敝弊必辟壁臂避陛鞭边编贬扁便变卞辨辩辫遍标彪膘表鳖憋别瘪彬斌濒滨宾摈兵冰柄丙秉饼炳"
+  ],
+  [
+    "b240",
+    "睝睞睟睠睤睧睩睪睭",
+    11,
+    "睺睻睼瞁瞂瞃瞆",
+    5,
+    "瞏瞐瞓",
+    11,
+    "瞡瞣瞤瞦瞨瞫瞭瞮瞯瞱瞲瞴瞶",
+    4
+  ],
+  [
+    "b280",
+    "瞼瞾矀",
+    12,
+    "矎",
+    8,
+    "矘矙矚矝",
+    4,
+    "矤病并玻菠播拨钵波博勃搏铂箔伯帛舶脖膊渤泊驳捕卜哺补埠不布步簿部怖擦猜裁材才财睬踩采彩菜蔡餐参蚕残惭惨灿苍舱仓沧藏操糙槽曹草厕策侧册测层蹭插叉茬茶查碴搽察岔差诧拆柴豺搀掺蝉馋谗缠铲产阐颤昌猖"
+  ],
+  [
+    "b340",
+    "矦矨矪矯矰矱矲矴矵矷矹矺矻矼砃",
+    5,
+    "砊砋砎砏砐砓砕砙砛砞砠砡砢砤砨砪砫砮砯砱砲砳砵砶砽砿硁硂硃硄硆硈硉硊硋硍硏硑硓硔硘硙硚"
+  ],
+  [
+    "b380",
+    "硛硜硞",
+    11,
+    "硯",
+    7,
+    "硸硹硺硻硽",
+    6,
+    "场尝常长偿肠厂敞畅唱倡超抄钞朝嘲潮巢吵炒车扯撤掣彻澈郴臣辰尘晨忱沉陈趁衬撑称城橙成呈乘程惩澄诚承逞骋秤吃痴持匙池迟弛驰耻齿侈尺赤翅斥炽充冲虫崇宠抽酬畴踌稠愁筹仇绸瞅丑臭初出橱厨躇锄雏滁除楚"
+  ],
+  [
+    "b440",
+    "碄碅碆碈碊碋碏碐碒碔碕碖碙碝碞碠碢碤碦碨",
+    7,
+    "碵碶碷碸確碻碼碽碿磀磂磃磄磆磇磈磌磍磎磏磑磒磓磖磗磘磚",
+    9
+  ],
+  [
+    "b480",
+    "磤磥磦磧磩磪磫磭",
+    4,
+    "磳磵磶磸磹磻",
+    5,
+    "礂礃礄礆",
+    6,
+    "础储矗搐触处揣川穿椽传船喘串疮窗幢床闯创吹炊捶锤垂春椿醇唇淳纯蠢戳绰疵茨磁雌辞慈瓷词此刺赐次聪葱囱匆从丛凑粗醋簇促蹿篡窜摧崔催脆瘁粹淬翠村存寸磋撮搓措挫错搭达答瘩打大呆歹傣戴带殆代贷袋待逮"
+  ],
+  [
+    "b540",
+    "礍",
+    5,
+    "礔",
+    9,
+    "礟",
+    4,
+    "礥",
+    14,
+    "礵",
+    4,
+    "礽礿祂祃祄祅祇祊",
+    8,
+    "祔祕祘祙祡祣"
+  ],
+  [
+    "b580",
+    "祤祦祩祪祫祬祮祰",
+    6,
+    "祹祻",
+    4,
+    "禂禃禆禇禈禉禋禌禍禎禐禑禒怠耽担丹单郸掸胆旦氮但惮淡诞弹蛋当挡党荡档刀捣蹈倒岛祷导到稻悼道盗德得的蹬灯登等瞪凳邓堤低滴迪敌笛狄涤翟嫡抵底地蒂第帝弟递缔颠掂滇碘点典靛垫电佃甸店惦奠淀殿碉叼雕凋刁掉吊钓调跌爹碟蝶迭谍叠"
+  ],
+  [
+    "b640",
+    "禓",
+    6,
+    "禛",
+    11,
+    "禨",
+    10,
+    "禴",
+    4,
+    "禼禿秂秄秅秇秈秊秌秎秏秐秓秔秖秗秙",
+    5,
+    "秠秡秢秥秨秪"
+  ],
+  [
+    "b680",
+    "秬秮秱",
+    6,
+    "秹秺秼秾秿稁稄稅稇稈稉稊稌稏",
+    4,
+    "稕稖稘稙稛稜丁盯叮钉顶鼎锭定订丢东冬董懂动栋侗恫冻洞兜抖斗陡豆逗痘都督毒犊独读堵睹赌杜镀肚度渡妒端短锻段断缎堆兑队对墩吨蹲敦顿囤钝盾遁掇哆多夺垛躲朵跺舵剁惰堕蛾峨鹅俄额讹娥恶厄扼遏鄂饿恩而儿耳尔饵洱二"
+  ],
+  [
+    "b740",
+    "稝稟稡稢稤",
+    14,
+    "稴稵稶稸稺稾穀",
+    5,
+    "穇",
+    9,
+    "穒",
+    4,
+    "穘",
+    16
+  ],
+  [
+    "b780",
+    "穩",
+    6,
+    "穱穲穳穵穻穼穽穾窂窅窇窉窊窋窌窎窏窐窓窔窙窚窛窞窡窢贰发罚筏伐乏阀法珐藩帆番翻樊矾钒繁凡烦反返范贩犯饭泛坊芳方肪房防妨仿访纺放菲非啡飞肥匪诽吠肺废沸费芬酚吩氛分纷坟焚汾粉奋份忿愤粪丰封枫蜂峰锋风疯烽逢冯缝讽奉凤佛否夫敷肤孵扶拂辐幅氟符伏俘服"
+  ],
+  [
+    "b840",
+    "窣窤窧窩窪窫窮",
+    4,
+    "窴",
+    10,
+    "竀",
+    10,
+    "竌",
+    9,
+    "竗竘竚竛竜竝竡竢竤竧",
+    5,
+    "竮竰竱竲竳"
+  ],
+  [
+    "b880",
+    "竴",
+    4,
+    "竻竼竾笀笁笂笅笇笉笌笍笎笐笒笓笖笗笘笚笜笝笟笡笢笣笧笩笭浮涪福袱弗甫抚辅俯釜斧脯腑府腐赴副覆赋复傅付阜父腹负富讣附妇缚咐噶嘎该改概钙盖溉干甘杆柑竿肝赶感秆敢赣冈刚钢缸肛纲岗港杠篙皋高膏羔糕搞镐稿告哥歌搁戈鸽胳疙割革葛格蛤阁隔铬个各给根跟耕更庚羹"
+  ],
+  [
+    "b940",
+    "笯笰笲笴笵笶笷笹笻笽笿",
+    5,
+    "筆筈筊筍筎筓筕筗筙筜筞筟筡筣",
+    10,
+    "筯筰筳筴筶筸筺筼筽筿箁箂箃箄箆",
+    6,
+    "箎箏"
+  ],
+  [
+    "b980",
+    "箑箒箓箖箘箙箚箛箞箟箠箣箤箥箮箯箰箲箳箵箶箷箹",
+    7,
+    "篂篃範埂耿梗工攻功恭龚供躬公宫弓巩汞拱贡共钩勾沟苟狗垢构购够辜菇咕箍估沽孤姑鼓古蛊骨谷股故顾固雇刮瓜剐寡挂褂乖拐怪棺关官冠观管馆罐惯灌贯光广逛瑰规圭硅归龟闺轨鬼诡癸桂柜跪贵刽辊滚棍锅郭国果裹过哈"
+  ],
+  [
+    "ba40",
+    "篅篈築篊篋篍篎篏篐篒篔",
+    4,
+    "篛篜篞篟篠篢篣篤篧篨篩篫篬篭篯篰篲",
+    4,
+    "篸篹篺篻篽篿",
+    7,
+    "簈簉簊簍簎簐",
+    5,
+    "簗簘簙"
+  ],
+  [
+    "ba80",
+    "簚",
+    4,
+    "簠",
+    5,
+    "簨簩簫",
+    12,
+    "簹",
+    5,
+    "籂骸孩海氦亥害骇酣憨邯韩含涵寒函喊罕翰撼捍旱憾悍焊汗汉夯杭航壕嚎豪毫郝好耗号浩呵喝荷菏核禾和何合盒貉阂河涸赫褐鹤贺嘿黑痕很狠恨哼亨横衡恒轰哄烘虹鸿洪宏弘红喉侯猴吼厚候后呼乎忽瑚壶葫胡蝴狐糊湖"
+  ],
+  [
+    "bb40",
+    "籃",
+    9,
+    "籎",
+    36,
+    "籵",
+    5,
+    "籾",
+    9
+  ],
+  [
+    "bb80",
+    "粈粊",
+    6,
+    "粓粔粖粙粚粛粠粡粣粦粧粨粩粫粬粭粯粰粴",
+    4,
+    "粺粻弧虎唬护互沪户花哗华猾滑画划化话槐徊怀淮坏欢环桓还缓换患唤痪豢焕涣宦幻荒慌黄磺蝗簧皇凰惶煌晃幌恍谎灰挥辉徽恢蛔回毁悔慧卉惠晦贿秽会烩汇讳诲绘荤昏婚魂浑混豁活伙火获或惑霍货祸击圾基机畸稽积箕"
+  ],
+  [
+    "bc40",
+    "粿糀糂糃糄糆糉糋糎",
+    6,
+    "糘糚糛糝糞糡",
+    6,
+    "糩",
+    5,
+    "糰",
+    7,
+    "糹糺糼",
+    13,
+    "紋",
+    5
+  ],
+  [
+    "bc80",
+    "紑",
+    14,
+    "紡紣紤紥紦紨紩紪紬紭紮細",
+    6,
+    "肌饥迹激讥鸡姬绩缉吉极棘辑籍集及急疾汲即嫉级挤几脊己蓟技冀季伎祭剂悸济寄寂计记既忌际妓继纪嘉枷夹佳家加荚颊贾甲钾假稼价架驾嫁歼监坚尖笺间煎兼肩艰奸缄茧检柬碱硷拣捡简俭剪减荐槛鉴践贱见键箭件"
+  ],
+  [
+    "bd40",
+    "紷",
+    54,
+    "絯",
+    7
+  ],
+  [
+    "bd80",
+    "絸",
+    32,
+    "健舰剑饯渐溅涧建僵姜将浆江疆蒋桨奖讲匠酱降蕉椒礁焦胶交郊浇骄娇嚼搅铰矫侥脚狡角饺缴绞剿教酵轿较叫窖揭接皆秸街阶截劫节桔杰捷睫竭洁结解姐戒藉芥界借介疥诫届巾筋斤金今津襟紧锦仅谨进靳晋禁近烬浸"
+  ],
+  [
+    "be40",
+    "継",
+    12,
+    "綧",
+    6,
+    "綯",
+    42
+  ],
+  [
+    "be80",
+    "線",
+    32,
+    "尽劲荆兢茎睛晶鲸京惊精粳经井警景颈静境敬镜径痉靖竟竞净炯窘揪究纠玖韭久灸九酒厩救旧臼舅咎就疚鞠拘狙疽居驹菊局咀矩举沮聚拒据巨具距踞锯俱句惧炬剧捐鹃娟倦眷卷绢撅攫抉掘倔爵觉决诀绝均菌钧军君峻"
+  ],
+  [
+    "bf40",
+    "緻",
+    62
+  ],
+  [
+    "bf80",
+    "縺縼",
+    4,
+    "繂",
+    4,
+    "繈",
+    21,
+    "俊竣浚郡骏喀咖卡咯开揩楷凯慨刊堪勘坎砍看康慷糠扛抗亢炕考拷烤靠坷苛柯棵磕颗科壳咳可渴克刻客课肯啃垦恳坑吭空恐孔控抠口扣寇枯哭窟苦酷库裤夸垮挎跨胯块筷侩快宽款匡筐狂框矿眶旷况亏盔岿窥葵奎魁傀"
+  ],
+  [
+    "c040",
+    "繞",
+    35,
+    "纃",
+    23,
+    "纜纝纞"
+  ],
+  [
+    "c080",
+    "纮纴纻纼绖绤绬绹缊缐缞缷缹缻",
+    6,
+    "罃罆",
+    9,
+    "罒罓馈愧溃坤昆捆困括扩廓阔垃拉喇蜡腊辣啦莱来赖蓝婪栏拦篮阑兰澜谰揽览懒缆烂滥琅榔狼廊郎朗浪捞劳牢老佬姥酪烙涝勒乐雷镭蕾磊累儡垒擂肋类泪棱楞冷厘梨犁黎篱狸离漓理李里鲤礼莉荔吏栗丽厉励砾历利傈例俐"
+  ],
+  [
+    "c140",
+    "罖罙罛罜罝罞罠罣",
+    4,
+    "罫罬罭罯罰罳罵罶罷罸罺罻罼罽罿羀羂",
+    7,
+    "羋羍羏",
+    4,
+    "羕",
+    4,
+    "羛羜羠羢羣羥羦羨",
+    6,
+    "羱"
+  ],
+  [
+    "c180",
+    "羳",
+    4,
+    "羺羻羾翀翂翃翄翆翇翈翉翋翍翏",
+    4,
+    "翖翗翙",
+    5,
+    "翢翣痢立粒沥隶力璃哩俩联莲连镰廉怜涟帘敛脸链恋炼练粮凉梁粱良两辆量晾亮谅撩聊僚疗燎寥辽潦了撂镣廖料列裂烈劣猎琳林磷霖临邻鳞淋凛赁吝拎玲菱零龄铃伶羚凌灵陵岭领另令溜琉榴硫馏留刘瘤流柳六龙聋咙笼窿"
+  ],
+  [
+    "c240",
+    "翤翧翨翪翫翬翭翯翲翴",
+    6,
+    "翽翾翿耂耇耈耉耊耎耏耑耓耚耛耝耞耟耡耣耤耫",
+    5,
+    "耲耴耹耺耼耾聀聁聄聅聇聈聉聎聏聐聑聓聕聖聗"
+  ],
+  [
+    "c280",
+    "聙聛",
+    13,
+    "聫",
+    5,
+    "聲",
+    11,
+    "隆垄拢陇楼娄搂篓漏陋芦卢颅庐炉掳卤虏鲁麓碌露路赂鹿潞禄录陆戮驴吕铝侣旅履屡缕虑氯律率滤绿峦挛孪滦卵乱掠略抡轮伦仑沦纶论萝螺罗逻锣箩骡裸落洛骆络妈麻玛码蚂马骂嘛吗埋买麦卖迈脉瞒馒蛮满蔓曼慢漫"
+  ],
+  [
+    "c340",
+    "聾肁肂肅肈肊肍",
+    5,
+    "肔肕肗肙肞肣肦肧肨肬肰肳肵肶肸肹肻胅胇",
+    4,
+    "胏",
+    6,
+    "胘胟胠胢胣胦胮胵胷胹胻胾胿脀脁脃脄脅脇脈脋"
+  ],
+  [
+    "c380",
+    "脌脕脗脙脛脜脝脟",
+    12,
+    "脭脮脰脳脴脵脷脹",
+    4,
+    "脿谩芒茫盲氓忙莽猫茅锚毛矛铆卯茂冒帽貌贸么玫枚梅酶霉煤没眉媒镁每美昧寐妹媚门闷们萌蒙檬盟锰猛梦孟眯醚靡糜迷谜弥米秘觅泌蜜密幂棉眠绵冕免勉娩缅面苗描瞄藐秒渺庙妙蔑灭民抿皿敏悯闽明螟鸣铭名命谬摸"
+  ],
+  [
+    "c440",
+    "腀",
+    5,
+    "腇腉腍腎腏腒腖腗腘腛",
+    4,
+    "腡腢腣腤腦腨腪腫腬腯腲腳腵腶腷腸膁膃",
+    4,
+    "膉膋膌膍膎膐膒",
+    5,
+    "膙膚膞",
+    4,
+    "膤膥"
+  ],
+  [
+    "c480",
+    "膧膩膫",
+    7,
+    "膴",
+    5,
+    "膼膽膾膿臄臅臇臈臉臋臍",
+    6,
+    "摹蘑模膜磨摩魔抹末莫墨默沫漠寞陌谋牟某拇牡亩姆母墓暮幕募慕木目睦牧穆拿哪呐钠那娜纳氖乃奶耐奈南男难囊挠脑恼闹淖呢馁内嫩能妮霓倪泥尼拟你匿腻逆溺蔫拈年碾撵捻念娘酿鸟尿捏聂孽啮镊镍涅您柠狞凝宁"
+  ],
+  [
+    "c540",
+    "臔",
+    14,
+    "臤臥臦臨臩臫臮",
+    4,
+    "臵",
+    5,
+    "臽臿舃與",
+    4,
+    "舎舏舑舓舕",
+    5,
+    "舝舠舤舥舦舧舩舮舲舺舼舽舿"
+  ],
+  [
+    "c580",
+    "艀艁艂艃艅艆艈艊艌艍艎艐",
+    7,
+    "艙艛艜艝艞艠",
+    7,
+    "艩拧泞牛扭钮纽脓浓农弄奴努怒女暖虐疟挪懦糯诺哦欧鸥殴藕呕偶沤啪趴爬帕怕琶拍排牌徘湃派攀潘盘磐盼畔判叛乓庞旁耪胖抛咆刨炮袍跑泡呸胚培裴赔陪配佩沛喷盆砰抨烹澎彭蓬棚硼篷膨朋鹏捧碰坯砒霹批披劈琵毗"
+  ],
+  [
+    "c640",
+    "艪艫艬艭艱艵艶艷艸艻艼芀芁芃芅芆芇芉芌芐芓芔芕芖芚芛芞芠芢芣芧芲芵芶芺芻芼芿苀苂苃苅苆苉苐苖苙苚苝苢苧苨苩苪苬苭苮苰苲苳苵苶苸"
+  ],
+  [
+    "c680",
+    "苺苼",
+    4,
+    "茊茋茍茐茒茓茖茘茙茝",
+    9,
+    "茩茪茮茰茲茷茻茽啤脾疲皮匹痞僻屁譬篇偏片骗飘漂瓢票撇瞥拼频贫品聘乒坪苹萍平凭瓶评屏坡泼颇婆破魄迫粕剖扑铺仆莆葡菩蒲埔朴圃普浦谱曝瀑期欺栖戚妻七凄漆柒沏其棋奇歧畦崎脐齐旗祈祁骑起岂乞企启契砌器气迄弃汽泣讫掐"
+  ],
+  [
+    "c740",
+    "茾茿荁荂荄荅荈荊",
+    4,
+    "荓荕",
+    4,
+    "荝荢荰",
+    6,
+    "荹荺荾",
+    6,
+    "莇莈莊莋莌莍莏莐莑莔莕莖莗莙莚莝莟莡",
+    6,
+    "莬莭莮"
+  ],
+  [
+    "c780",
+    "莯莵莻莾莿菂菃菄菆菈菉菋菍菎菐菑菒菓菕菗菙菚菛菞菢菣菤菦菧菨菫菬菭恰洽牵扦钎铅千迁签仟谦乾黔钱钳前潜遣浅谴堑嵌欠歉枪呛腔羌墙蔷强抢橇锹敲悄桥瞧乔侨巧鞘撬翘峭俏窍切茄且怯窃钦侵亲秦琴勤芹擒禽寝沁青轻氢倾卿清擎晴氰情顷请庆琼穷秋丘邱球求囚酋泅趋区蛆曲躯屈驱渠"
+  ],
+  [
+    "c840",
+    "菮華菳",
+    4,
+    "菺菻菼菾菿萀萂萅萇萈萉萊萐萒",
+    5,
+    "萙萚萛萞",
+    5,
+    "萩",
+    7,
+    "萲",
+    5,
+    "萹萺萻萾",
+    7,
+    "葇葈葉"
+  ],
+  [
+    "c880",
+    "葊",
+    6,
+    "葒",
+    4,
+    "葘葝葞葟葠葢葤",
+    4,
+    "葪葮葯葰葲葴葷葹葻葼取娶龋趣去圈颧权醛泉全痊拳犬券劝缺炔瘸却鹊榷确雀裙群然燃冉染瓤壤攘嚷让饶扰绕惹热壬仁人忍韧任认刃妊纫扔仍日戎茸蓉荣融熔溶容绒冗揉柔肉茹蠕儒孺如辱乳汝入褥软阮蕊瑞锐闰润若弱撒洒萨腮鳃塞赛三叁"
+  ],
+  [
+    "c940",
+    "葽",
+    4,
+    "蒃蒄蒅蒆蒊蒍蒏",
+    7,
+    "蒘蒚蒛蒝蒞蒟蒠蒢",
+    12,
+    "蒰蒱蒳蒵蒶蒷蒻蒼蒾蓀蓂蓃蓅蓆蓇蓈蓋蓌蓎蓏蓒蓔蓕蓗"
+  ],
+  [
+    "c980",
+    "蓘",
+    4,
+    "蓞蓡蓢蓤蓧",
+    4,
+    "蓭蓮蓯蓱",
+    10,
+    "蓽蓾蔀蔁蔂伞散桑嗓丧搔骚扫嫂瑟色涩森僧莎砂杀刹沙纱傻啥煞筛晒珊苫杉山删煽衫闪陕擅赡膳善汕扇缮墒伤商赏晌上尚裳梢捎稍烧芍勺韶少哨邵绍奢赊蛇舌舍赦摄射慑涉社设砷申呻伸身深娠绅神沈审婶甚肾慎渗声生甥牲升绳"
+  ],
+  [
+    "ca40",
+    "蔃",
+    8,
+    "蔍蔎蔏蔐蔒蔔蔕蔖蔘蔙蔛蔜蔝蔞蔠蔢",
+    8,
+    "蔭",
+    9,
+    "蔾",
+    4,
+    "蕄蕅蕆蕇蕋",
+    10
+  ],
+  [
+    "ca80",
+    "蕗蕘蕚蕛蕜蕝蕟",
+    4,
+    "蕥蕦蕧蕩",
+    8,
+    "蕳蕵蕶蕷蕸蕼蕽蕿薀薁省盛剩胜圣师失狮施湿诗尸虱十石拾时什食蚀实识史矢使屎驶始式示士世柿事拭誓逝势是嗜噬适仕侍释饰氏市恃室视试收手首守寿授售受瘦兽蔬枢梳殊抒输叔舒淑疏书赎孰熟薯暑曙署蜀黍鼠属术述树束戍竖墅庶数漱"
+  ],
+  [
+    "cb40",
+    "薂薃薆薈",
+    6,
+    "薐",
+    10,
+    "薝",
+    6,
+    "薥薦薧薩薫薬薭薱",
+    5,
+    "薸薺",
+    6,
+    "藂",
+    6,
+    "藊",
+    4,
+    "藑藒"
+  ],
+  [
+    "cb80",
+    "藔藖",
+    5,
+    "藝",
+    6,
+    "藥藦藧藨藪",
+    14,
+    "恕刷耍摔衰甩帅栓拴霜双爽谁水睡税吮瞬顺舜说硕朔烁斯撕嘶思私司丝死肆寺嗣四伺似饲巳松耸怂颂送宋讼诵搜艘擞嗽苏酥俗素速粟僳塑溯宿诉肃酸蒜算虽隋随绥髓碎岁穗遂隧祟孙损笋蓑梭唆缩琐索锁所塌他它她塔"
+  ],
+  [
+    "cc40",
+    "藹藺藼藽藾蘀",
+    4,
+    "蘆",
+    10,
+    "蘒蘓蘔蘕蘗",
+    15,
+    "蘨蘪",
+    13,
+    "蘹蘺蘻蘽蘾蘿虀"
+  ],
+  [
+    "cc80",
+    "虁",
+    11,
+    "虒虓處",
+    4,
+    "虛虜虝號虠虡虣",
+    7,
+    "獭挞蹋踏胎苔抬台泰酞太态汰坍摊贪瘫滩坛檀痰潭谭谈坦毯袒碳探叹炭汤塘搪堂棠膛唐糖倘躺淌趟烫掏涛滔绦萄桃逃淘陶讨套特藤腾疼誊梯剔踢锑提题蹄啼体替嚏惕涕剃屉天添填田甜恬舔腆挑条迢眺跳贴铁帖厅听烃"
+  ],
+  [
+    "cd40",
+    "虭虯虰虲",
+    6,
+    "蚃",
+    6,
+    "蚎",
+    4,
+    "蚔蚖",
+    5,
+    "蚞",
+    4,
+    "蚥蚦蚫蚭蚮蚲蚳蚷蚸蚹蚻",
+    4,
+    "蛁蛂蛃蛅蛈蛌蛍蛒蛓蛕蛖蛗蛚蛜"
+  ],
+  [
+    "cd80",
+    "蛝蛠蛡蛢蛣蛥蛦蛧蛨蛪蛫蛬蛯蛵蛶蛷蛺蛻蛼蛽蛿蜁蜄蜅蜆蜋蜌蜎蜏蜐蜑蜔蜖汀廷停亭庭挺艇通桐酮瞳同铜彤童桶捅筒统痛偷投头透凸秃突图徒途涂屠土吐兔湍团推颓腿蜕褪退吞屯臀拖托脱鸵陀驮驼椭妥拓唾挖哇蛙洼娃瓦袜歪外豌弯湾玩顽丸烷完碗挽晚皖惋宛婉万腕汪王亡枉网往旺望忘妄威"
+  ],
+  [
+    "ce40",
+    "蜙蜛蜝蜟蜠蜤蜦蜧蜨蜪蜫蜬蜭蜯蜰蜲蜳蜵蜶蜸蜹蜺蜼蜽蝀",
+    6,
+    "蝊蝋蝍蝏蝐蝑蝒蝔蝕蝖蝘蝚",
+    5,
+    "蝡蝢蝦",
+    7,
+    "蝯蝱蝲蝳蝵"
+  ],
+  [
+    "ce80",
+    "蝷蝸蝹蝺蝿螀螁螄螆螇螉螊螌螎",
+    4,
+    "螔螕螖螘",
+    6,
+    "螠",
+    4,
+    "巍微危韦违桅围唯惟为潍维苇萎委伟伪尾纬未蔚味畏胃喂魏位渭谓尉慰卫瘟温蚊文闻纹吻稳紊问嗡翁瓮挝蜗涡窝我斡卧握沃巫呜钨乌污诬屋无芜梧吾吴毋武五捂午舞伍侮坞戊雾晤物勿务悟误昔熙析西硒矽晰嘻吸锡牺"
+  ],
+  [
+    "cf40",
+    "螥螦螧螩螪螮螰螱螲螴螶螷螸螹螻螼螾螿蟁",
+    4,
+    "蟇蟈蟉蟌",
+    4,
+    "蟔",
+    6,
+    "蟜蟝蟞蟟蟡蟢蟣蟤蟦蟧蟨蟩蟫蟬蟭蟯",
+    9
+  ],
+  [
+    "cf80",
+    "蟺蟻蟼蟽蟿蠀蠁蠂蠄",
+    5,
+    "蠋",
+    7,
+    "蠔蠗蠘蠙蠚蠜",
+    4,
+    "蠣稀息希悉膝夕惜熄烯溪汐犀檄袭席习媳喜铣洗系隙戏细瞎虾匣霞辖暇峡侠狭下厦夏吓掀锨先仙鲜纤咸贤衔舷闲涎弦嫌显险现献县腺馅羡宪陷限线相厢镶香箱襄湘乡翔祥详想响享项巷橡像向象萧硝霄削哮嚣销消宵淆晓"
+  ],
+  [
+    "d040",
+    "蠤",
+    13,
+    "蠳",
+    5,
+    "蠺蠻蠽蠾蠿衁衂衃衆",
+    5,
+    "衎",
+    5,
+    "衕衖衘衚",
+    6,
+    "衦衧衪衭衯衱衳衴衵衶衸衹衺"
+  ],
+  [
+    "d080",
+    "衻衼袀袃袆袇袉袊袌袎袏袐袑袓袔袕袗",
+    4,
+    "袝",
+    4,
+    "袣袥",
+    5,
+    "小孝校肖啸笑效楔些歇蝎鞋协挟携邪斜胁谐写械卸蟹懈泄泻谢屑薪芯锌欣辛新忻心信衅星腥猩惺兴刑型形邢行醒幸杏性姓兄凶胸匈汹雄熊休修羞朽嗅锈秀袖绣墟戌需虚嘘须徐许蓄酗叙旭序畜恤絮婿绪续轩喧宣悬旋玄"
+  ],
+  [
+    "d140",
+    "袬袮袯袰袲",
+    4,
+    "袸袹袺袻袽袾袿裀裃裄裇裈裊裋裌裍裏裐裑裓裖裗裚",
+    4,
+    "裠裡裦裧裩",
+    6,
+    "裲裵裶裷裺裻製裿褀褁褃",
+    5
+  ],
+  [
+    "d180",
+    "褉褋",
+    4,
+    "褑褔",
+    4,
+    "褜",
+    4,
+    "褢褣褤褦褧褨褩褬褭褮褯褱褲褳褵褷选癣眩绚靴薛学穴雪血勋熏循旬询寻驯巡殉汛训讯逊迅压押鸦鸭呀丫芽牙蚜崖衙涯雅哑亚讶焉咽阉烟淹盐严研蜒岩延言颜阎炎沿奄掩眼衍演艳堰燕厌砚雁唁彦焰宴谚验殃央鸯秧杨扬佯疡羊洋阳氧仰痒养样漾邀腰妖瑶"
+  ],
+  [
+    "d240",
+    "褸",
+    8,
+    "襂襃襅",
+    24,
+    "襠",
+    5,
+    "襧",
+    19,
+    "襼"
+  ],
+  [
+    "d280",
+    "襽襾覀覂覄覅覇",
+    26,
+    "摇尧遥窑谣姚咬舀药要耀椰噎耶爷野冶也页掖业叶曳腋夜液一壹医揖铱依伊衣颐夷遗移仪胰疑沂宜姨彝椅蚁倚已乙矣以艺抑易邑屹亿役臆逸肄疫亦裔意毅忆义益溢诣议谊译异翼翌绎茵荫因殷音阴姻吟银淫寅饮尹引隐"
+  ],
+  [
+    "d340",
+    "覢",
+    30,
+    "觃觍觓觔觕觗觘觙觛觝觟觠觡觢觤觧觨觩觪觬觭觮觰觱觲觴",
+    6
+  ],
+  [
+    "d380",
+    "觻",
+    4,
+    "訁",
+    5,
+    "計",
+    21,
+    "印英樱婴鹰应缨莹萤营荧蝇迎赢盈影颖硬映哟拥佣臃痈庸雍踊蛹咏泳涌永恿勇用幽优悠忧尤由邮铀犹油游酉有友右佑釉诱又幼迂淤于盂榆虞愚舆余俞逾鱼愉渝渔隅予娱雨与屿禹宇语羽玉域芋郁吁遇喻峪御愈欲狱育誉"
+  ],
+  [
+    "d440",
+    "訞",
+    31,
+    "訿",
+    8,
+    "詉",
+    21
+  ],
+  [
+    "d480",
+    "詟",
+    25,
+    "詺",
+    6,
+    "浴寓裕预豫驭鸳渊冤元垣袁原援辕园员圆猿源缘远苑愿怨院曰约越跃钥岳粤月悦阅耘云郧匀陨允运蕴酝晕韵孕匝砸杂栽哉灾宰载再在咱攒暂赞赃脏葬遭糟凿藻枣早澡蚤躁噪造皂灶燥责择则泽贼怎增憎曾赠扎喳渣札轧"
+  ],
+  [
+    "d540",
+    "誁",
+    7,
+    "誋",
+    7,
+    "誔",
+    46
+  ],
+  [
+    "d580",
+    "諃",
+    32,
+    "铡闸眨栅榨咋乍炸诈摘斋宅窄债寨瞻毡詹粘沾盏斩辗崭展蘸栈占战站湛绽樟章彰漳张掌涨杖丈帐账仗胀瘴障招昭找沼赵照罩兆肇召遮折哲蛰辙者锗蔗这浙珍斟真甄砧臻贞针侦枕疹诊震振镇阵蒸挣睁征狰争怔整拯正政"
+  ],
+  [
+    "d640",
+    "諤",
+    34,
+    "謈",
+    27
+  ],
+  [
+    "d680",
+    "謤謥謧",
+    30,
+    "帧症郑证芝枝支吱蜘知肢脂汁之织职直植殖执值侄址指止趾只旨纸志挚掷至致置帜峙制智秩稚质炙痔滞治窒中盅忠钟衷终种肿重仲众舟周州洲诌粥轴肘帚咒皱宙昼骤珠株蛛朱猪诸诛逐竹烛煮拄瞩嘱主著柱助蛀贮铸筑"
+  ],
+  [
+    "d740",
+    "譆",
+    31,
+    "譧",
+    4,
+    "譭",
+    25
+  ],
+  [
+    "d780",
+    "讇",
+    24,
+    "讬讱讻诇诐诪谉谞住注祝驻抓爪拽专砖转撰赚篆桩庄装妆撞壮状椎锥追赘坠缀谆准捉拙卓桌琢茁酌啄着灼浊兹咨资姿滋淄孜紫仔籽滓子自渍字鬃棕踪宗综总纵邹走奏揍租足卒族祖诅阻组钻纂嘴醉最罪尊遵昨左佐柞做作坐座"
+  ],
+  [
+    "d840",
+    "谸",
+    8,
+    "豂豃豄豅豈豊豋豍",
+    7,
+    "豖豗豘豙豛",
+    5,
+    "豣",
+    6,
+    "豬",
+    6,
+    "豴豵豶豷豻",
+    6,
+    "貃貄貆貇"
+  ],
+  [
+    "d880",
+    "貈貋貍",
+    6,
+    "貕貖貗貙",
+    20,
+    "亍丌兀丐廿卅丕亘丞鬲孬噩丨禺丿匕乇夭爻卮氐囟胤馗毓睾鼗丶亟鼐乜乩亓芈孛啬嘏仄厍厝厣厥厮靥赝匚叵匦匮匾赜卦卣刂刈刎刭刳刿剀剌剞剡剜蒯剽劂劁劐劓冂罔亻仃仉仂仨仡仫仞伛仳伢佤仵伥伧伉伫佞佧攸佚佝"
+  ],
+  [
+    "d940",
+    "貮",
+    62
+  ],
+  [
+    "d980",
+    "賭",
+    32,
+    "佟佗伲伽佶佴侑侉侃侏佾佻侪佼侬侔俦俨俪俅俚俣俜俑俟俸倩偌俳倬倏倮倭俾倜倌倥倨偾偃偕偈偎偬偻傥傧傩傺僖儆僭僬僦僮儇儋仝氽佘佥俎龠汆籴兮巽黉馘冁夔勹匍訇匐凫夙兕亠兖亳衮袤亵脔裒禀嬴蠃羸冫冱冽冼"
+  ],
+  [
+    "da40",
+    "贎",
+    14,
+    "贠赑赒赗赟赥赨赩赪赬赮赯赱赲赸",
+    8,
+    "趂趃趆趇趈趉趌",
+    4,
+    "趒趓趕",
+    9,
+    "趠趡"
+  ],
+  [
+    "da80",
+    "趢趤",
+    12,
+    "趲趶趷趹趻趽跀跁跂跅跇跈跉跊跍跐跒跓跔凇冖冢冥讠讦讧讪讴讵讷诂诃诋诏诎诒诓诔诖诘诙诜诟诠诤诨诩诮诰诳诶诹诼诿谀谂谄谇谌谏谑谒谔谕谖谙谛谘谝谟谠谡谥谧谪谫谮谯谲谳谵谶卩卺阝阢阡阱阪阽阼陂陉陔陟陧陬陲陴隈隍隗隰邗邛邝邙邬邡邴邳邶邺"
+  ],
+  [
+    "db40",
+    "跕跘跙跜跠跡跢跥跦跧跩跭跮跰跱跲跴跶跼跾",
+    6,
+    "踆踇踈踋踍踎踐踑踒踓踕",
+    7,
+    "踠踡踤",
+    4,
+    "踫踭踰踲踳踴踶踷踸踻踼踾"
+  ],
+  [
+    "db80",
+    "踿蹃蹅蹆蹌",
+    4,
+    "蹓",
+    5,
+    "蹚",
+    11,
+    "蹧蹨蹪蹫蹮蹱邸邰郏郅邾郐郄郇郓郦郢郜郗郛郫郯郾鄄鄢鄞鄣鄱鄯鄹酃酆刍奂劢劬劭劾哿勐勖勰叟燮矍廴凵凼鬯厶弁畚巯坌垩垡塾墼壅壑圩圬圪圳圹圮圯坜圻坂坩垅坫垆坼坻坨坭坶坳垭垤垌垲埏垧垴垓垠埕埘埚埙埒垸埴埯埸埤埝"
+  ],
+  [
+    "dc40",
+    "蹳蹵蹷",
+    4,
+    "蹽蹾躀躂躃躄躆躈",
+    6,
+    "躑躒躓躕",
+    6,
+    "躝躟",
+    11,
+    "躭躮躰躱躳",
+    6,
+    "躻",
+    7
+  ],
+  [
+    "dc80",
+    "軃",
+    10,
+    "軏",
+    21,
+    "堋堍埽埭堀堞堙塄堠塥塬墁墉墚墀馨鼙懿艹艽艿芏芊芨芄芎芑芗芙芫芸芾芰苈苊苣芘芷芮苋苌苁芩芴芡芪芟苄苎芤苡茉苷苤茏茇苜苴苒苘茌苻苓茑茚茆茔茕苠苕茜荑荛荜茈莒茼茴茱莛荞茯荏荇荃荟荀茗荠茭茺茳荦荥"
+  ],
+  [
+    "dd40",
+    "軥",
+    62
+  ],
+  [
+    "dd80",
+    "輤",
+    32,
+    "荨茛荩荬荪荭荮莰荸莳莴莠莪莓莜莅荼莶莩荽莸荻莘莞莨莺莼菁萁菥菘堇萘萋菝菽菖萜萸萑萆菔菟萏萃菸菹菪菅菀萦菰菡葜葑葚葙葳蒇蒈葺蒉葸萼葆葩葶蒌蒎萱葭蓁蓍蓐蓦蒽蓓蓊蒿蒺蓠蒡蒹蒴蒗蓥蓣蔌甍蔸蓰蔹蔟蔺"
+  ],
+  [
+    "de40",
+    "轅",
+    32,
+    "轪辀辌辒辝辠辡辢辤辥辦辧辪辬辭辮辯農辳辴辵辷辸辺辻込辿迀迃迆"
+  ],
+  [
+    "de80",
+    "迉",
+    4,
+    "迏迒迖迗迚迠迡迣迧迬迯迱迲迴迵迶迺迻迼迾迿逇逈逌逎逓逕逘蕖蔻蓿蓼蕙蕈蕨蕤蕞蕺瞢蕃蕲蕻薤薨薇薏蕹薮薜薅薹薷薰藓藁藜藿蘧蘅蘩蘖蘼廾弈夼奁耷奕奚奘匏尢尥尬尴扌扪抟抻拊拚拗拮挢拶挹捋捃掭揶捱捺掎掴捭掬掊捩掮掼揲揸揠揿揄揞揎摒揆掾摅摁搋搛搠搌搦搡摞撄摭撖"
+  ],
+  [
+    "df40",
+    "這逜連逤逥逧",
+    5,
+    "逰",
+    4,
+    "逷逹逺逽逿遀遃遅遆遈",
+    4,
+    "過達違遖遙遚遜",
+    5,
+    "遤遦遧適遪遫遬遯",
+    4,
+    "遶",
+    6,
+    "遾邁"
+  ],
+  [
+    "df80",
+    "還邅邆邇邉邊邌",
+    4,
+    "邒邔邖邘邚邜邞邟邠邤邥邧邨邩邫邭邲邷邼邽邿郀摺撷撸撙撺擀擐擗擤擢攉攥攮弋忒甙弑卟叱叽叩叨叻吒吖吆呋呒呓呔呖呃吡呗呙吣吲咂咔呷呱呤咚咛咄呶呦咝哐咭哂咴哒咧咦哓哔呲咣哕咻咿哌哙哚哜咩咪咤哝哏哞唛哧唠哽唔哳唢唣唏唑唧唪啧喏喵啉啭啁啕唿啐唼"
+  ],
+  [
+    "e040",
+    "郂郃郆郈郉郋郌郍郒郔郕郖郘郙郚郞郟郠郣郤郥郩郪郬郮郰郱郲郳郵郶郷郹郺郻郼郿鄀鄁鄃鄅",
+    19,
+    "鄚鄛鄜"
+  ],
+  [
+    "e080",
+    "鄝鄟鄠鄡鄤",
+    10,
+    "鄰鄲",
+    6,
+    "鄺",
+    8,
+    "酄唷啖啵啶啷唳唰啜喋嗒喃喱喹喈喁喟啾嗖喑啻嗟喽喾喔喙嗪嗷嗉嘟嗑嗫嗬嗔嗦嗝嗄嗯嗥嗲嗳嗌嗍嗨嗵嗤辔嘞嘈嘌嘁嘤嘣嗾嘀嘧嘭噘嘹噗嘬噍噢噙噜噌噔嚆噤噱噫噻噼嚅嚓嚯囔囗囝囡囵囫囹囿圄圊圉圜帏帙帔帑帱帻帼"
+  ],
+  [
+    "e140",
+    "酅酇酈酑酓酔酕酖酘酙酛酜酟酠酦酧酨酫酭酳酺酻酼醀",
+    4,
+    "醆醈醊醎醏醓",
+    6,
+    "醜",
+    5,
+    "醤",
+    5,
+    "醫醬醰醱醲醳醶醷醸醹醻"
+  ],
+  [
+    "e180",
+    "醼",
+    10,
+    "釈釋釐釒",
+    9,
+    "針",
+    8,
+    "帷幄幔幛幞幡岌屺岍岐岖岈岘岙岑岚岜岵岢岽岬岫岱岣峁岷峄峒峤峋峥崂崃崧崦崮崤崞崆崛嵘崾崴崽嵬嵛嵯嵝嵫嵋嵊嵩嵴嶂嶙嶝豳嶷巅彳彷徂徇徉後徕徙徜徨徭徵徼衢彡犭犰犴犷犸狃狁狎狍狒狨狯狩狲狴狷猁狳猃狺"
+  ],
+  [
+    "e240",
+    "釦",
+    62
+  ],
+  [
+    "e280",
+    "鈥",
+    32,
+    "狻猗猓猡猊猞猝猕猢猹猥猬猸猱獐獍獗獠獬獯獾舛夥飧夤夂饣饧",
+    5,
+    "饴饷饽馀馄馇馊馍馐馑馓馔馕庀庑庋庖庥庠庹庵庾庳赓廒廑廛廨廪膺忄忉忖忏怃忮怄忡忤忾怅怆忪忭忸怙怵怦怛怏怍怩怫怊怿怡恸恹恻恺恂"
+  ],
+  [
+    "e340",
+    "鉆",
+    45,
+    "鉵",
+    16
+  ],
+  [
+    "e380",
+    "銆",
+    7,
+    "銏",
+    24,
+    "恪恽悖悚悭悝悃悒悌悛惬悻悱惝惘惆惚悴愠愦愕愣惴愀愎愫慊慵憬憔憧憷懔懵忝隳闩闫闱闳闵闶闼闾阃阄阆阈阊阋阌阍阏阒阕阖阗阙阚丬爿戕氵汔汜汊沣沅沐沔沌汨汩汴汶沆沩泐泔沭泷泸泱泗沲泠泖泺泫泮沱泓泯泾"
+  ],
+  [
+    "e440",
+    "銨",
+    5,
+    "銯",
+    24,
+    "鋉",
+    31
+  ],
+  [
+    "e480",
+    "鋩",
+    32,
+    "洹洧洌浃浈洇洄洙洎洫浍洮洵洚浏浒浔洳涑浯涞涠浞涓涔浜浠浼浣渚淇淅淞渎涿淠渑淦淝淙渖涫渌涮渫湮湎湫溲湟溆湓湔渲渥湄滟溱溘滠漭滢溥溧溽溻溷滗溴滏溏滂溟潢潆潇漤漕滹漯漶潋潴漪漉漩澉澍澌潸潲潼潺濑"
+  ],
+  [
+    "e540",
+    "錊",
+    51,
+    "錿",
+    10
+  ],
+  [
+    "e580",
+    "鍊",
+    31,
+    "鍫濉澧澹澶濂濡濮濞濠濯瀚瀣瀛瀹瀵灏灞宀宄宕宓宥宸甯骞搴寤寮褰寰蹇謇辶迓迕迥迮迤迩迦迳迨逅逄逋逦逑逍逖逡逵逶逭逯遄遑遒遐遨遘遢遛暹遴遽邂邈邃邋彐彗彖彘尻咫屐屙孱屣屦羼弪弩弭艴弼鬻屮妁妃妍妩妪妣"
+  ],
+  [
+    "e640",
+    "鍬",
+    34,
+    "鎐",
+    27
+  ],
+  [
+    "e680",
+    "鎬",
+    29,
+    "鏋鏌鏍妗姊妫妞妤姒妲妯姗妾娅娆姝娈姣姘姹娌娉娲娴娑娣娓婀婧婊婕娼婢婵胬媪媛婷婺媾嫫媲嫒嫔媸嫠嫣嫱嫖嫦嫘嫜嬉嬗嬖嬲嬷孀尕尜孚孥孳孑孓孢驵驷驸驺驿驽骀骁骅骈骊骐骒骓骖骘骛骜骝骟骠骢骣骥骧纟纡纣纥纨纩"
+  ],
+  [
+    "e740",
+    "鏎",
+    7,
+    "鏗",
+    54
+  ],
+  [
+    "e780",
+    "鐎",
+    32,
+    "纭纰纾绀绁绂绉绋绌绐绔绗绛绠绡绨绫绮绯绱绲缍绶绺绻绾缁缂缃缇缈缋缌缏缑缒缗缙缜缛缟缡",
+    6,
+    "缪缫缬缭缯",
+    4,
+    "缵幺畿巛甾邕玎玑玮玢玟珏珂珑玷玳珀珉珈珥珙顼琊珩珧珞玺珲琏琪瑛琦琥琨琰琮琬"
+  ],
+  [
+    "e840",
+    "鐯",
+    14,
+    "鐿",
+    43,
+    "鑬鑭鑮鑯"
+  ],
+  [
+    "e880",
+    "鑰",
+    20,
+    "钑钖钘铇铏铓铔铚铦铻锜锠琛琚瑁瑜瑗瑕瑙瑷瑭瑾璜璎璀璁璇璋璞璨璩璐璧瓒璺韪韫韬杌杓杞杈杩枥枇杪杳枘枧杵枨枞枭枋杷杼柰栉柘栊柩枰栌柙枵柚枳柝栀柃枸柢栎柁柽栲栳桠桡桎桢桄桤梃栝桕桦桁桧桀栾桊桉栩梵梏桴桷梓桫棂楮棼椟椠棹"
+  ],
+  [
+    "e940",
+    "锧锳锽镃镈镋镕镚镠镮镴镵長",
+    7,
+    "門",
+    42
+  ],
+  [
+    "e980",
+    "閫",
+    32,
+    "椤棰椋椁楗棣椐楱椹楠楂楝榄楫榀榘楸椴槌榇榈槎榉楦楣楹榛榧榻榫榭槔榱槁槊槟榕槠榍槿樯槭樗樘橥槲橄樾檠橐橛樵檎橹樽樨橘橼檑檐檩檗檫猷獒殁殂殇殄殒殓殍殚殛殡殪轫轭轱轲轳轵轶轸轷轹轺轼轾辁辂辄辇辋"
+  ],
+  [
+    "ea40",
+    "闌",
+    27,
+    "闬闿阇阓阘阛阞阠阣",
+    6,
+    "阫阬阭阯阰阷阸阹阺阾陁陃陊陎陏陑陒陓陖陗"
+  ],
+  [
+    "ea80",
+    "陘陙陚陜陝陞陠陣陥陦陫陭",
+    4,
+    "陳陸",
+    12,
+    "隇隉隊辍辎辏辘辚軎戋戗戛戟戢戡戥戤戬臧瓯瓴瓿甏甑甓攴旮旯旰昊昙杲昃昕昀炅曷昝昴昱昶昵耆晟晔晁晏晖晡晗晷暄暌暧暝暾曛曜曦曩贲贳贶贻贽赀赅赆赈赉赇赍赕赙觇觊觋觌觎觏觐觑牮犟牝牦牯牾牿犄犋犍犏犒挈挲掰"
+  ],
+  [
+    "eb40",
+    "隌階隑隒隓隕隖隚際隝",
+    9,
+    "隨",
+    7,
+    "隱隲隴隵隷隸隺隻隿雂雃雈雊雋雐雑雓雔雖",
+    9,
+    "雡",
+    6,
+    "雫"
+  ],
+  [
+    "eb80",
+    "雬雭雮雰雱雲雴雵雸雺電雼雽雿霂霃霅霊霋霌霐霑霒霔霕霗",
+    4,
+    "霝霟霠搿擘耄毪毳毽毵毹氅氇氆氍氕氘氙氚氡氩氤氪氲攵敕敫牍牒牖爰虢刖肟肜肓肼朊肽肱肫肭肴肷胧胨胩胪胛胂胄胙胍胗朐胝胫胱胴胭脍脎胲胼朕脒豚脶脞脬脘脲腈腌腓腴腙腚腱腠腩腼腽腭腧塍媵膈膂膑滕膣膪臌朦臊膻"
+  ],
+  [
+    "ec40",
+    "霡",
+    8,
+    "霫霬霮霯霱霳",
+    4,
+    "霺霻霼霽霿",
+    18,
+    "靔靕靗靘靚靜靝靟靣靤靦靧靨靪",
+    7
+  ],
+  [
+    "ec80",
+    "靲靵靷",
+    4,
+    "靽",
+    7,
+    "鞆",
+    4,
+    "鞌鞎鞏鞐鞓鞕鞖鞗鞙",
+    4,
+    "臁膦欤欷欹歃歆歙飑飒飓飕飙飚殳彀毂觳斐齑斓於旆旄旃旌旎旒旖炀炜炖炝炻烀炷炫炱烨烊焐焓焖焯焱煳煜煨煅煲煊煸煺熘熳熵熨熠燠燔燧燹爝爨灬焘煦熹戾戽扃扈扉礻祀祆祉祛祜祓祚祢祗祠祯祧祺禅禊禚禧禳忑忐"
+  ],
+  [
+    "ed40",
+    "鞞鞟鞡鞢鞤",
+    6,
+    "鞬鞮鞰鞱鞳鞵",
+    46
+  ],
+  [
+    "ed80",
+    "韤韥韨韮",
+    4,
+    "韴韷",
+    23,
+    "怼恝恚恧恁恙恣悫愆愍慝憩憝懋懑戆肀聿沓泶淼矶矸砀砉砗砘砑斫砭砜砝砹砺砻砟砼砥砬砣砩硎硭硖硗砦硐硇硌硪碛碓碚碇碜碡碣碲碹碥磔磙磉磬磲礅磴礓礤礞礴龛黹黻黼盱眄眍盹眇眈眚眢眙眭眦眵眸睐睑睇睃睚睨"
+  ],
+  [
+    "ee40",
+    "頏",
+    62
+  ],
+  [
+    "ee80",
+    "顎",
+    32,
+    "睢睥睿瞍睽瞀瞌瞑瞟瞠瞰瞵瞽町畀畎畋畈畛畲畹疃罘罡罟詈罨罴罱罹羁罾盍盥蠲钅钆钇钋钊钌钍钏钐钔钗钕钚钛钜钣钤钫钪钭钬钯钰钲钴钶",
+    4,
+    "钼钽钿铄铈",
+    6,
+    "铐铑铒铕铖铗铙铘铛铞铟铠铢铤铥铧铨铪"
+  ],
+  [
+    "ef40",
+    "顯",
+    5,
+    "颋颎颒颕颙颣風",
+    37,
+    "飏飐飔飖飗飛飜飝飠",
+    4
+  ],
+  [
+    "ef80",
+    "飥飦飩",
+    30,
+    "铩铫铮铯铳铴铵铷铹铼铽铿锃锂锆锇锉锊锍锎锏锒",
+    4,
+    "锘锛锝锞锟锢锪锫锩锬锱锲锴锶锷锸锼锾锿镂锵镄镅镆镉镌镎镏镒镓镔镖镗镘镙镛镞镟镝镡镢镤",
+    8,
+    "镯镱镲镳锺矧矬雉秕秭秣秫稆嵇稃稂稞稔"
+  ],
+  [
+    "f040",
+    "餈",
+    4,
+    "餎餏餑",
+    28,
+    "餯",
+    26
+  ],
+  [
+    "f080",
+    "饊",
+    9,
+    "饖",
+    12,
+    "饤饦饳饸饹饻饾馂馃馉稹稷穑黏馥穰皈皎皓皙皤瓞瓠甬鸠鸢鸨",
+    4,
+    "鸲鸱鸶鸸鸷鸹鸺鸾鹁鹂鹄鹆鹇鹈鹉鹋鹌鹎鹑鹕鹗鹚鹛鹜鹞鹣鹦",
+    6,
+    "鹱鹭鹳疒疔疖疠疝疬疣疳疴疸痄疱疰痃痂痖痍痣痨痦痤痫痧瘃痱痼痿瘐瘀瘅瘌瘗瘊瘥瘘瘕瘙"
+  ],
+  [
+    "f140",
+    "馌馎馚",
+    10,
+    "馦馧馩",
+    47
+  ],
+  [
+    "f180",
+    "駙",
+    32,
+    "瘛瘼瘢瘠癀瘭瘰瘿瘵癃瘾瘳癍癞癔癜癖癫癯翊竦穸穹窀窆窈窕窦窠窬窨窭窳衤衩衲衽衿袂袢裆袷袼裉裢裎裣裥裱褚裼裨裾裰褡褙褓褛褊褴褫褶襁襦襻疋胥皲皴矜耒耔耖耜耠耢耥耦耧耩耨耱耋耵聃聆聍聒聩聱覃顸颀颃"
+  ],
+  [
+    "f240",
+    "駺",
+    62
+  ],
+  [
+    "f280",
+    "騹",
+    32,
+    "颉颌颍颏颔颚颛颞颟颡颢颥颦虍虔虬虮虿虺虼虻蚨蚍蚋蚬蚝蚧蚣蚪蚓蚩蚶蛄蚵蛎蚰蚺蚱蚯蛉蛏蚴蛩蛱蛲蛭蛳蛐蜓蛞蛴蛟蛘蛑蜃蜇蛸蜈蜊蜍蜉蜣蜻蜞蜥蜮蜚蜾蝈蜴蜱蜩蜷蜿螂蜢蝽蝾蝻蝠蝰蝌蝮螋蝓蝣蝼蝤蝙蝥螓螯螨蟒"
+  ],
+  [
+    "f340",
+    "驚",
+    17,
+    "驲骃骉骍骎骔骕骙骦骩",
+    6,
+    "骲骳骴骵骹骻骽骾骿髃髄髆",
+    4,
+    "髍髎髏髐髒體髕髖髗髙髚髛髜"
+  ],
+  [
+    "f380",
+    "髝髞髠髢髣髤髥髧髨髩髪髬髮髰",
+    8,
+    "髺髼",
+    6,
+    "鬄鬅鬆蟆螈螅螭螗螃螫蟥螬螵螳蟋蟓螽蟑蟀蟊蟛蟪蟠蟮蠖蠓蟾蠊蠛蠡蠹蠼缶罂罄罅舐竺竽笈笃笄笕笊笫笏筇笸笪笙笮笱笠笥笤笳笾笞筘筚筅筵筌筝筠筮筻筢筲筱箐箦箧箸箬箝箨箅箪箜箢箫箴篑篁篌篝篚篥篦篪簌篾篼簏簖簋"
+  ],
+  [
+    "f440",
+    "鬇鬉",
+    5,
+    "鬐鬑鬒鬔",
+    10,
+    "鬠鬡鬢鬤",
+    10,
+    "鬰鬱鬳",
+    7,
+    "鬽鬾鬿魀魆魊魋魌魎魐魒魓魕",
+    5
+  ],
+  [
+    "f480",
+    "魛",
+    32,
+    "簟簪簦簸籁籀臾舁舂舄臬衄舡舢舣舭舯舨舫舸舻舳舴舾艄艉艋艏艚艟艨衾袅袈裘裟襞羝羟羧羯羰羲籼敉粑粝粜粞粢粲粼粽糁糇糌糍糈糅糗糨艮暨羿翎翕翥翡翦翩翮翳糸絷綦綮繇纛麸麴赳趄趔趑趱赧赭豇豉酊酐酎酏酤"
+  ],
+  [
+    "f540",
+    "魼",
+    62
+  ],
+  [
+    "f580",
+    "鮻",
+    32,
+    "酢酡酰酩酯酽酾酲酴酹醌醅醐醍醑醢醣醪醭醮醯醵醴醺豕鹾趸跫踅蹙蹩趵趿趼趺跄跖跗跚跞跎跏跛跆跬跷跸跣跹跻跤踉跽踔踝踟踬踮踣踯踺蹀踹踵踽踱蹉蹁蹂蹑蹒蹊蹰蹶蹼蹯蹴躅躏躔躐躜躞豸貂貊貅貘貔斛觖觞觚觜"
+  ],
+  [
+    "f640",
+    "鯜",
+    62
+  ],
+  [
+    "f680",
+    "鰛",
+    32,
+    "觥觫觯訾謦靓雩雳雯霆霁霈霏霎霪霭霰霾龀龃龅",
+    5,
+    "龌黾鼋鼍隹隼隽雎雒瞿雠銎銮鋈錾鍪鏊鎏鐾鑫鱿鲂鲅鲆鲇鲈稣鲋鲎鲐鲑鲒鲔鲕鲚鲛鲞",
+    5,
+    "鲥",
+    4,
+    "鲫鲭鲮鲰",
+    7,
+    "鲺鲻鲼鲽鳄鳅鳆鳇鳊鳋"
+  ],
+  [
+    "f740",
+    "鰼",
+    62
+  ],
+  [
+    "f780",
+    "鱻鱽鱾鲀鲃鲄鲉鲊鲌鲏鲓鲖鲗鲘鲙鲝鲪鲬鲯鲹鲾",
+    4,
+    "鳈鳉鳑鳒鳚鳛鳠鳡鳌",
+    4,
+    "鳓鳔鳕鳗鳘鳙鳜鳝鳟鳢靼鞅鞑鞒鞔鞯鞫鞣鞲鞴骱骰骷鹘骶骺骼髁髀髅髂髋髌髑魅魃魇魉魈魍魑飨餍餮饕饔髟髡髦髯髫髻髭髹鬈鬏鬓鬟鬣麽麾縻麂麇麈麋麒鏖麝麟黛黜黝黠黟黢黩黧黥黪黯鼢鼬鼯鼹鼷鼽鼾齄"
+  ],
+  [
+    "f840",
+    "鳣",
+    62
+  ],
+  [
+    "f880",
+    "鴢",
+    32
+  ],
+  [
+    "f940",
+    "鵃",
+    62
+  ],
+  [
+    "f980",
+    "鶂",
+    32
+  ],
+  [
+    "fa40",
+    "鶣",
+    62
+  ],
+  [
+    "fa80",
+    "鷢",
+    32
+  ],
+  [
+    "fb40",
+    "鸃",
+    27,
+    "鸤鸧鸮鸰鸴鸻鸼鹀鹍鹐鹒鹓鹔鹖鹙鹝鹟鹠鹡鹢鹥鹮鹯鹲鹴",
+    9,
+    "麀"
+  ],
+  [
+    "fb80",
+    "麁麃麄麅麆麉麊麌",
+    5,
+    "麔",
+    8,
+    "麞麠",
+    5,
+    "麧麨麩麪"
+  ],
+  [
+    "fc40",
+    "麫",
+    8,
+    "麵麶麷麹麺麼麿",
+    4,
+    "黅黆黇黈黊黋黌黐黒黓黕黖黗黙黚點黡黣黤黦黨黫黬黭黮黰",
+    8,
+    "黺黽黿",
+    6
+  ],
+  [
+    "fc80",
+    "鼆",
+    4,
+    "鼌鼏鼑鼒鼔鼕鼖鼘鼚",
+    5,
+    "鼡鼣",
+    8,
+    "鼭鼮鼰鼱"
+  ],
+  [
+    "fd40",
+    "鼲",
+    4,
+    "鼸鼺鼼鼿",
+    4,
+    "齅",
+    10,
+    "齒",
+    38
+  ],
+  [
+    "fd80",
+    "齹",
+    5,
+    "龁龂龍",
+    11,
+    "龜龝龞龡",
+    4,
+    "郎凉秊裏隣"
+  ],
+  [
+    "fe40",
+    "兀嗀﨎﨏﨑﨓﨔礼﨟蘒﨡﨣﨤﨧﨨﨩"
+  ]
+], Ii = [
+  [
+    "a140",
+    "",
+    62
+  ],
+  [
+    "a180",
+    "",
+    32
+  ],
+  [
+    "a240",
+    "",
+    62
+  ],
+  [
+    "a280",
+    "",
+    32
+  ],
+  [
+    "a2ab",
+    "",
+    5
+  ],
+  [
+    "a2e3",
+    "€"
+  ],
+  [
+    "a2ef",
+    ""
+  ],
+  [
+    "a2fd",
+    ""
+  ],
+  [
+    "a340",
+    "",
+    62
+  ],
+  [
+    "a380",
+    "",
+    31,
+    "　"
+  ],
+  [
+    "a440",
+    "",
+    62
+  ],
+  [
+    "a480",
+    "",
+    32
+  ],
+  [
+    "a4f4",
+    "",
+    10
+  ],
+  [
+    "a540",
+    "",
+    62
+  ],
+  [
+    "a580",
+    "",
+    32
+  ],
+  [
+    "a5f7",
+    "",
+    7
+  ],
+  [
+    "a640",
+    "",
+    62
+  ],
+  [
+    "a680",
+    "",
+    32
+  ],
+  [
+    "a6b9",
+    "",
+    7
+  ],
+  [
+    "a6d9",
+    "",
+    6
+  ],
+  [
+    "a6ec",
+    ""
+  ],
+  [
+    "a6f3",
+    ""
+  ],
+  [
+    "a6f6",
+    "",
+    8
+  ],
+  [
+    "a740",
+    "",
+    62
+  ],
+  [
+    "a780",
+    "",
+    32
+  ],
+  [
+    "a7c2",
+    "",
+    14
+  ],
+  [
+    "a7f2",
+    "",
+    12
+  ],
+  [
+    "a896",
+    "",
+    10
+  ],
+  [
+    "a8bc",
+    "ḿ"
+  ],
+  [
+    "a8bf",
+    "ǹ"
+  ],
+  [
+    "a8c1",
+    ""
+  ],
+  [
+    "a8ea",
+    "",
+    20
+  ],
+  [
+    "a958",
+    ""
+  ],
+  [
+    "a95b",
+    ""
+  ],
+  [
+    "a95d",
+    ""
+  ],
+  [
+    "a989",
+    "〾⿰",
+    11
+  ],
+  [
+    "a997",
+    "",
+    12
+  ],
+  [
+    "a9f0",
+    "",
+    14
+  ],
+  [
+    "aaa1",
+    "",
+    93
+  ],
+  [
+    "aba1",
+    "",
+    93
+  ],
+  [
+    "aca1",
+    "",
+    93
+  ],
+  [
+    "ada1",
+    "",
+    93
+  ],
+  [
+    "aea1",
+    "",
+    93
+  ],
+  [
+    "afa1",
+    "",
+    93
+  ],
+  [
+    "d7fa",
+    "",
+    4
+  ],
+  [
+    "f8a1",
+    "",
+    93
+  ],
+  [
+    "f9a1",
+    "",
+    93
+  ],
+  [
+    "faa1",
+    "",
+    93
+  ],
+  [
+    "fba1",
+    "",
+    93
+  ],
+  [
+    "fca1",
+    "",
+    93
+  ],
+  [
+    "fda1",
+    "",
+    93
+  ],
+  [
+    "fe50",
+    "⺁⺄㑳㑇⺈⺋㖞㘚㘎⺌⺗㥮㤘㧏㧟㩳㧐㭎㱮㳠⺧⺪䁖䅟⺮䌷⺳⺶⺷䎱䎬⺻䏝䓖䙡䙌"
+  ],
+  [
+    "fe80",
+    "䜣䜩䝼䞍⻊䥇䥺䥽䦂䦃䦅䦆䦟䦛䦷䦶䲣䲟䲠䲡䱷䲢䴓",
+    6,
+    "䶮",
+    93
+  ],
+  [
+    "8135f437",
+    ""
+  ]
+], c0 = [
+  128,
+  165,
+  169,
+  178,
+  184,
+  216,
+  226,
+  235,
+  238,
+  244,
+  248,
+  251,
+  253,
+  258,
+  276,
+  284,
+  300,
+  325,
+  329,
+  334,
+  364,
+  463,
+  465,
+  467,
+  469,
+  471,
+  473,
+  475,
+  477,
+  506,
+  594,
+  610,
+  712,
+  716,
+  730,
+  930,
+  938,
+  962,
+  970,
+  1026,
+  1104,
+  1106,
+  8209,
+  8215,
+  8218,
+  8222,
+  8231,
+  8241,
+  8244,
+  8246,
+  8252,
+  8365,
+  8452,
+  8454,
+  8458,
+  8471,
+  8482,
+  8556,
+  8570,
+  8596,
+  8602,
+  8713,
+  8720,
+  8722,
+  8726,
+  8731,
+  8737,
+  8740,
+  8742,
+  8748,
+  8751,
+  8760,
+  8766,
+  8777,
+  8781,
+  8787,
+  8802,
+  8808,
+  8816,
+  8854,
+  8858,
+  8870,
+  8896,
+  8979,
+  9322,
+  9372,
+  9548,
+  9588,
+  9616,
+  9622,
+  9634,
+  9652,
+  9662,
+  9672,
+  9676,
+  9680,
+  9702,
+  9735,
+  9738,
+  9793,
+  9795,
+  11906,
+  11909,
+  11913,
+  11917,
+  11928,
+  11944,
+  11947,
+  11951,
+  11956,
+  11960,
+  11964,
+  11979,
+  12284,
+  12292,
+  12312,
+  12319,
+  12330,
+  12351,
+  12436,
+  12447,
+  12535,
+  12543,
+  12586,
+  12842,
+  12850,
+  12964,
+  13200,
+  13215,
+  13218,
+  13253,
+  13263,
+  13267,
+  13270,
+  13384,
+  13428,
+  13727,
+  13839,
+  13851,
+  14617,
+  14703,
+  14801,
+  14816,
+  14964,
+  15183,
+  15471,
+  15585,
+  16471,
+  16736,
+  17208,
+  17325,
+  17330,
+  17374,
+  17623,
+  17997,
+  18018,
+  18212,
+  18218,
+  18301,
+  18318,
+  18760,
+  18811,
+  18814,
+  18820,
+  18823,
+  18844,
+  18848,
+  18872,
+  19576,
+  19620,
+  19738,
+  19887,
+  40870,
+  59244,
+  59336,
+  59367,
+  59413,
+  59417,
+  59423,
+  59431,
+  59437,
+  59443,
+  59452,
+  59460,
+  59478,
+  59493,
+  63789,
+  63866,
+  63894,
+  63976,
+  63986,
+  64016,
+  64018,
+  64021,
+  64025,
+  64034,
+  64037,
+  64042,
+  65074,
+  65093,
+  65107,
+  65112,
+  65127,
+  65132,
+  65375,
+  65510,
+  65536
+], l0 = [
+  0,
+  36,
+  38,
+  45,
+  50,
+  81,
+  89,
+  95,
+  96,
+  100,
+  103,
+  104,
+  105,
+  109,
+  126,
+  133,
+  148,
+  172,
+  175,
+  179,
+  208,
+  306,
+  307,
+  308,
+  309,
+  310,
+  311,
+  312,
+  313,
+  341,
+  428,
+  443,
+  544,
+  545,
+  558,
+  741,
+  742,
+  749,
+  750,
+  805,
+  819,
+  820,
+  7922,
+  7924,
+  7925,
+  7927,
+  7934,
+  7943,
+  7944,
+  7945,
+  7950,
+  8062,
+  8148,
+  8149,
+  8152,
+  8164,
+  8174,
+  8236,
+  8240,
+  8262,
+  8264,
+  8374,
+  8380,
+  8381,
+  8384,
+  8388,
+  8390,
+  8392,
+  8393,
+  8394,
+  8396,
+  8401,
+  8406,
+  8416,
+  8419,
+  8424,
+  8437,
+  8439,
+  8445,
+  8482,
+  8485,
+  8496,
+  8521,
+  8603,
+  8936,
+  8946,
+  9046,
+  9050,
+  9063,
+  9066,
+  9076,
+  9092,
+  9100,
+  9108,
+  9111,
+  9113,
+  9131,
+  9162,
+  9164,
+  9218,
+  9219,
+  11329,
+  11331,
+  11334,
+  11336,
+  11346,
+  11361,
+  11363,
+  11366,
+  11370,
+  11372,
+  11375,
+  11389,
+  11682,
+  11686,
+  11687,
+  11692,
+  11694,
+  11714,
+  11716,
+  11723,
+  11725,
+  11730,
+  11736,
+  11982,
+  11989,
+  12102,
+  12336,
+  12348,
+  12350,
+  12384,
+  12393,
+  12395,
+  12397,
+  12510,
+  12553,
+  12851,
+  12962,
+  12973,
+  13738,
+  13823,
+  13919,
+  13933,
+  14080,
+  14298,
+  14585,
+  14698,
+  15583,
+  15847,
+  16318,
+  16434,
+  16438,
+  16481,
+  16729,
+  17102,
+  17122,
+  17315,
+  17320,
+  17402,
+  17418,
+  17859,
+  17909,
+  17911,
+  17915,
+  17916,
+  17936,
+  17939,
+  17961,
+  18664,
+  18703,
+  18814,
+  18962,
+  19043,
+  33469,
+  33470,
+  33471,
+  33484,
+  33485,
+  33490,
+  33497,
+  33501,
+  33505,
+  33513,
+  33520,
+  33536,
+  33550,
+  37845,
+  37921,
+  37948,
+  38029,
+  38038,
+  38064,
+  38065,
+  38066,
+  38069,
+  38075,
+  38076,
+  38078,
+  39108,
+  39109,
+  39113,
+  39114,
+  39115,
+  39116,
+  39265,
+  39394,
+  189e3
+], u0 = {
+  uChars: c0,
+  gbChars: l0
+}, h0 = [
+  [
+    "0",
+    "\0",
+    127
+  ],
+  [
+    "8141",
+    "갂갃갅갆갋",
+    4,
+    "갘갞갟갡갢갣갥",
+    6,
+    "갮갲갳갴"
+  ],
+  [
+    "8161",
+    "갵갶갷갺갻갽갾갿걁",
+    9,
+    "걌걎",
+    5,
+    "걕"
+  ],
+  [
+    "8181",
+    "걖걗걙걚걛걝",
+    18,
+    "걲걳걵걶걹걻",
+    4,
+    "겂겇겈겍겎겏겑겒겓겕",
+    6,
+    "겞겢",
+    5,
+    "겫겭겮겱",
+    6,
+    "겺겾겿곀곂곃곅곆곇곉곊곋곍",
+    7,
+    "곖곘",
+    7,
+    "곢곣곥곦곩곫곭곮곲곴곷",
+    4,
+    "곾곿괁괂괃괅괇",
+    4,
+    "괎괐괒괓"
+  ],
+  [
+    "8241",
+    "괔괕괖괗괙괚괛괝괞괟괡",
+    7,
+    "괪괫괮",
+    5
+  ],
+  [
+    "8261",
+    "괶괷괹괺괻괽",
+    6,
+    "굆굈굊",
+    5,
+    "굑굒굓굕굖굗"
+  ],
+  [
+    "8281",
+    "굙",
+    7,
+    "굢굤",
+    7,
+    "굮굯굱굲굷굸굹굺굾궀궃",
+    4,
+    "궊궋궍궎궏궑",
+    10,
+    "궞",
+    5,
+    "궥",
+    17,
+    "궸",
+    7,
+    "귂귃귅귆귇귉",
+    6,
+    "귒귔",
+    7,
+    "귝귞귟귡귢귣귥",
+    18
+  ],
+  [
+    "8341",
+    "귺귻귽귾긂",
+    5,
+    "긊긌긎",
+    5,
+    "긕",
+    7
+  ],
+  [
+    "8361",
+    "긝",
+    18,
+    "긲긳긵긶긹긻긼"
+  ],
+  [
+    "8381",
+    "긽긾긿깂깄깇깈깉깋깏깑깒깓깕깗",
+    4,
+    "깞깢깣깤깦깧깪깫깭깮깯깱",
+    6,
+    "깺깾",
+    5,
+    "꺆",
+    5,
+    "꺍",
+    46,
+    "꺿껁껂껃껅",
+    6,
+    "껎껒",
+    5,
+    "껚껛껝",
+    8
+  ],
+  [
+    "8441",
+    "껦껧껩껪껬껮",
+    5,
+    "껵껶껷껹껺껻껽",
+    8
+  ],
+  [
+    "8461",
+    "꼆꼉꼊꼋꼌꼎꼏꼑",
+    18
+  ],
+  [
+    "8481",
+    "꼤",
+    7,
+    "꼮꼯꼱꼳꼵",
+    6,
+    "꼾꽀꽄꽅꽆꽇꽊",
+    5,
+    "꽑",
+    10,
+    "꽞",
+    5,
+    "꽦",
+    18,
+    "꽺",
+    5,
+    "꾁꾂꾃꾅꾆꾇꾉",
+    6,
+    "꾒꾓꾔꾖",
+    5,
+    "꾝",
+    26,
+    "꾺꾻꾽꾾"
+  ],
+  [
+    "8541",
+    "꾿꿁",
+    5,
+    "꿊꿌꿏",
+    4,
+    "꿕",
+    6,
+    "꿝",
+    4
+  ],
+  [
+    "8561",
+    "꿢",
+    5,
+    "꿪",
+    5,
+    "꿲꿳꿵꿶꿷꿹",
+    6,
+    "뀂뀃"
+  ],
+  [
+    "8581",
+    "뀅",
+    6,
+    "뀍뀎뀏뀑뀒뀓뀕",
+    6,
+    "뀞",
+    9,
+    "뀩",
+    26,
+    "끆끇끉끋끍끏끐끑끒끖끘끚끛끜끞",
+    29,
+    "끾끿낁낂낃낅",
+    6,
+    "낎낐낒",
+    5,
+    "낛낝낞낣낤"
+  ],
+  [
+    "8641",
+    "낥낦낧낪낰낲낶낷낹낺낻낽",
+    6,
+    "냆냊",
+    5,
+    "냒"
+  ],
+  [
+    "8661",
+    "냓냕냖냗냙",
+    6,
+    "냡냢냣냤냦",
+    10
+  ],
+  [
+    "8681",
+    "냱",
+    22,
+    "넊넍넎넏넑넔넕넖넗넚넞",
+    4,
+    "넦넧넩넪넫넭",
+    6,
+    "넶넺",
+    5,
+    "녂녃녅녆녇녉",
+    6,
+    "녒녓녖녗녙녚녛녝녞녟녡",
+    22,
+    "녺녻녽녾녿놁놃",
+    4,
+    "놊놌놎놏놐놑놕놖놗놙놚놛놝"
+  ],
+  [
+    "8741",
+    "놞",
+    9,
+    "놩",
+    15
+  ],
+  [
+    "8761",
+    "놹",
+    18,
+    "뇍뇎뇏뇑뇒뇓뇕"
+  ],
+  [
+    "8781",
+    "뇖",
+    5,
+    "뇞뇠",
+    7,
+    "뇪뇫뇭뇮뇯뇱",
+    7,
+    "뇺뇼뇾",
+    5,
+    "눆눇눉눊눍",
+    6,
+    "눖눘눚",
+    5,
+    "눡",
+    18,
+    "눵",
+    6,
+    "눽",
+    26,
+    "뉙뉚뉛뉝뉞뉟뉡",
+    6,
+    "뉪",
+    4
+  ],
+  [
+    "8841",
+    "뉯",
+    4,
+    "뉶",
+    5,
+    "뉽",
+    6,
+    "늆늇늈늊",
+    4
+  ],
+  [
+    "8861",
+    "늏늒늓늕늖늗늛",
+    4,
+    "늢늤늧늨늩늫늭늮늯늱늲늳늵늶늷"
+  ],
+  [
+    "8881",
+    "늸",
+    15,
+    "닊닋닍닎닏닑닓",
+    4,
+    "닚닜닞닟닠닡닣닧닩닪닰닱닲닶닼닽닾댂댃댅댆댇댉",
+    6,
+    "댒댖",
+    5,
+    "댝",
+    54,
+    "덗덙덚덝덠덡덢덣"
+  ],
+  [
+    "8941",
+    "덦덨덪덬덭덯덲덳덵덶덷덹",
+    6,
+    "뎂뎆",
+    5,
+    "뎍"
+  ],
+  [
+    "8961",
+    "뎎뎏뎑뎒뎓뎕",
+    10,
+    "뎢",
+    5,
+    "뎩뎪뎫뎭"
+  ],
+  [
+    "8981",
+    "뎮",
+    21,
+    "돆돇돉돊돍돏돑돒돓돖돘돚돜돞돟돡돢돣돥돦돧돩",
+    18,
+    "돽",
+    18,
+    "됑",
+    6,
+    "됙됚됛됝됞됟됡",
+    6,
+    "됪됬",
+    7,
+    "됵",
+    15
+  ],
+  [
+    "8a41",
+    "둅",
+    10,
+    "둒둓둕둖둗둙",
+    6,
+    "둢둤둦"
+  ],
+  [
+    "8a61",
+    "둧",
+    4,
+    "둭",
+    18,
+    "뒁뒂"
+  ],
+  [
+    "8a81",
+    "뒃",
+    4,
+    "뒉",
+    19,
+    "뒞",
+    5,
+    "뒥뒦뒧뒩뒪뒫뒭",
+    7,
+    "뒶뒸뒺",
+    5,
+    "듁듂듃듅듆듇듉",
+    6,
+    "듑듒듓듔듖",
+    5,
+    "듞듟듡듢듥듧",
+    4,
+    "듮듰듲",
+    5,
+    "듹",
+    26,
+    "딖딗딙딚딝"
+  ],
+  [
+    "8b41",
+    "딞",
+    5,
+    "딦딫",
+    4,
+    "딲딳딵딶딷딹",
+    6,
+    "땂땆"
+  ],
+  [
+    "8b61",
+    "땇땈땉땊땎땏땑땒땓땕",
+    6,
+    "땞땢",
+    8
+  ],
+  [
+    "8b81",
+    "땫",
+    52,
+    "떢떣떥떦떧떩떬떭떮떯떲떶",
+    4,
+    "떾떿뗁뗂뗃뗅",
+    6,
+    "뗎뗒",
+    5,
+    "뗙",
+    18,
+    "뗭",
+    18
+  ],
+  [
+    "8c41",
+    "똀",
+    15,
+    "똒똓똕똖똗똙",
+    4
+  ],
+  [
+    "8c61",
+    "똞",
+    6,
+    "똦",
+    5,
+    "똭",
+    6,
+    "똵",
+    5
+  ],
+  [
+    "8c81",
+    "똻",
+    12,
+    "뙉",
+    26,
+    "뙥뙦뙧뙩",
+    50,
+    "뚞뚟뚡뚢뚣뚥",
+    5,
+    "뚭뚮뚯뚰뚲",
+    16
+  ],
+  [
+    "8d41",
+    "뛃",
+    16,
+    "뛕",
+    8
+  ],
+  [
+    "8d61",
+    "뛞",
+    17,
+    "뛱뛲뛳뛵뛶뛷뛹뛺"
+  ],
+  [
+    "8d81",
+    "뛻",
+    4,
+    "뜂뜃뜄뜆",
+    33,
+    "뜪뜫뜭뜮뜱",
+    6,
+    "뜺뜼",
+    7,
+    "띅띆띇띉띊띋띍",
+    6,
+    "띖",
+    9,
+    "띡띢띣띥띦띧띩",
+    6,
+    "띲띴띶",
+    5,
+    "띾띿랁랂랃랅",
+    6,
+    "랎랓랔랕랚랛랝랞"
+  ],
+  [
+    "8e41",
+    "랟랡",
+    6,
+    "랪랮",
+    5,
+    "랶랷랹",
+    8
+  ],
+  [
+    "8e61",
+    "럂",
+    4,
+    "럈럊",
+    19
+  ],
+  [
+    "8e81",
+    "럞",
+    13,
+    "럮럯럱럲럳럵",
+    6,
+    "럾렂",
+    4,
+    "렊렋렍렎렏렑",
+    6,
+    "렚렜렞",
+    5,
+    "렦렧렩렪렫렭",
+    6,
+    "렶렺",
+    5,
+    "롁롂롃롅",
+    11,
+    "롒롔",
+    7,
+    "롞롟롡롢롣롥",
+    6,
+    "롮롰롲",
+    5,
+    "롹롺롻롽",
+    7
+  ],
+  [
+    "8f41",
+    "뢅",
+    7,
+    "뢎",
+    17
+  ],
+  [
+    "8f61",
+    "뢠",
+    7,
+    "뢩",
+    6,
+    "뢱뢲뢳뢵뢶뢷뢹",
+    4
+  ],
+  [
+    "8f81",
+    "뢾뢿룂룄룆",
+    5,
+    "룍룎룏룑룒룓룕",
+    7,
+    "룞룠룢",
+    5,
+    "룪룫룭룮룯룱",
+    6,
+    "룺룼룾",
+    5,
+    "뤅",
+    18,
+    "뤙",
+    6,
+    "뤡",
+    26,
+    "뤾뤿륁륂륃륅",
+    6,
+    "륍륎륐륒",
+    5
+  ],
+  [
+    "9041",
+    "륚륛륝륞륟륡",
+    6,
+    "륪륬륮",
+    5,
+    "륶륷륹륺륻륽"
+  ],
+  [
+    "9061",
+    "륾",
+    5,
+    "릆릈릋릌릏",
+    15
+  ],
+  [
+    "9081",
+    "릟",
+    12,
+    "릮릯릱릲릳릵",
+    6,
+    "릾맀맂",
+    5,
+    "맊맋맍맓",
+    4,
+    "맚맜맟맠맢맦맧맩맪맫맭",
+    6,
+    "맶맻",
+    4,
+    "먂",
+    5,
+    "먉",
+    11,
+    "먖",
+    33,
+    "먺먻먽먾먿멁멃멄멅멆"
+  ],
+  [
+    "9141",
+    "멇멊멌멏멐멑멒멖멗멙멚멛멝",
+    6,
+    "멦멪",
+    5
+  ],
+  [
+    "9161",
+    "멲멳멵멶멷멹",
+    9,
+    "몆몈몉몊몋몍",
+    5
+  ],
+  [
+    "9181",
+    "몓",
+    20,
+    "몪몭몮몯몱몳",
+    4,
+    "몺몼몾",
+    5,
+    "뫅뫆뫇뫉",
+    14,
+    "뫚",
+    33,
+    "뫽뫾뫿묁묂묃묅",
+    7,
+    "묎묐묒",
+    5,
+    "묙묚묛묝묞묟묡",
+    6
+  ],
+  [
+    "9241",
+    "묨묪묬",
+    7,
+    "묷묹묺묿",
+    4,
+    "뭆뭈뭊뭋뭌뭎뭑뭒"
+  ],
+  [
+    "9261",
+    "뭓뭕뭖뭗뭙",
+    7,
+    "뭢뭤",
+    7,
+    "뭭",
+    4
+  ],
+  [
+    "9281",
+    "뭲",
+    21,
+    "뮉뮊뮋뮍뮎뮏뮑",
+    18,
+    "뮥뮦뮧뮩뮪뮫뮭",
+    6,
+    "뮵뮶뮸",
+    7,
+    "믁믂믃믅믆믇믉",
+    6,
+    "믑믒믔",
+    35,
+    "믺믻믽믾밁"
+  ],
+  [
+    "9341",
+    "밃",
+    4,
+    "밊밎밐밒밓밙밚밠밡밢밣밦밨밪밫밬밮밯밲밳밵"
+  ],
+  [
+    "9361",
+    "밶밷밹",
+    6,
+    "뱂뱆뱇뱈뱊뱋뱎뱏뱑",
+    8
+  ],
+  [
+    "9381",
+    "뱚뱛뱜뱞",
+    37,
+    "벆벇벉벊벍벏",
+    4,
+    "벖벘벛",
+    4,
+    "벢벣벥벦벩",
+    6,
+    "벲벶",
+    5,
+    "벾벿볁볂볃볅",
+    7,
+    "볎볒볓볔볖볗볙볚볛볝",
+    22,
+    "볷볹볺볻볽"
+  ],
+  [
+    "9441",
+    "볾",
+    5,
+    "봆봈봊",
+    5,
+    "봑봒봓봕",
+    8
+  ],
+  [
+    "9461",
+    "봞",
+    5,
+    "봥",
+    6,
+    "봭",
+    12
+  ],
+  [
+    "9481",
+    "봺",
+    5,
+    "뵁",
+    6,
+    "뵊뵋뵍뵎뵏뵑",
+    6,
+    "뵚",
+    9,
+    "뵥뵦뵧뵩",
+    22,
+    "붂붃붅붆붋",
+    4,
+    "붒붔붖붗붘붛붝",
+    6,
+    "붥",
+    10,
+    "붱",
+    6,
+    "붹",
+    24
+  ],
+  [
+    "9541",
+    "뷒뷓뷖뷗뷙뷚뷛뷝",
+    11,
+    "뷪",
+    5,
+    "뷱"
+  ],
+  [
+    "9561",
+    "뷲뷳뷵뷶뷷뷹",
+    6,
+    "븁븂븄븆",
+    5,
+    "븎븏븑븒븓"
+  ],
+  [
+    "9581",
+    "븕",
+    6,
+    "븞븠",
+    35,
+    "빆빇빉빊빋빍빏",
+    4,
+    "빖빘빜빝빞빟빢빣빥빦빧빩빫",
+    4,
+    "빲빶",
+    4,
+    "빾빿뺁뺂뺃뺅",
+    6,
+    "뺎뺒",
+    5,
+    "뺚",
+    13,
+    "뺩",
+    14
+  ],
+  [
+    "9641",
+    "뺸",
+    23,
+    "뻒뻓"
+  ],
+  [
+    "9661",
+    "뻕뻖뻙",
+    6,
+    "뻡뻢뻦",
+    5,
+    "뻭",
+    8
+  ],
+  [
+    "9681",
+    "뻶",
+    10,
+    "뼂",
+    5,
+    "뼊",
+    13,
+    "뼚뼞",
+    33,
+    "뽂뽃뽅뽆뽇뽉",
+    6,
+    "뽒뽓뽔뽖",
+    44
+  ],
+  [
+    "9741",
+    "뾃",
+    16,
+    "뾕",
+    8
+  ],
+  [
+    "9761",
+    "뾞",
+    17,
+    "뾱",
+    7
+  ],
+  [
+    "9781",
+    "뾹",
+    11,
+    "뿆",
+    5,
+    "뿎뿏뿑뿒뿓뿕",
+    6,
+    "뿝뿞뿠뿢",
+    89,
+    "쀽쀾쀿"
+  ],
+  [
+    "9841",
+    "쁀",
+    16,
+    "쁒",
+    5,
+    "쁙쁚쁛"
+  ],
+  [
+    "9861",
+    "쁝쁞쁟쁡",
+    6,
+    "쁪",
+    15
+  ],
+  [
+    "9881",
+    "쁺",
+    21,
+    "삒삓삕삖삗삙",
+    6,
+    "삢삤삦",
+    5,
+    "삮삱삲삷",
+    4,
+    "삾샂샃샄샆샇샊샋샍샎샏샑",
+    6,
+    "샚샞",
+    5,
+    "샦샧샩샪샫샭",
+    6,
+    "샶샸샺",
+    5,
+    "섁섂섃섅섆섇섉",
+    6,
+    "섑섒섓섔섖",
+    5,
+    "섡섢섥섨섩섪섫섮"
+  ],
+  [
+    "9941",
+    "섲섳섴섵섷섺섻섽섾섿셁",
+    6,
+    "셊셎",
+    5,
+    "셖셗"
+  ],
+  [
+    "9961",
+    "셙셚셛셝",
+    6,
+    "셦셪",
+    5,
+    "셱셲셳셵셶셷셹셺셻"
+  ],
+  [
+    "9981",
+    "셼",
+    8,
+    "솆",
+    5,
+    "솏솑솒솓솕솗",
+    4,
+    "솞솠솢솣솤솦솧솪솫솭솮솯솱",
+    11,
+    "솾",
+    5,
+    "쇅쇆쇇쇉쇊쇋쇍",
+    6,
+    "쇕쇖쇙",
+    6,
+    "쇡쇢쇣쇥쇦쇧쇩",
+    6,
+    "쇲쇴",
+    7,
+    "쇾쇿숁숂숃숅",
+    6,
+    "숎숐숒",
+    5,
+    "숚숛숝숞숡숢숣"
+  ],
+  [
+    "9a41",
+    "숤숥숦숧숪숬숮숰숳숵",
+    16
+  ],
+  [
+    "9a61",
+    "쉆쉇쉉",
+    6,
+    "쉒쉓쉕쉖쉗쉙",
+    6,
+    "쉡쉢쉣쉤쉦"
+  ],
+  [
+    "9a81",
+    "쉧",
+    4,
+    "쉮쉯쉱쉲쉳쉵",
+    6,
+    "쉾슀슂",
+    5,
+    "슊",
+    5,
+    "슑",
+    6,
+    "슙슚슜슞",
+    5,
+    "슦슧슩슪슫슮",
+    5,
+    "슶슸슺",
+    33,
+    "싞싟싡싢싥",
+    5,
+    "싮싰싲싳싴싵싷싺싽싾싿쌁",
+    6,
+    "쌊쌋쌎쌏"
+  ],
+  [
+    "9b41",
+    "쌐쌑쌒쌖쌗쌙쌚쌛쌝",
+    6,
+    "쌦쌧쌪",
+    8
+  ],
+  [
+    "9b61",
+    "쌳",
+    17,
+    "썆",
+    7
+  ],
+  [
+    "9b81",
+    "썎",
+    25,
+    "썪썫썭썮썯썱썳",
+    4,
+    "썺썻썾",
+    5,
+    "쎅쎆쎇쎉쎊쎋쎍",
+    50,
+    "쏁",
+    22,
+    "쏚"
+  ],
+  [
+    "9c41",
+    "쏛쏝쏞쏡쏣",
+    4,
+    "쏪쏫쏬쏮",
+    5,
+    "쏶쏷쏹",
+    5
+  ],
+  [
+    "9c61",
+    "쏿",
+    8,
+    "쐉",
+    6,
+    "쐑",
+    9
+  ],
+  [
+    "9c81",
+    "쐛",
+    8,
+    "쐥",
+    6,
+    "쐭쐮쐯쐱쐲쐳쐵",
+    6,
+    "쐾",
+    9,
+    "쑉",
+    26,
+    "쑦쑧쑩쑪쑫쑭",
+    6,
+    "쑶쑷쑸쑺",
+    5,
+    "쒁",
+    18,
+    "쒕",
+    6,
+    "쒝",
+    12
+  ],
+  [
+    "9d41",
+    "쒪",
+    13,
+    "쒹쒺쒻쒽",
+    8
+  ],
+  [
+    "9d61",
+    "쓆",
+    25
+  ],
+  [
+    "9d81",
+    "쓠",
+    8,
+    "쓪",
+    5,
+    "쓲쓳쓵쓶쓷쓹쓻쓼쓽쓾씂",
+    9,
+    "씍씎씏씑씒씓씕",
+    6,
+    "씝",
+    10,
+    "씪씫씭씮씯씱",
+    6,
+    "씺씼씾",
+    5,
+    "앆앇앋앏앐앑앒앖앚앛앜앟앢앣앥앦앧앩",
+    6,
+    "앲앶",
+    5,
+    "앾앿얁얂얃얅얆얈얉얊얋얎얐얒얓얔"
+  ],
+  [
+    "9e41",
+    "얖얙얚얛얝얞얟얡",
+    7,
+    "얪",
+    9,
+    "얶"
+  ],
+  [
+    "9e61",
+    "얷얺얿",
+    4,
+    "엋엍엏엒엓엕엖엗엙",
+    6,
+    "엢엤엦엧"
+  ],
+  [
+    "9e81",
+    "엨엩엪엫엯엱엲엳엵엸엹엺엻옂옃옄옉옊옋옍옎옏옑",
+    6,
+    "옚옝",
+    6,
+    "옦옧옩옪옫옯옱옲옶옸옺옼옽옾옿왂왃왅왆왇왉",
+    6,
+    "왒왖",
+    5,
+    "왞왟왡",
+    10,
+    "왭왮왰왲",
+    5,
+    "왺왻왽왾왿욁",
+    6,
+    "욊욌욎",
+    5,
+    "욖욗욙욚욛욝",
+    6,
+    "욦"
+  ],
+  [
+    "9f41",
+    "욨욪",
+    5,
+    "욲욳욵욶욷욻",
+    4,
+    "웂웄웆",
+    5,
+    "웎"
+  ],
+  [
+    "9f61",
+    "웏웑웒웓웕",
+    6,
+    "웞웟웢",
+    5,
+    "웪웫웭웮웯웱웲"
+  ],
+  [
+    "9f81",
+    "웳",
+    4,
+    "웺웻웼웾",
+    5,
+    "윆윇윉윊윋윍",
+    6,
+    "윖윘윚",
+    5,
+    "윢윣윥윦윧윩",
+    6,
+    "윲윴윶윸윹윺윻윾윿읁읂읃읅",
+    4,
+    "읋읎읐읙읚읛읝읞읟읡",
+    6,
+    "읩읪읬",
+    7,
+    "읶읷읹읺읻읿잀잁잂잆잋잌잍잏잒잓잕잙잛",
+    4,
+    "잢잧",
+    4,
+    "잮잯잱잲잳잵잶잷"
+  ],
+  [
+    "a041",
+    "잸잹잺잻잾쟂",
+    5,
+    "쟊쟋쟍쟏쟑",
+    6,
+    "쟙쟚쟛쟜"
+  ],
+  [
+    "a061",
+    "쟞",
+    5,
+    "쟥쟦쟧쟩쟪쟫쟭",
+    13
+  ],
+  [
+    "a081",
+    "쟻",
+    4,
+    "젂젃젅젆젇젉젋",
+    4,
+    "젒젔젗",
+    4,
+    "젞젟젡젢젣젥",
+    6,
+    "젮젰젲",
+    5,
+    "젹젺젻젽젾젿졁",
+    6,
+    "졊졋졎",
+    5,
+    "졕",
+    26,
+    "졲졳졵졶졷졹졻",
+    4,
+    "좂좄좈좉좊좎",
+    5,
+    "좕",
+    7,
+    "좞좠좢좣좤"
+  ],
+  [
+    "a141",
+    "좥좦좧좩",
+    18,
+    "좾좿죀죁"
+  ],
+  [
+    "a161",
+    "죂죃죅죆죇죉죊죋죍",
+    6,
+    "죖죘죚",
+    5,
+    "죢죣죥"
+  ],
+  [
+    "a181",
+    "죦",
+    14,
+    "죶",
+    5,
+    "죾죿줁줂줃줇",
+    4,
+    "줎　、。·‥…¨〃­―∥＼∼‘’“”〔〕〈",
+    9,
+    "±×÷≠≤≥∞∴°′″℃Å￠￡￥♂♀∠⊥⌒∂∇≡≒§※☆★○●◎◇◆□■△▲▽▼→←↑↓↔〓≪≫√∽∝∵∫∬∈∋⊆⊇⊂⊃∪∩∧∨￢"
+  ],
+  [
+    "a241",
+    "줐줒",
+    5,
+    "줙",
+    18
+  ],
+  [
+    "a261",
+    "줭",
+    6,
+    "줵",
+    18
+  ],
+  [
+    "a281",
+    "쥈",
+    7,
+    "쥒쥓쥕쥖쥗쥙",
+    6,
+    "쥢쥤",
+    7,
+    "쥭쥮쥯⇒⇔∀∃´～ˇ˘˝˚˙¸˛¡¿ː∮∑∏¤℉‰◁◀▷▶♤♠♡♥♧♣⊙◈▣◐◑▒▤▥▨▧▦▩♨☏☎☜☞¶†‡↕↗↙↖↘♭♩♪♬㉿㈜№㏇™㏂㏘℡€®"
+  ],
+  [
+    "a341",
+    "쥱쥲쥳쥵",
+    6,
+    "쥽",
+    10,
+    "즊즋즍즎즏"
+  ],
+  [
+    "a361",
+    "즑",
+    6,
+    "즚즜즞",
+    16
+  ],
+  [
+    "a381",
+    "즯",
+    16,
+    "짂짃짅짆짉짋",
+    4,
+    "짒짔짗짘짛！",
+    58,
+    "￦］",
+    32,
+    "￣"
+  ],
+  [
+    "a441",
+    "짞짟짡짣짥짦짨짩짪짫짮짲",
+    5,
+    "짺짻짽짾짿쨁쨂쨃쨄"
+  ],
+  [
+    "a461",
+    "쨅쨆쨇쨊쨎",
+    5,
+    "쨕쨖쨗쨙",
+    12
+  ],
+  [
+    "a481",
+    "쨦쨧쨨쨪",
+    28,
+    "ㄱ",
+    93
+  ],
+  [
+    "a541",
+    "쩇",
+    4,
+    "쩎쩏쩑쩒쩓쩕",
+    6,
+    "쩞쩢",
+    5,
+    "쩩쩪"
+  ],
+  [
+    "a561",
+    "쩫",
+    17,
+    "쩾",
+    5,
+    "쪅쪆"
+  ],
+  [
+    "a581",
+    "쪇",
+    16,
+    "쪙",
+    14,
+    "ⅰ",
+    9
+  ],
+  [
+    "a5b0",
+    "Ⅰ",
+    9
+  ],
+  [
+    "a5c1",
+    "Α",
+    16,
+    "Σ",
+    6
+  ],
+  [
+    "a5e1",
+    "α",
+    16,
+    "σ",
+    6
+  ],
+  [
+    "a641",
+    "쪨",
+    19,
+    "쪾쪿쫁쫂쫃쫅"
+  ],
+  [
+    "a661",
+    "쫆",
+    5,
+    "쫎쫐쫒쫔쫕쫖쫗쫚",
+    5,
+    "쫡",
+    6
+  ],
+  [
+    "a681",
+    "쫨쫩쫪쫫쫭",
+    6,
+    "쫵",
+    18,
+    "쬉쬊─│┌┐┘└├┬┤┴┼━┃┏┓┛┗┣┳┫┻╋┠┯┨┷┿┝┰┥┸╂┒┑┚┙┖┕┎┍┞┟┡┢┦┧┩┪┭┮┱┲┵┶┹┺┽┾╀╁╃",
+    7
+  ],
+  [
+    "a741",
+    "쬋",
+    4,
+    "쬑쬒쬓쬕쬖쬗쬙",
+    6,
+    "쬢",
+    7
+  ],
+  [
+    "a761",
+    "쬪",
+    22,
+    "쭂쭃쭄"
+  ],
+  [
+    "a781",
+    "쭅쭆쭇쭊쭋쭍쭎쭏쭑",
+    6,
+    "쭚쭛쭜쭞",
+    5,
+    "쭥",
+    7,
+    "㎕㎖㎗ℓ㎘㏄㎣㎤㎥㎦㎙",
+    9,
+    "㏊㎍㎎㎏㏏㎈㎉㏈㎧㎨㎰",
+    9,
+    "㎀",
+    4,
+    "㎺",
+    5,
+    "㎐",
+    4,
+    "Ω㏀㏁㎊㎋㎌㏖㏅㎭㎮㎯㏛㎩㎪㎫㎬㏝㏐㏓㏃㏉㏜㏆"
+  ],
+  [
+    "a841",
+    "쭭",
+    10,
+    "쭺",
+    14
+  ],
+  [
+    "a861",
+    "쮉",
+    18,
+    "쮝",
+    6
+  ],
+  [
+    "a881",
+    "쮤",
+    19,
+    "쮹",
+    11,
+    "ÆÐªĦ"
+  ],
+  [
+    "a8a6",
+    "Ĳ"
+  ],
+  [
+    "a8a8",
+    "ĿŁØŒºÞŦŊ"
+  ],
+  [
+    "a8b1",
+    "㉠",
+    27,
+    "ⓐ",
+    25,
+    "①",
+    14,
+    "½⅓⅔¼¾⅛⅜⅝⅞"
+  ],
+  [
+    "a941",
+    "쯅",
+    14,
+    "쯕",
+    10
+  ],
+  [
+    "a961",
+    "쯠쯡쯢쯣쯥쯦쯨쯪",
+    18
+  ],
+  [
+    "a981",
+    "쯽",
+    14,
+    "찎찏찑찒찓찕",
+    6,
+    "찞찟찠찣찤æđðħıĳĸŀłøœßþŧŋŉ㈀",
+    27,
+    "⒜",
+    25,
+    "⑴",
+    14,
+    "¹²³⁴ⁿ₁₂₃₄"
+  ],
+  [
+    "aa41",
+    "찥찦찪찫찭찯찱",
+    6,
+    "찺찿",
+    4,
+    "챆챇챉챊챋챍챎"
+  ],
+  [
+    "aa61",
+    "챏",
+    4,
+    "챖챚",
+    5,
+    "챡챢챣챥챧챩",
+    6,
+    "챱챲"
+  ],
+  [
+    "aa81",
+    "챳챴챶",
+    29,
+    "ぁ",
+    82
+  ],
+  [
+    "ab41",
+    "첔첕첖첗첚첛첝첞첟첡",
+    6,
+    "첪첮",
+    5,
+    "첶첷첹"
+  ],
+  [
+    "ab61",
+    "첺첻첽",
+    6,
+    "쳆쳈쳊",
+    5,
+    "쳑쳒쳓쳕",
+    5
+  ],
+  [
+    "ab81",
+    "쳛",
+    8,
+    "쳥",
+    6,
+    "쳭쳮쳯쳱",
+    12,
+    "ァ",
+    85
+  ],
+  [
+    "ac41",
+    "쳾쳿촀촂",
+    5,
+    "촊촋촍촎촏촑",
+    6,
+    "촚촜촞촟촠"
+  ],
+  [
+    "ac61",
+    "촡촢촣촥촦촧촩촪촫촭",
+    11,
+    "촺",
+    4
+  ],
+  [
+    "ac81",
+    "촿",
+    28,
+    "쵝쵞쵟А",
+    5,
+    "ЁЖ",
+    25
+  ],
+  [
+    "acd1",
+    "а",
+    5,
+    "ёж",
+    25
+  ],
+  [
+    "ad41",
+    "쵡쵢쵣쵥",
+    6,
+    "쵮쵰쵲",
+    5,
+    "쵹",
+    7
+  ],
+  [
+    "ad61",
+    "춁",
+    6,
+    "춉",
+    10,
+    "춖춗춙춚춛춝춞춟"
+  ],
+  [
+    "ad81",
+    "춠춡춢춣춦춨춪",
+    5,
+    "춱",
+    18,
+    "췅"
+  ],
+  [
+    "ae41",
+    "췆",
+    5,
+    "췍췎췏췑",
+    16
+  ],
+  [
+    "ae61",
+    "췢",
+    5,
+    "췩췪췫췭췮췯췱",
+    6,
+    "췺췼췾",
+    4
+  ],
+  [
+    "ae81",
+    "츃츅츆츇츉츊츋츍",
+    6,
+    "츕츖츗츘츚",
+    5,
+    "츢츣츥츦츧츩츪츫"
+  ],
+  [
+    "af41",
+    "츬츭츮츯츲츴츶",
+    19
+  ],
+  [
+    "af61",
+    "칊",
+    13,
+    "칚칛칝칞칢",
+    5,
+    "칪칬"
+  ],
+  [
+    "af81",
+    "칮",
+    5,
+    "칶칷칹칺칻칽",
+    6,
+    "캆캈캊",
+    5,
+    "캒캓캕캖캗캙"
+  ],
+  [
+    "b041",
+    "캚",
+    5,
+    "캢캦",
+    5,
+    "캮",
+    12
+  ],
+  [
+    "b061",
+    "캻",
+    5,
+    "컂",
+    19
+  ],
+  [
+    "b081",
+    "컖",
+    13,
+    "컦컧컩컪컭",
+    6,
+    "컶컺",
+    5,
+    "가각간갇갈갉갊감",
+    7,
+    "같",
+    4,
+    "갠갤갬갭갯갰갱갸갹갼걀걋걍걔걘걜거걱건걷걸걺검겁것겄겅겆겉겊겋게겐겔겜겝겟겠겡겨격겪견겯결겸겹겻겼경곁계곈곌곕곗고곡곤곧골곪곬곯곰곱곳공곶과곽관괄괆"
+  ],
+  [
+    "b141",
+    "켂켃켅켆켇켉",
+    6,
+    "켒켔켖",
+    5,
+    "켝켞켟켡켢켣"
+  ],
+  [
+    "b161",
+    "켥",
+    6,
+    "켮켲",
+    5,
+    "켹",
+    11
+  ],
+  [
+    "b181",
+    "콅",
+    14,
+    "콖콗콙콚콛콝",
+    6,
+    "콦콨콪콫콬괌괍괏광괘괜괠괩괬괭괴괵괸괼굄굅굇굉교굔굘굡굣구국군굳굴굵굶굻굼굽굿궁궂궈궉권궐궜궝궤궷귀귁귄귈귐귑귓규균귤그극근귿글긁금급긋긍긔기긱긴긷길긺김깁깃깅깆깊까깍깎깐깔깖깜깝깟깠깡깥깨깩깬깰깸"
+  ],
+  [
+    "b241",
+    "콭콮콯콲콳콵콶콷콹",
+    6,
+    "쾁쾂쾃쾄쾆",
+    5,
+    "쾍"
+  ],
+  [
+    "b261",
+    "쾎",
+    18,
+    "쾢",
+    5,
+    "쾩"
+  ],
+  [
+    "b281",
+    "쾪",
+    5,
+    "쾱",
+    18,
+    "쿅",
+    6,
+    "깹깻깼깽꺄꺅꺌꺼꺽꺾껀껄껌껍껏껐껑께껙껜껨껫껭껴껸껼꼇꼈꼍꼐꼬꼭꼰꼲꼴꼼꼽꼿꽁꽂꽃꽈꽉꽐꽜꽝꽤꽥꽹꾀꾄꾈꾐꾑꾕꾜꾸꾹꾼꿀꿇꿈꿉꿋꿍꿎꿔꿜꿨꿩꿰꿱꿴꿸뀀뀁뀄뀌뀐뀔뀜뀝뀨끄끅끈끊끌끎끓끔끕끗끙"
+  ],
+  [
+    "b341",
+    "쿌",
+    19,
+    "쿢쿣쿥쿦쿧쿩"
+  ],
+  [
+    "b361",
+    "쿪",
+    5,
+    "쿲쿴쿶",
+    5,
+    "쿽쿾쿿퀁퀂퀃퀅",
+    5
+  ],
+  [
+    "b381",
+    "퀋",
+    5,
+    "퀒",
+    5,
+    "퀙",
+    19,
+    "끝끼끽낀낄낌낍낏낑나낙낚난낟날낡낢남납낫",
+    4,
+    "낱낳내낵낸낼냄냅냇냈냉냐냑냔냘냠냥너넉넋넌널넒넓넘넙넛넜넝넣네넥넨넬넴넵넷넸넹녀녁년녈념녑녔녕녘녜녠노녹논놀놂놈놉놋농높놓놔놘놜놨뇌뇐뇔뇜뇝"
+  ],
+  [
+    "b441",
+    "퀮",
+    5,
+    "퀶퀷퀹퀺퀻퀽",
+    6,
+    "큆큈큊",
+    5
+  ],
+  [
+    "b461",
+    "큑큒큓큕큖큗큙",
+    6,
+    "큡",
+    10,
+    "큮큯"
+  ],
+  [
+    "b481",
+    "큱큲큳큵",
+    6,
+    "큾큿킀킂",
+    18,
+    "뇟뇨뇩뇬뇰뇹뇻뇽누눅눈눋눌눔눕눗눙눠눴눼뉘뉜뉠뉨뉩뉴뉵뉼늄늅늉느늑는늘늙늚늠늡늣능늦늪늬늰늴니닉닌닐닒님닙닛닝닢다닥닦단닫",
+    4,
+    "닳담답닷",
+    4,
+    "닿대댁댄댈댐댑댓댔댕댜더덕덖던덛덜덞덟덤덥"
+  ],
+  [
+    "b541",
+    "킕",
+    14,
+    "킦킧킩킪킫킭",
+    5
+  ],
+  [
+    "b561",
+    "킳킶킸킺",
+    5,
+    "탂탃탅탆탇탊",
+    5,
+    "탒탖",
+    4
+  ],
+  [
+    "b581",
+    "탛탞탟탡탢탣탥",
+    6,
+    "탮탲",
+    5,
+    "탹",
+    11,
+    "덧덩덫덮데덱덴델뎀뎁뎃뎄뎅뎌뎐뎔뎠뎡뎨뎬도독돈돋돌돎돐돔돕돗동돛돝돠돤돨돼됐되된될됨됩됫됴두둑둔둘둠둡둣둥둬뒀뒈뒝뒤뒨뒬뒵뒷뒹듀듄듈듐듕드득든듣들듦듬듭듯등듸디딕딘딛딜딤딥딧딨딩딪따딱딴딸"
+  ],
+  [
+    "b641",
+    "턅",
+    7,
+    "턎",
+    17
+  ],
+  [
+    "b661",
+    "턠",
+    15,
+    "턲턳턵턶턷턹턻턼턽턾"
+  ],
+  [
+    "b681",
+    "턿텂텆",
+    5,
+    "텎텏텑텒텓텕",
+    6,
+    "텞텠텢",
+    5,
+    "텩텪텫텭땀땁땃땄땅땋때땍땐땔땜땝땟땠땡떠떡떤떨떪떫떰떱떳떴떵떻떼떽뗀뗄뗌뗍뗏뗐뗑뗘뗬또똑똔똘똥똬똴뙈뙤뙨뚜뚝뚠뚤뚫뚬뚱뛔뛰뛴뛸뜀뜁뜅뜨뜩뜬뜯뜰뜸뜹뜻띄띈띌띔띕띠띤띨띰띱띳띵라락란랄람랍랏랐랑랒랖랗"
+  ],
+  [
+    "b741",
+    "텮",
+    13,
+    "텽",
+    6,
+    "톅톆톇톉톊"
+  ],
+  [
+    "b761",
+    "톋",
+    20,
+    "톢톣톥톦톧"
+  ],
+  [
+    "b781",
+    "톩",
+    6,
+    "톲톴톶톷톸톹톻톽톾톿퇁",
+    14,
+    "래랙랜랠램랩랫랬랭랴략랸럇량러럭런럴럼럽럿렀렁렇레렉렌렐렘렙렛렝려력련렬렴렵렷렸령례롄롑롓로록론롤롬롭롯롱롸롼뢍뢨뢰뢴뢸룀룁룃룅료룐룔룝룟룡루룩룬룰룸룹룻룽뤄뤘뤠뤼뤽륀륄륌륏륑류륙륜률륨륩"
+  ],
+  [
+    "b841",
+    "퇐",
+    7,
+    "퇙",
+    17
+  ],
+  [
+    "b861",
+    "퇫",
+    8,
+    "퇵퇶퇷퇹",
+    13
+  ],
+  [
+    "b881",
+    "툈툊",
+    5,
+    "툑",
+    24,
+    "륫륭르륵른를름릅릇릉릊릍릎리릭린릴림립릿링마막만많",
+    4,
+    "맘맙맛망맞맡맣매맥맨맬맴맵맷맸맹맺먀먁먈먕머먹먼멀멂멈멉멋멍멎멓메멕멘멜멤멥멧멨멩며멱면멸몃몄명몇몌모목몫몬몰몲몸몹못몽뫄뫈뫘뫙뫼"
+  ],
+  [
+    "b941",
+    "툪툫툮툯툱툲툳툵",
+    6,
+    "툾퉀퉂",
+    5,
+    "퉉퉊퉋퉌"
+  ],
+  [
+    "b961",
+    "퉍",
+    14,
+    "퉝",
+    6,
+    "퉥퉦퉧퉨"
+  ],
+  [
+    "b981",
+    "퉩",
+    22,
+    "튂튃튅튆튇튉튊튋튌묀묄묍묏묑묘묜묠묩묫무묵묶문묻물묽묾뭄뭅뭇뭉뭍뭏뭐뭔뭘뭡뭣뭬뮈뮌뮐뮤뮨뮬뮴뮷므믄믈믐믓미믹민믿밀밂밈밉밋밌밍및밑바",
+    4,
+    "받",
+    4,
+    "밤밥밧방밭배백밴밸뱀뱁뱃뱄뱅뱉뱌뱍뱐뱝버벅번벋벌벎범법벗"
+  ],
+  [
+    "ba41",
+    "튍튎튏튒튓튔튖",
+    5,
+    "튝튞튟튡튢튣튥",
+    6,
+    "튭"
+  ],
+  [
+    "ba61",
+    "튮튯튰튲",
+    5,
+    "튺튻튽튾틁틃",
+    4,
+    "틊틌",
+    5
+  ],
+  [
+    "ba81",
+    "틒틓틕틖틗틙틚틛틝",
+    6,
+    "틦",
+    9,
+    "틲틳틵틶틷틹틺벙벚베벡벤벧벨벰벱벳벴벵벼벽변별볍볏볐병볕볘볜보복볶본볼봄봅봇봉봐봔봤봬뵀뵈뵉뵌뵐뵘뵙뵤뵨부북분붇불붉붊붐붑붓붕붙붚붜붤붰붸뷔뷕뷘뷜뷩뷰뷴뷸븀븃븅브븍븐블븜븝븟비빅빈빌빎빔빕빗빙빚빛빠빡빤"
+  ],
+  [
+    "bb41",
+    "틻",
+    4,
+    "팂팄팆",
+    5,
+    "팏팑팒팓팕팗",
+    4,
+    "팞팢팣"
+  ],
+  [
+    "bb61",
+    "팤팦팧팪팫팭팮팯팱",
+    6,
+    "팺팾",
+    5,
+    "퍆퍇퍈퍉"
+  ],
+  [
+    "bb81",
+    "퍊",
+    31,
+    "빨빪빰빱빳빴빵빻빼빽뺀뺄뺌뺍뺏뺐뺑뺘뺙뺨뻐뻑뻔뻗뻘뻠뻣뻤뻥뻬뼁뼈뼉뼘뼙뼛뼜뼝뽀뽁뽄뽈뽐뽑뽕뾔뾰뿅뿌뿍뿐뿔뿜뿟뿡쀼쁑쁘쁜쁠쁨쁩삐삑삔삘삠삡삣삥사삭삯산삳살삵삶삼삽삿샀상샅새색샌샐샘샙샛샜생샤"
+  ],
+  [
+    "bc41",
+    "퍪",
+    17,
+    "퍾퍿펁펂펃펅펆펇"
+  ],
+  [
+    "bc61",
+    "펈펉펊펋펎펒",
+    5,
+    "펚펛펝펞펟펡",
+    6,
+    "펪펬펮"
+  ],
+  [
+    "bc81",
+    "펯",
+    4,
+    "펵펶펷펹펺펻펽",
+    6,
+    "폆폇폊",
+    5,
+    "폑",
+    5,
+    "샥샨샬샴샵샷샹섀섄섈섐섕서",
+    4,
+    "섣설섦섧섬섭섯섰성섶세섹센셀셈셉셋셌셍셔셕션셜셤셥셧셨셩셰셴셸솅소속솎손솔솖솜솝솟송솥솨솩솬솰솽쇄쇈쇌쇔쇗쇘쇠쇤쇨쇰쇱쇳쇼쇽숀숄숌숍숏숑수숙순숟술숨숩숫숭"
+  ],
+  [
+    "bd41",
+    "폗폙",
+    7,
+    "폢폤",
+    7,
+    "폮폯폱폲폳폵폶폷"
+  ],
+  [
+    "bd61",
+    "폸폹폺폻폾퐀퐂",
+    5,
+    "퐉",
+    13
+  ],
+  [
+    "bd81",
+    "퐗",
+    5,
+    "퐞",
+    25,
+    "숯숱숲숴쉈쉐쉑쉔쉘쉠쉥쉬쉭쉰쉴쉼쉽쉿슁슈슉슐슘슛슝스슥슨슬슭슴습슷승시식신싣실싫심십싯싱싶싸싹싻싼쌀쌈쌉쌌쌍쌓쌔쌕쌘쌜쌤쌥쌨쌩썅써썩썬썰썲썸썹썼썽쎄쎈쎌쏀쏘쏙쏜쏟쏠쏢쏨쏩쏭쏴쏵쏸쐈쐐쐤쐬쐰"
+  ],
+  [
+    "be41",
+    "퐸",
+    7,
+    "푁푂푃푅",
+    14
+  ],
+  [
+    "be61",
+    "푔",
+    7,
+    "푝푞푟푡푢푣푥",
+    7,
+    "푮푰푱푲"
+  ],
+  [
+    "be81",
+    "푳",
+    4,
+    "푺푻푽푾풁풃",
+    4,
+    "풊풌풎",
+    5,
+    "풕",
+    8,
+    "쐴쐼쐽쑈쑤쑥쑨쑬쑴쑵쑹쒀쒔쒜쒸쒼쓩쓰쓱쓴쓸쓺쓿씀씁씌씐씔씜씨씩씬씰씸씹씻씽아악안앉않알앍앎앓암압앗았앙앝앞애액앤앨앰앱앳앴앵야약얀얄얇얌얍얏양얕얗얘얜얠얩어억언얹얻얼얽얾엄",
+    6,
+    "엌엎"
+  ],
+  [
+    "bf41",
+    "풞",
+    10,
+    "풪",
+    14
+  ],
+  [
+    "bf61",
+    "풹",
+    18,
+    "퓍퓎퓏퓑퓒퓓퓕"
+  ],
+  [
+    "bf81",
+    "퓖",
+    5,
+    "퓝퓞퓠",
+    7,
+    "퓩퓪퓫퓭퓮퓯퓱",
+    6,
+    "퓹퓺퓼에엑엔엘엠엡엣엥여역엮연열엶엷염",
+    5,
+    "옅옆옇예옌옐옘옙옛옜오옥온올옭옮옰옳옴옵옷옹옻와왁완왈왐왑왓왔왕왜왝왠왬왯왱외왹왼욀욈욉욋욍요욕욘욜욤욥욧용우욱운울욹욺움웁웃웅워웍원월웜웝웠웡웨"
+  ],
+  [
+    "c041",
+    "퓾",
+    5,
+    "픅픆픇픉픊픋픍",
+    6,
+    "픖픘",
+    5
+  ],
+  [
+    "c061",
+    "픞",
+    25
+  ],
+  [
+    "c081",
+    "픸픹픺픻픾픿핁핂핃핅",
+    6,
+    "핎핐핒",
+    5,
+    "핚핛핝핞핟핡핢핣웩웬웰웸웹웽위윅윈윌윔윕윗윙유육윤율윰윱윳융윷으윽은을읊음읍읏응",
+    7,
+    "읜읠읨읫이익인일읽읾잃임입잇있잉잊잎자작잔잖잗잘잚잠잡잣잤장잦재잭잰잴잼잽잿쟀쟁쟈쟉쟌쟎쟐쟘쟝쟤쟨쟬저적전절젊"
+  ],
+  [
+    "c141",
+    "핤핦핧핪핬핮",
+    5,
+    "핶핷핹핺핻핽",
+    6,
+    "햆햊햋"
+  ],
+  [
+    "c161",
+    "햌햍햎햏햑",
+    19,
+    "햦햧"
+  ],
+  [
+    "c181",
+    "햨",
+    31,
+    "점접젓정젖제젝젠젤젬젭젯젱져젼졀졈졉졌졍졔조족존졸졺좀좁좃종좆좇좋좌좍좔좝좟좡좨좼좽죄죈죌죔죕죗죙죠죡죤죵주죽준줄줅줆줌줍줏중줘줬줴쥐쥑쥔쥘쥠쥡쥣쥬쥰쥴쥼즈즉즌즐즘즙즛증지직진짇질짊짐집짓"
+  ],
+  [
+    "c241",
+    "헊헋헍헎헏헑헓",
+    4,
+    "헚헜헞",
+    5,
+    "헦헧헩헪헫헭헮"
+  ],
+  [
+    "c261",
+    "헯",
+    4,
+    "헶헸헺",
+    5,
+    "혂혃혅혆혇혉",
+    6,
+    "혒"
+  ],
+  [
+    "c281",
+    "혖",
+    5,
+    "혝혞혟혡혢혣혥",
+    7,
+    "혮",
+    9,
+    "혺혻징짖짙짚짜짝짠짢짤짧짬짭짯짰짱째짹짼쨀쨈쨉쨋쨌쨍쨔쨘쨩쩌쩍쩐쩔쩜쩝쩟쩠쩡쩨쩽쪄쪘쪼쪽쫀쫄쫌쫍쫏쫑쫓쫘쫙쫠쫬쫴쬈쬐쬔쬘쬠쬡쭁쭈쭉쭌쭐쭘쭙쭝쭤쭸쭹쮜쮸쯔쯤쯧쯩찌찍찐찔찜찝찡찢찧차착찬찮찰참찹찻"
+  ],
+  [
+    "c341",
+    "혽혾혿홁홂홃홄홆홇홊홌홎홏홐홒홓홖홗홙홚홛홝",
+    4
+  ],
+  [
+    "c361",
+    "홢",
+    4,
+    "홨홪",
+    5,
+    "홲홳홵",
+    11
+  ],
+  [
+    "c381",
+    "횁횂횄횆",
+    5,
+    "횎횏횑횒횓횕",
+    7,
+    "횞횠횢",
+    5,
+    "횩횪찼창찾채책챈챌챔챕챗챘챙챠챤챦챨챰챵처척천철첨첩첫첬청체첵첸첼쳄쳅쳇쳉쳐쳔쳤쳬쳰촁초촉촌촐촘촙촛총촤촨촬촹최쵠쵤쵬쵭쵯쵱쵸춈추축춘출춤춥춧충춰췄췌췐취췬췰췸췹췻췽츄츈츌츔츙츠측츤츨츰츱츳층"
+  ],
+  [
+    "c441",
+    "횫횭횮횯횱",
+    7,
+    "횺횼",
+    7,
+    "훆훇훉훊훋"
+  ],
+  [
+    "c461",
+    "훍훎훏훐훒훓훕훖훘훚",
+    5,
+    "훡훢훣훥훦훧훩",
+    4
+  ],
+  [
+    "c481",
+    "훮훯훱훲훳훴훶",
+    5,
+    "훾훿휁휂휃휅",
+    11,
+    "휒휓휔치칙친칟칠칡침칩칫칭카칵칸칼캄캅캇캉캐캑캔캘캠캡캣캤캥캬캭컁커컥컨컫컬컴컵컷컸컹케켁켄켈켐켑켓켕켜켠켤켬켭켯켰켱켸코콕콘콜콤콥콧콩콰콱콴콸쾀쾅쾌쾡쾨쾰쿄쿠쿡쿤쿨쿰쿱쿳쿵쿼퀀퀄퀑퀘퀭퀴퀵퀸퀼"
+  ],
+  [
+    "c541",
+    "휕휖휗휚휛휝휞휟휡",
+    6,
+    "휪휬휮",
+    5,
+    "휶휷휹"
+  ],
+  [
+    "c561",
+    "휺휻휽",
+    6,
+    "흅흆흈흊",
+    5,
+    "흒흓흕흚",
+    4
+  ],
+  [
+    "c581",
+    "흟흢흤흦흧흨흪흫흭흮흯흱흲흳흵",
+    6,
+    "흾흿힀힂",
+    5,
+    "힊힋큄큅큇큉큐큔큘큠크큭큰클큼큽킁키킥킨킬킴킵킷킹타탁탄탈탉탐탑탓탔탕태택탠탤탬탭탯탰탱탸턍터턱턴털턺텀텁텃텄텅테텍텐텔템텝텟텡텨텬텼톄톈토톡톤톨톰톱톳통톺톼퇀퇘퇴퇸툇툉툐투툭툰툴툼툽툿퉁퉈퉜"
+  ],
+  [
+    "c641",
+    "힍힎힏힑",
+    6,
+    "힚힜힞",
+    5
+  ],
+  [
+    "c6a1",
+    "퉤튀튁튄튈튐튑튕튜튠튤튬튱트특튼튿틀틂틈틉틋틔틘틜틤틥티틱틴틸팀팁팃팅파팍팎판팔팖팜팝팟팠팡팥패팩팬팰팸팹팻팼팽퍄퍅퍼퍽펀펄펌펍펏펐펑페펙펜펠펨펩펫펭펴편펼폄폅폈평폐폘폡폣포폭폰폴폼폽폿퐁"
+  ],
+  [
+    "c7a1",
+    "퐈퐝푀푄표푠푤푭푯푸푹푼푿풀풂품풉풋풍풔풩퓌퓐퓔퓜퓟퓨퓬퓰퓸퓻퓽프픈플픔픕픗피픽핀필핌핍핏핑하학한할핥함합핫항해핵핸핼햄햅햇했행햐향허헉헌헐헒험헙헛헝헤헥헨헬헴헵헷헹혀혁현혈혐협혓혔형혜혠"
+  ],
+  [
+    "c8a1",
+    "혤혭호혹혼홀홅홈홉홋홍홑화확환활홧황홰홱홴횃횅회획횐횔횝횟횡효횬횰횹횻후훅훈훌훑훔훗훙훠훤훨훰훵훼훽휀휄휑휘휙휜휠휨휩휫휭휴휵휸휼흄흇흉흐흑흔흖흗흘흙흠흡흣흥흩희흰흴흼흽힁히힉힌힐힘힙힛힝"
+  ],
+  [
+    "caa1",
+    "伽佳假價加可呵哥嘉嫁家暇架枷柯歌珂痂稼苛茄街袈訶賈跏軻迦駕刻却各恪慤殼珏脚覺角閣侃刊墾奸姦干幹懇揀杆柬桿澗癎看磵稈竿簡肝艮艱諫間乫喝曷渴碣竭葛褐蝎鞨勘坎堪嵌感憾戡敢柑橄減甘疳監瞰紺邯鑑鑒龕"
+  ],
+  [
+    "cba1",
+    "匣岬甲胛鉀閘剛堈姜岡崗康强彊慷江畺疆糠絳綱羌腔舡薑襁講鋼降鱇介价個凱塏愷愾慨改槪漑疥皆盖箇芥蓋豈鎧開喀客坑更粳羹醵倨去居巨拒据據擧渠炬祛距踞車遽鉅鋸乾件健巾建愆楗腱虔蹇鍵騫乞傑杰桀儉劍劒檢"
+  ],
+  [
+    "cca1",
+    "瞼鈐黔劫怯迲偈憩揭擊格檄激膈覡隔堅牽犬甄絹繭肩見譴遣鵑抉決潔結缺訣兼慊箝謙鉗鎌京俓倞傾儆勁勍卿坰境庚徑慶憬擎敬景暻更梗涇炅烱璟璥瓊痙硬磬竟競絅經耕耿脛莖警輕逕鏡頃頸驚鯨係啓堺契季屆悸戒桂械"
+  ],
+  [
+    "cda1",
+    "棨溪界癸磎稽系繫繼計誡谿階鷄古叩告呱固姑孤尻庫拷攷故敲暠枯槁沽痼皐睾稿羔考股膏苦苽菰藁蠱袴誥賈辜錮雇顧高鼓哭斛曲梏穀谷鵠困坤崑昆梱棍滾琨袞鯤汨滑骨供公共功孔工恐恭拱控攻珙空蚣貢鞏串寡戈果瓜"
+  ],
+  [
+    "cea1",
+    "科菓誇課跨過鍋顆廓槨藿郭串冠官寬慣棺款灌琯瓘管罐菅觀貫關館刮恝括适侊光匡壙廣曠洸炚狂珖筐胱鑛卦掛罫乖傀塊壞怪愧拐槐魁宏紘肱轟交僑咬喬嬌嶠巧攪敎校橋狡皎矯絞翹膠蕎蛟較轎郊餃驕鮫丘久九仇俱具勾"
+  ],
+  [
+    "cfa1",
+    "區口句咎嘔坵垢寇嶇廐懼拘救枸柩構歐毆毬求溝灸狗玖球瞿矩究絿耉臼舅舊苟衢謳購軀逑邱鉤銶駒驅鳩鷗龜國局菊鞠鞫麴君窘群裙軍郡堀屈掘窟宮弓穹窮芎躬倦券勸卷圈拳捲權淃眷厥獗蕨蹶闕机櫃潰詭軌饋句晷歸貴"
+  ],
+  [
+    "d0a1",
+    "鬼龜叫圭奎揆槻珪硅窺竅糾葵規赳逵閨勻均畇筠菌鈞龜橘克剋劇戟棘極隙僅劤勤懃斤根槿瑾筋芹菫覲謹近饉契今妗擒昑檎琴禁禽芩衾衿襟金錦伋及急扱汲級給亘兢矜肯企伎其冀嗜器圻基埼夔奇妓寄岐崎己幾忌技旗旣"
+  ],
+  [
+    "d1a1",
+    "朞期杞棋棄機欺氣汽沂淇玘琦琪璂璣畸畿碁磯祁祇祈祺箕紀綺羈耆耭肌記譏豈起錡錤飢饑騎騏驥麒緊佶吉拮桔金喫儺喇奈娜懦懶拏拿癩",
+    5,
+    "那樂",
+    4,
+    "諾酪駱亂卵暖欄煖爛蘭難鸞捏捺南嵐枏楠湳濫男藍襤拉"
+  ],
+  [
+    "d2a1",
+    "納臘蠟衲囊娘廊",
+    4,
+    "乃來內奈柰耐冷女年撚秊念恬拈捻寧寗努勞奴弩怒擄櫓爐瑙盧",
+    5,
+    "駑魯",
+    10,
+    "濃籠聾膿農惱牢磊腦賂雷尿壘",
+    7,
+    "嫩訥杻紐勒",
+    5,
+    "能菱陵尼泥匿溺多茶"
+  ],
+  [
+    "d3a1",
+    "丹亶但單團壇彖斷旦檀段湍短端簞緞蛋袒鄲鍛撻澾獺疸達啖坍憺擔曇淡湛潭澹痰聃膽蕁覃談譚錟沓畓答踏遝唐堂塘幢戇撞棠當糖螳黨代垈坮大對岱帶待戴擡玳臺袋貸隊黛宅德悳倒刀到圖堵塗導屠島嶋度徒悼挑掉搗桃"
+  ],
+  [
+    "d4a1",
+    "棹櫂淘渡滔濤燾盜睹禱稻萄覩賭跳蹈逃途道都鍍陶韜毒瀆牘犢獨督禿篤纛讀墩惇敦旽暾沌焞燉豚頓乭突仝冬凍動同憧東桐棟洞潼疼瞳童胴董銅兜斗杜枓痘竇荳讀豆逗頭屯臀芚遁遯鈍得嶝橙燈登等藤謄鄧騰喇懶拏癩羅"
+  ],
+  [
+    "d5a1",
+    "蘿螺裸邏樂洛烙珞絡落諾酪駱丹亂卵欄欒瀾爛蘭鸞剌辣嵐擥攬欖濫籃纜藍襤覽拉臘蠟廊朗浪狼琅瑯螂郞來崍徠萊冷掠略亮倆兩凉梁樑粮粱糧良諒輛量侶儷勵呂廬慮戾旅櫚濾礪藜蠣閭驢驪麗黎力曆歷瀝礫轢靂憐戀攣漣"
+  ],
+  [
+    "d6a1",
+    "煉璉練聯蓮輦連鍊冽列劣洌烈裂廉斂殮濂簾獵令伶囹寧岺嶺怜玲笭羚翎聆逞鈴零靈領齡例澧禮醴隷勞怒撈擄櫓潞瀘爐盧老蘆虜路輅露魯鷺鹵碌祿綠菉錄鹿麓論壟弄朧瀧瓏籠聾儡瀨牢磊賂賚賴雷了僚寮廖料燎療瞭聊蓼"
+  ],
+  [
+    "d7a1",
+    "遼鬧龍壘婁屢樓淚漏瘻累縷蔞褸鏤陋劉旒柳榴流溜瀏琉瑠留瘤硫謬類六戮陸侖倫崙淪綸輪律慄栗率隆勒肋凜凌楞稜綾菱陵俚利厘吏唎履悧李梨浬犁狸理璃異痢籬罹羸莉裏裡里釐離鯉吝潾燐璘藺躪隣鱗麟林淋琳臨霖砬"
+  ],
+  [
+    "d8a1",
+    "立笠粒摩瑪痲碼磨馬魔麻寞幕漠膜莫邈万卍娩巒彎慢挽晩曼滿漫灣瞞萬蔓蠻輓饅鰻唜抹末沫茉襪靺亡妄忘忙望網罔芒茫莽輞邙埋妹媒寐昧枚梅每煤罵買賣邁魅脈貊陌驀麥孟氓猛盲盟萌冪覓免冕勉棉沔眄眠綿緬面麵滅"
+  ],
+  [
+    "d9a1",
+    "蔑冥名命明暝椧溟皿瞑茗蓂螟酩銘鳴袂侮冒募姆帽慕摸摹暮某模母毛牟牡瑁眸矛耗芼茅謀謨貌木沐牧目睦穆鶩歿沒夢朦蒙卯墓妙廟描昴杳渺猫竗苗錨務巫憮懋戊拇撫无楙武毋無珷畝繆舞茂蕪誣貿霧鵡墨默們刎吻問文"
+  ],
+  [
+    "daa1",
+    "汶紊紋聞蚊門雯勿沕物味媚尾嵋彌微未梶楣渼湄眉米美薇謎迷靡黴岷悶愍憫敏旻旼民泯玟珉緡閔密蜜謐剝博拍搏撲朴樸泊珀璞箔粕縛膊舶薄迫雹駁伴半反叛拌搬攀斑槃泮潘班畔瘢盤盼磐磻礬絆般蟠返頒飯勃拔撥渤潑"
+  ],
+  [
+    "dba1",
+    "發跋醱鉢髮魃倣傍坊妨尨幇彷房放方旁昉枋榜滂磅紡肪膀舫芳蒡蚌訪謗邦防龐倍俳北培徘拜排杯湃焙盃背胚裴裵褙賠輩配陪伯佰帛柏栢白百魄幡樊煩燔番磻繁蕃藩飜伐筏罰閥凡帆梵氾汎泛犯範范法琺僻劈壁擘檗璧癖"
+  ],
+  [
+    "dca1",
+    "碧蘗闢霹便卞弁變辨辯邊別瞥鱉鼈丙倂兵屛幷昞昺柄棅炳甁病秉竝輧餠騈保堡報寶普步洑湺潽珤甫菩補褓譜輔伏僕匐卜宓復服福腹茯蔔複覆輹輻馥鰒本乶俸奉封峯峰捧棒烽熢琫縫蓬蜂逢鋒鳳不付俯傅剖副否咐埠夫婦"
+  ],
+  [
+    "dda1",
+    "孚孵富府復扶敷斧浮溥父符簿缶腐腑膚艀芙莩訃負賦賻赴趺部釜阜附駙鳧北分吩噴墳奔奮忿憤扮昐汾焚盆粉糞紛芬賁雰不佛弗彿拂崩朋棚硼繃鵬丕備匕匪卑妃婢庇悲憊扉批斐枇榧比毖毗毘沸泌琵痺砒碑秕秘粃緋翡肥"
+  ],
+  [
+    "dea1",
+    "脾臂菲蜚裨誹譬費鄙非飛鼻嚬嬪彬斌檳殯浜濱瀕牝玭貧賓頻憑氷聘騁乍事些仕伺似使俟僿史司唆嗣四士奢娑寫寺射巳師徙思捨斜斯柶査梭死沙泗渣瀉獅砂社祀祠私篩紗絲肆舍莎蓑蛇裟詐詞謝賜赦辭邪飼駟麝削數朔索"
+  ],
+  [
+    "dfa1",
+    "傘刪山散汕珊産疝算蒜酸霰乷撒殺煞薩三參杉森渗芟蔘衫揷澁鈒颯上傷像償商喪嘗孀尙峠常床庠廂想桑橡湘爽牀狀相祥箱翔裳觴詳象賞霜塞璽賽嗇塞穡索色牲生甥省笙墅壻嶼序庶徐恕抒捿敍暑曙書栖棲犀瑞筮絮緖署"
+  ],
+  [
+    "e0a1",
+    "胥舒薯西誓逝鋤黍鼠夕奭席惜昔晳析汐淅潟石碩蓆釋錫仙僊先善嬋宣扇敾旋渲煽琁瑄璇璿癬禪線繕羨腺膳船蘚蟬詵跣選銑鐥饍鮮卨屑楔泄洩渫舌薛褻設說雪齧剡暹殲纖蟾贍閃陝攝涉燮葉城姓宬性惺成星晟猩珹盛省筬"
+  ],
+  [
+    "e1a1",
+    "聖聲腥誠醒世勢歲洗稅笹細說貰召嘯塑宵小少巢所掃搔昭梳沼消溯瀟炤燒甦疏疎瘙笑篠簫素紹蔬蕭蘇訴逍遡邵銷韶騷俗屬束涑粟續謖贖速孫巽損蓀遜飡率宋悚松淞訟誦送頌刷殺灑碎鎖衰釗修受嗽囚垂壽嫂守岫峀帥愁"
+  ],
+  [
+    "e2a1",
+    "戍手授搜收數樹殊水洙漱燧狩獸琇璲瘦睡秀穗竪粹綏綬繡羞脩茱蒐蓚藪袖誰讐輸遂邃酬銖銹隋隧隨雖需須首髓鬚叔塾夙孰宿淑潚熟琡璹肅菽巡徇循恂旬栒楯橓殉洵淳珣盾瞬筍純脣舜荀蓴蕣詢諄醇錞順馴戌術述鉥崇崧"
+  ],
+  [
+    "e3a1",
+    "嵩瑟膝蝨濕拾習褶襲丞乘僧勝升承昇繩蠅陞侍匙嘶始媤尸屎屍市弑恃施是時枾柴猜矢示翅蒔蓍視試詩諡豕豺埴寔式息拭植殖湜熄篒蝕識軾食飾伸侁信呻娠宸愼新晨燼申神紳腎臣莘薪藎蜃訊身辛辰迅失室實悉審尋心沁"
+  ],
+  [
+    "e4a1",
+    "沈深瀋甚芯諶什十拾雙氏亞俄兒啞娥峨我牙芽莪蛾衙訝阿雅餓鴉鵝堊岳嶽幄惡愕握樂渥鄂鍔顎鰐齷安岸按晏案眼雁鞍顔鮟斡謁軋閼唵岩巖庵暗癌菴闇壓押狎鴨仰央怏昻殃秧鴦厓哀埃崖愛曖涯碍艾隘靄厄扼掖液縊腋額"
+  ],
+  [
+    "e5a1",
+    "櫻罌鶯鸚也倻冶夜惹揶椰爺耶若野弱掠略約若葯蒻藥躍亮佯兩凉壤孃恙揚攘敭暘梁楊樣洋瀁煬痒瘍禳穰糧羊良襄諒讓釀陽量養圄御於漁瘀禦語馭魚齬億憶抑檍臆偃堰彦焉言諺孼蘖俺儼嚴奄掩淹嶪業円予余勵呂女如廬"
+  ],
+  [
+    "e6a1",
+    "旅歟汝濾璵礖礪與艅茹輿轝閭餘驪麗黎亦力域役易曆歷疫繹譯轢逆驛嚥堧姸娟宴年延憐戀捐挻撚椽沇沿涎涓淵演漣烟然煙煉燃燕璉硏硯秊筵緣練縯聯衍軟輦蓮連鉛鍊鳶列劣咽悅涅烈熱裂說閱厭廉念捻染殮炎焰琰艶苒"
+  ],
+  [
+    "e7a1",
+    "簾閻髥鹽曄獵燁葉令囹塋寧嶺嶸影怜映暎楹榮永泳渶潁濚瀛瀯煐營獰玲瑛瑩瓔盈穎纓羚聆英詠迎鈴鍈零霙靈領乂倪例刈叡曳汭濊猊睿穢芮藝蘂禮裔詣譽豫醴銳隸霓預五伍俉傲午吾吳嗚塢墺奧娛寤悟惡懊敖旿晤梧汚澳"
+  ],
+  [
+    "e8a1",
+    "烏熬獒筽蜈誤鰲鼇屋沃獄玉鈺溫瑥瘟穩縕蘊兀壅擁瓮甕癰翁邕雍饔渦瓦窩窪臥蛙蝸訛婉完宛梡椀浣玩琓琬碗緩翫脘腕莞豌阮頑曰往旺枉汪王倭娃歪矮外嵬巍猥畏了僚僥凹堯夭妖姚寥寮尿嶢拗搖撓擾料曜樂橈燎燿瑤療"
+  ],
+  [
+    "e9a1",
+    "窈窯繇繞耀腰蓼蟯要謠遙遼邀饒慾欲浴縟褥辱俑傭冗勇埇墉容庸慂榕涌湧溶熔瑢用甬聳茸蓉踊鎔鏞龍于佑偶優又友右宇寓尤愚憂旴牛玗瑀盂祐禑禹紆羽芋藕虞迂遇郵釪隅雨雩勖彧旭昱栯煜稶郁頊云暈橒殞澐熉耘芸蕓"
+  ],
+  [
+    "eaa1",
+    "運隕雲韻蔚鬱亐熊雄元原員圓園垣媛嫄寃怨愿援沅洹湲源爰猿瑗苑袁轅遠阮院願鴛月越鉞位偉僞危圍委威尉慰暐渭爲瑋緯胃萎葦蔿蝟衛褘謂違韋魏乳侑儒兪劉唯喩孺宥幼幽庾悠惟愈愉揄攸有杻柔柚柳楡楢油洧流游溜"
+  ],
+  [
+    "eba1",
+    "濡猶猷琉瑜由留癒硫紐維臾萸裕誘諛諭踰蹂遊逾遺酉釉鍮類六堉戮毓肉育陸倫允奫尹崙淪潤玧胤贇輪鈗閏律慄栗率聿戎瀜絨融隆垠恩慇殷誾銀隱乙吟淫蔭陰音飮揖泣邑凝應膺鷹依倚儀宜意懿擬椅毅疑矣義艤薏蟻衣誼"
+  ],
+  [
+    "eca1",
+    "議醫二以伊利吏夷姨履已弛彛怡易李梨泥爾珥理異痍痢移罹而耳肄苡荑裏裡貽貳邇里離飴餌匿溺瀷益翊翌翼謚人仁刃印吝咽因姻寅引忍湮燐璘絪茵藺蚓認隣靭靷鱗麟一佚佾壹日溢逸鎰馹任壬妊姙恁林淋稔臨荏賃入卄"
+  ],
+  [
+    "eda1",
+    "立笠粒仍剩孕芿仔刺咨姉姿子字孜恣慈滋炙煮玆瓷疵磁紫者自茨蔗藉諮資雌作勺嚼斫昨灼炸爵綽芍酌雀鵲孱棧殘潺盞岑暫潛箴簪蠶雜丈仗匠場墻壯奬將帳庄張掌暲杖樟檣欌漿牆狀獐璋章粧腸臟臧莊葬蔣薔藏裝贓醬長"
+  ],
+  [
+    "eea1",
+    "障再哉在宰才材栽梓渽滓災縡裁財載齋齎爭箏諍錚佇低儲咀姐底抵杵楮樗沮渚狙猪疽箸紵苧菹著藷詛貯躇這邸雎齟勣吊嫡寂摘敵滴狄炙的積笛籍績翟荻謫賊赤跡蹟迪迹適鏑佃佺傳全典前剪塡塼奠專展廛悛戰栓殿氈澱"
+  ],
+  [
+    "efa1",
+    "煎琠田甸畑癲筌箋箭篆纏詮輾轉鈿銓錢鐫電顚顫餞切截折浙癤竊節絶占岾店漸点粘霑鮎點接摺蝶丁井亭停偵呈姃定幀庭廷征情挺政整旌晶晸柾楨檉正汀淀淨渟湞瀞炡玎珽町睛碇禎程穽精綎艇訂諪貞鄭酊釘鉦鋌錠霆靖"
+  ],
+  [
+    "f0a1",
+    "靜頂鼎制劑啼堤帝弟悌提梯濟祭第臍薺製諸蹄醍除際霽題齊俎兆凋助嘲弔彫措操早晁曺曹朝條棗槽漕潮照燥爪璪眺祖祚租稠窕粗糟組繰肇藻蚤詔調趙躁造遭釣阻雕鳥族簇足鏃存尊卒拙猝倧宗從悰慫棕淙琮種終綜縱腫"
+  ],
+  [
+    "f1a1",
+    "踪踵鍾鐘佐坐左座挫罪主住侏做姝胄呪周嗾奏宙州廚晝朱柱株注洲湊澍炷珠疇籌紂紬綢舟蛛註誅走躊輳週酎酒鑄駐竹粥俊儁准埈寯峻晙樽浚準濬焌畯竣蠢逡遵雋駿茁中仲衆重卽櫛楫汁葺增憎曾拯烝甑症繒蒸證贈之只"
+  ],
+  [
+    "f2a1",
+    "咫地址志持指摯支旨智枝枳止池沚漬知砥祉祗紙肢脂至芝芷蜘誌識贄趾遲直稙稷織職唇嗔塵振搢晉晋桭榛殄津溱珍瑨璡畛疹盡眞瞋秦縉縝臻蔯袗診賑軫辰進鎭陣陳震侄叱姪嫉帙桎瓆疾秩窒膣蛭質跌迭斟朕什執潗緝輯"
+  ],
+  [
+    "f3a1",
+    "鏶集徵懲澄且侘借叉嗟嵯差次此磋箚茶蹉車遮捉搾着窄錯鑿齪撰澯燦璨瓚竄簒纂粲纘讚贊鑽餐饌刹察擦札紮僭參塹慘慙懺斬站讒讖倉倡創唱娼廠彰愴敞昌昶暢槍滄漲猖瘡窓脹艙菖蒼債埰寀寨彩採砦綵菜蔡采釵冊柵策"
+  ],
+  [
+    "f4a1",
+    "責凄妻悽處倜刺剔尺慽戚拓擲斥滌瘠脊蹠陟隻仟千喘天川擅泉淺玔穿舛薦賤踐遷釧闡阡韆凸哲喆徹撤澈綴輟轍鐵僉尖沾添甛瞻簽籤詹諂堞妾帖捷牒疊睫諜貼輒廳晴淸聽菁請靑鯖切剃替涕滯締諦逮遞體初剿哨憔抄招梢"
+  ],
+  [
+    "f5a1",
+    "椒楚樵炒焦硝礁礎秒稍肖艸苕草蕉貂超酢醋醮促囑燭矗蜀觸寸忖村邨叢塚寵悤憁摠總聰蔥銃撮催崔最墜抽推椎楸樞湫皺秋芻萩諏趨追鄒酋醜錐錘鎚雛騶鰍丑畜祝竺筑築縮蓄蹙蹴軸逐春椿瑃出朮黜充忠沖蟲衝衷悴膵萃"
+  ],
+  [
+    "f6a1",
+    "贅取吹嘴娶就炊翠聚脆臭趣醉驟鷲側仄厠惻測層侈値嗤峙幟恥梔治淄熾痔痴癡稚穉緇緻置致蚩輜雉馳齒則勅飭親七柒漆侵寢枕沈浸琛砧針鍼蟄秤稱快他咤唾墮妥惰打拖朶楕舵陀馱駝倬卓啄坼度托拓擢晫柝濁濯琢琸託"
+  ],
+  [
+    "f7a1",
+    "鐸呑嘆坦彈憚歎灘炭綻誕奪脫探眈耽貪塔搭榻宕帑湯糖蕩兌台太怠態殆汰泰笞胎苔跆邰颱宅擇澤撑攄兎吐土討慟桶洞痛筒統通堆槌腿褪退頹偸套妬投透鬪慝特闖坡婆巴把播擺杷波派爬琶破罷芭跛頗判坂板版瓣販辦鈑"
+  ],
+  [
+    "f8a1",
+    "阪八叭捌佩唄悖敗沛浿牌狽稗覇貝彭澎烹膨愎便偏扁片篇編翩遍鞭騙貶坪平枰萍評吠嬖幣廢弊斃肺蔽閉陛佈包匍匏咆哺圃布怖抛抱捕暴泡浦疱砲胞脯苞葡蒲袍褒逋鋪飽鮑幅暴曝瀑爆輻俵剽彪慓杓標漂瓢票表豹飇飄驃"
+  ],
+  [
+    "f9a1",
+    "品稟楓諷豊風馮彼披疲皮被避陂匹弼必泌珌畢疋筆苾馝乏逼下何厦夏廈昰河瑕荷蝦賀遐霞鰕壑學虐謔鶴寒恨悍旱汗漢澣瀚罕翰閑閒限韓割轄函含咸啣喊檻涵緘艦銜陷鹹合哈盒蛤閤闔陜亢伉姮嫦巷恒抗杭桁沆港缸肛航"
+  ],
+  [
+    "faa1",
+    "行降項亥偕咳垓奚孩害懈楷海瀣蟹解該諧邂駭骸劾核倖幸杏荇行享向嚮珦鄕響餉饗香噓墟虛許憲櫶獻軒歇險驗奕爀赫革俔峴弦懸晛泫炫玄玹現眩睍絃絢縣舷衒見賢鉉顯孑穴血頁嫌俠協夾峽挾浹狹脅脇莢鋏頰亨兄刑型"
+  ],
+  [
+    "fba1",
+    "形泂滎瀅灐炯熒珩瑩荊螢衡逈邢鎣馨兮彗惠慧暳蕙蹊醯鞋乎互呼壕壺好岵弧戶扈昊晧毫浩淏湖滸澔濠濩灝狐琥瑚瓠皓祜糊縞胡芦葫蒿虎號蝴護豪鎬頀顥惑或酷婚昏混渾琿魂忽惚笏哄弘汞泓洪烘紅虹訌鴻化和嬅樺火畵"
+  ],
+  [
+    "fca1",
+    "禍禾花華話譁貨靴廓擴攫確碻穫丸喚奐宦幻患換歡晥桓渙煥環紈還驩鰥活滑猾豁闊凰幌徨恍惶愰慌晃晄榥況湟滉潢煌璜皇篁簧荒蝗遑隍黃匯回廻徊恢悔懷晦會檜淮澮灰獪繪膾茴蛔誨賄劃獲宖橫鐄哮嚆孝效斅曉梟涍淆"
+  ],
+  [
+    "fda1",
+    "爻肴酵驍侯候厚后吼喉嗅帿後朽煦珝逅勛勳塤壎焄熏燻薰訓暈薨喧暄煊萱卉喙毁彙徽揮暉煇諱輝麾休携烋畦虧恤譎鷸兇凶匈洶胸黑昕欣炘痕吃屹紇訖欠欽歆吸恰洽翕興僖凞喜噫囍姬嬉希憙憘戱晞曦熙熹熺犧禧稀羲詰"
+  ]
+], Ri = [
+  [
+    "0",
+    "\0",
+    127
+  ],
+  [
+    "a140",
+    "　，、。．‧；：？！︰…‥﹐﹑﹒·﹔﹕﹖﹗｜–︱—︳╴︴﹏（）︵︶｛｝︷︸〔〕︹︺【】︻︼《》︽︾〈〉︿﹀「」﹁﹂『』﹃﹄﹙﹚"
+  ],
+  [
+    "a1a1",
+    "﹛﹜﹝﹞‘’“”〝〞‵′＃＆＊※§〃○●△▲◎☆★◇◆□■▽▼㊣℅¯￣＿ˍ﹉﹊﹍﹎﹋﹌﹟﹠﹡＋－×÷±√＜＞＝≦≧≠∞≒≡﹢",
+    4,
+    "～∩∪⊥∠∟⊿㏒㏑∫∮∵∴♀♂⊕⊙↑↓←→↖↗↙↘∥∣／"
+  ],
+  [
+    "a240",
+    "＼∕﹨＄￥〒￠￡％＠℃℉﹩﹪﹫㏕㎜㎝㎞㏎㎡㎎㎏㏄°兙兛兞兝兡兣嗧瓩糎▁",
+    7,
+    "▏▎▍▌▋▊▉┼┴┬┤├▔─│▕┌┐└┘╭"
+  ],
+  [
+    "a2a1",
+    "╮╰╯═╞╪╡◢◣◥◤╱╲╳０",
+    9,
+    "Ⅰ",
+    9,
+    "〡",
+    8,
+    "十卄卅Ａ",
+    25,
+    "ａ",
+    21
+  ],
+  [
+    "a340",
+    "ｗｘｙｚΑ",
+    16,
+    "Σ",
+    6,
+    "α",
+    16,
+    "σ",
+    6,
+    "ㄅ",
+    10
+  ],
+  [
+    "a3a1",
+    "ㄐ",
+    25,
+    "˙ˉˊˇˋ"
+  ],
+  [
+    "a3e1",
+    "€"
+  ],
+  [
+    "a440",
+    "一乙丁七乃九了二人儿入八几刀刁力匕十卜又三下丈上丫丸凡久么也乞于亡兀刃勺千叉口土士夕大女子孑孓寸小尢尸山川工己已巳巾干廾弋弓才"
+  ],
+  [
+    "a4a1",
+    "丑丐不中丰丹之尹予云井互五亢仁什仃仆仇仍今介仄元允內六兮公冗凶分切刈勻勾勿化匹午升卅卞厄友及反壬天夫太夭孔少尤尺屯巴幻廿弔引心戈戶手扎支文斗斤方日曰月木欠止歹毋比毛氏水火爪父爻片牙牛犬王丙"
+  ],
+  [
+    "a540",
+    "世丕且丘主乍乏乎以付仔仕他仗代令仙仞充兄冉冊冬凹出凸刊加功包匆北匝仟半卉卡占卯卮去可古右召叮叩叨叼司叵叫另只史叱台句叭叻四囚外"
+  ],
+  [
+    "a5a1",
+    "央失奴奶孕它尼巨巧左市布平幼弁弘弗必戊打扔扒扑斥旦朮本未末札正母民氐永汁汀氾犯玄玉瓜瓦甘生用甩田由甲申疋白皮皿目矛矢石示禾穴立丞丟乒乓乩亙交亦亥仿伉伙伊伕伍伐休伏仲件任仰仳份企伋光兇兆先全"
+  ],
+  [
+    "a640",
+    "共再冰列刑划刎刖劣匈匡匠印危吉吏同吊吐吁吋各向名合吃后吆吒因回囝圳地在圭圬圯圩夙多夷夸妄奸妃好她如妁字存宇守宅安寺尖屹州帆并年"
+  ],
+  [
+    "a6a1",
+    "式弛忙忖戎戌戍成扣扛托收早旨旬旭曲曳有朽朴朱朵次此死氖汝汗汙江池汐汕污汛汍汎灰牟牝百竹米糸缶羊羽老考而耒耳聿肉肋肌臣自至臼舌舛舟艮色艾虫血行衣西阡串亨位住佇佗佞伴佛何估佐佑伽伺伸佃佔似但佣"
+  ],
+  [
+    "a740",
+    "作你伯低伶余佝佈佚兌克免兵冶冷別判利刪刨劫助努劬匣即卵吝吭吞吾否呎吧呆呃吳呈呂君吩告吹吻吸吮吵吶吠吼呀吱含吟听囪困囤囫坊坑址坍"
+  ],
+  [
+    "a7a1",
+    "均坎圾坐坏圻壯夾妝妒妨妞妣妙妖妍妤妓妊妥孝孜孚孛完宋宏尬局屁尿尾岐岑岔岌巫希序庇床廷弄弟彤形彷役忘忌志忍忱快忸忪戒我抄抗抖技扶抉扭把扼找批扳抒扯折扮投抓抑抆改攻攸旱更束李杏材村杜杖杞杉杆杠"
+  ],
+  [
+    "a840",
+    "杓杗步每求汞沙沁沈沉沅沛汪決沐汰沌汨沖沒汽沃汲汾汴沆汶沍沔沘沂灶灼災灸牢牡牠狄狂玖甬甫男甸皂盯矣私秀禿究系罕肖肓肝肘肛肚育良芒"
+  ],
+  [
+    "a8a1",
+    "芋芍見角言谷豆豕貝赤走足身車辛辰迂迆迅迄巡邑邢邪邦那酉釆里防阮阱阪阬並乖乳事些亞享京佯依侍佳使佬供例來侃佰併侈佩佻侖佾侏侑佺兔兒兕兩具其典冽函刻券刷刺到刮制剁劾劻卒協卓卑卦卷卸卹取叔受味呵"
+  ],
+  [
+    "a940",
+    "咖呸咕咀呻呷咄咒咆呼咐呱呶和咚呢周咋命咎固垃坷坪坩坡坦坤坼夜奉奇奈奄奔妾妻委妹妮姑姆姐姍始姓姊妯妳姒姅孟孤季宗定官宜宙宛尚屈居"
+  ],
+  [
+    "a9a1",
+    "屆岷岡岸岩岫岱岳帘帚帖帕帛帑幸庚店府底庖延弦弧弩往征彿彼忝忠忽念忿怏怔怯怵怖怪怕怡性怩怫怛或戕房戾所承拉拌拄抿拂抹拒招披拓拔拋拈抨抽押拐拙拇拍抵拚抱拘拖拗拆抬拎放斧於旺昔易昌昆昂明昀昏昕昊"
+  ],
+  [
+    "aa40",
+    "昇服朋杭枋枕東果杳杷枇枝林杯杰板枉松析杵枚枓杼杪杲欣武歧歿氓氛泣注泳沱泌泥河沽沾沼波沫法泓沸泄油況沮泗泅泱沿治泡泛泊沬泯泜泖泠"
+  ],
+  [
+    "aaa1",
+    "炕炎炒炊炙爬爭爸版牧物狀狎狙狗狐玩玨玟玫玥甽疝疙疚的盂盲直知矽社祀祁秉秈空穹竺糾罔羌羋者肺肥肢肱股肫肩肴肪肯臥臾舍芳芝芙芭芽芟芹花芬芥芯芸芣芰芾芷虎虱初表軋迎返近邵邸邱邶采金長門阜陀阿阻附"
+  ],
+  [
+    "ab40",
+    "陂隹雨青非亟亭亮信侵侯便俠俑俏保促侶俘俟俊俗侮俐俄係俚俎俞侷兗冒冑冠剎剃削前剌剋則勇勉勃勁匍南卻厚叛咬哀咨哎哉咸咦咳哇哂咽咪品"
+  ],
+  [
+    "aba1",
+    "哄哈咯咫咱咻咩咧咿囿垂型垠垣垢城垮垓奕契奏奎奐姜姘姿姣姨娃姥姪姚姦威姻孩宣宦室客宥封屎屏屍屋峙峒巷帝帥帟幽庠度建弈弭彥很待徊律徇後徉怒思怠急怎怨恍恰恨恢恆恃恬恫恪恤扁拜挖按拼拭持拮拽指拱拷"
+  ],
+  [
+    "ac40",
+    "拯括拾拴挑挂政故斫施既春昭映昧是星昨昱昤曷柿染柱柔某柬架枯柵柩柯柄柑枴柚查枸柏柞柳枰柙柢柝柒歪殃殆段毒毗氟泉洋洲洪流津洌洱洞洗"
+  ],
+  [
+    "aca1",
+    "活洽派洶洛泵洹洧洸洩洮洵洎洫炫為炳炬炯炭炸炮炤爰牲牯牴狩狠狡玷珊玻玲珍珀玳甚甭畏界畎畋疫疤疥疢疣癸皆皇皈盈盆盃盅省盹相眉看盾盼眇矜砂研砌砍祆祉祈祇禹禺科秒秋穿突竿竽籽紂紅紀紉紇約紆缸美羿耄"
+  ],
+  [
+    "ad40",
+    "耐耍耑耶胖胥胚胃胄背胡胛胎胞胤胝致舢苧范茅苣苛苦茄若茂茉苒苗英茁苜苔苑苞苓苟苯茆虐虹虻虺衍衫要觔計訂訃貞負赴赳趴軍軌述迦迢迪迥"
+  ],
+  [
+    "ada1",
+    "迭迫迤迨郊郎郁郃酋酊重閂限陋陌降面革韋韭音頁風飛食首香乘亳倌倍倣俯倦倥俸倩倖倆值借倚倒們俺倀倔倨俱倡個候倘俳修倭倪俾倫倉兼冤冥冢凍凌准凋剖剜剔剛剝匪卿原厝叟哨唐唁唷哼哥哲唆哺唔哩哭員唉哮哪"
+  ],
+  [
+    "ae40",
+    "哦唧唇哽唏圃圄埂埔埋埃堉夏套奘奚娑娘娜娟娛娓姬娠娣娩娥娌娉孫屘宰害家宴宮宵容宸射屑展屐峭峽峻峪峨峰島崁峴差席師庫庭座弱徒徑徐恙"
+  ],
+  [
+    "aea1",
+    "恣恥恐恕恭恩息悄悟悚悍悔悌悅悖扇拳挈拿捎挾振捕捂捆捏捉挺捐挽挪挫挨捍捌效敉料旁旅時晉晏晃晒晌晅晁書朔朕朗校核案框桓根桂桔栩梳栗桌桑栽柴桐桀格桃株桅栓栘桁殊殉殷氣氧氨氦氤泰浪涕消涇浦浸海浙涓"
+  ],
+  [
+    "af40",
+    "浬涉浮浚浴浩涌涊浹涅浥涔烊烘烤烙烈烏爹特狼狹狽狸狷玆班琉珮珠珪珞畔畝畜畚留疾病症疲疳疽疼疹痂疸皋皰益盍盎眩真眠眨矩砰砧砸砝破砷"
+  ],
+  [
+    "afa1",
+    "砥砭砠砟砲祕祐祠祟祖神祝祗祚秤秣秧租秦秩秘窄窈站笆笑粉紡紗紋紊素索純紐紕級紜納紙紛缺罟羔翅翁耆耘耕耙耗耽耿胱脂胰脅胭胴脆胸胳脈能脊胼胯臭臬舀舐航舫舨般芻茫荒荔荊茸荐草茵茴荏茲茹茶茗荀茱茨荃"
+  ],
+  [
+    "b040",
+    "虔蚊蚪蚓蚤蚩蚌蚣蚜衰衷袁袂衽衹記訐討訌訕訊託訓訖訏訑豈豺豹財貢起躬軒軔軏辱送逆迷退迺迴逃追逅迸邕郡郝郢酒配酌釘針釗釜釙閃院陣陡"
+  ],
+  [
+    "b0a1",
+    "陛陝除陘陞隻飢馬骨高鬥鬲鬼乾偺偽停假偃偌做偉健偶偎偕偵側偷偏倏偯偭兜冕凰剪副勒務勘動匐匏匙匿區匾參曼商啪啦啄啞啡啃啊唱啖問啕唯啤唸售啜唬啣唳啁啗圈國圉域堅堊堆埠埤基堂堵執培夠奢娶婁婉婦婪婀"
+  ],
+  [
+    "b140",
+    "娼婢婚婆婊孰寇寅寄寂宿密尉專將屠屜屝崇崆崎崛崖崢崑崩崔崙崤崧崗巢常帶帳帷康庸庶庵庾張強彗彬彩彫得徙從徘御徠徜恿患悉悠您惋悴惦悽"
+  ],
+  [
+    "b1a1",
+    "情悻悵惜悼惘惕惆惟悸惚惇戚戛扈掠控捲掖探接捷捧掘措捱掩掉掃掛捫推掄授掙採掬排掏掀捻捩捨捺敝敖救教敗啟敏敘敕敔斜斛斬族旋旌旎晝晚晤晨晦晞曹勗望梁梯梢梓梵桿桶梱梧梗械梃棄梭梆梅梔條梨梟梡梂欲殺"
+  ],
+  [
+    "b240",
+    "毫毬氫涎涼淳淙液淡淌淤添淺清淇淋涯淑涮淞淹涸混淵淅淒渚涵淚淫淘淪深淮淨淆淄涪淬涿淦烹焉焊烽烯爽牽犁猜猛猖猓猙率琅琊球理現琍瓠瓶"
+  ],
+  [
+    "b2a1",
+    "瓷甜產略畦畢異疏痔痕疵痊痍皎盔盒盛眷眾眼眶眸眺硫硃硎祥票祭移窒窕笠笨笛第符笙笞笮粒粗粕絆絃統紮紹紼絀細紳組累終紲紱缽羞羚翌翎習耜聊聆脯脖脣脫脩脰脤舂舵舷舶船莎莞莘荸莢莖莽莫莒莊莓莉莠荷荻荼"
+  ],
+  [
+    "b340",
+    "莆莧處彪蛇蛀蚶蛄蚵蛆蛋蚱蚯蛉術袞袈被袒袖袍袋覓規訪訝訣訥許設訟訛訢豉豚販責貫貨貪貧赧赦趾趺軛軟這逍通逗連速逝逐逕逞造透逢逖逛途"
+  ],
+  [
+    "b3a1",
+    "部郭都酗野釵釦釣釧釭釩閉陪陵陳陸陰陴陶陷陬雀雪雩章竟頂頃魚鳥鹵鹿麥麻傢傍傅備傑傀傖傘傚最凱割剴創剩勞勝勛博厥啻喀喧啼喊喝喘喂喜喪喔喇喋喃喳單喟唾喲喚喻喬喱啾喉喫喙圍堯堪場堤堰報堡堝堠壹壺奠"
+  ],
+  [
+    "b440",
+    "婷媚婿媒媛媧孳孱寒富寓寐尊尋就嵌嵐崴嵇巽幅帽幀幃幾廊廁廂廄弼彭復循徨惑惡悲悶惠愜愣惺愕惰惻惴慨惱愎惶愉愀愒戟扉掣掌描揀揩揉揆揍"
+  ],
+  [
+    "b4a1",
+    "插揣提握揖揭揮捶援揪換摒揚揹敞敦敢散斑斐斯普晰晴晶景暑智晾晷曾替期朝棺棕棠棘棗椅棟棵森棧棹棒棲棣棋棍植椒椎棉棚楮棻款欺欽殘殖殼毯氮氯氬港游湔渡渲湧湊渠渥渣減湛湘渤湖湮渭渦湯渴湍渺測湃渝渾滋"
+  ],
+  [
+    "b540",
+    "溉渙湎湣湄湲湩湟焙焚焦焰無然煮焜牌犄犀猶猥猴猩琺琪琳琢琥琵琶琴琯琛琦琨甥甦畫番痢痛痣痙痘痞痠登發皖皓皴盜睏短硝硬硯稍稈程稅稀窘"
+  ],
+  [
+    "b5a1",
+    "窗窖童竣等策筆筐筒答筍筋筏筑粟粥絞結絨絕紫絮絲絡給絢絰絳善翔翕耋聒肅腕腔腋腑腎脹腆脾腌腓腴舒舜菩萃菸萍菠菅萋菁華菱菴著萊菰萌菌菽菲菊萸萎萄菜萇菔菟虛蛟蛙蛭蛔蛛蛤蛐蛞街裁裂袱覃視註詠評詞証詁"
+  ],
+  [
+    "b640",
+    "詔詛詐詆訴診訶詖象貂貯貼貳貽賁費賀貴買貶貿貸越超趁跎距跋跚跑跌跛跆軻軸軼辜逮逵週逸進逶鄂郵鄉郾酣酥量鈔鈕鈣鈉鈞鈍鈐鈇鈑閔閏開閑"
+  ],
+  [
+    "b6a1",
+    "間閒閎隊階隋陽隅隆隍陲隄雁雅雄集雇雯雲韌項順須飧飪飯飩飲飭馮馭黃黍黑亂傭債傲傳僅傾催傷傻傯僇剿剷剽募勦勤勢勣匯嗟嗨嗓嗦嗎嗜嗇嗑嗣嗤嗯嗚嗡嗅嗆嗥嗉園圓塞塑塘塗塚塔填塌塭塊塢塒塋奧嫁嫉嫌媾媽媼"
+  ],
+  [
+    "b740",
+    "媳嫂媲嵩嵯幌幹廉廈弒彙徬微愚意慈感想愛惹愁愈慎慌慄慍愾愴愧愍愆愷戡戢搓搾搞搪搭搽搬搏搜搔損搶搖搗搆敬斟新暗暉暇暈暖暄暘暍會榔業"
+  ],
+  [
+    "b7a1",
+    "楚楷楠楔極椰概楊楨楫楞楓楹榆楝楣楛歇歲毀殿毓毽溢溯滓溶滂源溝滇滅溥溘溼溺溫滑準溜滄滔溪溧溴煎煙煩煤煉照煜煬煦煌煥煞煆煨煖爺牒猷獅猿猾瑯瑚瑕瑟瑞瑁琿瑙瑛瑜當畸瘀痰瘁痲痱痺痿痴痳盞盟睛睫睦睞督"
+  ],
+  [
+    "b840",
+    "睹睪睬睜睥睨睢矮碎碰碗碘碌碉硼碑碓硿祺祿禁萬禽稜稚稠稔稟稞窟窠筷節筠筮筧粱粳粵經絹綑綁綏絛置罩罪署義羨群聖聘肆肄腱腰腸腥腮腳腫"
+  ],
+  [
+    "b8a1",
+    "腹腺腦舅艇蒂葷落萱葵葦葫葉葬葛萼萵葡董葩葭葆虞虜號蛹蜓蜈蜇蜀蛾蛻蜂蜃蜆蜊衙裟裔裙補裘裝裡裊裕裒覜解詫該詳試詩詰誇詼詣誠話誅詭詢詮詬詹詻訾詨豢貊貉賊資賈賄貲賃賂賅跡跟跨路跳跺跪跤跦躲較載軾輊"
+  ],
+  [
+    "b940",
+    "辟農運遊道遂達逼違遐遇遏過遍遑逾遁鄒鄗酬酪酩釉鈷鉗鈸鈽鉀鈾鉛鉋鉤鉑鈴鉉鉍鉅鈹鈿鉚閘隘隔隕雍雋雉雊雷電雹零靖靴靶預頑頓頊頒頌飼飴"
+  ],
+  [
+    "b9a1",
+    "飽飾馳馱馴髡鳩麂鼎鼓鼠僧僮僥僖僭僚僕像僑僱僎僩兢凳劃劂匱厭嗾嘀嘛嘗嗽嘔嘆嘉嘍嘎嗷嘖嘟嘈嘐嗶團圖塵塾境墓墊塹墅塽壽夥夢夤奪奩嫡嫦嫩嫗嫖嫘嫣孵寞寧寡寥實寨寢寤察對屢嶄嶇幛幣幕幗幔廓廖弊彆彰徹慇"
+  ],
+  [
+    "ba40",
+    "愿態慷慢慣慟慚慘慵截撇摘摔撤摸摟摺摑摧搴摭摻敲斡旗旖暢暨暝榜榨榕槁榮槓構榛榷榻榫榴槐槍榭槌榦槃榣歉歌氳漳演滾漓滴漩漾漠漬漏漂漢"
+  ],
+  [
+    "baa1",
+    "滿滯漆漱漸漲漣漕漫漯澈漪滬漁滲滌滷熔熙煽熊熄熒爾犒犖獄獐瑤瑣瑪瑰瑭甄疑瘧瘍瘋瘉瘓盡監瞄睽睿睡磁碟碧碳碩碣禎福禍種稱窪窩竭端管箕箋筵算箝箔箏箸箇箄粹粽精綻綰綜綽綾綠緊綴網綱綺綢綿綵綸維緒緇綬"
+  ],
+  [
+    "bb40",
+    "罰翠翡翟聞聚肇腐膀膏膈膊腿膂臧臺與舔舞艋蓉蒿蓆蓄蒙蒞蒲蒜蓋蒸蓀蓓蒐蒼蓑蓊蜿蜜蜻蜢蜥蜴蜘蝕蜷蜩裳褂裴裹裸製裨褚裯誦誌語誣認誡誓誤"
+  ],
+  [
+    "bba1",
+    "說誥誨誘誑誚誧豪貍貌賓賑賒赫趙趕跼輔輒輕輓辣遠遘遜遣遙遞遢遝遛鄙鄘鄞酵酸酷酴鉸銀銅銘銖鉻銓銜銨鉼銑閡閨閩閣閥閤隙障際雌雒需靼鞅韶頗領颯颱餃餅餌餉駁骯骰髦魁魂鳴鳶鳳麼鼻齊億儀僻僵價儂儈儉儅凜"
+  ],
+  [
+    "bc40",
+    "劇劈劉劍劊勰厲嘮嘻嘹嘲嘿嘴嘩噓噎噗噴嘶嘯嘰墀墟增墳墜墮墩墦奭嬉嫻嬋嫵嬌嬈寮寬審寫層履嶝嶔幢幟幡廢廚廟廝廣廠彈影德徵慶慧慮慝慕憂"
+  ],
+  [
+    "bca1",
+    "慼慰慫慾憧憐憫憎憬憚憤憔憮戮摩摯摹撞撲撈撐撰撥撓撕撩撒撮播撫撚撬撙撢撳敵敷數暮暫暴暱樣樟槨樁樞標槽模樓樊槳樂樅槭樑歐歎殤毅毆漿潼澄潑潦潔澆潭潛潸潮澎潺潰潤澗潘滕潯潠潟熟熬熱熨牖犛獎獗瑩璋璃"
+  ],
+  [
+    "bd40",
+    "瑾璀畿瘠瘩瘟瘤瘦瘡瘢皚皺盤瞎瞇瞌瞑瞋磋磅確磊碾磕碼磐稿稼穀稽稷稻窯窮箭箱範箴篆篇篁箠篌糊締練緯緻緘緬緝編緣線緞緩綞緙緲緹罵罷羯"
+  ],
+  [
+    "bda1",
+    "翩耦膛膜膝膠膚膘蔗蔽蔚蓮蔬蔭蔓蔑蔣蔡蔔蓬蔥蓿蔆螂蝴蝶蝠蝦蝸蝨蝙蝗蝌蝓衛衝褐複褒褓褕褊誼諒談諄誕請諸課諉諂調誰論諍誶誹諛豌豎豬賠賞賦賤賬賭賢賣賜質賡赭趟趣踫踐踝踢踏踩踟踡踞躺輝輛輟輩輦輪輜輞"
+  ],
+  [
+    "be40",
+    "輥適遮遨遭遷鄰鄭鄧鄱醇醉醋醃鋅銻銷鋪銬鋤鋁銳銼鋒鋇鋰銲閭閱霄霆震霉靠鞍鞋鞏頡頫頜颳養餓餒餘駝駐駟駛駑駕駒駙骷髮髯鬧魅魄魷魯鴆鴉"
+  ],
+  [
+    "bea1",
+    "鴃麩麾黎墨齒儒儘儔儐儕冀冪凝劑劓勳噙噫噹噩噤噸噪器噥噱噯噬噢噶壁墾壇壅奮嬝嬴學寰導彊憲憑憩憊懍憶憾懊懈戰擅擁擋撻撼據擄擇擂操撿擒擔撾整曆曉暹曄曇暸樽樸樺橙橫橘樹橄橢橡橋橇樵機橈歙歷氅濂澱澡"
+  ],
+  [
+    "bf40",
+    "濃澤濁澧澳激澹澶澦澠澴熾燉燐燒燈燕熹燎燙燜燃燄獨璜璣璘璟璞瓢甌甍瘴瘸瘺盧盥瞠瞞瞟瞥磨磚磬磧禦積穎穆穌穋窺篙簑築篤篛篡篩篦糕糖縊"
+  ],
+  [
+    "bfa1",
+    "縑縈縛縣縞縝縉縐罹羲翰翱翮耨膳膩膨臻興艘艙蕊蕙蕈蕨蕩蕃蕉蕭蕪蕞螃螟螞螢融衡褪褲褥褫褡親覦諦諺諫諱謀諜諧諮諾謁謂諷諭諳諶諼豫豭貓賴蹄踱踴蹂踹踵輻輯輸輳辨辦遵遴選遲遼遺鄴醒錠錶鋸錳錯錢鋼錫錄錚"
+  ],
+  [
+    "c040",
+    "錐錦錡錕錮錙閻隧隨險雕霎霑霖霍霓霏靛靜靦鞘頰頸頻頷頭頹頤餐館餞餛餡餚駭駢駱骸骼髻髭鬨鮑鴕鴣鴦鴨鴒鴛默黔龍龜優償儡儲勵嚎嚀嚐嚅嚇"
+  ],
+  [
+    "c0a1",
+    "嚏壕壓壑壎嬰嬪嬤孺尷屨嶼嶺嶽嶸幫彌徽應懂懇懦懋戲戴擎擊擘擠擰擦擬擱擢擭斂斃曙曖檀檔檄檢檜櫛檣橾檗檐檠歜殮毚氈濘濱濟濠濛濤濫濯澀濬濡濩濕濮濰燧營燮燦燥燭燬燴燠爵牆獰獲璩環璦璨癆療癌盪瞳瞪瞰瞬"
+  ],
+  [
+    "c140",
+    "瞧瞭矯磷磺磴磯礁禧禪穗窿簇簍篾篷簌篠糠糜糞糢糟糙糝縮績繆縷縲繃縫總縱繅繁縴縹繈縵縿縯罄翳翼聱聲聰聯聳臆臃膺臂臀膿膽臉膾臨舉艱薪"
+  ],
+  [
+    "c1a1",
+    "薄蕾薜薑薔薯薛薇薨薊虧蟀蟑螳蟒蟆螫螻螺蟈蟋褻褶襄褸褽覬謎謗謙講謊謠謝謄謐豁谿豳賺賽購賸賻趨蹉蹋蹈蹊轄輾轂轅輿避遽還邁邂邀鄹醣醞醜鍍鎂錨鍵鍊鍥鍋錘鍾鍬鍛鍰鍚鍔闊闋闌闈闆隱隸雖霜霞鞠韓顆颶餵騁"
+  ],
+  [
+    "c240",
+    "駿鮮鮫鮪鮭鴻鴿麋黏點黜黝黛鼾齋叢嚕嚮壙壘嬸彝懣戳擴擲擾攆擺擻擷斷曜朦檳檬櫃檻檸櫂檮檯歟歸殯瀉瀋濾瀆濺瀑瀏燻燼燾燸獷獵璧璿甕癖癘"
+  ],
+  [
+    "c2a1",
+    "癒瞽瞿瞻瞼礎禮穡穢穠竄竅簫簧簪簞簣簡糧織繕繞繚繡繒繙罈翹翻職聶臍臏舊藏薩藍藐藉薰薺薹薦蟯蟬蟲蟠覆覲觴謨謹謬謫豐贅蹙蹣蹦蹤蹟蹕軀轉轍邇邃邈醫醬釐鎔鎊鎖鎢鎳鎮鎬鎰鎘鎚鎗闔闖闐闕離雜雙雛雞霤鞣鞦"
+  ],
+  [
+    "c340",
+    "鞭韹額顏題顎顓颺餾餿餽餮馥騎髁鬃鬆魏魎魍鯊鯉鯽鯈鯀鵑鵝鵠黠鼕鼬儳嚥壞壟壢寵龐廬懲懷懶懵攀攏曠曝櫥櫝櫚櫓瀛瀟瀨瀚瀝瀕瀘爆爍牘犢獸"
+  ],
+  [
+    "c3a1",
+    "獺璽瓊瓣疇疆癟癡矇礙禱穫穩簾簿簸簽簷籀繫繭繹繩繪羅繳羶羹羸臘藩藝藪藕藤藥藷蟻蠅蠍蟹蟾襠襟襖襞譁譜識證譚譎譏譆譙贈贊蹼蹲躇蹶蹬蹺蹴轔轎辭邊邋醱醮鏡鏑鏟鏃鏈鏜鏝鏖鏢鏍鏘鏤鏗鏨關隴難霪霧靡韜韻類"
+  ],
+  [
+    "c440",
+    "願顛颼饅饉騖騙鬍鯨鯧鯖鯛鶉鵡鵲鵪鵬麒麗麓麴勸嚨嚷嚶嚴嚼壤孀孃孽寶巉懸懺攘攔攙曦朧櫬瀾瀰瀲爐獻瓏癢癥礦礪礬礫竇競籌籃籍糯糰辮繽繼"
+  ],
+  [
+    "c4a1",
+    "纂罌耀臚艦藻藹蘑藺蘆蘋蘇蘊蠔蠕襤覺觸議譬警譯譟譫贏贍躉躁躅躂醴釋鐘鐃鏽闡霰飄饒饑馨騫騰騷騵鰓鰍鹹麵黨鼯齟齣齡儷儸囁囀囂夔屬巍懼懾攝攜斕曩櫻欄櫺殲灌爛犧瓖瓔癩矓籐纏續羼蘗蘭蘚蠣蠢蠡蠟襪襬覽譴"
+  ],
+  [
+    "c540",
+    "護譽贓躊躍躋轟辯醺鐮鐳鐵鐺鐸鐲鐫闢霸霹露響顧顥饗驅驃驀騾髏魔魑鰭鰥鶯鶴鷂鶸麝黯鼙齜齦齧儼儻囈囊囉孿巔巒彎懿攤權歡灑灘玀瓤疊癮癬"
+  ],
+  [
+    "c5a1",
+    "禳籠籟聾聽臟襲襯觼讀贖贗躑躓轡酈鑄鑑鑒霽霾韃韁顫饕驕驍髒鬚鱉鰱鰾鰻鷓鷗鼴齬齪龔囌巖戀攣攫攪曬欐瓚竊籤籣籥纓纖纔臢蘸蘿蠱變邐邏鑣鑠鑤靨顯饜驚驛驗髓體髑鱔鱗鱖鷥麟黴囑壩攬灞癱癲矗罐羈蠶蠹衢讓讒"
+  ],
+  [
+    "c640",
+    "讖艷贛釀鑪靂靈靄韆顰驟鬢魘鱟鷹鷺鹼鹽鼇齷齲廳欖灣籬籮蠻觀躡釁鑲鑰顱饞髖鬣黌灤矚讚鑷韉驢驥纜讜躪釅鑽鑾鑼鱷鱸黷豔鑿鸚爨驪鬱鸛鸞籲"
+  ],
+  [
+    "c940",
+    "乂乜凵匚厂万丌乇亍囗兀屮彳丏冇与丮亓仂仉仈冘勼卬厹圠夃夬尐巿旡殳毌气爿丱丼仨仜仩仡仝仚刌匜卌圢圣夗夯宁宄尒尻屴屳帄庀庂忉戉扐氕"
+  ],
+  [
+    "c9a1",
+    "氶汃氿氻犮犰玊禸肊阞伎优伬仵伔仱伀价伈伝伂伅伢伓伄仴伒冱刓刉刐劦匢匟卍厊吇囡囟圮圪圴夼妀奼妅奻奾奷奿孖尕尥屼屺屻屾巟幵庄异弚彴忕忔忏扜扞扤扡扦扢扙扠扚扥旯旮朾朹朸朻机朿朼朳氘汆汒汜汏汊汔汋"
+  ],
+  [
+    "ca40",
+    "汌灱牞犴犵玎甪癿穵网艸艼芀艽艿虍襾邙邗邘邛邔阢阤阠阣佖伻佢佉体佤伾佧佒佟佁佘伭伳伿佡冏冹刜刞刡劭劮匉卣卲厎厏吰吷吪呔呅吙吜吥吘"
+  ],
+  [
+    "caa1",
+    "吽呏呁吨吤呇囮囧囥坁坅坌坉坋坒夆奀妦妘妠妗妎妢妐妏妧妡宎宒尨尪岍岏岈岋岉岒岊岆岓岕巠帊帎庋庉庌庈庍弅弝彸彶忒忑忐忭忨忮忳忡忤忣忺忯忷忻怀忴戺抃抌抎抏抔抇扱扻扺扰抁抈扷扽扲扴攷旰旴旳旲旵杅杇"
+  ],
+  [
+    "cb40",
+    "杙杕杌杈杝杍杚杋毐氙氚汸汧汫沄沋沏汱汯汩沚汭沇沕沜汦汳汥汻沎灴灺牣犿犽狃狆狁犺狅玕玗玓玔玒町甹疔疕皁礽耴肕肙肐肒肜芐芏芅芎芑芓"
+  ],
+  [
+    "cba1",
+    "芊芃芄豸迉辿邟邡邥邞邧邠阰阨阯阭丳侘佼侅佽侀侇佶佴侉侄佷佌侗佪侚佹侁佸侐侜侔侞侒侂侕佫佮冞冼冾刵刲刳剆刱劼匊匋匼厒厔咇呿咁咑咂咈呫呺呾呥呬呴呦咍呯呡呠咘呣呧呤囷囹坯坲坭坫坱坰坶垀坵坻坳坴坢"
+  ],
+  [
+    "cc40",
+    "坨坽夌奅妵妺姏姎妲姌姁妶妼姃姖妱妽姀姈妴姇孢孥宓宕屄屇岮岤岠岵岯岨岬岟岣岭岢岪岧岝岥岶岰岦帗帔帙弨弢弣弤彔徂彾彽忞忥怭怦怙怲怋"
+  ],
+  [
+    "cca1",
+    "怴怊怗怳怚怞怬怢怍怐怮怓怑怌怉怜戔戽抭抴拑抾抪抶拊抮抳抯抻抩抰抸攽斨斻昉旼昄昒昈旻昃昋昍昅旽昑昐曶朊枅杬枎枒杶杻枘枆构杴枍枌杺枟枑枙枃杽极杸杹枔欥殀歾毞氝沓泬泫泮泙沶泔沭泧沷泐泂沺泃泆泭泲"
+  ],
+  [
+    "cd40",
+    "泒泝沴沊沝沀泞泀洰泍泇沰泹泏泩泑炔炘炅炓炆炄炑炖炂炚炃牪狖狋狘狉狜狒狔狚狌狑玤玡玭玦玢玠玬玝瓝瓨甿畀甾疌疘皯盳盱盰盵矸矼矹矻矺"
+  ],
+  [
+    "cda1",
+    "矷祂礿秅穸穻竻籵糽耵肏肮肣肸肵肭舠芠苀芫芚芘芛芵芧芮芼芞芺芴芨芡芩苂芤苃芶芢虰虯虭虮豖迒迋迓迍迖迕迗邲邴邯邳邰阹阽阼阺陃俍俅俓侲俉俋俁俔俜俙侻侳俛俇俖侺俀侹俬剄剉勀勂匽卼厗厖厙厘咺咡咭咥哏"
+  ],
+  [
+    "ce40",
+    "哃茍咷咮哖咶哅哆咠呰咼咢咾呲哞咰垵垞垟垤垌垗垝垛垔垘垏垙垥垚垕壴复奓姡姞姮娀姱姝姺姽姼姶姤姲姷姛姩姳姵姠姾姴姭宨屌峐峘峌峗峋峛"
+  ],
+  [
+    "cea1",
+    "峞峚峉峇峊峖峓峔峏峈峆峎峟峸巹帡帢帣帠帤庰庤庢庛庣庥弇弮彖徆怷怹恔恲恞恅恓恇恉恛恌恀恂恟怤恄恘恦恮扂扃拏挍挋拵挎挃拫拹挏挌拸拶挀挓挔拺挕拻拰敁敃斪斿昶昡昲昵昜昦昢昳昫昺昝昴昹昮朏朐柁柲柈枺"
+  ],
+  [
+    "cf40",
+    "柜枻柸柘柀枷柅柫柤柟枵柍枳柷柶柮柣柂枹柎柧柰枲柼柆柭柌枮柦柛柺柉柊柃柪柋欨殂殄殶毖毘毠氠氡洨洴洭洟洼洿洒洊泚洳洄洙洺洚洑洀洝浂"
+  ],
+  [
+    "cfa1",
+    "洁洘洷洃洏浀洇洠洬洈洢洉洐炷炟炾炱炰炡炴炵炩牁牉牊牬牰牳牮狊狤狨狫狟狪狦狣玅珌珂珈珅玹玶玵玴珫玿珇玾珃珆玸珋瓬瓮甮畇畈疧疪癹盄眈眃眄眅眊盷盻盺矧矨砆砑砒砅砐砏砎砉砃砓祊祌祋祅祄秕种秏秖秎窀"
+  ],
+  [
+    "d040",
+    "穾竑笀笁籺籸籹籿粀粁紃紈紁罘羑羍羾耇耎耏耔耷胘胇胠胑胈胂胐胅胣胙胜胊胕胉胏胗胦胍臿舡芔苙苾苹茇苨茀苕茺苫苖苴苬苡苲苵茌苻苶苰苪"
+  ],
+  [
+    "d0a1",
+    "苤苠苺苳苭虷虴虼虳衁衎衧衪衩觓訄訇赲迣迡迮迠郱邽邿郕郅邾郇郋郈釔釓陔陏陑陓陊陎倞倅倇倓倢倰倛俵俴倳倷倬俶俷倗倜倠倧倵倯倱倎党冔冓凊凄凅凈凎剡剚剒剞剟剕剢勍匎厞唦哢唗唒哧哳哤唚哿唄唈哫唑唅哱"
+  ],
+  [
+    "d140",
+    "唊哻哷哸哠唎唃唋圁圂埌堲埕埒垺埆垽垼垸垶垿埇埐垹埁夎奊娙娖娭娮娕娏娗娊娞娳孬宧宭宬尃屖屔峬峿峮峱峷崀峹帩帨庨庮庪庬弳弰彧恝恚恧"
+  ],
+  [
+    "d1a1",
+    "恁悢悈悀悒悁悝悃悕悛悗悇悜悎戙扆拲挐捖挬捄捅挶捃揤挹捋捊挼挩捁挴捘捔捙挭捇挳捚捑挸捗捀捈敊敆旆旃旄旂晊晟晇晑朒朓栟栚桉栲栳栻桋桏栖栱栜栵栫栭栯桎桄栴栝栒栔栦栨栮桍栺栥栠欬欯欭欱欴歭肂殈毦毤"
+  ],
+  [
+    "d240",
+    "毨毣毢毧氥浺浣浤浶洍浡涒浘浢浭浯涑涍淯浿涆浞浧浠涗浰浼浟涂涘洯浨涋浾涀涄洖涃浻浽浵涐烜烓烑烝烋缹烢烗烒烞烠烔烍烅烆烇烚烎烡牂牸"
+  ],
+  [
+    "d2a1",
+    "牷牶猀狺狴狾狶狳狻猁珓珙珥珖玼珧珣珩珜珒珛珔珝珚珗珘珨瓞瓟瓴瓵甡畛畟疰痁疻痄痀疿疶疺皊盉眝眛眐眓眒眣眑眕眙眚眢眧砣砬砢砵砯砨砮砫砡砩砳砪砱祔祛祏祜祓祒祑秫秬秠秮秭秪秜秞秝窆窉窅窋窌窊窇竘笐"
+  ],
+  [
+    "d340",
+    "笄笓笅笏笈笊笎笉笒粄粑粊粌粈粍粅紞紝紑紎紘紖紓紟紒紏紌罜罡罞罠罝罛羖羒翃翂翀耖耾耹胺胲胹胵脁胻脀舁舯舥茳茭荄茙荑茥荖茿荁茦茜茢"
+  ],
+  [
+    "d3a1",
+    "荂荎茛茪茈茼荍茖茤茠茷茯茩荇荅荌荓茞茬荋茧荈虓虒蚢蚨蚖蚍蚑蚞蚇蚗蚆蚋蚚蚅蚥蚙蚡蚧蚕蚘蚎蚝蚐蚔衃衄衭衵衶衲袀衱衿衯袃衾衴衼訒豇豗豻貤貣赶赸趵趷趶軑軓迾迵适迿迻逄迼迶郖郠郙郚郣郟郥郘郛郗郜郤酐"
+  ],
+  [
+    "d440",
+    "酎酏釕釢釚陜陟隼飣髟鬯乿偰偪偡偞偠偓偋偝偲偈偍偁偛偊偢倕偅偟偩偫偣偤偆偀偮偳偗偑凐剫剭剬剮勖勓匭厜啵啶唼啍啐唴唪啑啢唶唵唰啒啅"
+  ],
+  [
+    "d4a1",
+    "唌唲啥啎唹啈唭唻啀啋圊圇埻堔埢埶埜埴堀埭埽堈埸堋埳埏堇埮埣埲埥埬埡堎埼堐埧堁堌埱埩埰堍堄奜婠婘婕婧婞娸娵婭婐婟婥婬婓婤婗婃婝婒婄婛婈媎娾婍娹婌婰婩婇婑婖婂婜孲孮寁寀屙崞崋崝崚崠崌崨崍崦崥崏"
+  ],
+  [
+    "d540",
+    "崰崒崣崟崮帾帴庱庴庹庲庳弶弸徛徖徟悊悐悆悾悰悺惓惔惏惤惙惝惈悱惛悷惊悿惃惍惀挲捥掊掂捽掽掞掭掝掗掫掎捯掇掐据掯捵掜捭掮捼掤挻掟"
+  ],
+  [
+    "d5a1",
+    "捸掅掁掑掍捰敓旍晥晡晛晙晜晢朘桹梇梐梜桭桮梮梫楖桯梣梬梩桵桴梲梏桷梒桼桫桲梪梀桱桾梛梖梋梠梉梤桸桻梑梌梊桽欶欳欷欸殑殏殍殎殌氪淀涫涴涳湴涬淩淢涷淶淔渀淈淠淟淖涾淥淜淝淛淴淊涽淭淰涺淕淂淏淉"
+  ],
+  [
+    "d640",
+    "淐淲淓淽淗淍淣涻烺焍烷焗烴焌烰焄烳焐烼烿焆焓焀烸烶焋焂焎牾牻牼牿猝猗猇猑猘猊猈狿猏猞玈珶珸珵琄琁珽琇琀珺珼珿琌琋珴琈畤畣痎痒痏"
+  ],
+  [
+    "d6a1",
+    "痋痌痑痐皏皉盓眹眯眭眱眲眴眳眽眥眻眵硈硒硉硍硊硌砦硅硐祤祧祩祪祣祫祡离秺秸秶秷窏窔窐笵筇笴笥笰笢笤笳笘笪笝笱笫笭笯笲笸笚笣粔粘粖粣紵紽紸紶紺絅紬紩絁絇紾紿絊紻紨罣羕羜羝羛翊翋翍翐翑翇翏翉耟"
+  ],
+  [
+    "d740",
+    "耞耛聇聃聈脘脥脙脛脭脟脬脞脡脕脧脝脢舑舸舳舺舴舲艴莐莣莨莍荺荳莤荴莏莁莕莙荵莔莩荽莃莌莝莛莪莋荾莥莯莈莗莰荿莦莇莮荶莚虙虖蚿蚷"
+  ],
+  [
+    "d7a1",
+    "蛂蛁蛅蚺蚰蛈蚹蚳蚸蛌蚴蚻蚼蛃蚽蚾衒袉袕袨袢袪袚袑袡袟袘袧袙袛袗袤袬袌袓袎覂觖觙觕訰訧訬訞谹谻豜豝豽貥赽赻赹趼跂趹趿跁軘軞軝軜軗軠軡逤逋逑逜逌逡郯郪郰郴郲郳郔郫郬郩酖酘酚酓酕釬釴釱釳釸釤釹釪"
+  ],
+  [
+    "d840",
+    "釫釷釨釮镺閆閈陼陭陫陱陯隿靪頄飥馗傛傕傔傞傋傣傃傌傎傝偨傜傒傂傇兟凔匒匑厤厧喑喨喥喭啷噅喢喓喈喏喵喁喣喒喤啽喌喦啿喕喡喎圌堩堷"
+  ],
+  [
+    "d8a1",
+    "堙堞堧堣堨埵塈堥堜堛堳堿堶堮堹堸堭堬堻奡媯媔媟婺媢媞婸媦婼媥媬媕媮娷媄媊媗媃媋媩婻婽媌媜媏媓媝寪寍寋寔寑寊寎尌尰崷嵃嵫嵁嵋崿崵嵑嵎嵕崳崺嵒崽崱嵙嵂崹嵉崸崼崲崶嵀嵅幄幁彘徦徥徫惉悹惌惢惎惄愔"
+  ],
+  [
+    "d940",
+    "惲愊愖愅惵愓惸惼惾惁愃愘愝愐惿愄愋扊掔掱掰揎揥揨揯揃撝揳揊揠揶揕揲揵摡揟掾揝揜揄揘揓揂揇揌揋揈揰揗揙攲敧敪敤敜敨敥斌斝斞斮旐旒"
+  ],
+  [
+    "d9a1",
+    "晼晬晻暀晱晹晪晲朁椌棓椄棜椪棬棪棱椏棖棷棫棤棶椓椐棳棡椇棌椈楰梴椑棯棆椔棸棐棽棼棨椋椊椗棎棈棝棞棦棴棑椆棔棩椕椥棇欹欻欿欼殔殗殙殕殽毰毲毳氰淼湆湇渟湉溈渼渽湅湢渫渿湁湝湳渜渳湋湀湑渻渃渮湞"
+  ],
+  [
+    "da40",
+    "湨湜湡渱渨湠湱湫渹渢渰湓湥渧湸湤湷湕湹湒湦渵渶湚焠焞焯烻焮焱焣焥焢焲焟焨焺焛牋牚犈犉犆犅犋猒猋猰猢猱猳猧猲猭猦猣猵猌琮琬琰琫琖"
+  ],
+  [
+    "daa1",
+    "琚琡琭琱琤琣琝琩琠琲瓻甯畯畬痧痚痡痦痝痟痤痗皕皒盚睆睇睄睍睅睊睎睋睌矞矬硠硤硥硜硭硱硪确硰硩硨硞硢祴祳祲祰稂稊稃稌稄窙竦竤筊笻筄筈筌筎筀筘筅粢粞粨粡絘絯絣絓絖絧絪絏絭絜絫絒絔絩絑絟絎缾缿罥"
+  ],
+  [
+    "db40",
+    "罦羢羠羡翗聑聏聐胾胔腃腊腒腏腇脽腍脺臦臮臷臸臹舄舼舽舿艵茻菏菹萣菀菨萒菧菤菼菶萐菆菈菫菣莿萁菝菥菘菿菡菋菎菖菵菉萉萏菞萑萆菂菳"
+  ],
+  [
+    "dba1",
+    "菕菺菇菑菪萓菃菬菮菄菻菗菢萛菛菾蛘蛢蛦蛓蛣蛚蛪蛝蛫蛜蛬蛩蛗蛨蛑衈衖衕袺裗袹袸裀袾袶袼袷袽袲褁裉覕覘覗觝觚觛詎詍訹詙詀詗詘詄詅詒詈詑詊詌詏豟貁貀貺貾貰貹貵趄趀趉跘跓跍跇跖跜跏跕跙跈跗跅軯軷軺"
+  ],
+  [
+    "dc40",
+    "軹軦軮軥軵軧軨軶軫軱軬軴軩逭逴逯鄆鄬鄄郿郼鄈郹郻鄁鄀鄇鄅鄃酡酤酟酢酠鈁鈊鈥鈃鈚鈦鈏鈌鈀鈒釿釽鈆鈄鈧鈂鈜鈤鈙鈗鈅鈖镻閍閌閐隇陾隈"
+  ],
+  [
+    "dca1",
+    "隉隃隀雂雈雃雱雰靬靰靮頇颩飫鳦黹亃亄亶傽傿僆傮僄僊傴僈僂傰僁傺傱僋僉傶傸凗剺剸剻剼嗃嗛嗌嗐嗋嗊嗝嗀嗔嗄嗩喿嗒喍嗏嗕嗢嗖嗈嗲嗍嗙嗂圔塓塨塤塏塍塉塯塕塎塝塙塥塛堽塣塱壼嫇嫄嫋媺媸媱媵媰媿嫈媻嫆"
+  ],
+  [
+    "dd40",
+    "媷嫀嫊媴媶嫍媹媐寖寘寙尟尳嵱嵣嵊嵥嵲嵬嵞嵨嵧嵢巰幏幎幊幍幋廅廌廆廋廇彀徯徭惷慉慊愫慅愶愲愮慆愯慏愩慀戠酨戣戥戤揅揱揫搐搒搉搠搤"
+  ],
+  [
+    "dda1",
+    "搳摃搟搕搘搹搷搢搣搌搦搰搨摁搵搯搊搚摀搥搧搋揧搛搮搡搎敯斒旓暆暌暕暐暋暊暙暔晸朠楦楟椸楎楢楱椿楅楪椹楂楗楙楺楈楉椵楬椳椽楥棰楸椴楩楀楯楄楶楘楁楴楌椻楋椷楜楏楑椲楒椯楻椼歆歅歃歂歈歁殛嗀毻毼"
+  ],
+  [
+    "de40",
+    "毹毷毸溛滖滈溏滀溟溓溔溠溱溹滆滒溽滁溞滉溷溰滍溦滏溲溾滃滜滘溙溒溎溍溤溡溿溳滐滊溗溮溣煇煔煒煣煠煁煝煢煲煸煪煡煂煘煃煋煰煟煐煓"
+  ],
+  [
+    "dea1",
+    "煄煍煚牏犍犌犑犐犎猼獂猻猺獀獊獉瑄瑊瑋瑒瑑瑗瑀瑏瑐瑎瑂瑆瑍瑔瓡瓿瓾瓽甝畹畷榃痯瘏瘃痷痾痼痹痸瘐痻痶痭痵痽皙皵盝睕睟睠睒睖睚睩睧睔睙睭矠碇碚碔碏碄碕碅碆碡碃硹碙碀碖硻祼禂祽祹稑稘稙稒稗稕稢稓"
+  ],
+  [
+    "df40",
+    "稛稐窣窢窞竫筦筤筭筴筩筲筥筳筱筰筡筸筶筣粲粴粯綈綆綀綍絿綅絺綎絻綃絼綌綔綄絽綒罭罫罧罨罬羦羥羧翛翜耡腤腠腷腜腩腛腢腲朡腞腶腧腯"
+  ],
+  [
+    "dfa1",
+    "腄腡舝艉艄艀艂艅蓱萿葖葶葹蒏蒍葥葑葀蒆葧萰葍葽葚葙葴葳葝蔇葞萷萺萴葺葃葸萲葅萩菙葋萯葂萭葟葰萹葎葌葒葯蓅蒎萻葇萶萳葨葾葄萫葠葔葮葐蜋蜄蛷蜌蛺蛖蛵蝍蛸蜎蜉蜁蛶蜍蜅裖裋裍裎裞裛裚裌裐覅覛觟觥觤"
+  ],
+  [
+    "e040",
+    "觡觠觢觜触詶誆詿詡訿詷誂誄詵誃誁詴詺谼豋豊豥豤豦貆貄貅賌赨赩趑趌趎趏趍趓趔趐趒跰跠跬跱跮跐跩跣跢跧跲跫跴輆軿輁輀輅輇輈輂輋遒逿"
+  ],
+  [
+    "e0a1",
+    "遄遉逽鄐鄍鄏鄑鄖鄔鄋鄎酮酯鉈鉒鈰鈺鉦鈳鉥鉞銃鈮鉊鉆鉭鉬鉏鉠鉧鉯鈶鉡鉰鈱鉔鉣鉐鉲鉎鉓鉌鉖鈲閟閜閞閛隒隓隑隗雎雺雽雸雵靳靷靸靲頏頍頎颬飶飹馯馲馰馵骭骫魛鳪鳭鳧麀黽僦僔僗僨僳僛僪僝僤僓僬僰僯僣僠"
+  ],
+  [
+    "e140",
+    "凘劀劁勩勫匰厬嘧嘕嘌嘒嗼嘏嘜嘁嘓嘂嗺嘝嘄嗿嗹墉塼墐墘墆墁塿塴墋塺墇墑墎塶墂墈塻墔墏壾奫嫜嫮嫥嫕嫪嫚嫭嫫嫳嫢嫠嫛嫬嫞嫝嫙嫨嫟孷寠"
+  ],
+  [
+    "e1a1",
+    "寣屣嶂嶀嵽嶆嵺嶁嵷嶊嶉嶈嵾嵼嶍嵹嵿幘幙幓廘廑廗廎廜廕廙廒廔彄彃彯徶愬愨慁慞慱慳慒慓慲慬憀慴慔慺慛慥愻慪慡慖戩戧戫搫摍摛摝摴摶摲摳摽摵摦撦摎撂摞摜摋摓摠摐摿搿摬摫摙摥摷敳斠暡暠暟朅朄朢榱榶槉"
+  ],
+  [
+    "e240",
+    "榠槎榖榰榬榼榑榙榎榧榍榩榾榯榿槄榽榤槔榹槊榚槏榳榓榪榡榞槙榗榐槂榵榥槆歊歍歋殞殟殠毃毄毾滎滵滱漃漥滸漷滻漮漉潎漙漚漧漘漻漒滭漊"
+  ],
+  [
+    "e2a1",
+    "漶潳滹滮漭潀漰漼漵滫漇漎潃漅滽滶漹漜滼漺漟漍漞漈漡熇熐熉熀熅熂熏煻熆熁熗牄牓犗犕犓獃獍獑獌瑢瑳瑱瑵瑲瑧瑮甀甂甃畽疐瘖瘈瘌瘕瘑瘊瘔皸瞁睼瞅瞂睮瞀睯睾瞃碲碪碴碭碨硾碫碞碥碠碬碢碤禘禊禋禖禕禔禓"
+  ],
+  [
+    "e340",
+    "禗禈禒禐稫穊稰稯稨稦窨窫窬竮箈箜箊箑箐箖箍箌箛箎箅箘劄箙箤箂粻粿粼粺綧綷緂綣綪緁緀緅綝緎緄緆緋緌綯綹綖綼綟綦綮綩綡緉罳翢翣翥翞"
+  ],
+  [
+    "e3a1",
+    "耤聝聜膉膆膃膇膍膌膋舕蒗蒤蒡蒟蒺蓎蓂蒬蒮蒫蒹蒴蓁蓍蒪蒚蒱蓐蒝蒧蒻蒢蒔蓇蓌蒛蒩蒯蒨蓖蒘蒶蓏蒠蓗蓔蓒蓛蒰蒑虡蜳蜣蜨蝫蝀蜮蜞蜡蜙蜛蝃蜬蝁蜾蝆蜠蜲蜪蜭蜼蜒蜺蜱蜵蝂蜦蜧蜸蜤蜚蜰蜑裷裧裱裲裺裾裮裼裶裻"
+  ],
+  [
+    "e440",
+    "裰裬裫覝覡覟覞觩觫觨誫誙誋誒誏誖谽豨豩賕賏賗趖踉踂跿踍跽踊踃踇踆踅跾踀踄輐輑輎輍鄣鄜鄠鄢鄟鄝鄚鄤鄡鄛酺酲酹酳銥銤鉶銛鉺銠銔銪銍"
+  ],
+  [
+    "e4a1",
+    "銦銚銫鉹銗鉿銣鋮銎銂銕銢鉽銈銡銊銆銌銙銧鉾銇銩銝銋鈭隞隡雿靘靽靺靾鞃鞀鞂靻鞄鞁靿韎韍頖颭颮餂餀餇馝馜駃馹馻馺駂馽駇骱髣髧鬾鬿魠魡魟鳱鳲鳵麧僿儃儰僸儆儇僶僾儋儌僽儊劋劌勱勯噈噂噌嘵噁噊噉噆噘"
+  ],
+  [
+    "e540",
+    "噚噀嘳嘽嘬嘾嘸嘪嘺圚墫墝墱墠墣墯墬墥墡壿嫿嫴嫽嫷嫶嬃嫸嬂嫹嬁嬇嬅嬏屧嶙嶗嶟嶒嶢嶓嶕嶠嶜嶡嶚嶞幩幝幠幜緳廛廞廡彉徲憋憃慹憱憰憢憉"
+  ],
+  [
+    "e5a1",
+    "憛憓憯憭憟憒憪憡憍慦憳戭摮摰撖撠撅撗撜撏撋撊撌撣撟摨撱撘敶敺敹敻斲斳暵暰暩暲暷暪暯樀樆樗槥槸樕槱槤樠槿槬槢樛樝槾樧槲槮樔槷槧橀樈槦槻樍槼槫樉樄樘樥樏槶樦樇槴樖歑殥殣殢殦氁氀毿氂潁漦潾澇濆澒"
+  ],
+  [
+    "e640",
+    "澍澉澌潢潏澅潚澖潶潬澂潕潲潒潐潗澔澓潝漀潡潫潽潧澐潓澋潩潿澕潣潷潪潻熲熯熛熰熠熚熩熵熝熥熞熤熡熪熜熧熳犘犚獘獒獞獟獠獝獛獡獚獙"
+  ],
+  [
+    "e6a1",
+    "獢璇璉璊璆璁瑽璅璈瑼瑹甈甇畾瘥瘞瘙瘝瘜瘣瘚瘨瘛皜皝皞皛瞍瞏瞉瞈磍碻磏磌磑磎磔磈磃磄磉禚禡禠禜禢禛歶稹窲窴窳箷篋箾箬篎箯箹篊箵糅糈糌糋緷緛緪緧緗緡縃緺緦緶緱緰緮緟罶羬羰羭翭翫翪翬翦翨聤聧膣膟"
+  ],
+  [
+    "e740",
+    "膞膕膢膙膗舖艏艓艒艐艎艑蔤蔻蔏蔀蔩蔎蔉蔍蔟蔊蔧蔜蓻蔫蓺蔈蔌蓴蔪蓲蔕蓷蓫蓳蓼蔒蓪蓩蔖蓾蔨蔝蔮蔂蓽蔞蓶蔱蔦蓧蓨蓰蓯蓹蔘蔠蔰蔋蔙蔯虢"
+  ],
+  [
+    "e7a1",
+    "蝖蝣蝤蝷蟡蝳蝘蝔蝛蝒蝡蝚蝑蝞蝭蝪蝐蝎蝟蝝蝯蝬蝺蝮蝜蝥蝏蝻蝵蝢蝧蝩衚褅褌褔褋褗褘褙褆褖褑褎褉覢覤覣觭觰觬諏諆誸諓諑諔諕誻諗誾諀諅諘諃誺誽諙谾豍貏賥賟賙賨賚賝賧趠趜趡趛踠踣踥踤踮踕踛踖踑踙踦踧"
+  ],
+  [
+    "e840",
+    "踔踒踘踓踜踗踚輬輤輘輚輠輣輖輗遳遰遯遧遫鄯鄫鄩鄪鄲鄦鄮醅醆醊醁醂醄醀鋐鋃鋄鋀鋙銶鋏鋱鋟鋘鋩鋗鋝鋌鋯鋂鋨鋊鋈鋎鋦鋍鋕鋉鋠鋞鋧鋑鋓"
+  ],
+  [
+    "e8a1",
+    "銵鋡鋆銴镼閬閫閮閰隤隢雓霅霈霂靚鞊鞎鞈韐韏頞頝頦頩頨頠頛頧颲餈飺餑餔餖餗餕駜駍駏駓駔駎駉駖駘駋駗駌骳髬髫髳髲髱魆魃魧魴魱魦魶魵魰魨魤魬鳼鳺鳽鳿鳷鴇鴀鳹鳻鴈鴅鴄麃黓鼏鼐儜儓儗儚儑凞匴叡噰噠噮"
+  ],
+  [
+    "e940",
+    "噳噦噣噭噲噞噷圜圛壈墽壉墿墺壂墼壆嬗嬙嬛嬡嬔嬓嬐嬖嬨嬚嬠嬞寯嶬嶱嶩嶧嶵嶰嶮嶪嶨嶲嶭嶯嶴幧幨幦幯廩廧廦廨廥彋徼憝憨憖懅憴懆懁懌憺"
+  ],
+  [
+    "e9a1",
+    "憿憸憌擗擖擐擏擉撽撉擃擛擳擙攳敿敼斢曈暾曀曊曋曏暽暻暺曌朣樴橦橉橧樲橨樾橝橭橶橛橑樨橚樻樿橁橪橤橐橏橔橯橩橠樼橞橖橕橍橎橆歕歔歖殧殪殫毈毇氄氃氆澭濋澣濇澼濎濈潞濄澽澞濊澨瀄澥澮澺澬澪濏澿澸"
+  ],
+  [
+    "ea40",
+    "澢濉澫濍澯澲澰燅燂熿熸燖燀燁燋燔燊燇燏熽燘熼燆燚燛犝犞獩獦獧獬獥獫獪瑿璚璠璔璒璕璡甋疀瘯瘭瘱瘽瘳瘼瘵瘲瘰皻盦瞚瞝瞡瞜瞛瞢瞣瞕瞙"
+  ],
+  [
+    "eaa1",
+    "瞗磝磩磥磪磞磣磛磡磢磭磟磠禤穄穈穇窶窸窵窱窷篞篣篧篝篕篥篚篨篹篔篪篢篜篫篘篟糒糔糗糐糑縒縡縗縌縟縠縓縎縜縕縚縢縋縏縖縍縔縥縤罃罻罼罺羱翯耪耩聬膱膦膮膹膵膫膰膬膴膲膷膧臲艕艖艗蕖蕅蕫蕍蕓蕡蕘"
+  ],
+  [
+    "eb40",
+    "蕀蕆蕤蕁蕢蕄蕑蕇蕣蔾蕛蕱蕎蕮蕵蕕蕧蕠薌蕦蕝蕔蕥蕬虣虥虤螛螏螗螓螒螈螁螖螘蝹螇螣螅螐螑螝螄螔螜螚螉褞褦褰褭褮褧褱褢褩褣褯褬褟觱諠"
+  ],
+  [
+    "eba1",
+    "諢諲諴諵諝謔諤諟諰諈諞諡諨諿諯諻貑貒貐賵賮賱賰賳赬赮趥趧踳踾踸蹀蹅踶踼踽蹁踰踿躽輶輮輵輲輹輷輴遶遹遻邆郺鄳鄵鄶醓醐醑醍醏錧錞錈錟錆錏鍺錸錼錛錣錒錁鍆錭錎錍鋋錝鋺錥錓鋹鋷錴錂錤鋿錩錹錵錪錔錌"
+  ],
+  [
+    "ec40",
+    "錋鋾錉錀鋻錖閼闍閾閹閺閶閿閵閽隩雔霋霒霐鞙鞗鞔韰韸頵頯頲餤餟餧餩馞駮駬駥駤駰駣駪駩駧骹骿骴骻髶髺髹髷鬳鮀鮅鮇魼魾魻鮂鮓鮒鮐魺鮕"
+  ],
+  [
+    "eca1",
+    "魽鮈鴥鴗鴠鴞鴔鴩鴝鴘鴢鴐鴙鴟麈麆麇麮麭黕黖黺鼒鼽儦儥儢儤儠儩勴嚓嚌嚍嚆嚄嚃噾嚂噿嚁壖壔壏壒嬭嬥嬲嬣嬬嬧嬦嬯嬮孻寱寲嶷幬幪徾徻懃憵憼懧懠懥懤懨懞擯擩擣擫擤擨斁斀斶旚曒檍檖檁檥檉檟檛檡檞檇檓檎"
+  ],
+  [
+    "ed40",
+    "檕檃檨檤檑橿檦檚檅檌檒歛殭氉濌澩濴濔濣濜濭濧濦濞濲濝濢濨燡燱燨燲燤燰燢獳獮獯璗璲璫璐璪璭璱璥璯甐甑甒甏疄癃癈癉癇皤盩瞵瞫瞲瞷瞶"
+  ],
+  [
+    "eda1",
+    "瞴瞱瞨矰磳磽礂磻磼磲礅磹磾礄禫禨穜穛穖穘穔穚窾竀竁簅簏篲簀篿篻簎篴簋篳簂簉簃簁篸篽簆篰篱簐簊糨縭縼繂縳顈縸縪繉繀繇縩繌縰縻縶繄縺罅罿罾罽翴翲耬膻臄臌臊臅臇膼臩艛艚艜薃薀薏薧薕薠薋薣蕻薤薚薞"
+  ],
+  [
+    "ee40",
+    "蕷蕼薉薡蕺蕸蕗薎薖薆薍薙薝薁薢薂薈薅蕹蕶薘薐薟虨螾螪螭蟅螰螬螹螵螼螮蟉蟃蟂蟌螷螯蟄蟊螴螶螿螸螽蟞螲褵褳褼褾襁襒褷襂覭覯覮觲觳謞"
+  ],
+  [
+    "eea1",
+    "謘謖謑謅謋謢謏謒謕謇謍謈謆謜謓謚豏豰豲豱豯貕貔賹赯蹎蹍蹓蹐蹌蹇轃轀邅遾鄸醚醢醛醙醟醡醝醠鎡鎃鎯鍤鍖鍇鍼鍘鍜鍶鍉鍐鍑鍠鍭鎏鍌鍪鍹鍗鍕鍒鍏鍱鍷鍻鍡鍞鍣鍧鎀鍎鍙闇闀闉闃闅閷隮隰隬霠霟霘霝霙鞚鞡鞜"
+  ],
+  [
+    "ef40",
+    "鞞鞝韕韔韱顁顄顊顉顅顃餥餫餬餪餳餲餯餭餱餰馘馣馡騂駺駴駷駹駸駶駻駽駾駼騃骾髾髽鬁髼魈鮚鮨鮞鮛鮦鮡鮥鮤鮆鮢鮠鮯鴳鵁鵧鴶鴮鴯鴱鴸鴰"
+  ],
+  [
+    "efa1",
+    "鵅鵂鵃鴾鴷鵀鴽翵鴭麊麉麍麰黈黚黻黿鼤鼣鼢齔龠儱儭儮嚘嚜嚗嚚嚝嚙奰嬼屩屪巀幭幮懘懟懭懮懱懪懰懫懖懩擿攄擽擸攁攃擼斔旛曚曛曘櫅檹檽櫡櫆檺檶檷櫇檴檭歞毉氋瀇瀌瀍瀁瀅瀔瀎濿瀀濻瀦濼濷瀊爁燿燹爃燽獶"
+  ],
+  [
+    "f040",
+    "璸瓀璵瓁璾璶璻瓂甔甓癜癤癙癐癓癗癚皦皽盬矂瞺磿礌礓礔礉礐礒礑禭禬穟簜簩簙簠簟簭簝簦簨簢簥簰繜繐繖繣繘繢繟繑繠繗繓羵羳翷翸聵臑臒"
+  ],
+  [
+    "f0a1",
+    "臐艟艞薴藆藀藃藂薳薵薽藇藄薿藋藎藈藅薱薶藒蘤薸薷薾虩蟧蟦蟢蟛蟫蟪蟥蟟蟳蟤蟔蟜蟓蟭蟘蟣螤蟗蟙蠁蟴蟨蟝襓襋襏襌襆襐襑襉謪謧謣謳謰謵譇謯謼謾謱謥謷謦謶謮謤謻謽謺豂豵貙貘貗賾贄贂贀蹜蹢蹠蹗蹖蹞蹥蹧"
+  ],
+  [
+    "f140",
+    "蹛蹚蹡蹝蹩蹔轆轇轈轋鄨鄺鄻鄾醨醥醧醯醪鎵鎌鎒鎷鎛鎝鎉鎧鎎鎪鎞鎦鎕鎈鎙鎟鎍鎱鎑鎲鎤鎨鎴鎣鎥闒闓闑隳雗雚巂雟雘雝霣霢霥鞬鞮鞨鞫鞤鞪"
+  ],
+  [
+    "f1a1",
+    "鞢鞥韗韙韖韘韺顐顑顒颸饁餼餺騏騋騉騍騄騑騊騅騇騆髀髜鬈鬄鬅鬩鬵魊魌魋鯇鯆鯃鮿鯁鮵鮸鯓鮶鯄鮹鮽鵜鵓鵏鵊鵛鵋鵙鵖鵌鵗鵒鵔鵟鵘鵚麎麌黟鼁鼀鼖鼥鼫鼪鼩鼨齌齕儴儵劖勷厴嚫嚭嚦嚧嚪嚬壚壝壛夒嬽嬾嬿巃幰"
+  ],
+  [
+    "f240",
+    "徿懻攇攐攍攉攌攎斄旞旝曞櫧櫠櫌櫑櫙櫋櫟櫜櫐櫫櫏櫍櫞歠殰氌瀙瀧瀠瀖瀫瀡瀢瀣瀩瀗瀤瀜瀪爌爊爇爂爅犥犦犤犣犡瓋瓅璷瓃甖癠矉矊矄矱礝礛"
+  ],
+  [
+    "f2a1",
+    "礡礜礗礞禰穧穨簳簼簹簬簻糬糪繶繵繸繰繷繯繺繲繴繨罋罊羃羆羷翽翾聸臗臕艤艡艣藫藱藭藙藡藨藚藗藬藲藸藘藟藣藜藑藰藦藯藞藢蠀蟺蠃蟶蟷蠉蠌蠋蠆蟼蠈蟿蠊蠂襢襚襛襗襡襜襘襝襙覈覷覶觶譐譈譊譀譓譖譔譋譕"
+  ],
+  [
+    "f340",
+    "譑譂譒譗豃豷豶貚贆贇贉趬趪趭趫蹭蹸蹳蹪蹯蹻軂轒轑轏轐轓辴酀鄿醰醭鏞鏇鏏鏂鏚鏐鏹鏬鏌鏙鎩鏦鏊鏔鏮鏣鏕鏄鏎鏀鏒鏧镽闚闛雡霩霫霬霨霦"
+  ],
+  [
+    "f3a1",
+    "鞳鞷鞶韝韞韟顜顙顝顗颿颽颻颾饈饇饃馦馧騚騕騥騝騤騛騢騠騧騣騞騜騔髂鬋鬊鬎鬌鬷鯪鯫鯠鯞鯤鯦鯢鯰鯔鯗鯬鯜鯙鯥鯕鯡鯚鵷鶁鶊鶄鶈鵱鶀鵸鶆鶋鶌鵽鵫鵴鵵鵰鵩鶅鵳鵻鶂鵯鵹鵿鶇鵨麔麑黀黼鼭齀齁齍齖齗齘匷嚲"
+  ],
+  [
+    "f440",
+    "嚵嚳壣孅巆巇廮廯忀忁懹攗攖攕攓旟曨曣曤櫳櫰櫪櫨櫹櫱櫮櫯瀼瀵瀯瀷瀴瀱灂瀸瀿瀺瀹灀瀻瀳灁爓爔犨獽獼璺皫皪皾盭矌矎矏矍矲礥礣礧礨礤礩"
+  ],
+  [
+    "f4a1",
+    "禲穮穬穭竷籉籈籊籇籅糮繻繾纁纀羺翿聹臛臙舋艨艩蘢藿蘁藾蘛蘀藶蘄蘉蘅蘌藽蠙蠐蠑蠗蠓蠖襣襦覹觷譠譪譝譨譣譥譧譭趮躆躈躄轙轖轗轕轘轚邍酃酁醷醵醲醳鐋鐓鏻鐠鐏鐔鏾鐕鐐鐨鐙鐍鏵鐀鏷鐇鐎鐖鐒鏺鐉鏸鐊鏿"
+  ],
+  [
+    "f540",
+    "鏼鐌鏶鐑鐆闞闠闟霮霯鞹鞻韽韾顠顢顣顟飁飂饐饎饙饌饋饓騲騴騱騬騪騶騩騮騸騭髇髊髆鬐鬒鬑鰋鰈鯷鰅鰒鯸鱀鰇鰎鰆鰗鰔鰉鶟鶙鶤鶝鶒鶘鶐鶛"
+  ],
+  [
+    "f5a1",
+    "鶠鶔鶜鶪鶗鶡鶚鶢鶨鶞鶣鶿鶩鶖鶦鶧麙麛麚黥黤黧黦鼰鼮齛齠齞齝齙龑儺儹劘劗囃嚽嚾孈孇巋巏廱懽攛欂櫼欃櫸欀灃灄灊灈灉灅灆爝爚爙獾甗癪矐礭礱礯籔籓糲纊纇纈纋纆纍罍羻耰臝蘘蘪蘦蘟蘣蘜蘙蘧蘮蘡蘠蘩蘞蘥"
+  ],
+  [
+    "f640",
+    "蠩蠝蠛蠠蠤蠜蠫衊襭襩襮襫觺譹譸譅譺譻贐贔趯躎躌轞轛轝酆酄酅醹鐿鐻鐶鐩鐽鐼鐰鐹鐪鐷鐬鑀鐱闥闤闣霵霺鞿韡顤飉飆飀饘饖騹騽驆驄驂驁騺"
+  ],
+  [
+    "f6a1",
+    "騿髍鬕鬗鬘鬖鬺魒鰫鰝鰜鰬鰣鰨鰩鰤鰡鶷鶶鶼鷁鷇鷊鷏鶾鷅鷃鶻鶵鷎鶹鶺鶬鷈鶱鶭鷌鶳鷍鶲鹺麜黫黮黭鼛鼘鼚鼱齎齥齤龒亹囆囅囋奱孋孌巕巑廲攡攠攦攢欋欈欉氍灕灖灗灒爞爟犩獿瓘瓕瓙瓗癭皭礵禴穰穱籗籜籙籛籚"
+  ],
+  [
+    "f740",
+    "糴糱纑罏羇臞艫蘴蘵蘳蘬蘲蘶蠬蠨蠦蠪蠥襱覿覾觻譾讄讂讆讅譿贕躕躔躚躒躐躖躗轠轢酇鑌鑐鑊鑋鑏鑇鑅鑈鑉鑆霿韣顪顩飋饔饛驎驓驔驌驏驈驊"
+  ],
+  [
+    "f7a1",
+    "驉驒驐髐鬙鬫鬻魖魕鱆鱈鰿鱄鰹鰳鱁鰼鰷鰴鰲鰽鰶鷛鷒鷞鷚鷋鷐鷜鷑鷟鷩鷙鷘鷖鷵鷕鷝麶黰鼵鼳鼲齂齫龕龢儽劙壨壧奲孍巘蠯彏戁戃戄攩攥斖曫欑欒欏毊灛灚爢玂玁玃癰矔籧籦纕艬蘺虀蘹蘼蘱蘻蘾蠰蠲蠮蠳襶襴襳觾"
+  ],
+  [
+    "f840",
+    "讌讎讋讈豅贙躘轤轣醼鑢鑕鑝鑗鑞韄韅頀驖驙鬞鬟鬠鱒鱘鱐鱊鱍鱋鱕鱙鱌鱎鷻鷷鷯鷣鷫鷸鷤鷶鷡鷮鷦鷲鷰鷢鷬鷴鷳鷨鷭黂黐黲黳鼆鼜鼸鼷鼶齃齏"
+  ],
+  [
+    "f8a1",
+    "齱齰齮齯囓囍孎屭攭曭曮欓灟灡灝灠爣瓛瓥矕礸禷禶籪纗羉艭虃蠸蠷蠵衋讔讕躞躟躠躝醾醽釂鑫鑨鑩雥靆靃靇韇韥驞髕魙鱣鱧鱦鱢鱞鱠鸂鷾鸇鸃鸆鸅鸀鸁鸉鷿鷽鸄麠鼞齆齴齵齶囔攮斸欘欙欗欚灢爦犪矘矙礹籩籫糶纚"
+  ],
+  [
+    "f940",
+    "纘纛纙臠臡虆虇虈襹襺襼襻觿讘讙躥躤躣鑮鑭鑯鑱鑳靉顲饟鱨鱮鱭鸋鸍鸐鸏鸒鸑麡黵鼉齇齸齻齺齹圞灦籯蠼趲躦釃鑴鑸鑶鑵驠鱴鱳鱱鱵鸔鸓黶鼊"
+  ],
+  [
+    "f9a1",
+    "龤灨灥糷虪蠾蠽蠿讞貜躩軉靋顳顴飌饡馫驤驦驧鬤鸕鸗齈戇欞爧虌躨钂钀钁驩驨鬮鸙爩虋讟钃鱹麷癵驫鱺鸝灩灪麤齾齉龘碁銹裏墻恒粧嫺╔╦╗╠╬╣╚╩╝╒╤╕╞╪╡╘╧╛╓╥╖╟╫╢╙╨╜║═╭╮╰╯▓"
+  ]
+], f0 = [
+  [
+    "8740",
+    "䏰䰲䘃䖦䕸𧉧䵷䖳𧲱䳢𧳅㮕䜶䝄䱇䱀𤊿𣘗𧍒𦺋𧃒䱗𪍑䝏䗚䲅𧱬䴇䪤䚡𦬣爥𥩔𡩣𣸆𣽡晍囻"
+  ],
+  [
+    "8767",
+    "綕夝𨮹㷴霴𧯯寛𡵞媤㘥𩺰嫑宷峼杮薓𩥅瑡璝㡵𡵓𣚞𦀡㻬"
+  ],
+  [
+    "87a1",
+    "𥣞㫵竼龗𤅡𨤍𣇪𠪊𣉞䌊蒄龖鐯䤰蘓墖靊鈘秐稲晠権袝瑌篅枂稬剏遆㓦珄𥶹瓆鿇垳䤯呌䄱𣚎堘穲𧭥讏䚮𦺈䆁𥶙箮𢒼鿈𢓁𢓉𢓌鿉蔄𣖻䂴鿊䓡𪷿拁灮鿋"
+  ],
+  [
+    "8840",
+    "㇀",
+    4,
+    "𠄌㇅𠃑𠃍㇆㇇𠃋𡿨㇈𠃊㇉㇊㇋㇌𠄎㇍㇎ĀÁǍÀĒÉĚÈŌÓǑÒ࿿Ê̄Ế࿿Ê̌ỀÊāáǎàɑēéěèīíǐìōóǒòūúǔùǖǘǚ"
+  ],
+  [
+    "88a1",
+    "ǜü࿿ê̄ế࿿ê̌ềêɡ⏚⏛"
+  ],
+  [
+    "8940",
+    "𪎩𡅅"
+  ],
+  [
+    "8943",
+    "攊"
+  ],
+  [
+    "8946",
+    "丽滝鵎釟"
+  ],
+  [
+    "894c",
+    "𧜵撑会伨侨兖兴农凤务动医华发变团声处备夲头学实実岚庆总斉柾栄桥济炼电纤纬纺织经统缆缷艺苏药视设询车轧轮"
+  ],
+  [
+    "89a1",
+    "琑糼緍楆竉刧"
+  ],
+  [
+    "89ab",
+    "醌碸酞肼"
+  ],
+  [
+    "89b0",
+    "贋胶𠧧"
+  ],
+  [
+    "89b5",
+    "肟黇䳍鷉鸌䰾𩷶𧀎鸊𪄳㗁"
+  ],
+  [
+    "89c1",
+    "溚舾甙"
+  ],
+  [
+    "89c5",
+    "䤑马骏龙禇𨑬𡷊𠗐𢫦两亁亀亇亿仫伷㑌侽㹈倃傈㑽㒓㒥円夅凛凼刅争剹劐匧㗇厩㕑厰㕓参吣㕭㕲㚁咓咣咴咹哐哯唘唣唨㖘唿㖥㖿嗗㗅"
+  ],
+  [
+    "8a40",
+    "𧶄唥"
+  ],
+  [
+    "8a43",
+    "𠱂𠴕𥄫喐𢳆㧬𠍁蹆𤶸𩓥䁓𨂾睺𢰸㨴䟕𨅝𦧲𤷪擝𠵼𠾴𠳕𡃴撍蹾𠺖𠰋𠽤𢲩𨉖𤓓"
+  ],
+  [
+    "8a64",
+    "𠵆𩩍𨃩䟴𤺧𢳂骲㩧𩗴㿭㔆𥋇𩟔𧣈𢵄鵮頕"
+  ],
+  [
+    "8a76",
+    "䏙𦂥撴哣𢵌𢯊𡁷㧻𡁯"
+  ],
+  [
+    "8aa1",
+    "𦛚𦜖𧦠擪𥁒𠱃蹨𢆡𨭌𠜱"
+  ],
+  [
+    "8aac",
+    "䠋𠆩㿺塳𢶍"
+  ],
+  [
+    "8ab2",
+    "𤗈𠓼𦂗𠽌𠶖啹䂻䎺"
+  ],
+  [
+    "8abb",
+    "䪴𢩦𡂝膪飵𠶜捹㧾𢝵跀嚡摼㹃"
+  ],
+  [
+    "8ac9",
+    "𪘁𠸉𢫏𢳉"
+  ],
+  [
+    "8ace",
+    "𡃈𣧂㦒㨆𨊛㕸𥹉𢃇噒𠼱𢲲𩜠㒼氽𤸻"
+  ],
+  [
+    "8adf",
+    "𧕴𢺋𢈈𪙛𨳍𠹺𠰴𦠜羓𡃏𢠃𢤹㗻𥇣𠺌𠾍𠺪㾓𠼰𠵇𡅏𠹌"
+  ],
+  [
+    "8af6",
+    "𠺫𠮩𠵈𡃀𡄽㿹𢚖搲𠾭"
+  ],
+  [
+    "8b40",
+    "𣏴𧘹𢯎𠵾𠵿𢱑𢱕㨘𠺘𡃇𠼮𪘲𦭐𨳒𨶙𨳊閪哌苄喹"
+  ],
+  [
+    "8b55",
+    "𩻃鰦骶𧝞𢷮煀腭胬尜𦕲脴㞗卟𨂽醶𠻺𠸏𠹷𠻻㗝𤷫㘉𠳖嚯𢞵𡃉𠸐𠹸𡁸𡅈𨈇𡑕𠹹𤹐𢶤婔𡀝𡀞𡃵𡃶垜𠸑"
+  ],
+  [
+    "8ba1",
+    "𧚔𨋍𠾵𠹻𥅾㜃𠾶𡆀𥋘𪊽𤧚𡠺𤅷𨉼墙剨㘚𥜽箲孨䠀䬬鼧䧧鰟鮍𥭴𣄽嗻㗲嚉丨夂𡯁屮靑𠂆乛亻㔾尣彑忄㣺扌攵歺氵氺灬爫丬犭𤣩罒礻糹罓𦉪㓁"
+  ],
+  [
+    "8bde",
+    "𦍋耂肀𦘒𦥑卝衤见𧢲讠贝钅镸长门𨸏韦页风飞饣𩠐鱼鸟黄歯龜丷𠂇阝户钢"
+  ],
+  [
+    "8c40",
+    "倻淾𩱳龦㷉袏𤅎灷峵䬠𥇍㕙𥴰愢𨨲辧釶熑朙玺𣊁𪄇㲋𡦀䬐磤琂冮𨜏䀉橣𪊺䈣蘏𠩯稪𩥇𨫪靕灍匤𢁾鏴盙𨧣龧矝亣俰傼丯众龨吴綋墒壐𡶶庒庙忂𢜒斋"
+  ],
+  [
+    "8ca1",
+    "𣏹椙橃𣱣泿"
+  ],
+  [
+    "8ca7",
+    "爀𤔅玌㻛𤨓嬕璹讃𥲤𥚕窓篬糃繬苸薗龩袐龪躹龫迏蕟駠鈡龬𨶹𡐿䁱䊢娚"
+  ],
+  [
+    "8cc9",
+    "顨杫䉶圽"
+  ],
+  [
+    "8cce",
+    "藖𤥻芿𧄍䲁𦵴嵻𦬕𦾾龭龮宖龯曧繛湗秊㶈䓃𣉖𢞖䎚䔶"
+  ],
+  [
+    "8ce6",
+    "峕𣬚諹屸㴒𣕑嵸龲煗䕘𤃬𡸣䱷㥸㑊𠆤𦱁諌侴𠈹妿腬顖𩣺弻"
+  ],
+  [
+    "8d40",
+    "𠮟"
+  ],
+  [
+    "8d42",
+    "𢇁𨥭䄂䚻𩁹㼇龳𪆵䃸㟖䛷𦱆䅼𨚲𧏿䕭㣔𥒚䕡䔛䶉䱻䵶䗪㿈𤬏㙡䓞䒽䇭崾嵈嵖㷼㠏嶤嶹㠠㠸幂庽弥徃㤈㤔㤿㥍惗愽峥㦉憷憹懏㦸戬抐拥挘㧸嚱"
+  ],
+  [
+    "8da1",
+    "㨃揢揻搇摚㩋擀崕嘡龟㪗斆㪽旿晓㫲暒㬢朖㭂枤栀㭘桊梄㭲㭱㭻椉楃牜楤榟榅㮼槖㯝橥橴橱檂㯬檙㯲檫檵櫔櫶殁毁毪汵沪㳋洂洆洦涁㳯涤涱渕渘温溆𨧀溻滢滚齿滨滩漤漴㵆𣽁澁澾㵪㵵熷岙㶊瀬㶑灐灔灯灿炉𠌥䏁㗱𠻘"
+  ],
+  [
+    "8e40",
+    "𣻗垾𦻓焾𥟠㙎榢𨯩孴穉𥣡𩓙穥穽𥦬窻窰竂竃燑𦒍䇊竚竝竪䇯咲𥰁笋筕笩𥌎𥳾箢筯莜𥮴𦱿篐萡箒箸𥴠㶭𥱥蒒篺簆簵𥳁籄粃𤢂粦晽𤕸糉糇糦籴糳糵糎"
+  ],
+  [
+    "8ea1",
+    "繧䔝𦹄絝𦻖璍綉綫焵綳緒𤁗𦀩緤㴓緵𡟹緥𨍭縝𦄡𦅚繮纒䌫鑬縧罀罁罇礶𦋐駡羗𦍑羣𡙡𠁨䕜𣝦䔃𨌺翺𦒉者耈耝耨耯𪂇𦳃耻耼聡𢜔䦉𦘦𣷣𦛨朥肧𨩈脇脚墰𢛶汿𦒘𤾸擧𡒊舘𡡞橓𤩥𤪕䑺舩𠬍𦩒𣵾俹𡓽蓢荢𦬊𤦧𣔰𡝳𣷸芪椛芳䇛"
+  ],
+  [
+    "8f40",
+    "蕋苐茚𠸖𡞴㛁𣅽𣕚艻苢茘𣺋𦶣𦬅𦮗𣗎㶿茝嗬莅䔋𦶥莬菁菓㑾𦻔橗蕚㒖𦹂𢻯葘𥯤葱㷓䓤檧葊𣲵祘蒨𦮖𦹷𦹃蓞萏莑䒠蒓蓤𥲑䉀𥳀䕃蔴嫲𦺙䔧蕳䔖枿蘖"
+  ],
+  [
+    "8fa1",
+    "𨘥𨘻藁𧂈蘂𡖂𧃍䕫䕪蘨㙈𡢢号𧎚虾蝱𪃸蟮𢰧螱蟚蠏噡虬桖䘏衅衆𧗠𣶹𧗤衞袜䙛袴袵揁装睷𧜏覇覊覦覩覧覼𨨥觧𧤤𧪽誜瞓釾誐𧩙竩𧬺𣾏䜓𧬸煼謌謟𥐰𥕥謿譌譍誩𤩺讐讛誯𡛟䘕衏貛𧵔𧶏貫㜥𧵓賖𧶘𧶽贒贃𡤐賛灜贑𤳉㻐起"
+  ],
+  [
+    "9040",
+    "趩𨀂𡀔𤦊㭼𨆼𧄌竧躭躶軃鋔輙輭𨍥𨐒辥錃𪊟𠩐辳䤪𨧞𨔽𣶻廸𣉢迹𪀔𨚼𨔁𢌥㦀𦻗逷𨔼𧪾遡𨕬𨘋邨𨜓郄𨛦邮都酧㫰醩釄粬𨤳𡺉鈎沟鉁鉢𥖹銹𨫆𣲛𨬌𥗛"
+  ],
+  [
+    "90a1",
+    "𠴱錬鍫𨫡𨯫炏嫃𨫢𨫥䥥鉄𨯬𨰹𨯿鍳鑛躼閅閦鐦閠濶䊹𢙺𨛘𡉼𣸮䧟氜陻隖䅬隣𦻕懚隶磵𨫠隽双䦡𦲸𠉴𦐐𩂯𩃥𤫑𡤕𣌊霱虂霶䨏䔽䖅𤫩灵孁霛靜𩇕靗孊𩇫靟鐥僐𣂷𣂼鞉鞟鞱鞾韀韒韠𥑬韮琜𩐳響韵𩐝𧥺䫑頴頳顋顦㬎𧅵㵑𠘰𤅜"
+  ],
+  [
+    "9140",
+    "𥜆飊颷飈飇䫿𦴧𡛓喰飡飦飬鍸餹𤨩䭲𩡗𩤅駵騌騻騐驘𥜥㛄𩂱𩯕髠髢𩬅髴䰎鬔鬭𨘀倴鬴𦦨㣃𣁽魐魀𩴾婅𡡣鮎𤉋鰂鯿鰌𩹨鷔𩾷𪆒𪆫𪃡𪄣𪇟鵾鶃𪄴鸎梈"
+  ],
+  [
+    "91a1",
+    "鷄𢅛𪆓𪈠𡤻𪈳鴹𪂹𪊴麐麕麞麢䴴麪麯𤍤黁㭠㧥㴝伲㞾𨰫鼂鼈䮖鐤𦶢鼗鼖鼹嚟嚊齅馸𩂋韲葿齢齩竜龎爖䮾𤥵𤦻煷𤧸𤍈𤩑玞𨯚𡣺禟𨥾𨸶鍩鏳𨩄鋬鎁鏋𨥬𤒹爗㻫睲穃烐𤑳𤏸煾𡟯炣𡢾𣖙㻇𡢅𥐯𡟸㜢𡛻𡠹㛡𡝴𡣑𥽋㜣𡛀坛𤨥𡏾𡊨"
+  ],
+  [
+    "9240",
+    "𡏆𡒶蔃𣚦蔃葕𤦔𧅥𣸱𥕜𣻻𧁒䓴𣛮𩦝𦼦柹㜳㰕㷧塬𡤢栐䁗𣜿𤃡𤂋𤄏𦰡哋嚞𦚱嚒𠿟𠮨𠸍鏆𨬓鎜仸儫㠙𤐶亼𠑥𠍿佋侊𥙑婨𠆫𠏋㦙𠌊𠐔㐵伩𠋀𨺳𠉵諚𠈌亘"
+  ],
+  [
+    "92a1",
+    "働儍侢伃𤨎𣺊佂倮偬傁俌俥偘僼兙兛兝兞湶𣖕𣸹𣺿浲𡢄𣺉冨凃𠗠䓝𠒣𠒒𠒑赺𨪜𠜎剙劤𠡳勡鍮䙺熌𤎌𠰠𤦬𡃤槑𠸝瑹㻞璙琔瑖玘䮎𤪼𤂍叐㖄爏𤃉喴𠍅响𠯆圝鉝雴鍦埝垍坿㘾壋媙𨩆𡛺𡝯𡜐娬妸銏婾嫏娒𥥆𡧳𡡡𤊕㛵洅瑃娡𥺃"
+  ],
+  [
+    "9340",
+    "媁𨯗𠐓鏠璌𡌃焅䥲鐈𨧻鎽㞠尞岞幞幈𡦖𡥼𣫮廍孏𡤃𡤄㜁𡢠㛝𡛾㛓脪𨩇𡶺𣑲𨦨弌弎𡤧𡞫婫𡜻孄蘔𧗽衠恾𢡠𢘫忛㺸𢖯𢖾𩂈𦽳懀𠀾𠁆𢘛憙憘恵𢲛𢴇𤛔𩅍"
+  ],
+  [
+    "93a1",
+    "摱𤙥𢭪㨩𢬢𣑐𩣪𢹸挷𪑛撶挱揑𤧣𢵧护𢲡搻敫楲㯴𣂎𣊭𤦉𣊫唍𣋠𡣙𩐿曎𣊉𣆳㫠䆐𥖄𨬢𥖏𡛼𥕛𥐥磮𣄃𡠪𣈴㑤𣈏𣆂𤋉暎𦴤晫䮓昰𧡰𡷫晣𣋒𣋡昞𥡲㣑𣠺𣞼㮙𣞢𣏾瓐㮖枏𤘪梶栞㯄檾㡣𣟕𤒇樳橒櫉欅𡤒攑梘橌㯗橺歗𣿀𣲚鎠鋲𨯪𨫋"
+  ],
+  [
+    "9440",
+    "銉𨀞𨧜鑧涥漋𤧬浧𣽿㶏渄𤀼娽渊塇洤硂焻𤌚𤉶烱牐犇犔𤞏𤜥兹𤪤𠗫瑺𣻸𣙟𤩊𤤗𥿡㼆㺱𤫟𨰣𣼵悧㻳瓌琼鎇琷䒟𦷪䕑疃㽣𤳙𤴆㽘畕癳𪗆㬙瑨𨫌𤦫𤦎㫻"
+  ],
+  [
+    "94a1",
+    "㷍𤩎㻿𤧅𤣳釺圲鍂𨫣𡡤僟𥈡𥇧睸𣈲眎眏睻𤚗𣞁㩞𤣰琸璛㺿𤪺𤫇䃈𤪖𦆮錇𥖁砞碍碈磒珐祙𧝁𥛣䄎禛蒖禥樭𣻺稺秴䅮𡛦䄲鈵秱𠵌𤦌𠊙𣶺𡝮㖗啫㕰㚪𠇔𠰍竢婙𢛵𥪯𥪜娍𠉛磰娪𥯆竾䇹籝籭䈑𥮳𥺼𥺦糍𤧹𡞰粎籼粮檲緜縇緓罎𦉡"
+  ],
+  [
+    "9540",
+    "𦅜𧭈綗𥺂䉪𦭵𠤖柖𠁎𣗏埄𦐒𦏸𤥢翝笧𠠬𥫩𥵃笌𥸎駦虅驣樜𣐿㧢𤧷𦖭騟𦖠蒀𧄧𦳑䓪脷䐂胆脉腂𦞴飃𦩂艢艥𦩑葓𦶧蘐𧈛媆䅿𡡀嬫𡢡嫤𡣘蚠蜨𣶏蠭𧐢娂"
+  ],
+  [
+    "95a1",
+    "衮佅袇袿裦襥襍𥚃襔𧞅𧞄𨯵𨯙𨮜𨧹㺭蒣䛵䛏㟲訽訜𩑈彍鈫𤊄旔焩烄𡡅鵭貟賩𧷜妚矃姰䍮㛔踪躧𤰉輰轊䋴汘澻𢌡䢛潹溋𡟚鯩㚵𤤯邻邗啱䤆醻鐄𨩋䁢𨫼鐧𨰝𨰻蓥訫閙閧閗閖𨴴瑅㻂𤣿𤩂𤏪㻧𣈥随𨻧𨹦𨹥㻌𤧭𤩸𣿮琒瑫㻼靁𩂰"
+  ],
+  [
+    "9640",
+    "桇䨝𩂓𥟟靝鍨𨦉𨰦𨬯𦎾銺嬑譩䤼珹𤈛鞛靱餸𠼦巁𨯅𤪲頟𩓚鋶𩗗釥䓀𨭐𤩧𨭤飜𨩅㼀鈪䤥萔餻饍𧬆㷽馛䭯馪驜𨭥𥣈檏騡嫾騯𩣱䮐𩥈馼䮽䮗鍽塲𡌂堢𤦸"
+  ],
+  [
+    "96a1",
+    "𡓨硄𢜟𣶸棅㵽鑘㤧慐𢞁𢥫愇鱏鱓鱻鰵鰐魿鯏𩸭鮟𪇵𪃾鴡䲮𤄄鸘䲰鴌𪆴𪃭𪃳𩤯鶥蒽𦸒𦿟𦮂藼䔳𦶤𦺄𦷰萠藮𦸀𣟗𦁤秢𣖜𣙀䤭𤧞㵢鏛銾鍈𠊿碹鉷鑍俤㑀遤𥕝砽硔碶硋𡝗𣇉𤥁㚚佲濚濙瀞瀞吔𤆵垻壳垊鴖埗焴㒯𤆬燫𦱀𤾗嬨𡞵𨩉"
+  ],
+  [
+    "9740",
+    "愌嫎娋䊼𤒈㜬䭻𨧼鎻鎸𡣖𠼝葲𦳀𡐓𤋺𢰦𤏁妔𣶷𦝁綨𦅛𦂤𤦹𤦋𨧺鋥珢㻩璴𨭣𡢟㻡𤪳櫘珳珻㻖𤨾𤪔𡟙𤩦𠎧𡐤𤧥瑈𤤖炥𤥶銄珦鍟𠓾錱𨫎𨨖鎆𨯧𥗕䤵𨪂煫"
+  ],
+  [
+    "97a1",
+    "𤥃𠳿嚤𠘚𠯫𠲸唂秄𡟺緾𡛂𤩐𡡒䔮鐁㜊𨫀𤦭妰𡢿𡢃𧒄媡㛢𣵛㚰鉟婹𨪁𡡢鍴㳍𠪴䪖㦊僴㵩㵌𡎜煵䋻𨈘渏𩃤䓫浗𧹏灧沯㳖𣿭𣸭渂漌㵯𠏵畑㚼㓈䚀㻚䡱姄鉮䤾轁𨰜𦯀堒埈㛖𡑒烾𤍢𤩱𢿣𡊰𢎽梹楧𡎘𣓥𧯴𣛟𨪃𣟖𣏺𤲟樚𣚭𦲷萾䓟䓎"
+  ],
+  [
+    "9840",
+    "𦴦𦵑𦲂𦿞漗𧄉茽𡜺菭𦲀𧁓𡟛妉媂𡞳婡婱𡤅𤇼㜭姯𡜼㛇熎鎐暚𤊥婮娫𤊓樫𣻹𧜶𤑛𤋊焝𤉙𨧡侰𦴨峂𤓎𧹍𤎽樌𤉖𡌄炦焳𤏩㶥泟勇𤩏繥姫崯㷳彜𤩝𡟟綤萦"
+  ],
+  [
+    "98a1",
+    "咅𣫺𣌀𠈔坾𠣕𠘙㿥𡾞𪊶瀃𩅛嵰玏糓𨩙𩐠俈翧狍猐𧫴猸猹𥛶獁獈㺩𧬘遬燵𤣲珡臶㻊県㻑沢国琙琞琟㻢㻰㻴㻺瓓㼎㽓畂畭畲疍㽼痈痜㿀癍㿗癴㿜発𤽜熈嘣覀塩䀝睃䀹条䁅㗛瞘䁪䁯属瞾矋売砘点砜䂨砹硇硑硦葈𥔵礳栃礲䄃"
+  ],
+  [
+    "9940",
+    "䄉禑禙辻稆込䅧窑䆲窼艹䇄竏竛䇏両筢筬筻簒簛䉠䉺类粜䊌粸䊔糭输烀𠳏総緔緐緽羮羴犟䎗耠耥笹耮耱联㷌垴炠肷胩䏭脌猪脎脒畠脔䐁㬹腖腙腚"
+  ],
+  [
+    "99a1",
+    "䐓堺腼膄䐥膓䐭膥埯臁臤艔䒏芦艶苊苘苿䒰荗险榊萅烵葤惣蒈䔄蒾蓡蓸蔐蔸蕒䔻蕯蕰藠䕷虲蚒蚲蛯际螋䘆䘗袮裿褤襇覑𧥧訩訸誔誴豑賔賲贜䞘塟跃䟭仮踺嗘坔蹱嗵躰䠷軎転軤軭軲辷迁迊迌逳駄䢭飠鈓䤞鈨鉘鉫銱銮銿"
+  ],
+  [
+    "9a40",
+    "鋣鋫鋳鋴鋽鍃鎄鎭䥅䥑麿鐗匁鐝鐭鐾䥪鑔鑹锭関䦧间阳䧥枠䨤靀䨵鞲韂噔䫤惨颹䬙飱塄餎餙冴餜餷饂饝饢䭰駅䮝騼鬏窃魩鮁鯝鯱鯴䱭鰠㝯𡯂鵉鰺"
+  ],
+  [
+    "9aa1",
+    "黾噐鶓鶽鷀鷼银辶鹻麬麱麽黆铜黢黱黸竈齄𠂔𠊷𠎠椚铃妬𠓗塀铁㞹𠗕𠘕𠙶𡚺块煳𠫂𠫍𠮿呪吆𠯋咞𠯻𠰻𠱓𠱥𠱼惧𠲍噺𠲵𠳝𠳭𠵯𠶲𠷈楕鰯螥𠸄𠸎𠻗𠾐𠼭𠹳尠𠾼帋𡁜𡁏𡁶朞𡁻𡂈𡂖㙇𡂿𡃓𡄯𡄻卤蒭𡋣𡍵𡌶讁𡕷𡘙𡟃𡟇乸炻𡠭𡥪"
+  ],
+  [
+    "9b40",
+    "𡨭𡩅𡰪𡱰𡲬𡻈拃𡻕𡼕熘桕𢁅槩㛈𢉼𢏗𢏺𢜪𢡱𢥏苽𢥧𢦓𢫕覥𢫨辠𢬎鞸𢬿顇骽𢱌"
+  ],
+  [
+    "9b62",
+    "𢲈𢲷𥯨𢴈𢴒𢶷𢶕𢹂𢽴𢿌𣀳𣁦𣌟𣏞徱晈暿𧩹𣕧𣗳爁𤦺矗𣘚𣜖纇𠍆墵朎"
+  ],
+  [
+    "9ba1",
+    "椘𣪧𧙗𥿢𣸑𣺹𧗾𢂚䣐䪸𤄙𨪚𤋮𤌍𤀻𤌴𤎖𤩅𠗊凒𠘑妟𡺨㮾𣳿𤐄𤓖垈𤙴㦛𤜯𨗨𩧉㝢𢇃譞𨭎駖𤠒𤣻𤨕爉𤫀𠱸奥𤺥𤾆𠝹軚𥀬劏圿煱𥊙𥐙𣽊𤪧喼𥑆𥑮𦭒釔㑳𥔿𧘲𥕞䜘𥕢𥕦𥟇𤤿𥡝偦㓻𣏌惞𥤃䝼𨥈𥪮𥮉𥰆𡶐垡煑澶𦄂𧰒遖𦆲𤾚譢𦐂𦑊"
+  ],
+  [
+    "9c40",
+    "嵛𦯷輶𦒄𡤜諪𤧶𦒈𣿯𦔒䯀𦖿𦚵𢜛鑥𥟡憕娧晉侻嚹𤔡𦛼乪𤤴陖涏𦲽㘘襷𦞙𦡮𦐑𦡞營𦣇筂𩃀𠨑𦤦鄄𦤹穅鷰𦧺騦𦨭㙟𦑩𠀡禃𦨴𦭛崬𣔙菏𦮝䛐𦲤画补𦶮墶"
+  ],
+  [
+    "9ca1",
+    "㜜𢖍𧁋𧇍㱔𧊀𧊅銁𢅺𧊋錰𧋦𤧐氹钟𧑐𠻸蠧裵𢤦𨑳𡞱溸𤨪𡠠㦤㚹尐秣䔿暶𩲭𩢤襃𧟌𧡘囖䃟𡘊㦡𣜯𨃨𡏅熭荦𧧝𩆨婧䲷𧂯𨦫𧧽𧨊𧬋𧵦𤅺筃祾𨀉澵𪋟樃𨌘厢𦸇鎿栶靝𨅯𨀣𦦵𡏭𣈯𨁈嶅𨰰𨂃圕頣𨥉嶫𤦈斾槕叒𤪥𣾁㰑朶𨂐𨃴𨄮𡾡𨅏"
+  ],
+  [
+    "9d40",
+    "𨆉𨆯𨈚𨌆𨌯𨎊㗊𨑨𨚪䣺揦𨥖砈鉕𨦸䏲𨧧䏟𨧨𨭆𨯔姸𨰉輋𨿅𩃬筑𩄐𩄼㷷𩅞𤫊运犏嚋𩓧𩗩𩖰𩖸𩜲𩣑𩥉𩥪𩧃𩨨𩬎𩵚𩶛纟𩻸𩼣䲤镇𪊓熢𪋿䶑递𪗋䶜𠲜达嗁"
+  ],
+  [
+    "9da1",
+    "辺𢒰边𤪓䔉繿潖檱仪㓤𨬬𧢝㜺躀𡟵𨀤𨭬𨮙𧨾𦚯㷫𧙕𣲷𥘵𥥖亚𥺁𦉘嚿𠹭踎孭𣺈𤲞揞拐𡟶𡡻攰嘭𥱊吚𥌑㷆𩶘䱽嘢嘞罉𥻘奵𣵀蝰东𠿪𠵉𣚺脗鵞贘瘻鱅癎瞹鍅吲腈苷嘥脲萘肽嗪祢噃吖𠺝㗎嘅嗱曱𨋢㘭甴嗰喺咗啲𠱁𠲖廐𥅈𠹶𢱢"
+  ],
+  [
+    "9e40",
+    "𠺢麫絚嗞𡁵抝靭咔賍燶酶揼掹揾啩𢭃鱲𢺳冚㓟𠶧冧呍唞唓癦踭𦢊疱肶蠄螆裇膶萜𡃁䓬猄𤜆宐茋𦢓噻𢛴𧴯𤆣𧵳𦻐𧊶酰𡇙鈈𣳼𪚩𠺬𠻹牦𡲢䝎𤿂𧿹𠿫䃺"
+  ],
+  [
+    "9ea1",
+    "鱝攟𢶠䣳𤟠𩵼𠿬𠸊恢𧖣𠿭"
+  ],
+  [
+    "9ead",
+    "𦁈𡆇熣纎鵐业丄㕷嬍沲卧㚬㧜卽㚥𤘘墚𤭮舭呋垪𥪕𠥹"
+  ],
+  [
+    "9ec5",
+    "㩒𢑥獴𩺬䴉鯭𣳾𩼰䱛𤾩𩖞𩿞葜𣶶𧊲𦞳𣜠挮紥𣻷𣸬㨪逈勌㹴㙺䗩𠒎癀嫰𠺶硺𧼮墧䂿噼鮋嵴癔𪐴麅䳡痹㟻愙𣃚𤏲"
+  ],
+  [
+    "9ef5",
+    "噝𡊩垧𤥣𩸆刴𧂮㖭汊鵼"
+  ],
+  [
+    "9f40",
+    "籖鬹埞𡝬屓擓𩓐𦌵𧅤蚭𠴨𦴢𤫢𠵱"
+  ],
+  [
+    "9f4f",
+    "凾𡼏嶎霃𡷑麁遌笟鬂峑箣扨挵髿篏鬪籾鬮籂粆鰕篼鬉鼗鰛𤤾齚啳寃俽麘俲剠㸆勑坧偖妷帒韈鶫轜呩鞴饀鞺匬愰"
+  ],
+  [
+    "9fa1",
+    "椬叚鰊鴂䰻陁榀傦畆𡝭駚剳"
+  ],
+  [
+    "9fae",
+    "酙隁酜"
+  ],
+  [
+    "9fb2",
+    "酑𨺗捿𦴣櫊嘑醎畺抅𠏼獏籰𥰡𣳽"
+  ],
+  [
+    "9fc1",
+    "𤤙盖鮝个𠳔莾衂"
+  ],
+  [
+    "9fc9",
+    "届槀僭坺刟巵从氱𠇲伹咜哚劚趂㗾弌㗳"
+  ],
+  [
+    "9fdb",
+    "歒酼龥鮗頮颴骺麨麄煺笔"
+  ],
+  [
+    "9fe7",
+    "毺蠘罸"
+  ],
+  [
+    "9feb",
+    "嘠𪙊蹷齓"
+  ],
+  [
+    "9ff0",
+    "跔蹏鸜踁抂𨍽踨蹵竓𤩷稾磘泪詧瘇"
+  ],
+  [
+    "a040",
+    "𨩚鼦泎蟖痃𪊲硓咢贌狢獱謭猂瓱賫𤪻蘯徺袠䒷"
+  ],
+  [
+    "a055",
+    "𡠻𦸅"
+  ],
+  [
+    "a058",
+    "詾𢔛"
+  ],
+  [
+    "a05b",
+    "惽癧髗鵄鍮鮏蟵"
+  ],
+  [
+    "a063",
+    "蠏賷猬霡鮰㗖犲䰇籑饊𦅙慙䰄麖慽"
+  ],
+  [
+    "a073",
+    "坟慯抦戹拎㩜懢厪𣏵捤栂㗒"
+  ],
+  [
+    "a0a1",
+    "嵗𨯂迚𨸹"
+  ],
+  [
+    "a0a6",
+    "僙𡵆礆匲阸𠼻䁥"
+  ],
+  [
+    "a0ae",
+    "矾"
+  ],
+  [
+    "a0b0",
+    "糂𥼚糚稭聦聣絍甅瓲覔舚朌聢𧒆聛瓰脃眤覉𦟌畓𦻑螩蟎臈螌詉貭譃眫瓸蓚㘵榲趦"
+  ],
+  [
+    "a0d4",
+    "覩瑨涹蟁𤀑瓧㷛煶悤憜㳑煢恷"
+  ],
+  [
+    "a0e2",
+    "罱𨬭牐惩䭾删㰘𣳇𥻗𧙖𥔱𡥄𡋾𩤃𦷜𧂭峁𦆭𨨏𣙷𠃮𦡆𤼎䕢嬟𦍌齐麦𦉫"
+  ],
+  [
+    "a3c0",
+    "␀",
+    31,
+    "␡"
+  ],
+  [
+    "c6a1",
+    "①",
+    9,
+    "⑴",
+    9,
+    "ⅰ",
+    9,
+    "丶丿亅亠冂冖冫勹匸卩厶夊宀巛⼳广廴彐彡攴无疒癶辵隶¨ˆヽヾゝゞ〃仝々〆〇ー［］✽ぁ",
+    23
+  ],
+  [
+    "c740",
+    "す",
+    58,
+    "ァアィイ"
+  ],
+  [
+    "c7a1",
+    "ゥ",
+    81,
+    "А",
+    5,
+    "ЁЖ",
+    4
+  ],
+  [
+    "c840",
+    "Л",
+    26,
+    "ёж",
+    25,
+    "⇧↸↹㇏𠃌乚𠂊刂䒑"
+  ],
+  [
+    "c8a1",
+    "龰冈龱𧘇"
+  ],
+  [
+    "c8cd",
+    "￢￤＇＂㈱№℡゛゜⺀⺄⺆⺇⺈⺊⺌⺍⺕⺜⺝⺥⺧⺪⺬⺮⺶⺼⺾⻆⻊⻌⻍⻏⻖⻗⻞⻣"
+  ],
+  [
+    "c8f5",
+    "ʃɐɛɔɵœøŋʊɪ"
+  ],
+  [
+    "f9fe",
+    "￭"
+  ],
+  [
+    "fa40",
+    "𠕇鋛𠗟𣿅蕌䊵珯况㙉𤥂𨧤鍄𡧛苮𣳈砼杄拟𤤳𨦪𠊠𦮳𡌅侫𢓭倈𦴩𧪄𣘀𤪱𢔓倩𠍾徤𠎀𠍇滛𠐟偽儁㑺儎顬㝃萖𤦤𠒇兠𣎴兪𠯿𢃼𠋥𢔰𠖎𣈳𡦃宂蝽𠖳𣲙冲冸"
+  ],
+  [
+    "faa1",
+    "鴴凉减凑㳜凓𤪦决凢卂凭菍椾𣜭彻刋刦刼劵剗劔効勅簕蕂勠蘍𦬓包𨫞啉滙𣾀𠥔𣿬匳卄𠯢泋𡜦栛珕恊㺪㣌𡛨燝䒢卭却𨚫卾卿𡖖𡘓矦厓𨪛厠厫厮玧𥝲㽙玜叁叅汉义埾叙㪫𠮏叠𣿫𢶣叶𠱷吓灹唫晗浛呭𦭓𠵴啝咏咤䞦𡜍𠻝㶴𠵍"
+  ],
+  [
+    "fb40",
+    "𨦼𢚘啇䳭启琗喆喩嘅𡣗𤀺䕒𤐵暳𡂴嘷曍𣊊暤暭噍噏磱囱鞇叾圀囯园𨭦㘣𡉏坆𤆥汮炋坂㚱𦱾埦𡐖堃𡑔𤍣堦𤯵塜墪㕡壠壜𡈼壻寿坃𪅐𤉸鏓㖡够梦㛃湙"
+  ],
+  [
+    "fba1",
+    "𡘾娤啓𡚒蔅姉𠵎𦲁𦴪𡟜姙𡟻𡞲𦶦浱𡠨𡛕姹𦹅媫婣㛦𤦩婷㜈媖瑥嫓𦾡𢕔㶅𡤑㜲𡚸広勐孶斈孼𧨎䀄䡝𠈄寕慠𡨴𥧌𠖥寳宝䴐尅𡭄尓珎尔𡲥𦬨屉䣝岅峩峯嶋𡷹𡸷崐崘嵆𡺤岺巗苼㠭𤤁𢁉𢅳芇㠶㯂帮檊幵幺𤒼𠳓厦亷廐厨𡝱帉廴𨒂"
+  ],
+  [
+    "fc40",
+    "廹廻㢠廼栾鐛弍𠇁弢㫞䢮𡌺强𦢈𢏐彘𢑱彣鞽𦹮彲鍀𨨶徧嶶㵟𥉐𡽪𧃸𢙨釖𠊞𨨩怱暅𡡷㥣㷇㘹垐𢞴祱㹀悞悤悳𤦂𤦏𧩓璤僡媠慤萤慂慈𦻒憁凴𠙖憇宪𣾷"
+  ],
+  [
+    "fca1",
+    "𢡟懓𨮝𩥝懐㤲𢦀𢣁怣慜攞掋𠄘担𡝰拕𢸍捬𤧟㨗搸揸𡎎𡟼撐澊𢸶頔𤂌𥜝擡擥鑻㩦携㩗敍漖𤨨𤨣斅敭敟𣁾斵𤥀䬷旑䃘𡠩无旣忟𣐀昘𣇷𣇸晄𣆤𣆥晋𠹵晧𥇦晳晴𡸽𣈱𨗴𣇈𥌓矅𢣷馤朂𤎜𤨡㬫槺𣟂杞杧杢𤇍𩃭柗䓩栢湐鈼栁𣏦𦶠桝"
+  ],
+  [
+    "fd40",
+    "𣑯槡樋𨫟楳棃𣗍椁椀㴲㨁𣘼㮀枬楡𨩊䋼椶榘㮡𠏉荣傐槹𣙙𢄪橅𣜃檝㯳枱櫈𩆜㰍欝𠤣惞欵歴𢟍溵𣫛𠎵𡥘㝀吡𣭚毡𣻼毜氷𢒋𤣱𦭑汚舦汹𣶼䓅𣶽𤆤𤤌𤤀"
+  ],
+  [
+    "fda1",
+    "𣳉㛥㳫𠴲鮃𣇹𢒑羏样𦴥𦶡𦷫涖浜湼漄𤥿𤂅𦹲蔳𦽴凇沜渝萮𨬡港𣸯瑓𣾂秌湏媑𣁋濸㜍澝𣸰滺𡒗𤀽䕕鏰潄潜㵎潴𩅰㴻澟𤅄濓𤂑𤅕𤀹𣿰𣾴𤄿凟𤅖𤅗𤅀𦇝灋灾炧炁烌烕烖烟䄄㷨熴熖𤉷焫煅媈煊煮岜𤍥煏鍢𤋁焬𤑚𤨧𤨢熺𨯨炽爎"
+  ],
+  [
+    "fe40",
+    "鑂爕夑鑃爤鍁𥘅爮牀𤥴梽牕牗㹕𣁄栍漽犂猪猫𤠣𨠫䣭𨠄猨献珏玪𠰺𦨮珉瑉𤇢𡛧𤨤昣㛅𤦷𤦍𤧻珷琕椃𤨦琹𠗃㻗瑜𢢭瑠𨺲瑇珤瑶莹瑬㜰瑴鏱樬璂䥓𤪌"
+  ],
+  [
+    "fea1",
+    "𤅟𤩹𨮏孆𨰃𡢞瓈𡦈甎瓩甞𨻙𡩋寗𨺬鎅畍畊畧畮𤾂㼄𤴓疎瑝疞疴瘂瘬癑癏癯癶𦏵皐臯㟸𦤑𦤎皡皥皷盌𦾟葢𥂝𥅽𡸜眞眦着撯𥈠睘𣊬瞯𨥤𨥨𡛁矴砉𡍶𤨒棊碯磇磓隥礮𥗠磗礴碱𧘌辸袄𨬫𦂃𢘜禆褀椂禀𥡗禝𧬹礼禩渪𧄦㺨秆𩄍秔"
+  ]
+];
+var yr, Bi;
+function p0() {
+  return Bi || (Bi = 1, yr = {
+    // == Japanese/ShiftJIS ====================================================
+    // All japanese encodings are based on JIS X set of standards:
+    // JIS X 0201 - Single-byte encoding of ASCII + ¥ + Kana chars at 0xA1-0xDF.
+    // JIS X 0208 - Main set of 6879 characters, placed in 94x94 plane, to be encoded by 2 bytes.
+    //              Has several variations in 1978, 1983, 1990 and 1997.
+    // JIS X 0212 - Supplementary plane of 6067 chars in 94x94 plane. 1990. Effectively dead.
+    // JIS X 0213 - Extension and modern replacement of 0208 and 0212. Total chars: 11233.
+    //              2 planes, first is superset of 0208, second - revised 0212.
+    //              Introduced in 2000, revised 2004. Some characters are in Unicode Plane 2 (0x2xxxx)
+    // Byte encodings are:
+    //  * Shift_JIS: Compatible with 0201, uses not defined chars in top half as lead bytes for double-byte
+    //               encoding of 0208. Lead byte ranges: 0x81-0x9F, 0xE0-0xEF; Trail byte ranges: 0x40-0x7E, 0x80-0x9E, 0x9F-0xFC.
+    //               Windows CP932 is a superset of Shift_JIS. Some companies added more chars, notably KDDI.
+    //  * EUC-JP:    Up to 3 bytes per character. Used mostly on *nixes.
+    //               0x00-0x7F       - lower part of 0201
+    //               0x8E, 0xA1-0xDF - upper part of 0201
+    //               (0xA1-0xFE)x2   - 0208 plane (94x94).
+    //               0x8F, (0xA1-0xFE)x2 - 0212 plane (94x94).
+    //  * JIS X 208: 7-bit, direct encoding of 0208. Byte ranges: 0x21-0x7E (94 values). Uncommon.
+    //               Used as-is in ISO2022 family.
+    //  * ISO2022-JP: Stateful encoding, with escape sequences to switch between ASCII,
+    //                0201-1976 Roman, 0208-1978, 0208-1983.
+    //  * ISO2022-JP-1: Adds esc seq for 0212-1990.
+    //  * ISO2022-JP-2: Adds esc seq for GB2313-1980, KSX1001-1992, ISO8859-1, ISO8859-7.
+    //  * ISO2022-JP-3: Adds esc seq for 0201-1976 Kana set, 0213-2000 Planes 1, 2.
+    //  * ISO2022-JP-2004: Adds 0213-2004 Plane 1.
+    //
+    // After JIS X 0213 appeared, Shift_JIS-2004, EUC-JISX0213 and ISO2022-JP-2004 followed, with just changing the planes.
+    //
+    // Overall, it seems that it's a mess :( http://www8.plala.or.jp/tkubota1/unicode-symbols-map2.html
+    shiftjis: {
+      type: "_dbcs",
+      table: function() {
+        return a0;
+      },
+      encodeAdd: { "¥": 92, "‾": 126 },
+      encodeSkipVals: [{ from: 60736, to: 63808 }]
+    },
+    csshiftjis: "shiftjis",
+    mskanji: "shiftjis",
+    sjis: "shiftjis",
+    windows31j: "shiftjis",
+    ms31j: "shiftjis",
+    xsjis: "shiftjis",
+    windows932: "shiftjis",
+    ms932: "shiftjis",
+    932: "shiftjis",
+    cp932: "shiftjis",
+    eucjp: {
+      type: "_dbcs",
+      table: function() {
+        return o0;
+      },
+      encodeAdd: { "¥": 92, "‾": 126 }
+    },
+    // TODO: KDDI extension to Shift_JIS
+    // TODO: IBM CCSID 942 = CP932, but F0-F9 custom chars and other char changes.
+    // TODO: IBM CCSID 943 = Shift_JIS = CP932 with original Shift_JIS lower 128 chars.
+    // == Chinese/GBK ==========================================================
+    // http://en.wikipedia.org/wiki/GBK
+    // We mostly implement W3C recommendation: https://www.w3.org/TR/encoding/#gbk-encoder
+    // Oldest GB2312 (1981, ~7600 chars) is a subset of CP936
+    gb2312: "cp936",
+    gb231280: "cp936",
+    gb23121980: "cp936",
+    csgb2312: "cp936",
+    csiso58gb231280: "cp936",
+    euccn: "cp936",
+    // Microsoft's CP936 is a subset and approximation of GBK.
+    windows936: "cp936",
+    ms936: "cp936",
+    936: "cp936",
+    cp936: {
+      type: "_dbcs",
+      table: function() {
+        return mr;
+      }
+    },
+    // GBK (~22000 chars) is an extension of CP936 that added user-mapped chars and some other.
+    gbk: {
+      type: "_dbcs",
+      table: function() {
+        return mr.concat(Ii);
+      }
+    },
+    xgbk: "gbk",
+    isoir58: "gbk",
+    // GB18030 is an algorithmic extension of GBK.
+    // Main source: https://www.w3.org/TR/encoding/#gbk-encoder
+    // http://icu-project.org/docs/papers/gb18030.html
+    // http://source.icu-project.org/repos/icu/data/trunk/charset/data/xml/gb-18030-2000.xml
+    // http://www.khngai.com/chinese/charmap/tblgbk.php?page=0
+    gb18030: {
+      type: "_dbcs",
+      table: function() {
+        return mr.concat(Ii);
+      },
+      gb18030: function() {
+        return u0;
+      },
+      encodeSkipVals: [128],
+      encodeAdd: { "€": 41699 }
+    },
+    chinese: "gb18030",
+    // == Korean ===============================================================
+    // EUC-KR, KS_C_5601 and KS X 1001 are exactly the same.
+    windows949: "cp949",
+    ms949: "cp949",
+    949: "cp949",
+    cp949: {
+      type: "_dbcs",
+      table: function() {
+        return h0;
+      }
+    },
+    cseuckr: "cp949",
+    csksc56011987: "cp949",
+    euckr: "cp949",
+    isoir149: "cp949",
+    korean: "cp949",
+    ksc56011987: "cp949",
+    ksc56011989: "cp949",
+    ksc5601: "cp949",
+    // == Big5/Taiwan/Hong Kong ================================================
+    // There are lots of tables for Big5 and cp950. Please see the following links for history:
+    // http://moztw.org/docs/big5/  http://www.haible.de/bruno/charsets/conversion-tables/Big5.html
+    // Variations, in roughly number of defined chars:
+    //  * Windows CP 950: Microsoft variant of Big5. Canonical: http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP950.TXT
+    //  * Windows CP 951: Microsoft variant of Big5-HKSCS-2001. Seems to be never public. http://me.abelcheung.org/articles/research/what-is-cp951/
+    //  * Big5-2003 (Taiwan standard) almost superset of cp950.
+    //  * Unicode-at-on (UAO) / Mozilla 1.8. Falling out of use on the Web. Not supported by other browsers.
+    //  * Big5-HKSCS (-2001, -2004, -2008). Hong Kong standard.
+    //    many unicode code points moved from PUA to Supplementary plane (U+2XXXX) over the years.
+    //    Plus, it has 4 combining sequences.
+    //    Seems that Mozilla refused to support it for 10 yrs. https://bugzilla.mozilla.org/show_bug.cgi?id=162431 https://bugzilla.mozilla.org/show_bug.cgi?id=310299
+    //    because big5-hkscs is the only encoding to include astral characters in non-algorithmic way.
+    //    Implementations are not consistent within browsers; sometimes labeled as just big5.
+    //    MS Internet Explorer switches from big5 to big5-hkscs when a patch applied.
+    //    Great discussion & recap of what's going on https://bugzilla.mozilla.org/show_bug.cgi?id=912470#c31
+    //    In the encoder, it might make sense to support encoding old PUA mappings to Big5 bytes seq-s.
+    //    Official spec: http://www.ogcio.gov.hk/en/business/tech_promotion/ccli/terms/doc/2003cmp_2008.txt
+    //                   http://www.ogcio.gov.hk/tc/business/tech_promotion/ccli/terms/doc/hkscs-2008-big5-iso.txt
+    //
+    // Current understanding of how to deal with Big5(-HKSCS) is in the Encoding Standard, http://encoding.spec.whatwg.org/#big5-encoder
+    // Unicode mapping (http://www.unicode.org/Public/MAPPINGS/OBSOLETE/EASTASIA/OTHER/BIG5.TXT) is said to be wrong.
+    windows950: "cp950",
+    ms950: "cp950",
+    950: "cp950",
+    cp950: {
+      type: "_dbcs",
+      table: function() {
+        return Ri;
+      }
+    },
+    // Big5 has many variations and is an extension of cp950. We use Encoding Standard's as a consensus.
+    big5: "big5hkscs",
+    big5hkscs: {
+      type: "_dbcs",
+      table: function() {
+        return Ri.concat(f0);
+      },
+      encodeSkipVals: [
+        // Although Encoding Standard says we should avoid encoding to HKSCS area (See Step 1 of
+        // https://encoding.spec.whatwg.org/#index-big5-pointer), we still do it to increase compatibility with ICU.
+        // But if a single unicode point can be encoded both as HKSCS and regular Big5, we prefer the latter.
+        36457,
+        36463,
+        36478,
+        36523,
+        36532,
+        36557,
+        36560,
+        36695,
+        36713,
+        36718,
+        36811,
+        36862,
+        36973,
+        36986,
+        37060,
+        37084,
+        37105,
+        37311,
+        37551,
+        37552,
+        37553,
+        37554,
+        37585,
+        37959,
+        38090,
+        38361,
+        38652,
+        39285,
+        39798,
+        39800,
+        39803,
+        39878,
+        39902,
+        39916,
+        39926,
+        40002,
+        40019,
+        40034,
+        40040,
+        40043,
+        40055,
+        40124,
+        40125,
+        40144,
+        40279,
+        40282,
+        40388,
+        40431,
+        40443,
+        40617,
+        40687,
+        40701,
+        40800,
+        40907,
+        41079,
+        41180,
+        41183,
+        36812,
+        37576,
+        38468,
+        38637,
+        // Step 2 of https://encoding.spec.whatwg.org/#index-big5-pointer: Use last pointer for U+2550, U+255E, U+2561, U+256A, U+5341, or U+5345
+        41636,
+        41637,
+        41639,
+        41638,
+        41676,
+        41678
+      ]
+    },
+    cnbig5: "big5hkscs",
+    csbig5: "big5hkscs",
+    xxbig5: "big5hkscs"
+  }), yr;
+}
+var Di;
+function d0() {
+  return Di || (Di = 1, function(t) {
+    for (var e = To, n = [
+      Jd(),
+      Qd(),
+      e0(),
+      t0(),
+      n0(),
+      r0(),
+      s0(),
+      i0(),
+      p0()
+    ], r = 0; r < n.length; r++) {
+      var s = n[r];
+      e(t, s);
+    }
+  }(lr)), lr;
+}
+var br, Mi;
+function g0() {
+  if (Mi) return br;
+  Mi = 1;
+  var t = xt.Buffer;
+  return br = function(e) {
+    var n = e.Transform;
+    function r(i, a) {
+      this.conv = i, a = a || {}, a.decodeStrings = !1, n.call(this, a);
+    }
+    r.prototype = Object.create(n.prototype, {
+      constructor: { value: r }
+    }), r.prototype._transform = function(i, a, o) {
+      if (typeof i != "string")
+        return o(new Error("Iconv encoding stream needs strings as its input."));
+      try {
+        var c = this.conv.write(i);
+        c && c.length && this.push(c), o();
+      } catch (l) {
+        o(l);
+      }
+    }, r.prototype._flush = function(i) {
+      try {
+        var a = this.conv.end();
+        a && a.length && this.push(a), i();
+      } catch (o) {
+        i(o);
+      }
+    }, r.prototype.collect = function(i) {
+      var a = [];
+      return this.on("error", i), this.on("data", function(o) {
+        a.push(o);
+      }), this.on("end", function() {
+        i(null, t.concat(a));
+      }), this;
+    };
+    function s(i, a) {
+      this.conv = i, a = a || {}, a.encoding = this.encoding = "utf8", n.call(this, a);
+    }
+    return s.prototype = Object.create(n.prototype, {
+      constructor: { value: s }
+    }), s.prototype._transform = function(i, a, o) {
+      if (!t.isBuffer(i) && !(i instanceof Uint8Array))
+        return o(new Error("Iconv decoding stream needs buffers as its input."));
+      try {
+        var c = this.conv.write(i);
+        c && c.length && this.push(c, this.encoding), o();
+      } catch (l) {
+        o(l);
+      }
+    }, s.prototype._flush = function(i) {
+      try {
+        var a = this.conv.end();
+        a && a.length && this.push(a, this.encoding), i();
+      } catch (o) {
+        i(o);
+      }
+    }, s.prototype.collect = function(i) {
+      var a = "";
+      return this.on("error", i), this.on("data", function(o) {
+        a += o;
+      }), this.on("end", function() {
+        i(null, a);
+      }), this;
+    }, {
+      IconvLiteEncoderStream: r,
+      IconvLiteDecoderStream: s
+    };
+  }, br;
+}
+const m0 = {}, y0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: m0
+}, Symbol.toStringTag, { value: "Module" })), b0 = /* @__PURE__ */ Nd(y0);
+(function(t) {
+  var e = xt.Buffer, n = is, r = To, s = t.exports;
+  s.encodings = null, s.defaultCharUnicode = "�", s.defaultCharSingleByte = "?", s.encode = function(o, c, l) {
+    o = "" + (o || "");
+    var u = s.getEncoder(c, l), f = u.write(o), h = u.end();
+    return h && h.length > 0 ? e.concat([f, h]) : f;
+  }, s.decode = function(o, c, l) {
+    typeof o == "string" && (s.skipDecodeWarning || (console.error("Iconv-lite warning: decode()-ing strings is deprecated. Refer to https://github.com/ashtuchkin/iconv-lite/wiki/Use-Buffers-when-decoding"), s.skipDecodeWarning = !0), o = e.from("" + (o || ""), "binary"));
+    var u = s.getDecoder(c, l), f = u.write(o), h = u.end();
+    return h ? f + h : f;
+  }, s.encodingExists = function(o) {
+    try {
+      return s.getCodec(o), !0;
+    } catch {
+      return !1;
+    }
+  }, s.toEncoding = s.encode, s.fromEncoding = s.decode, s._codecDataCache = { __proto__: null }, s.getCodec = function(o) {
+    if (!s.encodings) {
+      var c = d0();
+      s.encodings = { __proto__: null }, r(s.encodings, c);
+    }
+    for (var l = s._canonicalizeEncoding(o), u = {}; ; ) {
+      var f = s._codecDataCache[l];
+      if (f)
+        return f;
+      var h = s.encodings[l];
+      switch (typeof h) {
+        case "string":
+          l = h;
+          break;
+        case "object":
+          for (var p in h)
+            u[p] = h[p];
+          u.encodingName || (u.encodingName = l), l = h.type;
+          break;
+        case "function":
+          return u.encodingName || (u.encodingName = l), f = new h(u, s), s._codecDataCache[u.encodingName] = f, f;
+        default:
+          throw new Error("Encoding not recognized: '" + o + "' (searched as: '" + l + "')");
+      }
+    }
+  }, s._canonicalizeEncoding = function(a) {
+    return ("" + a).toLowerCase().replace(/:\d{4}$|[^0-9a-z]/g, "");
+  }, s.getEncoder = function(o, c) {
+    var l = s.getCodec(o), u = new l.encoder(c, l);
+    return l.bomAware && c && c.addBOM && (u = new n.PrependBOM(u, c)), u;
+  }, s.getDecoder = function(o, c) {
+    var l = s.getCodec(o), u = new l.decoder(c, l);
+    return l.bomAware && !(c && c.stripBOM === !1) && (u = new n.StripBOM(u, c)), u;
+  }, s.enableStreamingAPI = function(o) {
+    if (!s.supportsStreams) {
+      var c = g0()(o);
+      s.IconvLiteEncoderStream = c.IconvLiteEncoderStream, s.IconvLiteDecoderStream = c.IconvLiteDecoderStream, s.encodeStream = function(u, f) {
+        return new s.IconvLiteEncoderStream(s.getEncoder(u, f), f);
+      }, s.decodeStream = function(u, f) {
+        return new s.IconvLiteDecoderStream(s.getDecoder(u, f), f);
+      }, s.supportsStreams = !0;
+    }
+  };
+  var i;
+  try {
+    i = b0;
+  } catch {
+  }
+  i && i.Transform ? s.enableStreamingAPI(i) : s.encodeStream = s.decodeStream = function() {
+    throw new Error("iconv-lite Streaming API is not enabled. Use iconv.enableStreamingAPI(require('stream')); to enable it.");
+  };
+})(So);
+var x0 = So.exports;
+const _i = /* @__PURE__ */ Pd(x0);
+class cs extends ia {
+  /**
+   * Creates a new SHX text shape wrapper.
+   * @param code - The character code represented by this shape.
+   * @param fontSize - The font size used to resolve the shape advance width.
+   * @param shape - The parsed SHX shape data.
+   * @param font - The SHX font instance that owns the shape.
+   */
+  constructor(e, n, r, s) {
+    super(), this.fontSize = n, this.shape = r, this.font = s, this.code = e, this.width = Ud(r, s.data, n);
+  }
+  /**
+   * Computes the width of the shape from its bounding box.
+   * @returns The width of the shape's bounding box.
+   */
+  calcWidth() {
+    const e = this.shape.bbox;
+    return e.maxX - e.minX;
+  }
+  /**
+   * Returns a translated copy of this shape.
+   * @param offset - The offset to apply to the shape.
+   * @returns A new shape shifted by the given offset.
+   */
+  offset(e) {
+    return new cs(this.code, this.fontSize, this.shape.offset(e), this.font);
+  }
+  /**
+   * Converts the text shape to a THREE.js geometry.
+   * @returns A BufferGeometry representing the text shape.
+   */
+  toGeometry() {
+    if (this.geometry != null)
+      return this.geometry;
+    const e = this.shape.polylines, n = [], r = [];
+    let s = 0;
+    const i = new I.BufferGeometry();
+    for (let a = 0; a < e.length; a++) {
+      const o = e[a];
+      for (let c = 0; c < o.length; c++) {
+        const l = o[c];
+        n.push(l.x, l.y, 0), c === o.length - 1 || r.push(s, s + 1), s++;
+      }
+    }
+    return i.setAttribute("position", new I.Float32BufferAttribute(n, 3)), i.setIndex(r), this.geometry = i, i;
+  }
+  /** @inheritdoc */
+  hasStrokeGeometry() {
+    return this.shape.polylines.some((e) => e.length >= 2) ? !0 : this.width > 0;
+  }
+  /**
+   * Estimated bytes of the lazily built BufferGeometry, or 0 if not built / disposed.
+   */
+  estimateMemoryBytes() {
+    return na(this.geometry);
+  }
+  /**
+   * Disposes the lazily built BufferGeometry, if any.
+   */
+  dispose() {
+    this.geometry && (this.geometry.dispose(), this.geometry = void 0);
+  }
+}
+const ft = class ft extends sa {
+  /**
+   * Creates a new SHX font wrapper.
+   * @param fontData - Font metadata and binary SHX data used to initialize the font.
+   */
+  constructor(e) {
+    super(e), this.type = "shx", this.layoutShapeCache = new zr(4096), this.codeCache = /* @__PURE__ */ new Map(), this.font = new _d(e.data), this.data = this.font.fontData;
+  }
+  /**
+   * Returns whether the font contains a glyph for the given character.
+   * @param char - The character to look up.
+   * @returns True if the font contains the character; otherwise, false.
+   */
+  hasChar(e) {
+    const n = this.getCode(e);
+    return n === ft.NOT_ENCODABLE ? !1 : this.font.hasChar(n);
+  }
+  /**
+   * Returns whether the font contains a glyph for the given character code.
+   * @param code - The character code to look up.
+   * @returns True if the font contains the code point; otherwise, false.
+   */
+  hasCode(e) {
+    return this.font.hasChar(e);
+  }
+  /**
+   * Computes the horizontal advance for a space at the requested size.
+   * @param size - The requested font size.
+   * @returns The width of the space advance.
+   */
+  getSpaceAdvance(e) {
+    const n = this.getCharShape(" ", e);
+    return n ? n.width : e * 0.5;
+  }
+  /**
+   * Converts a text string into a list of SHX text shapes.
+   * @param text - The text to convert.
+   * @param size - The requested font size.
+   * @returns An array of generated SHX text shapes.
+   */
+  generateShapes(e, n) {
+    const r = [];
+    let s = 0;
+    for (let i = 0; i < e.length; i++) {
+      const a = e[i];
+      if (a === " ") {
+        s += this.getSpaceAdvance(n);
+        continue;
+      }
+      const o = this.getCharShape(a, n);
+      if (!o) {
+        s += this.getSpaceAdvance(n), this.addUnsupportedChar(a);
+        continue;
+      }
+      r.push(o.offset(new se(s, 0))), s += o.width;
+    }
+    return r;
+  }
+  /**
+   * Returns the scale factor used by the SHX font implementation.
+   * @returns Always returns 1 for SHX fonts.
+   */
+  getScaleFactor() {
+    return 1;
+  }
+  /**
+   * Gets the scaled layout metrics for the font at the requested size.
+   * @param size - The requested font size.
+   * @returns The SHX font metrics for the given size.
+   */
+  getFontMetrics(e) {
+    return this.font.getFontMetrics(e);
+  }
+  /**
+   * Gets the shape data for a specific character at a given size.
+   * @param char - The character to look up.
+   * @param size - The requested font size.
+   * @returns The shape data for the character, or undefined if not found.
+   */
+  getCharShape(e, n) {
+    const r = this.getCode(e);
+    if (r !== ft.NOT_ENCODABLE)
+      return this.getCodeShape(r, n);
+  }
+  /**
+   * Gets the shape data for a specific character code at a given size.
+   * @param code - The character code to look up.
+   * @param size - The requested font size.
+   * @returns The shape data for the code, or undefined if not found.
+   */
+  getCodeShape(e, n) {
+    const r = `${e}_${n}`, s = this.layoutShapeCache.get(r);
+    if (s)
+      return s;
+    const i = this.font.getLayoutCharShape(e, n);
+    if (!i || !ft.hasRenderableStrokes(i))
+      return;
+    const a = new cs(e, n, i, this);
+    return this.layoutShapeCache.set(r, a), a;
+  }
+  /**
+   * Gets the shape data for a named SHX shape at the requested size.
+   * @param name - The SHX shape name to look up.
+   * @param size - The requested font size.
+   * @returns The matching shape, or undefined if unavailable.
+   */
+  getShapeByName(e, n) {
+    const r = this.font.getShapeCode(e);
+    if (r !== void 0)
+      return this.getCodeShape(r, n);
+  }
+  /**
+   * Checks whether a parsed SHX shape contains renderable strokes.
+   * @param shape - The shape to inspect.
+   * @returns True when the shape has at least one renderable segment.
+   */
+  static hasRenderableStrokes(e) {
+    var n;
+    return e.polylines.some((r) => r.length >= 2) ? !0 : (((n = e.lastPoint) == null ? void 0 : n.x) ?? 0) > 0;
+  }
+  /**
+   * Gets the fallback text shape used for missing characters.
+   * @param size - The requested font size.
+   * @returns The fallback shape, or undefined if it cannot be built.
+   */
+  getNotFoundTextShape(e) {
+    const n = this.font.fontData.header.fontType === J.BIGFONT ? "？" : "?";
+    return this.getCharShape(n, e);
+  }
+  /**
+   * Estimates memory used by this SHX font (parsed tables + layout/geometry caches).
+   */
+  estimateMemoryUsage() {
+    const e = this.cache.getStats();
+    let n = 0;
+    for (const a of this.layoutShapeCache.values())
+      n += a.estimateMemoryBytes();
+    const r = {
+      entries: this.layoutShapeCache.size,
+      maxEntries: this.layoutShapeCache.capacity,
+      estimatedBytes: n
+    }, s = Math.round(
+      this.sourceByteLength * Jo
+    ), i = s + e.estimatedBytes + r.estimatedBytes;
+    return {
+      names: Array.from(this.names),
+      type: "shx",
+      sourceByteLength: this.sourceByteLength,
+      parsedFontEstimatedBytes: s,
+      charGeometryCache: e,
+      shxLayoutCache: r,
+      estimatedBytes: i
+    };
+  }
+  /**
+   * Clears layout/code caches and disposes retained shape geometries.
+   */
+  dispose() {
+    for (const e of this.layoutShapeCache.values())
+      e.dispose();
+    this.layoutShapeCache.clear(), this.codeCache.clear(), super.dispose();
+  }
+  /**
+   * Resolves the internal SHX character code for a given Unicode character.
+   *
+   * For BIGFONT fonts, `char` is converted through a legacy encoding (e.g.
+   * GBK) via `iconv-lite`. Characters outside that encoding's repertoire
+   * (math/symbol glyphs like the diameter sign, U+2205) are not rejected by
+   * `iconv.encode` — it silently substitutes a replacement byte (commonly
+   * ASCII `?`, 0x3F). Left unchecked, that byte resolves to the BIGFONT's
+   * own, perfectly valid `?` glyph, so `hasChar`/`getCharShape` report a
+   * false positive: the caller believes this font renders the character,
+   * when it actually renders an unrelated question mark. That masked the
+   * real GDT/symbol-font fallback for diameter dimension text stored as a
+   * literal U+2205 (mlightcad/cad-viewer#473) — the correct glyph exists in
+   * `amgdt.shx`, but the fallback chain in {@link FontManager} never got a
+   * chance because this font's bogus "yes" won first.
+   *
+   * A decode-of-the-encoded-bytes round trip catches this: encoding is lossy
+   * exactly when it can't recover the original character.
+   *
+   * @param char - The input character.
+   * @returns The internal SHX code used for lookup, or {@link NOT_ENCODABLE}
+   * when `char` cannot be represented in this font's encoding.
+   */
+  getCode(e) {
+    const n = this.codeCache.get(e);
+    if (n !== void 0)
+      return n;
+    const r = this.font.fontData.header.fontType;
+    let s;
+    if (r === J.BIGFONT && this.encoding) {
+      const i = _i.encode(e[0], this.encoding);
+      if (_i.decode(i, this.encoding) !== e[0])
+        return this.codeCache.set(e, ft.NOT_ENCODABLE), ft.NOT_ENCODABLE;
+      s = i.length === 1 ? i[0] : i[0] << 8 | i[1];
+    } else
+      s = e.charCodeAt(0);
+    if (r === J.BIGFONT && s >= 32 && s <= 126) {
+      const i = 41856 + s;
+      this.font.hasChar(i) && (s = i);
+    }
+    return this.codeCache.set(e, s), s;
+  }
+};
+ft.NOT_ENCODABLE = -1;
+let Gr = ft;
+class Ke {
+  constructor() {
+  }
+  /**
+   * Gets the singleton instance of the FontFactory
+   * @returns The FontFactory instance
+   */
+  static get instance() {
+    return Ke._instance || (Ke._instance = new Ke()), Ke._instance;
+  }
+  /**
+   * Creates a font instance based on the provided font data.
+   * The type of font created (ShxFont or MeshFont) is determined by the font type.
+   *
+   * @param data - The font data to create the font instance from
+   * @returns A new instance of either ShxFont or MeshFont
+   * @throws {Error} If the font data type is not supported
+   */
+  createFont(e) {
+    if (e.type === "shx")
+      return new Gr(e);
+    if (e.type === "mesh")
+      return new fd(e);
+    throw new Error("Unsupported font data type");
+  }
+}
+class ee {
+  constructor() {
+    this.fontMapping = {}, this.loadedFontMap = /* @__PURE__ */ new Map(), this.unsupportedChars = {}, this.missedFonts = {}, this.enableFontCache = !0, this.lazyFontLoading = !0, this.awaitFontsBeforeDraw = !1, this.defaultFonts = /* @__PURE__ */ new Set(["simsun"]), this.symbolFonts = /* @__PURE__ */ new Set(["simplex", "amgdt"]), this.events = {
+      /** Event triggered when a font cannot be found */
+      fontNotFound: new gs(),
+      /** Event triggered when a font is successfully loaded */
+      fontLoaded: new gs()
+    }, this.fontRequestInFlight = /* @__PURE__ */ new Map(), this.fontRequestFailed = /* @__PURE__ */ new Set(), this.loadEpoch = 0, this.loader = new I.FileLoader(), this.loader.setResponseType("arraybuffer"), this.fileNames = [], this.fontLoader = new v0();
+  }
+  /**
+   * Gets the singleton instance of the FontManager
+   * @returns The FontManager instance
+   */
+  static get instance() {
+    return ee._instance || (ee._instance = new ee()), ee._instance;
+  }
+  /**
+   * Base URL to load fonts
+   */
+  get baseUrl() {
+    return this.fontLoader.baseUrl;
+  }
+  set baseUrl(e) {
+    this.fontLoader.baseUrl = e;
+  }
+  /**
+   * Sets the font mapping configuration
+   * @param mapping - The font mapping to set
+   */
+  setFontMapping(e) {
+    this.fontMapping = e;
+  }
+  setDefaultFonts(e) {
+    if (typeof e == "string" && Ss(e)) {
+      this.defaultFonts = new Set(Ar[e]), this.symbolFonts = new Set(Zn[e]);
+      return;
+    }
+    const n = typeof e == "string" ? [e] : [...e];
+    this.defaultFonts = new Set(n);
+  }
+  setSymbolFonts(e) {
+    if (typeof e == "string" && Ss(e)) {
+      this.symbolFonts = new Set(Zn[e]);
+      return;
+    }
+    const n = typeof e == "string" ? [e] : [...e];
+    this.symbolFonts = new Set(n);
+  }
+  /**
+   * Returns the font names for a predefined default-font preset.
+   * @param preset - The preset to look up
+   */
+  getDefaultFontsPreset(e) {
+    return Ar[e];
+  }
+  /**
+   * Returns the symbol-font names for a predefined preset.
+   * @param preset - The preset to look up
+   */
+  getSymbolFontsPreset(e) {
+    return Zn[e];
+  }
+  /**
+   * Font names that should be loaded for the active default and symbol chains.
+   */
+  getFontsToLoad() {
+    return [.../* @__PURE__ */ new Set([...this.defaultFonts, ...this.symbolFonts])];
+  }
+  /**
+   * Sets the font loader
+   * @param fontLoader - The font loader to set
+   */
+  setFontLoader(e) {
+    this.fontLoader = e;
+  }
+  /**
+   * Retrieves information about all available fonts in the system.
+   * Merges remote font metadata with fonts stored in IndexedDB (cache-only
+   * entries are included; remote entries win when names collide).
+   * @returns Promise that resolves to an array of FontInfo objects
+   * @throws {Error} If font metadata cannot be loaded from the CDN
+   */
+  async getAvailableFonts() {
+    const e = await this.fontLoader.getAvailableFonts();
+    if (!this.enableFontCache)
+      return e.map((s) => ({ ...s, source: "remote" }));
+    const n = /* @__PURE__ */ new Map();
+    for (const s of e) {
+      const i = lt(s.file).toLowerCase();
+      n.set(i, { ...s, source: "remote" });
+    }
+    const r = await st.instance.getAll();
+    for (const s of r) {
+      const i = s.name.toLowerCase();
+      n.has(i) || n.set(i, this.cachedFontDataToFontInfo(s));
+    }
+    return [...n.values()].sort(
+      (s, i) => s.name[0].localeCompare(i.name[0], void 0, { sensitivity: "base" })
+    );
+  }
+  /**
+   * Return true if all default fonts were loaded.
+   * @returns True if every font in `defaultFonts` is loaded. False otherwise.
+   */
+  isDefaultFontLoaded() {
+    for (const e of this.getFontsToLoad())
+      if (this.loadedFontMap.get(e.toLowerCase()) == null)
+        return !1;
+    return this.defaultFonts.size > 0 || this.symbolFonts.size > 0;
+  }
+  /**
+   * Loads all default and symbol fonts
+   * @returns Promise that resolves to the font load statuses
+   */
+  async loadDefaultFont() {
+    return await this.loadFontsByNames(this.getFontsToLoad());
+  }
+  /**
+   * Loads the specified fonts from font names
+   * @param names - Font names to load.
+   * @returns Promise that resolves to an array of font load statuses
+   */
+  async loadFontsByNames(e) {
+    const n = typeof e == "string" ? [e] : [...e];
+    return await this.fontLoader.load(n);
+  }
+  /**
+   * Schedules a non-blocking load for a font that is not yet in memory.
+   *
+   * Concurrent callers for the same name share one in-flight promise.
+   * Already-loaded fonts resolve immediately. Safe to call from sync draw
+   * paths — do not await from the hot glyph loop.
+   */
+  requestFont(e) {
+    const n = this.normalizeFontName(e);
+    if (!n)
+      return Promise.resolve([]);
+    if (this.isFontLoaded(n))
+      return this.fontRequestFailed.delete(n), Promise.resolve([]);
+    if (this.fontRequestFailed.has(n))
+      return Promise.resolve([
+        {
+          fontName: n,
+          url: "",
+          status: "FailedToLoad"
+        }
+      ]);
+    const r = this.fontRequestInFlight.get(n);
+    if (r)
+      return r;
+    const s = this.loadEpoch, i = this.loadFontsByNames(n).then((a) => (s !== this.loadEpoch || (this.isFontLoaded(n) ? this.fontRequestFailed.delete(n) : this.fontRequestFailed.add(n)), a)).catch(() => (s === this.loadEpoch && this.fontRequestFailed.add(n), [
+      {
+        fontName: n,
+        url: "",
+        status: "FailedToLoad"
+      }
+    ])).finally(() => {
+      this.fontRequestInFlight.get(n) === i && this.fontRequestInFlight.delete(n);
+    });
+    return this.fontRequestInFlight.set(n, i), i;
+  }
+  /**
+   * Requests each font name via {@link requestFont} (deduped per name).
+   * Callers may ignore the returned promise for fire-and-forget loads, or
+   * await it when they need fonts before drawing.
+   */
+  requestFonts(e) {
+    return Promise.all(e.map((n) => this.requestFont(n))).then(
+      (n) => n.flat()
+    );
+  }
+  normalizeFontName(e) {
+    if (e == null)
+      return "";
+    let n = String(e);
+    const r = n.lastIndexOf(".");
+    return (r > 0 && r == n.length - 4 || r == n.length - 5) && (n = n.substring(0, r)), n.toLowerCase();
+  }
+  /**
+   * Parses a user-uploaded font file, registers it for rendering, and stores
+   * it in IndexedDB when {@link enableFontCache} is true.
+   *
+   * Supported formats: `.shx`, `.ttf`, `.otf`, `.woff`.
+   *
+   * @param data - Font file contents or a browser `File` selected by the user
+   * @param fileName - Font file name (e.g. `custom.shx`, `simkai.ttf`). Required when `data` is an `ArrayBuffer`
+   * @param aliases - Optional alias names for the font (e.g. AutoCAD style names)
+   * @param encoding - Optional character encoding for SHX bigfonts
+   * @returns Promise that resolves to the font load status
+   */
+  async cacheFont(e, n, r, s) {
+    let i, a;
+    if (typeof File < "u" && e instanceof File ? (i = await e.arrayBuffer(), a = n ?? e.name) : (i = e, a = n ?? ""), !a)
+      throw new Error("fileName is required when caching an ArrayBuffer");
+    const o = lt(a).toLowerCase();
+    if (!o)
+      return {
+        fontName: "",
+        url: "",
+        status: "FailedToLoad"
+      };
+    const c = this.resolveUploadedFontType(a);
+    if (!c)
+      return {
+        fontName: o,
+        url: "",
+        status: "FailedToLoad"
+      };
+    if (this.isFontLoaded(o))
+      return {
+        fontName: o,
+        url: "",
+        status: "Success"
+      };
+    const l = this.buildUploadedFontAliases(
+      o,
+      a,
+      r
+    ), u = {
+      name: o,
+      alias: l,
+      type: c,
+      encoding: s,
+      data: i
+    };
+    try {
+      const f = Ke.instance.createFont(u);
+      return l.forEach((h) => f.names.add(h)), this.registerFontInMap(o, f), this.enableFontCache && await st.instance.set(o, u), this.events.fontLoaded.dispatch({ fontName: o }), {
+        fontName: o,
+        url: "",
+        status: "Success"
+      };
+    } catch {
+      return {
+        fontName: o,
+        url: "",
+        status: "FailedToLoad"
+      };
+    }
+  }
+  /**
+   * Loads a font from IndexedDB by primary name or alias.
+   * No-op when {@link enableFontCache} is false.
+   *
+   * @param fontName - Font name or alias (with or without file extension)
+   * @returns True if the font was found in cache and registered for rendering
+   */
+  async loadFontFromCache(e) {
+    var s;
+    if (!this.enableFontCache || !e)
+      return !1;
+    const n = lt(e).toLowerCase();
+    if (this.isFontLoaded(n))
+      return !0;
+    const r = await st.instance.find(e);
+    if (!r)
+      return !1;
+    try {
+      const i = Ke.instance.createFont(r);
+      return (s = r.alias) == null || s.forEach((a) => i.names.add(a)), this.registerFontInMap(r.name, i), this.events.fontLoaded.dispatch({ fontName: r.name }), !0;
+    } catch {
+      return !1;
+    }
+  }
+  /**
+   * Loads the specified fonts from URLs
+   * @param urls - URLs of font files to load.
+   * @returns Promise that resolves to an array of font load statuses
+   */
+  async loadFonts(e) {
+    e = Array.isArray(e) ? e : [e];
+    const n = [];
+    for (let s = 0; s < e.length; s++)
+      n.push(this.loadFont(e[s]));
+    const r = [];
+    return await Promise.allSettled(n).then((s) => {
+      s.forEach((i, a) => {
+        const o = e[a].url, c = lt(
+          e[a].file || o
+        ).toLowerCase(), l = i.status === "fulfilled" && this.isFontLoaded(c);
+        r.push({
+          fontName: c,
+          url: o,
+          status: l ? "Success" : "FailedToLoad"
+        }), l && this.fileNames.push(c);
+      });
+    }), r;
+  }
+  /**
+   * Tries to find the specified font. If not found, uses a replacement font and returns its name.
+   * @param fontName - The font name to find
+   * @returns The original font name if found, or the replacement font name if not found
+   */
+  findAndReplaceFont(e) {
+    const n = e == null ? "" : String(e);
+    let r = this.loadedFontMap.get(n.toLowerCase());
+    if (r == null) {
+      const i = this.fontMapping[n];
+      if (i)
+        return r = this.loadedFontMap.get(i.toLowerCase()), !r && this.lazyFontLoading && this.requestFont(i), i;
+    }
+    if (r)
+      return n;
+    this.lazyFontLoading && n && this.requestFont(n);
+    for (const i of this.defaultFonts)
+      if (this.loadedFontMap.has(i.toLowerCase()))
+        return i;
+    const s = [...this.defaultFonts][0] ?? "";
+    return s && this.lazyFontLoading && this.requestFont(s), s;
+  }
+  /**
+   * Gets font by font name. Return undefined if not found.
+   * @param fontName - The font name to find
+   * @param recordMissedFonts - Record the font name to property `missedFonts` in this class
+   * if the specified font name not found.
+   * @returns The font with the specified font name, or undefined if not found
+   */
+  getFontByName(e, n = !0) {
+    e == null && (e = "");
+    const r = e.lastIndexOf(".");
+    (r > 0 && r == e.length - 4 || r == e.length - 5) && (e = e.substring(0, r));
+    const s = this.loadedFontMap.get(e.toLowerCase());
+    if (!s) {
+      n && this.recordMissedFonts(e);
+      return;
+    }
+    return s;
+  }
+  /**
+   * Gets the first font which contains the specified character.
+   * @param char - The character to get the shape for
+   * @returns The text shape for the character, or undefined if not found
+   */
+  getFontByChar(e) {
+    for (const [, n] of this.loadedFontMap)
+      if (n.hasChar(e))
+        return n;
+  }
+  /**
+   * Gets the text shape for a specific character in the named font only.
+   * Does not fall back to bigFont, default fonts, or other loaded fonts.
+   * @param char - The character to get the shape for
+   * @param fontName - The name of the font to use
+   * @param size - The size of the character
+   * @returns The text shape for the character, or undefined if not found
+   */
+  getCharShape(e, n, r) {
+    const s = this.getFontByName(n);
+    return s == null ? void 0 : s.getCharShape(e, r);
+  }
+  /**
+   * Resolves a named SHX shape glyph from the specified font.
+   */
+  getShapeByName(e, n, r) {
+    const s = this.getFontByName(n);
+    return s == null ? void 0 : s.getShapeByName(e, r);
+  }
+  /**
+   * Resolves an SHX shape glyph by numeric character code from the specified font.
+   */
+  getShapeByCode(e, n, r) {
+    const s = this.getFontByName(n);
+    return s == null ? void 0 : s.getCodeShape(e, r);
+  }
+  /**
+   * Gets the text shape from the first loaded default font that contains the character.
+   * Used after primary and optional bigFont lookups per AutoCAD text-style semantics.
+   */
+  getCharShapeFromDefaults(e, n) {
+    for (const r of this.defaultFonts) {
+      const s = this.loadedFontMap.get(r.toLowerCase()), i = s == null ? void 0 : s.getCharShape(e, n);
+      if (i)
+        return i;
+    }
+  }
+  /**
+   * Gets the text shape from configured GDT / symbol fonts (e.g. `amgdt.shx`)
+   * by font-internal character code.
+   *
+   * AutoCAD `%%` symbols resolve against SHX code points (e.g. 126, 129, 132),
+   * not Unicode text semantics. Use {@link BaseFont.getCodeShape} so BIGFONT and
+   * Unicode SHX fonts are queried consistently.
+   */
+  getCodeShapeFromSymbolFonts(e, n) {
+    for (const r of this.symbolFonts) {
+      const s = this.loadedFontMap.get(r.toLowerCase());
+      if (!s) {
+        this.lazyFontLoading && this.requestFont(r);
+        continue;
+      }
+      const i = s.getCodeShape(e, n);
+      if (i)
+        return i;
+    }
+  }
+  /**
+   * Gets the scale factor for a specific font
+   * @param fontName - The name of the font
+   * @returns The scale factor for the font, or 1 if the font is not found
+   */
+  getFontScaleFactor(e) {
+    const n = this.loadedFontMap.get(e.toLowerCase());
+    return n ? n.getScaleFactor() : 1;
+  }
+  /**
+   * Gets type of the specific font
+   * @param fontName - The name of the font
+   * @returns The type of the font. If the specified font can't be found, `undefined` is returned
+   */
+  getFontType(e) {
+    const n = this.loadedFontMap.get(e.toLowerCase());
+    return n == null ? void 0 : n.type;
+  }
+  /**
+   * Gets the type of the SHX font. Such as BIGFONT, SHAPES, UNIFONT.
+   * @param fontName - The name of the font
+   * @returns The type of the SHX font, or undefined if the specified font is not a SHX font
+   */
+  getShxFontType(e) {
+    const n = this.loadedFontMap.get(e.toLowerCase());
+    return (n == null ? void 0 : n.type) === "shx" ? n.data.header.fontType : void 0;
+  }
+  /**
+   * Gets the shape to display when a character is not found
+   * @param size - The size of the shape
+   * @returns The shape for the not found indicator, or undefined if not available
+   */
+  getNotFoundTextShape(e) {
+    for (const [, n] of this.loadedFontMap) {
+      const r = n.getNotFoundTextShape(e);
+      if (r) return r;
+    }
+  }
+  /**
+   * Checks if a font is already loaded in the system
+   * @param fontName - The name of the font to check
+   * @returns True if the font is loaded, false otherwise
+   */
+  isFontLoaded(e) {
+    return this.loadedFontMap.has(e.toLowerCase());
+  }
+  /**
+   * Records a font that was requested but not found
+   * @param fontName - The name of the font that was not found
+   */
+  recordMissedFonts(e) {
+    e && (this.missedFonts[e] || (this.missedFonts[e] = 0), this.missedFonts[e]++, this.missedFonts[e] === 1 && (this.events.fontNotFound.dispatch({
+      fontName: e,
+      count: this.missedFonts[e]
+    }), this.lazyFontLoading && this.requestFont(e)));
+  }
+  /**
+   * Loads a single font
+   * @param fontInfo - The matadata of the font to be loaded
+   */
+  async loadFont(e) {
+    if (!ea(e.file))
+      throw new Error(`Invalid font file name: ${e.file}`);
+    const r = this.fontInfoToFontData(e), s = r.name;
+    if (this.isFontLoaded(r.name))
+      return;
+    const i = this.loadEpoch, a = await st.instance.get(s);
+    if (i === this.loadEpoch) {
+      if (a) {
+        if (await new Promise((c) => setTimeout(c, 0)), i !== this.loadEpoch || this.isFontLoaded(s))
+          return;
+        const o = Ke.instance.createFont(a);
+        o && this.registerFontInMap(s, o);
+      } else {
+        const o = await this.loader.loadAsync(e.url);
+        if (i !== this.loadEpoch || (r.data = o, await new Promise((l) => setTimeout(l, 0)), i !== this.loadEpoch || this.isFontLoaded(s)))
+          return;
+        const c = Ke.instance.createFont(r);
+        c && (e.name.forEach((l) => c.names.add(l)), this.registerFontInMap(s, c), this.enableFontCache && await st.instance.set(s, r));
+      }
+      i !== this.loadEpoch || !this.isFontLoaded(s) || (delete this.missedFonts[s], this.fontRequestFailed.delete(s.toLowerCase()), this.events.fontLoaded.dispatch({
+        fontName: s
+      }));
+    }
+  }
+  fontInfoToFontData(e) {
+    const n = lt(e.file).toLowerCase(), r = ["ttf", "otf", "woff"].includes(e.type) ? "mesh" : e.type;
+    return {
+      name: n,
+      alias: e.name,
+      type: r,
+      encoding: e.encoding
+    };
+  }
+  /**
+   * Loads all fonts from the cache
+   */
+  async getAllFontsFromCache() {
+    if (this.loadedFontMap.size !== 0)
+      return;
+    const e = await st.instance.getAll();
+    for (const n of e) {
+      const { name: r } = n;
+      if (this.fileNames && !this.fileNames.includes(r))
+        continue;
+      const s = Ke.instance.createFont(n);
+      this.registerFontInMap(r, s);
+    }
+  }
+  cachedFontDataToFontInfo(e) {
+    const n = `${e.name}.${e.type === "shx" ? "shx" : "ttf"}`;
+    return {
+      name: e.alias && e.alias.length > 0 ? [...e.alias] : [e.name],
+      file: n,
+      type: e.type,
+      url: "",
+      encoding: e.encoding,
+      source: "cache"
+    };
+  }
+  resolveUploadedFontType(e) {
+    const n = Io(e).toLowerCase();
+    if (n === "shx")
+      return "shx";
+    if (["ttf", "otf", "woff"].includes(n))
+      return "mesh";
+  }
+  buildUploadedFontAliases(e, n, r) {
+    const s = /* @__PURE__ */ new Set();
+    return s.add(e), s.add(lt(n)), r == null || r.forEach((i) => {
+      i && s.add(i);
+    }), [...s];
+  }
+  /**
+   * Registers a loaded font under its primary name and all aliases.
+   */
+  registerFontInMap(e, n) {
+    this.loadedFontMap.set(e.toLowerCase(), n), n.names.forEach((r) => {
+      this.loadedFontMap.set(r.toLowerCase(), n);
+    });
+  }
+  /**
+   * Gets a record of all unsupported characters across all loaded fonts
+   * @returns A record mapping unsupported characters to their occurrence count
+   */
+  getUnsupportedChar() {
+    for (const [, e] of this.loadedFontMap)
+      Object.assign(this.unsupportedChars, e.unsupportedChars);
+    return this.unsupportedChars;
+  }
+  /**
+   * Releases loaded fonts from memory.
+   *
+   * - If no argument is provided, all loaded fonts are released and the font map is cleared.
+   * - If a font name is provided, only that specific font is released from the font map.
+   *
+   * Disposes per-font caches before dropping references so released resources are
+   * not retained and are excluded from {@link estimateMemoryUsage}.
+   *
+   * This is useful for freeing up memory, especially when working with large font files (e.g., Chinese mesh fonts).
+   * Notes: Based on testing, one Chinese mesh font file may take 40M memory.
+   *
+   * @param fontToRelease - (Optional) The name of the font to release. If omitted, all fonts are released.
+   * @returns `true` if the operation succeeded (all fonts released or the specified font was found and deleted), `false` if the specified font was not found.
+   */
+  release(e) {
+    var r, s;
+    if (e == null) {
+      const i = new Set(this.loadedFontMap.values());
+      for (const a of i)
+        (r = a.dispose) == null || r.call(a);
+      return this.loadedFontMap.clear(), this.fontRequestInFlight.clear(), this.fontRequestFailed.clear(), this.missedFonts = {}, this.loadEpoch++, !0;
+    }
+    const n = this.loadedFontMap.get(e.toLowerCase());
+    if (!n)
+      return !1;
+    (s = n.dispose) == null || s.call(n);
+    for (const [i, a] of this.loadedFontMap)
+      a === n && this.loadedFontMap.delete(i);
+    return !0;
+  }
+  /**
+   * Estimates memory used by loaded fonts in this isolate.
+   *
+   * Font aliases that point at the same instance are counted once.
+   * Does not include IndexedDB blobs or other isolates (workers).
+   *
+   * @param options - Optional isolate id, material stats, and in-flight request count.
+   */
+  estimateMemoryUsage(e) {
+    const n = /* @__PURE__ */ new Set();
+    for (const a of this.loadedFontMap.values())
+      n.add(a);
+    const r = Array.from(n).map((a) => a.estimateMemoryUsage()), s = (e == null ? void 0 : e.materials) ?? ca(), i = r.reduce((a, o) => a + o.estimatedBytes, 0);
+    return {
+      id: (e == null ? void 0 : e.id) ?? "main",
+      inFlightRequests: e == null ? void 0 : e.inFlightRequests,
+      fonts: r,
+      materials: s,
+      totalEstimatedBytes: i + s.estimatedBytes
+    };
+  }
+}
+class v0 {
+  /**
+   * Creates a new instance of DefaultFontLoader
+   */
+  constructor() {
+    this._avaiableFonts = [], this._avaiableFontMap = /* @__PURE__ */ new Map(), this._baseUrl = "https://cdn.jsdelivr.net/gh/mlightcad/cad-data/fonts/";
+  }
+  /**
+   * Base URL to load fonts
+   */
+  get baseUrl() {
+    return this._baseUrl;
+  }
+  set baseUrl(e) {
+    this._baseUrl !== e && (this._baseUrl = e, this._avaiableFonts = [], this._avaiableFontMap.clear(), this.onFontUrlChanged(e));
+  }
+  /**
+   * Gets the list of available fonts
+   * @returns Array of FontInfo objects describing available fonts
+   */
+  get avaiableFonts() {
+    return this._avaiableFonts;
+  }
+  /**
+   * Triggered when font url changed
+   * @param url - New font url value
+   */
+  onFontUrlChanged(e) {
+  }
+  /**
+   * Retrieves information about all available fonts in the system.
+   * Loads font metadata from a CDN if not already loaded.
+   * @returns Promise that resolves to an array of FontInfo objects
+   * @throws {Error} If font metadata cannot be loaded from the CDN
+   */
+  async getAvailableFonts() {
+    if (this._avaiableFonts.length == 0) {
+      const e = this._baseUrl + "fonts.json";
+      try {
+        const n = await fetch(e);
+        this._avaiableFonts = await n.json();
+      } catch (n) {
+        throw new Error(
+          `Filed to get avaiable font from '${e}' due to ${n}!`
+        );
+      }
+      this._avaiableFonts.forEach((n) => {
+        n.url = this._baseUrl + n.file;
+      });
+    }
+    return this.buildFontMap(), this._avaiableFonts;
+  }
+  /**
+   * Loads the specified fonts into the system. If one font is already loaded,
+   * the font will not be loaded again. If no font names are provided, just loads
+   * all available fonts information (not fonts).
+   * @param fontNames - Array of font names to load
+   * @returns Promise that resolves to an array of FontLoadStatus objects
+   */
+  async load(e) {
+    if (e == null || e.length === 0)
+      return [];
+    await this.getAvailableFonts();
+    const n = [], r = [], s = /* @__PURE__ */ new Map();
+    e.forEach((c) => {
+      const l = c.toLowerCase(), u = this._avaiableFontMap.get(l);
+      u && (s.set(l, u), ee.instance.isFontLoaded(l) && n.push({
+        fontName: l,
+        url: u.url,
+        status: "Success"
+      }), r.push(u));
+    });
+    const i = await ee.instance.loadFonts(r), a = {};
+    [...n, ...i].forEach((c) => {
+      a[c.fontName] = c;
+    });
+    const o = [];
+    for (const c of e) {
+      const l = c.toLowerCase(), u = a[l];
+      if (u) {
+        o.push(u);
+        continue;
+      }
+      const f = s.get(l);
+      if (f) {
+        if (ee.instance.isFontLoaded(l)) {
+          o.push({
+            fontName: l,
+            url: f.url,
+            status: "Success"
+          });
+          continue;
+        }
+        const h = lt(
+          f.file
+        ).toLowerCase(), p = a[h];
+        if (p) {
+          o.push({
+            fontName: l,
+            url: f.url,
+            status: p.status
+          });
+          continue;
+        }
+      }
+      if (await ee.instance.loadFontFromCache(c)) {
+        o.push({
+          fontName: l,
+          url: "",
+          status: "Success"
+        });
+        continue;
+      }
+      o.push({
+        fontName: l,
+        url: "",
+        status: "NotFound"
+      });
+    }
+    return o;
+  }
+  /**
+   * Build one font map. The key is font name. The value is font info.
+   */
+  buildFontMap() {
+    const e = this._avaiableFontMap;
+    this._avaiableFonts.forEach((n) => {
+      n.name.forEach((r) => {
+        e.set(r.toLowerCase(), n);
+      });
+    });
+  }
+}
+function S0(t) {
+  return t && "getMaterialStats" in t && typeof t.getMaterialStats == "function" ? t.getMaterialStats() : ca();
+}
+function ko(t, e) {
+  const n = e.materials ?? S0(e.styleManager);
+  return t.estimateMemoryUsage({
+    id: e.id,
+    materials: n,
+    inFlightRequests: e.inFlightRequests
+  });
+}
+function w0() {
+  const t = globalThis.performance, e = t == null ? void 0 : t.memory;
+  if (e)
+    return {
+      usedJSHeapSize: e.usedJSHeapSize,
+      totalJSHeapSize: e.totalJSHeapSize,
+      jsHeapSizeLimit: e.jsHeapSizeLimit
+    };
+}
+function Ui(t, e = "") {
+  const n = [
+    `${e}${t.id}: ${Le(t.totalEstimatedBytes)}` + (t.inFlightRequests != null ? ` (in-flight: ${t.inFlightRequests})` : "")
+  ];
+  if (n.push(
+    `${e}  materials: mesh=${t.materials.meshCount}, line=${t.materials.lineCount}, ~${Le(t.materials.estimatedBytes)}`
+  ), t.fonts.length === 0)
+    return n.push(`${e}  fonts: (none)`), n;
+  for (const r of t.fonts) {
+    const s = r.names[0] ?? "(unnamed)";
+    n.push(
+      `${e}  font "${s}" [${r.type}]: ~${Le(r.estimatedBytes)}`
+    ), n.push(
+      `${e}    source=${Le(r.sourceByteLength)}, parsed~=${Le(r.parsedFontEstimatedBytes)}`
+    ), n.push(
+      `${e}    charGeometry: ${r.charGeometryCache.entries}/${r.charGeometryCache.maxEntries} ~${Le(r.charGeometryCache.estimatedBytes)}`
+    ), r.meshGlyphs && n.push(
+      `${e}    meshGlyphs: ${r.meshGlyphs.glyphCount} glyphs, outlines=${Le(r.meshGlyphs.outlineStringBytes)}`
+    ), r.shxLayoutCache && n.push(
+      `${e}    shxLayout: ${r.shxLayoutCache.entries}/${r.shxLayoutCache.maxEntries} ~${Le(r.shxLayoutCache.estimatedBytes)}`
+    );
+  }
+  return n;
+}
+function K0(t) {
+  const e = [
+    `mtext-renderer memory estimate @ ${new Date(t.collectedAt).toISOString()}`,
+    `total (live isolates): ${Le(t.totalEstimatedBytes)}`
+  ];
+  if (t.jsHeap && e.push(
+    `jsHeap: used=${Le(t.jsHeap.usedJSHeapSize)}, total=${Le(t.jsHeap.totalJSHeapSize)}, limit=${Le(t.jsHeap.jsHeapSizeLimit)}`
+  ), e.push(...Ui(t.mainThread)), t.workers.length === 0)
+    e.push("workers: (none)");
+  else {
+    e.push(`workers (${t.workers.length}):`);
+    for (const r of t.workers)
+      e.push(...Ui(r, "  "));
+  }
+  const n = t.indexedDbFontCache;
+  e.push(
+    `indexedDbFontCache (not in total): ${n.fontCount} fonts, ${Le(n.totalBytes)}`
+  );
+  for (const r of n.fonts)
+    e.push(`  ${r.name} [${r.type}]: ${Le(r.bytes)}`);
+  return e.join(`
+`);
+}
+var Q;
+(function(t) {
+  t[t.NONE = 0] = "NONE", t[t.WORD = 1] = "WORD", t[t.STACK = 2] = "STACK", t[t.SPACE = 3] = "SPACE", t[t.NBSP = 4] = "NBSP", t[t.TABULATOR = 5] = "TABULATOR", t[t.NEW_PARAGRAPH = 6] = "NEW_PARAGRAPH", t[t.NEW_COLUMN = 7] = "NEW_COLUMN", t[t.WRAP_AT_DIMLINE = 8] = "WRAP_AT_DIMLINE", t[t.PROPERTIES_CHANGED = 9] = "PROPERTIES_CHANGED", t[t.PERCENT_SYMBOL = 10] = "PERCENT_SYMBOL";
+})(Q || (Q = {}));
+var dt;
+(function(t) {
+  t[t.BOTTOM = 0] = "BOTTOM", t[t.MIDDLE = 1] = "MIDDLE", t[t.TOP = 2] = "TOP";
+})(dt || (dt = {}));
+var oe;
+(function(t) {
+  t[t.DEFAULT = 0] = "DEFAULT", t[t.LEFT = 1] = "LEFT", t[t.RIGHT = 2] = "RIGHT", t[t.CENTER = 3] = "CENTER", t[t.JUSTIFIED = 4] = "JUSTIFIED", t[t.DISTRIBUTED = 5] = "DISTRIBUTED";
+})(oe || (oe = {}));
+var ht;
+(function(t) {
+  t[t.NONE = 0] = "NONE", t[t.UNDERLINE = 1] = "UNDERLINE", t[t.OVERLINE = 2] = "OVERLINE", t[t.STRIKE_THROUGH = 4] = "STRIKE_THROUGH";
+})(ht || (ht = {}));
+const C0 = {
+  c: "Ø",
+  d: "°",
+  p: "±",
+  "%": "%"
+}, T0 = {
+  l: oe.LEFT,
+  r: oe.RIGHT,
+  c: oe.CENTER,
+  j: oe.JUSTIFIED,
+  d: oe.DISTRIBUTED
+};
+function k0(t) {
+  const [e, n, r] = t;
+  return e << 16 | n << 8 | r;
+}
+function Z0(t) {
+  const e = t >> 16 & 255, n = t >> 8 & 255, r = t & 255;
+  return [e, n, r];
+}
+function Pi(t) {
+  return Math.max(0, Math.min(255, Math.round(t)));
+}
+function Fo(t) {
+  return Math.max(0, Math.min(16777215, Math.round(t)));
+}
+function F0(t) {
+  return t === null ? null : `#${Fo(t).toString(16).padStart(6, "0")}`;
+}
+function E0(t) {
+  if (!t)
+    return null;
+  const e = t.trim().toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(e))
+    return e;
+  if (/^[0-9a-f]{6}$/.test(e))
+    return `#${e}`;
+  if (/^#[0-9a-f]{3}$/.test(e)) {
+    const n = e[1], r = e[2], s = e[3];
+    return `#${n}${n}${r}${r}${s}${s}`;
+  }
+  if (/^[0-9a-f]{3}$/.test(e)) {
+    const n = e[0], r = e[1], s = e[2];
+    return `#${n}${n}${r}${r}${s}${s}`;
+  }
+  return null;
+}
+function A0(t) {
+  if (!t)
+    return null;
+  const e = t.trim().toLowerCase();
+  if (e === "transparent")
+    return null;
+  const n = E0(e);
+  if (n)
+    return Fo(Number.parseInt(n.slice(1), 16));
+  const r = e.match(/^rgba?\((.*)\)$/);
+  if (!r)
+    return null;
+  const s = r[1].replace(/\s*\/\s*/g, " ").split(/[,\s]+/).map((l) => l.trim()).filter(Boolean);
+  if (s.length < 3)
+    return null;
+  const i = (l) => {
+    if (l.endsWith("%")) {
+      const f = Number.parseFloat(l.slice(0, -1));
+      return Pi(f / 100 * 255);
+    }
+    const u = Number.parseFloat(l);
+    return Pi(u);
+  }, a = i(s[0]), o = i(s[1]), c = i(s[2]);
+  return k0([a, o, c]);
+}
+function J0(t) {
+  return t.replace(/\r\n|\r|\n/g, "\\P");
+}
+function Q0(t) {
+  return t.replace(/\\P/g, "").replace(/\\~/g, "").includes("\\");
+}
+function O0(t, e = !1) {
+  const n = /* @__PURE__ */ new Set(), r = /\\[fF](.*?)[;|]/g;
+  return [...t.matchAll(r)].forEach((s) => {
+    let i = s[1].toLowerCase();
+    e && (i = i.replace(/\.(ttf|otf|woff|shx)$/, "")), n.add(i);
+  }), n;
+}
+class L0 {
+  /**
+   * Creates a new ContextStack with an initial context.
+   * @param initial The initial MTextContext to use as the base of the stack.
+   */
+  constructor(e) {
+    this.stack = [], this.stack.push(e);
+  }
+  /**
+   * Pushes a copy of the given context onto the stack.
+   * @param ctx The MTextContext to push (copied).
+   */
+  push(e) {
+    this.stack.push(e);
+  }
+  /**
+   * Pops the top context from the stack and merges its paragraph properties into the new top context.
+   * If only one context remains, nothing is popped.
+   * @returns The popped MTextContext, or undefined if the stack has only one context.
+   */
+  pop() {
+    if (this.stack.length <= 1)
+      return;
+    const e = this.stack.pop(), n = this.stack[this.stack.length - 1];
+    return JSON.stringify(n.paragraph) !== JSON.stringify(e.paragraph) && (n.paragraph = { ...e.paragraph }), e;
+  }
+  /**
+   * Returns the current (top) context on the stack.
+   */
+  get current() {
+    return this.stack[this.stack.length - 1];
+  }
+  /**
+   * Returns the current stack depth (number of nested blocks), not counting the root context.
+   */
+  get depth() {
+    return this.stack.length - 1;
+  }
+  /**
+   * Returns the root (bottom) context, which represents the global formatting state.
+   * Used for paragraph property application.
+   */
+  get root() {
+    return this.stack[0];
+  }
+  /**
+   * Replaces the current (top) context with the given context.
+   * @param ctx The new context to set as the current context.
+   */
+  setCurrent(e) {
+    this.stack[this.stack.length - 1] = e;
+  }
+}
+class I0 {
+  /**
+   * Creates a new MTextParser instance
+   * @param content - The MText content to parse
+   * @param ctx - Optional initial MText context
+   * @param options - Parser options
+   */
+  constructor(e, n, r = {}) {
+    this.continueStroke = !1, this.inStackContext = !1, this.scanner = new xr(e);
+    const s = n ?? new ln();
+    this.ctxStack = new L0(s), this.yieldPropertyCommands = r.yieldPropertyCommands ?? !1, this.resetParagraphParameters = r.resetParagraphParameters ?? !1, this.yieldPercentSymbols = r.yieldPercentSymbols ?? !1, this.mifDecoder = r.mifDecoder ?? this.decodeMultiByteChar.bind(this), this.mifCodeLength = r.mifCodeLength ?? "auto";
+  }
+  /**
+   * Decode multi-byte character from hex code
+   * @param hex - Hex code string (e.g. "C4E3" or "1A2B3")
+   * @returns Decoded character or empty square if invalid
+   */
+  decodeMultiByteChar(e) {
+    try {
+      if (e.length === 5) {
+        const n = e[0];
+        let r = "gbk";
+        n === "1" ? r = "shift-jis" : n === "2" && (r = "big5");
+        const s = new Uint8Array([
+          parseInt(e.substr(1, 2), 16),
+          parseInt(e.substr(3, 2), 16)
+        ]);
+        return new TextDecoder(r).decode(s);
+      } else if (e.length === 4) {
+        const n = new Uint8Array([
+          parseInt(e.substr(0, 2), 16),
+          parseInt(e.substr(2, 2), 16)
+        ]), s = new TextDecoder("gbk").decode(n);
+        if (s !== "▯")
+          return s;
+        const a = new TextDecoder("big5").decode(n);
+        if (a !== "▯")
+          return a;
+      }
+      return "▯";
+    } catch {
+      return "▯";
+    }
+  }
+  /**
+   * Extract MIF hex code from scanner
+   * @param length - The length of the hex code to extract (4 or 5), or 'auto' to detect
+   * @returns The extracted hex code, or null if not found
+   */
+  extractMifCode(e) {
+    var n, r, s;
+    if (e === "auto") {
+      const i = (n = this.scanner.tail.match(/^[0-9A-Fa-f]{5}/)) == null ? void 0 : n[0];
+      if (i)
+        return i;
+      const a = (r = this.scanner.tail.match(/^[0-9A-Fa-f]{4}/)) == null ? void 0 : r[0];
+      return a || null;
+    } else
+      return ((s = this.scanner.tail.match(new RegExp(`^[0-9A-Fa-f]{${e}}`))) == null ? void 0 : s[0]) ?? null;
+  }
+  /**
+   * Push current context onto the stack
+   */
+  pushCtx() {
+    this.ctxStack.push(this.ctxStack.current);
+  }
+  /**
+   * Pop context from the stack
+   */
+  popCtx() {
+    this.ctxStack.pop();
+  }
+  /**
+   * Parse stacking expression (numerator/denominator)
+   * @returns Tuple of [TokenType.STACK, [numerator, denominator, type]]
+   */
+  parseStacking() {
+    const e = new xr(this.extractExpression(!0));
+    let n = "", r = "", s = "";
+    const i = () => {
+      let c = e.peek(), l = !1;
+      return c.charCodeAt(0) < 32 && (c = " "), c === "\\" && (l = !0, e.consume(1), c = e.peek()), e.consume(1), [c, l];
+    }, a = () => {
+      let c = "";
+      for (; e.hasData; ) {
+        const [l, u] = i();
+        if (!u && (l === "/" || l === "#" || l === "^"))
+          return [c, l];
+        c += l;
+      }
+      return [c, ""];
+    }, o = (c) => {
+      let l = "", u = c;
+      for (; e.hasData; ) {
+        const [f, h] = i();
+        if (!(u && f === " ")) {
+          if (u = !1, !h && f === ";")
+            break;
+          l += f;
+        }
+      }
+      return l;
+    };
+    return [n, s] = a(), s && (r = o(s === "^")), n === "" && r.includes("I/") ? [Q.STACK, [" ", " ", "/"]] : s === "^" ? [Q.STACK, [n, r, "^"]] : [Q.STACK, [n, r, s]];
+  }
+  /**
+   * Parse MText properties
+   * @param cmd - The property command to parse
+   * @returns Property changes if yieldPropertyCommands is true and changes occurred
+   */
+  parseProperties(e) {
+    const n = this.ctxStack.current.copy(), r = this.ctxStack.current.copy();
+    switch (e) {
+      case "L":
+        r.underline = !0, this.continueStroke = !0;
+        break;
+      case "l":
+        r.underline = !1, r.hasAnyStroke || (this.continueStroke = !1);
+        break;
+      case "O":
+        r.overline = !0, this.continueStroke = !0;
+        break;
+      case "o":
+        r.overline = !1, r.hasAnyStroke || (this.continueStroke = !1);
+        break;
+      case "K":
+        r.strikeThrough = !0, this.continueStroke = !0;
+        break;
+      case "k":
+        r.strikeThrough = !1, r.hasAnyStroke || (this.continueStroke = !1);
+        break;
+      case "A":
+        this.parseAlign(r);
+        break;
+      case "C":
+        this.parseAciColor(r);
+        break;
+      case "c":
+        this.parseRgbColor(r);
+        break;
+      case "H":
+        this.parseHeight(r);
+        break;
+      case "W":
+        this.parseWidth(r);
+        break;
+      case "Q":
+        this.parseOblique(r);
+        break;
+      case "T":
+        this.parseCharTracking(r);
+        break;
+      case "p":
+        this.parseParagraphProperties(r);
+        break;
+      case "f":
+      case "F":
+        this.parseFontProperties(r);
+        break;
+      default:
+        throw new Error(`Unknown command: ${e}`);
+    }
+    if (this.continueStroke = r.hasAnyStroke, r.continueStroke = this.continueStroke, this.ctxStack.setCurrent(r), this.yieldPropertyCommands) {
+      const s = this.getPropertyChanges(n, r);
+      if (Object.keys(s).length > 0)
+        return {
+          command: e,
+          changes: s,
+          depth: this.ctxStack.depth
+        };
+    }
+  }
+  /**
+   * Get property changes between two contexts
+   * @param oldCtx - The old context
+   * @param newCtx - The new context
+   * @returns Object containing changed properties
+   */
+  getPropertyChanges(e, n) {
+    const r = {};
+    if (e.underline !== n.underline && (r.underline = n.underline), e.overline !== n.overline && (r.overline = n.overline), e.strikeThrough !== n.strikeThrough && (r.strikeThrough = n.strikeThrough), e.color.aci !== n.color.aci && (r.aci = n.color.aci), e.color.rgbValue !== n.color.rgbValue && (r.rgb = n.color.rgb), e.align !== n.align && (r.align = n.align), JSON.stringify(e.fontFace) !== JSON.stringify(n.fontFace) && (r.fontFace = n.fontFace), (e.capHeight.value !== n.capHeight.value || e.capHeight.isRelative !== n.capHeight.isRelative) && (r.capHeight = n.capHeight), (e.widthFactor.value !== n.widthFactor.value || e.widthFactor.isRelative !== n.widthFactor.isRelative) && (r.widthFactor = n.widthFactor), (e.charTrackingFactor.value !== n.charTrackingFactor.value || e.charTrackingFactor.isRelative !== n.charTrackingFactor.isRelative) && (r.charTrackingFactor = n.charTrackingFactor), e.oblique !== n.oblique && (r.oblique = n.oblique), JSON.stringify(e.paragraph) !== JSON.stringify(n.paragraph)) {
+      const s = {};
+      e.paragraph.indent !== n.paragraph.indent && (s.indent = n.paragraph.indent), e.paragraph.align !== n.paragraph.align && (s.align = n.paragraph.align), e.paragraph.left !== n.paragraph.left && (s.left = n.paragraph.left), e.paragraph.right !== n.paragraph.right && (s.right = n.paragraph.right), JSON.stringify(e.paragraph.tabs) !== JSON.stringify(n.paragraph.tabs) && (s.tabs = n.paragraph.tabs), Object.keys(s).length > 0 && (r.paragraph = s);
+    }
+    return r;
+  }
+  /**
+   * Parse alignment property
+   * @param ctx - The context to update
+   */
+  parseAlign(e) {
+    const n = this.scanner.get();
+    "012".includes(n) ? e.align = parseInt(n) : e.align = dt.BOTTOM, this.consumeOptionalTerminator();
+  }
+  /**
+   * Parse height property
+   * @param ctx - The context to update
+   */
+  parseHeight(e) {
+    const n = this.extractFloatExpression(!0);
+    if (n)
+      try {
+        n.endsWith("x") ? e.capHeight = {
+          value: parseFloat(n.slice(0, -1)),
+          isRelative: !0
+        } : e.capHeight = {
+          value: parseFloat(n),
+          isRelative: !1
+        };
+      } catch {
+        this.scanner.consume(-n.length);
+        return;
+      }
+    this.consumeOptionalTerminator();
+  }
+  /**
+   * Parse width property
+   * @param ctx - The context to update
+   */
+  parseWidth(e) {
+    const n = this.extractFloatExpression(!0);
+    if (n)
+      try {
+        n.endsWith("x") ? e.widthFactor = {
+          value: parseFloat(n.slice(0, -1)),
+          isRelative: !0
+        } : e.widthFactor = {
+          value: parseFloat(n),
+          isRelative: !1
+        };
+      } catch {
+        this.scanner.consume(-n.length);
+        return;
+      }
+    this.consumeOptionalTerminator();
+  }
+  /**
+   * Parse character tracking property
+   * @param ctx - The context to update
+   */
+  parseCharTracking(e) {
+    const n = this.extractFloatExpression(!0);
+    if (n)
+      try {
+        n.endsWith("x") ? e.charTrackingFactor = {
+          value: Math.abs(parseFloat(n.slice(0, -1))),
+          isRelative: !0
+        } : e.charTrackingFactor = {
+          value: Math.abs(parseFloat(n)),
+          isRelative: !1
+        };
+      } catch {
+        this.scanner.consume(-n.length);
+        return;
+      }
+    this.consumeOptionalTerminator();
+  }
+  /**
+   * Parse float value or factor
+   * @param value - Current value to apply factor to
+   * @returns New value
+   */
+  parseFloatValueOrFactor(e) {
+    const n = this.extractFloatExpression(!0);
+    if (n)
+      if (n.endsWith("x")) {
+        const r = parseFloat(n.slice(0, -1));
+        e *= r;
+      } else
+        e = parseFloat(n);
+    return e;
+  }
+  /**
+   * Parse oblique angle property
+   * @param ctx - The context to update
+   */
+  parseOblique(e) {
+    const n = this.extractFloatExpression(!1);
+    n && (e.oblique = parseFloat(n)), this.consumeOptionalTerminator();
+  }
+  /**
+   * Parse ACI color property
+   * @param ctx - The context to update
+   */
+  parseAciColor(e) {
+    const n = this.extractIntExpression();
+    if (n) {
+      const r = parseInt(n);
+      r < 257 && (e.color.aci = r);
+    }
+    this.consumeOptionalTerminator();
+  }
+  /**
+   * Parse RGB color property
+   * @param ctx - The context to update
+   */
+  parseRgbColor(e) {
+    const n = this.extractIntExpression();
+    if (n) {
+      const r = parseInt(n) & 16777215;
+      e.color.rgbValue = r;
+    }
+    this.consumeOptionalTerminator();
+  }
+  /**
+   * Extract float expression from scanner
+   * @param relative - Whether to allow relative values (ending in 'x')
+   * @returns Extracted expression
+   */
+  extractFloatExpression(e = !1) {
+    const n = e ? /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?x?/ : /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/, r = this.scanner.tail.match(n);
+    if (r) {
+      const s = r[0];
+      return this.scanner.consume(s.length), s;
+    }
+    return "";
+  }
+  /**
+   * Extract integer expression from scanner
+   * @returns Extracted expression
+   */
+  extractIntExpression() {
+    const e = this.scanner.tail.match(/^\d+/);
+    if (e) {
+      const n = e[0];
+      return this.scanner.consume(n.length), n;
+    }
+    return "";
+  }
+  /**
+   * Extract expression until semicolon or end
+   * @param escape - Whether to handle escaped semicolons
+   * @returns Extracted expression
+   */
+  extractExpression(e = !1) {
+    const n = this.scanner.find(";", e);
+    if (n < 0) {
+      const a = this.scanner.tail;
+      return this.scanner.consume(a.length), a;
+    }
+    const s = this.scanner.peek(n - this.scanner.currentIndex - 1) === "\\", i = this.scanner.tail.slice(0, n - this.scanner.currentIndex + (s ? 1 : 0));
+    return this.scanner.consume(i.length + 1), i;
+  }
+  /**
+   * Parse font properties
+   * @param ctx - The context to update
+   */
+  parseFontProperties(e) {
+    const n = this.extractExpression().split("|");
+    if (n.length > 0 && n[0]) {
+      const r = n[0];
+      let s = "Regular", i = 400;
+      for (const a of n.slice(1))
+        a.startsWith("b1") ? i = 700 : a === "i" || a.startsWith("i1") ? s = "Italic" : (a === "i0" || a.startsWith("i0")) && (s = "Regular");
+      e.fontFace = {
+        family: r,
+        style: s,
+        weight: i
+      };
+    }
+  }
+  /**
+   * Parse paragraph properties from the MText content
+   * Handles properties like indentation, alignment, and tab stops
+   * @param ctx - The context to update
+   */
+  parseParagraphProperties(e) {
+    const n = new xr(this.extractExpression());
+    let r = e.paragraph.indent, s = e.paragraph.left, i = e.paragraph.right, a = e.paragraph.align, o = [];
+    const c = () => {
+      const l = n.tail.match(/^[+-]?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?/);
+      if (l) {
+        const u = parseFloat(l[0]);
+        for (n.consume(l[0].length); n.peek() === ","; )
+          n.consume(1);
+        return u;
+      }
+      return 0;
+    };
+    for (; n.hasData; )
+      switch (n.get()) {
+        case "i":
+          r = c();
+          break;
+        case "l":
+          s = c();
+          break;
+        case "r":
+          i = c();
+          break;
+        case "x":
+          break;
+        case "q": {
+          const u = n.get();
+          for (a = T0[u] || oe.DEFAULT; n.peek() === ","; )
+            n.consume(1);
+          break;
+        }
+        case "t":
+          for (o = []; n.hasData; ) {
+            const u = n.peek();
+            if (u === "r" || u === "c") {
+              n.consume(1);
+              const f = c();
+              o.push(u + f.toString());
+            } else {
+              const f = c();
+              isNaN(f) ? n.consume(1) : o.push(f);
+            }
+          }
+          break;
+      }
+    e.paragraph = {
+      indent: r,
+      left: s,
+      right: i,
+      align: a,
+      tabs: o
+    };
+  }
+  /**
+   * Consume optional terminator (semicolon)
+   */
+  consumeOptionalTerminator() {
+    this.scanner.peek() === ";" && this.scanner.consume(1);
+  }
+  /**
+   * Builds {@link PercentSymbolData} for a recognized `%%` code letter.
+   */
+  buildPercentSymbolData(e, n) {
+    return e === "c" || e === "d" || e === "p" ? { kind: "named", code: e, char: n } : e === "%" ? { kind: "literal", char: "%" } : null;
+  }
+  /**
+   * Parse MText content into tokens
+   * @yields MTextToken objects
+   */
+  *parse() {
+    const e = Q.WORD, n = Q.SPACE;
+    let r = null, s;
+    function i(o) {
+      const c = { ...o.paragraph };
+      o.paragraph = {
+        indent: 0,
+        left: 0,
+        right: 0,
+        align: oe.DEFAULT,
+        tabs: []
+      };
+      const l = {};
+      return c.indent !== 0 && (l.indent = 0), c.left !== 0 && (l.left = 0), c.right !== 0 && (l.right = 0), c.align !== oe.DEFAULT && (l.align = oe.DEFAULT), JSON.stringify(c.tabs) !== JSON.stringify([]) && (l.tabs = []), l;
+    }
+    const a = () => {
+      let o = "";
+      for (; this.scanner.hasData; ) {
+        let c = !1, l = this.scanner.peek();
+        const u = this.scanner.currentIndex;
+        if (l.charCodeAt(0) < 32) {
+          if (this.scanner.consume(1), l === "	")
+            return [Q.TABULATOR, null];
+          if (l === `
+`)
+            return [Q.NEW_PARAGRAPH, null];
+          l = " ";
+        }
+        if (l === "\\")
+          if ("\\{}".includes(this.scanner.peek(1)))
+            c = !0, this.scanner.consume(1), l = this.scanner.peek();
+          else {
+            if (o)
+              return [e, o];
+            this.scanner.consume(1);
+            const f = this.scanner.get();
+            switch (f) {
+              case "~":
+                return [Q.NBSP, null];
+              case "P":
+                return [Q.NEW_PARAGRAPH, null];
+              case "N":
+                return [Q.NEW_COLUMN, null];
+              case "X":
+                return [Q.WRAP_AT_DIMLINE, null];
+              case "S": {
+                this.inStackContext = !0;
+                const h = this.parseStacking();
+                return this.inStackContext = !1, h;
+              }
+              case "m":
+              case "M":
+                if (this.scanner.peek() === "+") {
+                  this.scanner.consume(1);
+                  const h = this.extractMifCode(this.mifCodeLength);
+                  if (h) {
+                    this.scanner.consume(h.length);
+                    const p = this.mifDecoder(h);
+                    return o ? [e, o] : [e, p];
+                  }
+                  this.scanner.consume(-1);
+                }
+                o += "\\M";
+                continue;
+              case "U":
+                if (this.scanner.peek() === "+") {
+                  this.scanner.consume(1);
+                  const h = this.scanner.tail.match(/^[0-9A-Fa-f]{4,8}/);
+                  if (h) {
+                    const p = h[0];
+                    this.scanner.consume(p.length);
+                    const y = parseInt(p, 16);
+                    let g = "";
+                    try {
+                      g = String.fromCodePoint(y);
+                    } catch {
+                      g = "▯";
+                    }
+                    return o ? [e, o] : [e, g];
+                  }
+                  this.scanner.consume(-1);
+                }
+                o += "\\U";
+                continue;
+              default:
+                if (f)
+                  try {
+                    const h = this.parseProperties(f);
+                    if (this.yieldPropertyCommands && h)
+                      return [Q.PROPERTIES_CHANGED, h];
+                    continue;
+                  } catch {
+                    const h = this.scanner.tail.slice(u, this.scanner.currentIndex);
+                    o += h;
+                  }
+            }
+            continue;
+          }
+        if (l === "%" && this.scanner.peek(1) === "%") {
+          const f = this.scanner.peek(2).toLowerCase(), h = C0[f];
+          if (h) {
+            if (this.scanner.consume(3), this.yieldPercentSymbols) {
+              const p = this.buildPercentSymbolData(f, h);
+              if (p)
+                return o ? (r = Q.PERCENT_SYMBOL, s = p, [e, o]) : [Q.PERCENT_SYMBOL, p];
+            }
+            o += h;
+            continue;
+          } else {
+            const p = [f, this.scanner.peek(3), this.scanner.peek(4)];
+            if (p.every((y) => y >= "0" && y <= "9")) {
+              const y = Number.parseInt(p.join(""), 10);
+              if (this.scanner.consume(5), this.yieldPercentSymbols) {
+                const g = {
+                  kind: "numeric",
+                  charCode: y,
+                  char: String.fromCharCode(y)
+                };
+                return o ? (r = Q.PERCENT_SYMBOL, s = g, [e, o]) : [Q.PERCENT_SYMBOL, g];
+              }
+              o += String.fromCharCode(y);
+            } else
+              this.scanner.consume(3);
+            continue;
+          }
+        }
+        if (l === " ")
+          return o ? (this.scanner.consume(1), r = n, [e, o]) : (this.scanner.consume(1), [n, null]);
+        if (!c) {
+          if (l === "{") {
+            if (o)
+              return [e, o];
+            this.scanner.consume(1), this.pushCtx();
+            continue;
+          } else if (l === "}") {
+            if (o)
+              return [e, o];
+            if (this.scanner.consume(1), this.yieldPropertyCommands) {
+              const f = this.ctxStack.current;
+              this.popCtx();
+              const h = this.getPropertyChanges(f, this.ctxStack.current);
+              if (Object.keys(h).length > 0)
+                return [
+                  Q.PROPERTIES_CHANGED,
+                  { command: void 0, changes: h, depth: this.ctxStack.depth }
+                ];
+            } else
+              this.popCtx();
+            continue;
+          }
+        }
+        if (!this.inStackContext && l === "^") {
+          const f = this.scanner.peek(1);
+          if (f) {
+            const h = f.charCodeAt(0);
+            if (this.scanner.consume(2), h === 32)
+              o += "^";
+            else {
+              if (h === 73)
+                return o ? [e, o] : [Q.TABULATOR, null];
+              if (h === 74)
+                return o ? [e, o] : [Q.NEW_PARAGRAPH, null];
+              if (h === 77)
+                continue;
+              o += "▯";
+            }
+            continue;
+          }
+        }
+        this.scanner.consume(1), l.charCodeAt(0) >= 32 && (o += l);
+      }
+      return o ? [e, o] : [Q.NONE, null];
+    };
+    for (; ; ) {
+      const [o, c] = a.call(this);
+      if (o) {
+        if (yield new vr(o, this.ctxStack.current.copy(), c), o === Q.NEW_PARAGRAPH && this.resetParagraphParameters) {
+          const l = this.ctxStack.current, u = i(l);
+          this.yieldPropertyCommands && Object.keys(u).length > 0 && (yield new vr(Q.PROPERTIES_CHANGED, l.copy(), {
+            command: void 0,
+            changes: { paragraph: u },
+            depth: this.ctxStack.depth
+          }));
+        }
+        r && (yield new vr(r, this.ctxStack.current.copy(), s ?? null), r = null, s = void 0);
+      } else
+        break;
+    }
+  }
+}
+class xr {
+  /**
+   * Create a new text scanner
+   * @param text - The text to scan
+   */
+  constructor(e) {
+    this.text = e, this.textLen = e.length, this._index = 0;
+  }
+  /**
+   * Get the current index in the text
+   */
+  get currentIndex() {
+    return this._index;
+  }
+  /**
+   * Check if the scanner has reached the end of the text
+   */
+  get isEmpty() {
+    return this._index >= this.textLen;
+  }
+  /**
+   * Check if there is more text to scan
+   */
+  get hasData() {
+    return this._index < this.textLen;
+  }
+  /**
+   * Get the next character and advance the index
+   * @returns The next character, or empty string if at end
+   */
+  get() {
+    if (this.isEmpty)
+      return "";
+    const e = this.text[this._index];
+    return this._index++, e;
+  }
+  /**
+   * Advance the index by the specified count
+   * @param count - Number of characters to advance
+   */
+  consume(e = 1) {
+    this._index = Math.max(0, Math.min(this._index + e, this.textLen));
+  }
+  /**
+   * Look at a character without advancing the index
+   * @param offset - Offset from current position
+   * @returns The character at the offset position, or empty string if out of bounds
+   */
+  peek(e = 0) {
+    const n = this._index + e;
+    return n >= this.textLen || n < 0 ? "" : this.text[n];
+  }
+  /**
+   * Find the next occurrence of a character
+   * @param char - The character to find
+   * @param escape - Whether to handle escaped characters
+   * @returns Index of the character, or -1 if not found
+   */
+  find(e, n = !1) {
+    let r = this._index;
+    for (; r < this.textLen; ) {
+      if (n && this.text[r] === "\\") {
+        if (r + 1 < this.textLen) {
+          if (this.text[r + 1] === e)
+            return r + 1;
+          r += 2;
+          continue;
+        }
+        r++;
+        continue;
+      }
+      if (this.text[r] === e)
+        return r;
+      r++;
+    }
+    return -1;
+  }
+  /**
+   * Get the remaining text from the current position
+   */
+  get tail() {
+    return this.text.slice(this._index);
+  }
+  /**
+   * Check if the next character is a space
+   */
+  isNextSpace() {
+    return this.peek() === " ";
+  }
+  /**
+   * Consume spaces until a non-space character is found
+   * @returns Number of spaces consumed
+   */
+  consumeSpaces() {
+    let e = 0;
+    for (; this.isNextSpace(); )
+      this.consume(), e++;
+    return e;
+  }
+}
+class bt {
+  /**
+   * Create a new MTextColor instance.
+   * @param color The initial color: number for ACI, [r,g,b] for RGB, or null/undefined for default (ACI=256).
+   */
+  constructor(e) {
+    this._aci = 256, this._rgbValue = null, Array.isArray(e) ? this.rgb = e : typeof e == "number" ? this.aci = e : this.aci = 256;
+  }
+  /**
+   * Get the current ACI color value.
+   * @returns The ACI color (0-256), or null if using RGB.
+   */
+  get aci() {
+    return this._aci;
+  }
+  /**
+   * Set the ACI color value. Setting this disables any RGB color.
+   * @param value The ACI color (0-256), or null to unset.
+   * @throws Error if value is out of range.
+   */
+  set aci(e) {
+    if (e === null)
+      this._aci = null;
+    else if (e >= 0 && e <= 256)
+      this._aci = e, this._rgbValue = null;
+    else
+      throw new Error("ACI not in range [0, 256]");
+  }
+  /**
+   * Get the current RGB color as a tuple [r, g, b], or null if not set.
+   * @returns The RGB color tuple, or null if using ACI.
+   */
+  get rgb() {
+    if (this._rgbValue === null)
+      return null;
+    const e = this._rgbValue >> 16 & 255, n = this._rgbValue >> 8 & 255, r = this._rgbValue & 255;
+    return [e, n, r];
+  }
+  /**
+   * Set the RGB color. Setting this disables ACI color.
+   * @param value The RGB color tuple [r, g, b], or null to use ACI.
+   */
+  set rgb(e) {
+    if (e) {
+      const [n, r, s] = e;
+      this._rgbValue = (n & 255) << 16 | (r & 255) << 8 | s & 255, this._aci = null;
+    } else
+      this._rgbValue = null;
+  }
+  /**
+   * Returns true if the color is set by RGB, false if by ACI.
+   */
+  get isRgb() {
+    return this._rgbValue !== null;
+  }
+  /**
+   * Returns true if the color is set by ACI, false if by RGB.
+   */
+  get isAci() {
+    return this._rgbValue === null && this._aci !== null;
+  }
+  /**
+   * Get or set the internal RGB value as a number (0xRRGGBB), or null if not set.
+   * Setting this will switch to RGB mode and set ACI to null.
+   */
+  get rgbValue() {
+    return this._rgbValue;
+  }
+  set rgbValue(e) {
+    e === null ? this._rgbValue = null : (this._rgbValue = e & 16777215, this._aci = null);
+  }
+  /**
+   * Returns a deep copy of this color.
+   * @returns A new MTextColor instance with the same color state.
+   */
+  copy() {
+    const e = new bt();
+    return e._aci = this._aci, e._rgbValue = this._rgbValue, e;
+  }
+  /**
+   * Returns a plain object for serialization.
+   * @returns An object with aci, rgb (tuple), and rgbValue (number or null).
+   */
+  toObject() {
+    return { aci: this._aci, rgb: this.rgb, rgbValue: this._rgbValue };
+  }
+  /**
+   * Convert the current color to a CSS hex color string (#rrggbb).
+   * Returns null if the color is ACI-based and has no RGB value.
+   */
+  toCssColor() {
+    return this._rgbValue !== null ? F0(this._rgbValue) : null;
+  }
+  /**
+   * Create an MTextColor from a CSS color string.
+   * Supports #rgb, #rrggbb, rgb(...), rgba(...). Returns null if invalid or transparent.
+   */
+  static fromCssColor(e) {
+    const n = A0(e);
+    if (n === null)
+      return null;
+    const r = new bt();
+    return r.rgbValue = n, r;
+  }
+  /**
+   * Equality check for color.
+   * @param other The other MTextColor to compare.
+   * @returns True if both ACI and RGB values are equal.
+   */
+  equals(e) {
+    return this._aci === e._aci && this._rgbValue === e._rgbValue;
+  }
+}
+class ln {
+  constructor() {
+    this._stroke = 0, this.continueStroke = !1, this.color = new bt(), this.align = dt.BOTTOM, this.fontFace = { family: "", style: "Regular", weight: 400 }, this._capHeight = { value: 1, isRelative: !1 }, this._widthFactor = { value: 1, isRelative: !1 }, this._charTrackingFactor = { value: 1, isRelative: !1 }, this.oblique = 0, this.paragraph = {
+      indent: 0,
+      left: 0,
+      right: 0,
+      align: oe.DEFAULT,
+      tabs: []
+    };
+  }
+  /**
+   * Get the capital letter height
+   */
+  get capHeight() {
+    return this._capHeight;
+  }
+  /**
+   * Set the capital letter height
+   * @param value - Height value
+   */
+  set capHeight(e) {
+    this._capHeight = {
+      value: Math.abs(e.value),
+      isRelative: e.isRelative
+    };
+  }
+  /**
+   * Get the character width factor
+   */
+  get widthFactor() {
+    return this._widthFactor;
+  }
+  /**
+   * Set the character width factor
+   * @param value - Width factor value
+   */
+  set widthFactor(e) {
+    this._widthFactor = {
+      value: Math.abs(e.value),
+      isRelative: e.isRelative
+    };
+  }
+  /**
+   * Get the character tracking factor
+   */
+  get charTrackingFactor() {
+    return this._charTrackingFactor;
+  }
+  /**
+   * Set the character tracking factor
+   * @param value - Tracking factor value
+   */
+  set charTrackingFactor(e) {
+    this._charTrackingFactor = {
+      value: Math.abs(e.value),
+      isRelative: e.isRelative
+    };
+  }
+  /**
+   * Get the ACI color value
+   */
+  get aci() {
+    return this.color.aci;
+  }
+  /**
+   * Set the ACI color value
+   * @param value - ACI color value (0-256)
+   * @throws Error if value is out of range
+   */
+  set aci(e) {
+    this.color.aci = e;
+  }
+  /**
+   * Get the RGB color value
+   */
+  get rgb() {
+    return this.color.rgb;
+  }
+  /**
+   * Set the RGB color value
+   */
+  set rgb(e) {
+    this.color.rgb = e;
+  }
+  /**
+   * Gets whether the current text should be rendered in italic style.
+   * @returns {boolean} True if the font style is 'Italic', otherwise false.
+   */
+  get italic() {
+    return this.fontFace.style === "Italic";
+  }
+  /**
+   * Sets whether the current text should be rendered in italic style.
+   * @param value - If true, sets the font style to 'Italic'; if false, sets it to 'Regular'.
+   */
+  set italic(e) {
+    this.fontFace.style = e ? "Italic" : "Regular";
+  }
+  /**
+   * Gets whether the current text should be rendered in bold style.
+   * This is primarily used for mesh fonts and affects font selection.
+   * @returns {boolean} True if the font weight is 700 or higher, otherwise false.
+   */
+  get bold() {
+    return (this.fontFace.weight || 400) >= 700;
+  }
+  /**
+   * Sets whether the current text should be rendered in bold style.
+   * This is primarily used for mesh fonts and affects font selection.
+   * @param value - If true, sets the font weight to 700; if false, sets it to 400.
+   */
+  set bold(e) {
+    this.fontFace.weight = e ? 700 : 400;
+  }
+  /**
+   * Get whether text is underlined
+   */
+  get underline() {
+    return !!(this._stroke & ht.UNDERLINE);
+  }
+  /**
+   * Set whether text is underlined
+   * @param value - Whether to underline
+   */
+  set underline(e) {
+    this._setStrokeState(ht.UNDERLINE, e);
+  }
+  /**
+   * Get whether text has strike-through
+   */
+  get strikeThrough() {
+    return !!(this._stroke & ht.STRIKE_THROUGH);
+  }
+  /**
+   * Set whether text has strike-through
+   * @param value - Whether to strike through
+   */
+  set strikeThrough(e) {
+    this._setStrokeState(ht.STRIKE_THROUGH, e);
+  }
+  /**
+   * Get whether text has overline
+   */
+  get overline() {
+    return !!(this._stroke & ht.OVERLINE);
+  }
+  /**
+   * Set whether text has overline
+   * @param value - Whether to overline
+   */
+  set overline(e) {
+    this._setStrokeState(ht.OVERLINE, e);
+  }
+  /**
+   * Check if any stroke formatting is active
+   */
+  get hasAnyStroke() {
+    return !!this._stroke;
+  }
+  /**
+   * Set the state of a stroke type
+   * @param stroke - The stroke type to set
+   * @param state - Whether to enable or disable the stroke
+   */
+  _setStrokeState(e, n = !0) {
+    n ? this._stroke |= e : this._stroke &= ~e;
+  }
+  /**
+   * Create a copy of this context
+   * @returns A new context with the same properties
+   */
+  copy() {
+    const e = new ln();
+    return e._stroke = this._stroke, e.continueStroke = this.continueStroke, e.color = this.color.copy(), e.align = this.align, e.fontFace = { ...this.fontFace }, e._capHeight = { ...this._capHeight }, e._widthFactor = { ...this._widthFactor }, e._charTrackingFactor = { ...this._charTrackingFactor }, e.oblique = this.oblique, e.paragraph = { ...this.paragraph }, e;
+  }
+}
+class vr {
+  /**
+   * Create a new MText token
+   * @param type - The token type
+   * @param ctx - The text context at this token
+   * @param data - Optional token data
+   */
+  constructor(e, n, r) {
+    this.type = e, this.ctx = n, this.data = r;
+  }
+}
+function Yt(t) {
+  return Math.max(0, Math.min(16777215, Math.round(t)));
+}
+function Kt(t) {
+  const e = t.color, n = e.aci;
+  return n === 0 ? Yt(t.byBlockColor) : n === 256 ? Yt(t.byLayerColor) : n != null ? ta(n) : e.rgbValue !== null ? Yt(e.rgbValue) : Yt(t.byLayerColor);
+}
+function e1(t) {
+  return t.isRgb && t.rgbValue != null ? { rgbValue: t.rgbValue } : t.aci != null ? { aci: t.aci } : { aci: 256 };
+}
+function R0(t) {
+  if (!t)
+    return;
+  const e = new bt();
+  if (typeof t.rgbValue == "number")
+    return e.rgbValue = t.rgbValue, e;
+  if (typeof t.aci == "number")
+    return e.aci = t.aci, e;
+}
+function B0(t, e, n, r) {
+  const s = R0(r), i = Kt(t);
+  if (s && s.isRgb && typeof s.rgbValue == "number" && s.rgbValue === i && !t.color.isRgb && typeof t.color.aci == "number") {
+    const o = new bt();
+    return o.aci = t.color.aci, {
+      byLayerColor: t.byLayerColor,
+      byBlockColor: t.byBlockColor,
+      layer: t.layer,
+      color: o
+    };
+  }
+  if (s)
+    return {
+      byLayerColor: t.byLayerColor,
+      byBlockColor: t.byBlockColor,
+      layer: t.layer,
+      color: s
+    };
+  const a = new bt();
+  return n && e === t.byLayerColor ? a.aci = 256 : t.color.aci === 0 && e === Yt(t.byBlockColor) ? a.aci = 0 : !t.color.isRgb && typeof t.color.aci == "number" && e === i ? a.aci = t.color.aci : a.rgbValue = e, {
+    byLayerColor: t.byLayerColor,
+    byBlockColor: t.byBlockColor,
+    layer: t.layer,
+    color: a
+  };
+}
+const D0 = 5 / 3, Ni = 1, bn = 0.3;
+var Ge = /* @__PURE__ */ ((t) => (t[t.LEFT_TO_RIGHT = 1] = "LEFT_TO_RIGHT", t[t.RIGHT_TO_LEFT = 2] = "RIGHT_TO_LEFT", t[t.TOP_TO_BOTTOM = 3] = "TOP_TO_BOTTOM", t[t.BOTTOM_TO_TOP = 4] = "BOTTOM_TO_TOP", t[t.BY_STYLE = 5] = "BY_STYLE", t))(Ge || {}), Z = /* @__PURE__ */ ((t) => (t[t.TopLeft = 1] = "TopLeft", t[t.TopCenter = 2] = "TopCenter", t[t.TopRight = 3] = "TopRight", t[t.MiddleLeft = 4] = "MiddleLeft", t[t.MiddleCenter = 5] = "MiddleCenter", t[t.MiddleRight = 6] = "MiddleRight", t[t.BottomLeft = 7] = "BottomLeft", t[t.BottomCenter = 8] = "BottomCenter", t[t.BottomRight = 9] = "BottomRight", t[t.BaselineLeft = 10] = "BaselineLeft", t[t.BaselineCenter = 11] = "BaselineCenter", t[t.BaselineRight = 12] = "BaselineRight", t))(Z || {}), ue = /* @__PURE__ */ ((t) => (t.CHAR = "CHAR", t.STACK = "STACK", t))(ue || {});
+const Tn = "", Ie = () => ({
+  byLayerColor: 16777215,
+  byBlockColor: 16777215,
+  layer: "0",
+  color: new bt()
+});
+function M0(t) {
+  if (!(!t || [
+    t.min.x,
+    t.min.y,
+    t.min.z,
+    t.max.x,
+    t.max.y,
+    t.max.z
+  ].some((n) => !Number.isFinite(n))))
+    return t;
+}
+function Hr(t, e, n) {
+  const r = [];
+  if (t.filter((h) => h.char !== Tn).forEach((h) => {
+    const p = M0(
+      new I.Box3().copy(h.box).applyMatrix4(e)
+    );
+    p && r.push({
+      type: ue.CHAR,
+      box: p,
+      char: h.char,
+      children: []
+    });
+  }), n !== ue.STACK)
+    return r;
+  const s = (h) => h.type === ue.CHAR && h.char.trim().length === 0, i = (h) => h.type === ue.CHAR && h.char.trim().length > 0, a = r.findIndex(i);
+  if (a < 0) return r;
+  let o = -1;
+  for (let h = r.length - 1; h >= 0; h--)
+    if (i(r[h])) {
+      o = h;
+      break;
+    }
+  const c = r.slice(0, a).filter(s), l = r.slice(o + 1).filter(s), u = r.slice(a, o + 1).filter(i);
+  if (u.length === 0) return [...c, ...l];
+  const f = new I.Box3().copy(u[0].box);
+  return u.slice(1).forEach((h) => f.union(h.box)), [
+    ...c,
+    {
+      type: ue.STACK,
+      char: "",
+      box: f,
+      children: u
+    },
+    ...l
+  ];
+}
+const _0 = 1.5, U0 = 0.8, P0 = 1e6, N0 = 1e4;
+function Gi(t, e) {
+  return Math.max(
+    1,
+    ...String(t ?? "").replace(/\\P/g, `
+`).replace(/[{}]/g, "").split(/\r?\n/).map((r) => r.length)
+  ) * e * U0;
+}
+function Hi(t) {
+  const e = t.width, n = t.height;
+  if (!Number.isFinite(e) || !Number.isFinite(n) || n <= 0 || e <= 0)
+    return e;
+  const r = n * _0;
+  if (e < r)
+    return Gi(t.text, n);
+  const s = Gi(t.text, n), i = e / n, a = e / Math.max(s, Number.EPSILON);
+  return i > P0 || a > N0 ? s : e;
+}
+const jt = /* @__PURE__ */ new I.Vector3();
+class Ct {
+  /**
+   * Merges indexed or non-indexed line geometries into one non-indexed {@link THREE.BufferGeometry}
+   * suitable for {@link THREE.LineSegments}.
+   * @param entries Glyph geometries paired with their world transforms.
+   * @returns A single non-indexed line geometry containing all transformed segments.
+   */
+  static mergeLineGeometries(e) {
+    if (e.length === 0)
+      return new I.BufferGeometry();
+    if (e.length === 1)
+      return Ct.applyMatrixToLineGeometry(
+        e[0].geometry,
+        e[0].matrix
+      );
+    let n = 0;
+    for (const a of e)
+      n += Ct.countLineSegments(a.geometry);
+    const r = new Float32Array(n * 6);
+    let s = 0;
+    for (const a of e)
+      s = Ct.writeTransformedLineSegments(
+        a.geometry,
+        a.matrix,
+        r,
+        s
+      );
+    const i = new I.BufferGeometry();
+    return i.setAttribute("position", new I.BufferAttribute(r, 3)), i;
+  }
+  /**
+   * Counts how many line segments a geometry represents.
+   * Indexed geometries use index pairs; non-indexed geometries use consecutive position pairs.
+   * @param geometry The line geometry to inspect.
+   * @returns The number of line segments (each segment is two vertices).
+   */
+  static countLineSegments(e) {
+    const n = e.getIndex();
+    if (n)
+      return n.count / 2;
+    const r = e.getAttribute("position");
+    return r ? r.count / 2 : 0;
+  }
+  /**
+   * Applies a transform matrix to a single line geometry and returns a new non-indexed copy.
+   * @param geometry The source line geometry.
+   * @param matrix The transform applied to every vertex.
+   * @returns A new non-indexed line geometry with transformed positions.
+   */
+  static applyMatrixToLineGeometry(e, n) {
+    const r = Ct.countLineSegments(e), s = new Float32Array(r * 6);
+    Ct.writeTransformedLineSegments(
+      e,
+      n,
+      s,
+      0
+    );
+    const i = new I.BufferGeometry();
+    return i.setAttribute("position", new I.BufferAttribute(s, 3)), i;
+  }
+  /**
+   * Writes transformed line-segment vertices from a source geometry into a flat position buffer.
+   * Supports both indexed and non-indexed source geometries.
+   * @param geometry The source line geometry.
+   * @param matrix The transform applied to each vertex before writing.
+   * @param output The destination `Float32Array` (xyz per vertex).
+   * @param outputOffset The index in `output` at which writing begins.
+   * @returns The next write offset after all segments have been written.
+   */
+  static writeTransformedLineSegments(e, n, r, s) {
+    const i = e.getAttribute("position");
+    if (!i || i.count === 0)
+      return s;
+    const a = e.getIndex();
+    let o = s;
+    const c = (l) => {
+      jt.fromBufferAttribute(i, l), jt.applyMatrix4(n), r[o++] = jt.x, r[o++] = jt.y, r[o++] = jt.z;
+    };
+    if (a) {
+      for (let l = 0; l < a.count; l += 2)
+        c(a.getX(l)), c(a.getX(l + 1));
+      return o;
+    }
+    for (let l = 0; l < i.count; l += 2)
+      c(l), c(l + 1);
+    return o;
+  }
+}
+const G0 = {
+  /** %%c — circle diameter dimensioning symbol (legacy SHX position) */
+  c: [129],
+  /** %%d — degree symbol (126/176 in amgdt.shx; avoid legacy 127) */
+  d: [126, 176],
+  /** %%p — plus/minus tolerance symbol (177 in amgdt.shx; avoid legacy 128) */
+  p: [177]
+}, H0 = {
+  c: [8709],
+  // ∅ — AutoCAD .NET diameter; present in amgdt.shx
+  d: [],
+  p: []
+};
+function z0(t) {
+  switch (t.kind) {
+    case "named":
+      return [
+        ...G0[t.code],
+        ...H0[t.code]
+      ];
+    case "numeric":
+      return [t.charCode];
+    case "literal":
+      return [];
+    default:
+      return t;
+  }
+}
+const W0 = /* @__PURE__ */ new I.Vector3(), zi = /* @__PURE__ */ new I.Matrix4(), Wi = /* @__PURE__ */ new I.Matrix4(), Sr = /* @__PURE__ */ new I.Matrix4(), wr = /* @__PURE__ */ new I.Matrix4(), Vi = /* @__PURE__ */ new I.Matrix4(), qi = /* @__PURE__ */ new I.Box3();
+class ls extends ln {
+  /**
+   * Creates a new RenderContext instance with optional initial values.
+   * @param init - Partial object containing initial values for context properties
+   */
+  constructor(e) {
+    super(), this.fontScaleFactor = 1, this.fontSize = 1, this.fontSizeScaleFactor = 1, this.blankWidth = 0, e && Object.assign(this, e);
+  }
+  /**
+   * Creates a deep copy of the current context.
+   * This is useful for saving state before applying formatting changes.
+   * @returns A new RenderContext instance with identical property values
+   */
+  clone() {
+    const e = new ls();
+    return e.continueStroke = this.continueStroke, e.color = this.color.copy(), e.align = this.align, e.fontFace = { ...this.fontFace }, e.capHeight = { ...this.capHeight }, e.widthFactor = { ...this.widthFactor }, e.charTrackingFactor = { ...this.charTrackingFactor }, e.oblique = this.oblique, e.paragraph = { ...this.paragraph }, e.fontScaleFactor = this.fontScaleFactor, e.fontSize = this.fontSize, e.fontSizeScaleFactor = this.fontSizeScaleFactor, e.blankWidth = this.blankWidth, e;
+  }
+  /**
+   * Get the current text color as a hexadecimal value for rendering.
+   * @returns The color as a hex number (0xRRGGBB)
+   */
+  getColorAsHex() {
+    return this.color.isRgb && this.color.rgbValue !== null ? this.color.rgbValue : this.color.isAci && this.color.aci !== null ? ta(this.color.aci) : 16777215;
+  }
+  /**
+   * Set the color using a hex value for rendering purposes.
+   * @param hexColor - The color as a hex number (0xRRGGBB)
+   */
+  setColorFromHex(e) {
+    const n = e >> 16 & 255, r = e >> 8 & 255, s = e & 255;
+    this.color.rgb = [n, r, s];
+  }
+}
+class ji {
+  /**
+   * Construct one instance of this class and initialize some properties with default values.
+   * @param style Input text style
+   * @param colorSettings Layer/block color resolution settings
+   * @param styleManager Input text style manager instance
+   * @param fontManager Input font manager instance
+   * @param options Input formating options
+   */
+  constructor(e, n, r, s, i) {
+    this._contextStack = [], this._maxFontSize = 0, this._lineBatchEntries = [], this._currentIndent = 0, this._currentLeftMargin = 0, this._currentRightMargin = 0, this._style = e, this._colorSettings = n, this._styleManager = r, this._fontManager = s, this._options = i, this._totalHeight = 0, this._hOffset = 0, this._maxLineAdvance = 0, this._vOffset = 0, this._lineCount = 1, this._currentLineObjects = [], this._currentContext = new ls({
+      fontScaleFactor: this.fontManager.getFontScaleFactor(
+        this.textStyle.font.toLowerCase()
+      ),
+      fontSize: i.fontSize,
+      fontSizeScaleFactor: 1,
+      italic: !1,
+      bold: !1,
+      blankWidth: this.calculateBlankWidthForFont(
+        this.textStyle.font.toLowerCase(),
+        i.fontSize
+      )
+    }), this._currentContext.color = this._colorSettings.color.copy(), this._currentContext.fontFace.family = this.textStyle.font.toLowerCase(), this._currentContext.widthFactor = {
+      value: i.widthFactor,
+      isRelative: !0
+    }, this._currentContext.oblique = e.obliqueAngle || 0, this._maxFontSize = 0, this._currentHorizontalAlignment = i.horizontalAlignment, this._lastCharBoxTarget = void 0, this._lineHasRenderableChar = !1, this._pendingEmptyLineFontSizeAdjust = void 0, this._lineLayouts = [], this._lineBreakIndices = [], this._processedCharCount = 0, this._currentIndent = 0, this._currentLeftMargin = 0, this._currentRightMargin = 0, this.initLineParams();
+  }
+  /**
+   * Font manager used to resolve glyphs, shapes, and font metrics.
+   */
+  get fontManager() {
+    return this._fontManager;
+  }
+  /** Style manager used to create mesh and line materials. */
+  get styleManager() {
+    return this._styleManager;
+  }
+  /** Active CAD text style for the entity being rendered. */
+  get textStyle() {
+    return this._style;
+  }
+  /**
+   * Total height of all lines of text
+   */
+  get totalHeight() {
+    return this._lineCount == 1 ? this.currentMaxFontSize : this._totalHeight + this.currentLineHeight;
+  }
+  /**
+   * The maximum width of one text line
+   */
+  get maxWidth() {
+    return this._options.maxWidth;
+  }
+  /**
+   * Maximum logical pen advance across processed visual lines.
+   *
+   * Unlike visible geometry bounds, this keeps the text insertion origin tied to
+   * the layout pen position even when glyphs have side bearings or overhangs.
+   */
+  get maxLineAdvance() {
+    return this._maxLineAdvance;
+  }
+  /**
+   * The direction that the text string follows from its start to its finish.
+   */
+  get flowDirection() {
+    return this._options.flowDirection;
+  }
+  /**
+   * The default horizontal alignment of one text line
+   */
+  get defaultHorizontalAlignment() {
+    return this._options.horizontalAlignment;
+  }
+  /**
+   * The default scale factor of character width
+   */
+  get defaultWidthFactor() {
+    return this._options.widthFactor;
+  }
+  /**
+   * The default font size of texts
+   */
+  get defaultFontSize() {
+    return this._options.fontSize;
+  }
+  /**
+   * AutoCAD DXF group-44 line spacing factor (multiple of single spacing).
+   * Single spacing is {@link LINE_SPACING_SCALE_FACTOR} × text height.
+   */
+  get defaultLineSpaceFactor() {
+    return this._options.lineSpaceFactor;
+  }
+  /**
+   * Font name of current character
+   */
+  get currentFont() {
+    return this._currentContext.fontFace.family;
+  }
+  /**
+   * The current horizontal alignment of one text line
+   */
+  get currentHorizontalAlignment() {
+    return this._currentHorizontalAlignment;
+  }
+  /**
+   * Font size of current character
+   */
+  get currentFontSize() {
+    return this._currentContext.fontSize;
+  }
+  /**
+   * The drawing-space text height used for layout calculations.
+   *
+   * `currentFontSize` includes a font-specific scale factor so glyph outlines
+   * from different font formats render at comparable visual sizes.  That scale
+   * must not leak into CAD layout metrics such as line height and attachment
+   * offsets, otherwise middle/bottom aligned text shifts vertically depending
+   * on the active font.
+   */
+  get currentLayoutFontSize() {
+    const e = this._currentContext.fontScaleFactor || 1;
+    return this._currentContext.fontSize / e;
+  }
+  /**
+   * Baseline-to-baseline advance for the current line (AutoCAD MTEXT semantics).
+   *
+   * Single spacing is `5/3` of the drawing-space text height; `lineSpaceFactor`
+   * (DXF group 44) scales that distance. Font glyph scale factors must not
+   * affect this layout metric — use {@link currentLayoutFontSize}.
+   */
+  get currentLineHeight() {
+    return Math.max(this.defaultLineSpaceFactor, 0) * this.currentLayoutFontSize * D0;
+  }
+  /**
+   * The maximum font size in current line. Characters in one line may have different font and font
+   * size. So we need to store the maximum font size in current line in order to calculate the height
+   * of current line.
+   */
+  get currentMaxFontSize() {
+    return this._maxFontSize;
+  }
+  /**
+   * The current space setting between two characters. The meaning of this value is as follows.
+   * - 1: no extra spacing (default tracking)
+   * - 1.2: increases spacing by 20% of the text height
+   * - 0.8: decreases spacing by 20% of the text height
+   */
+  get currentWordSpace() {
+    return this._currentContext.charTrackingFactor.value;
+  }
+  /**
+   * The current scale factor of character width
+   */
+  get currentWidthFactor() {
+    return this._currentContext.widthFactor.value;
+  }
+  /** Horizontal advance for one space, including tracking and width factor. */
+  get currentBlankAdvance() {
+    return this._currentContext.blankWidth * this.currentWordSpace * this.currentWidthFactor;
+  }
+  /**
+   * All of THREE.js objects in current line. It contains objects in all of sections of this line.
+   */
+  get currentLineObjects() {
+    return this._currentLineObjects;
+  }
+  /** Per-line vertical layout records accumulated during rendering. */
+  get lineLayouts() {
+    return this._lineLayouts;
+  }
+  /**
+   * The horizental offset of current character in this line
+   */
+  get hOffset() {
+    return this._hOffset;
+  }
+  /** @param value New horizontal pen position within the current line. */
+  set hOffset(e) {
+    this._hOffset = e;
+  }
+  /**
+   * The vertical offset of current character in this line
+   */
+  get vOffset() {
+    return this._vOffset;
+  }
+  /** @param value New vertical baseline position for the current line. */
+  set vOffset(e) {
+    this._vOffset = e;
+  }
+  /** Current paragraph first-line indent in drawing units. */
+  get currentIndent() {
+    return this._currentIndent;
+  }
+  /** Current paragraph left margin in drawing units. */
+  get currentLeftMargin() {
+    return this._currentLeftMargin;
+  }
+  /** Current paragraph right margin in drawing units. */
+  get currentRightMargin() {
+    return this._currentRightMargin;
+  }
+  /** Usable line width after subtracting left and right paragraph margins. */
+  get maxLineWidth() {
+    return this.maxWidth - this._currentLeftMargin - this._currentRightMargin;
+  }
+  /**
+   * Process text format information
+   * @param item Inline formatting command or restore snapshot from the parser.
+   */
+  processFormat(e) {
+    if (e.command === void 0) {
+      this.applyPropertyChanges(e.changes);
+      return;
+    }
+    switch (e.command) {
+      case "f":
+      case "F":
+        this.applyFontFaceChange(e.changes.fontFace);
+        break;
+      case "c":
+      case "C":
+        this.applyColorCommandChanges(e.changes);
+        break;
+      case "W":
+        this.applyWidthFactorChange(e.changes.widthFactor);
+        break;
+      case "H":
+        this.applyCapHeightChange(e.changes.capHeight);
+        break;
+      case "T":
+        this.applyCharTrackingChange(e.changes.charTrackingFactor);
+        break;
+      case "p":
+        this.applyParagraphChange(e.changes.paragraph);
+        break;
+      case "L":
+        this._currentContext.underline = !0;
+        break;
+      case "l":
+        this._currentContext.underline = !1;
+        break;
+      case "O":
+        this._currentContext.overline = !0;
+        break;
+      case "o":
+        this._currentContext.overline = !1;
+        break;
+      case "K":
+        this._currentContext.strikeThrough = !0;
+        break;
+      case "k":
+        this._currentContext.strikeThrough = !1;
+        break;
+      case "Q":
+        e.changes.oblique !== void 0 && (this._currentContext.oblique = e.changes.oblique);
+        break;
+    }
+  }
+  /**
+   * Applies a full property snapshot from the parser to the current render context.
+   *
+   * This is used when the parser emits a restore token (`command === undefined`)
+   * after exiting a formatting group `{}`. The `changes` object in that case is
+   * not a delta for a specific command; it is the complete property state that
+   * should be active after the restore.
+   *
+   * The method updates:
+   * - font face + derived bold/italic/oblique settings
+   * - ACI/RGB color and ByLayer/ByBlock resolution
+   * - width/height/tracking factors
+   * - paragraph alignment and margins
+   * - underline/overline/strike-through flags
+   *
+   * @param changes Full property snapshot to apply to the current render context.
+   */
+  applyPropertyChanges(e) {
+    this.applyFontFaceChange(e.fontFace), this.applyColorCommandChanges(e), this.applyWidthFactorChange(e.widthFactor), this.applyCapHeightChange(e.capHeight), this.applyCharTrackingChange(e.charTrackingFactor), this.applyParagraphMarginsOnly(e.paragraph), typeof e.underline == "boolean" && (this._currentContext.underline = e.underline), typeof e.overline == "boolean" && (this._currentContext.overline = e.overline), typeof e.strikeThrough == "boolean" && (this._currentContext.strikeThrough = e.strikeThrough), e.oblique !== void 0 && (this._currentContext.oblique = e.oblique);
+  }
+  /**
+   * Apply a font face change to the current render context, including
+   * derived bold/italic/oblique settings based on font type.
+   * @param fontFace The font face change data from the parser.
+   */
+  applyFontFaceChange(e) {
+    if (!e) return;
+    this.changeFont(e.family), this.fontManager.getFontType(
+      this._currentContext.fontFace.family
+    ) === "mesh" ? (this._currentContext.italic = e.style === "Italic", this._currentContext.bold = (e.weight || 400) >= 700, this._currentContext.oblique = this.textStyle.obliqueAngle || 0) : (this._currentContext.italic = !1, this._currentContext.bold = !1, e.style === "Italic" ? this._currentContext.oblique = 15 : this._currentContext.oblique = this.textStyle.obliqueAngle || 0);
+  }
+  /**
+   * Apply color changes for the inline color command (\c).
+   * This variant ignores null ACI and only applies explicit RGB when provided.
+   * @param changes The full change object for the current command.
+   */
+  applyColorCommandChanges(e) {
+    e.aci !== void 0 && e.aci !== null ? e.aci === 0 ? this._currentContext.setColorFromHex(this._options.byBlockColor) : e.aci === 256 ? this._currentContext.setColorFromHex(this._options.byLayerColor) : this._currentContext.color.aci = e.aci : e.rgb && (this._currentContext.color.rgb = e.rgb);
+  }
+  /**
+   * Apply color changes from a full snapshot restore.
+   * This variant accepts null to switch back to ACI-based color.
+   * @param changes The full snapshot of properties to restore.
+   */
+  applyColorSnapshotChanges(e) {
+    e.aci !== void 0 && (e.aci === null ? this._currentContext.color.aci = null : e.aci === 0 ? this._currentContext.setColorFromHex(this._options.byBlockColor) : e.aci === 256 ? this._currentContext.setColorFromHex(this._options.byLayerColor) : this._currentContext.color.aci = e.aci), e.rgb !== void 0 && (this._currentContext.color.rgb = e.rgb);
+  }
+  /**
+   * Apply width factor changes, resolving relative factors to absolute values.
+   * @param widthFactor Width factor change data.
+   */
+  applyWidthFactorChange(e) {
+    e && (e.isRelative ? this._currentContext.widthFactor = {
+      value: e.value * this.maxWidth,
+      isRelative: !1
+    } : this._currentContext.widthFactor = {
+      value: e.value * 0.85,
+      isRelative: !1
+    });
+  }
+  /**
+   * Apply cap height changes, either as a relative scale or absolute font height.
+   * @param capHeight Cap height change data.
+   */
+  applyCapHeightChange(e) {
+    e && (e.isRelative ? this.changeFontSizeScaleFactor(e.value) : this.changeFontHeight(e.value));
+  }
+  /**
+   * Apply character tracking (spacing) changes.
+   * @param charTrackingFactor Character tracking change data.
+   */
+  applyCharTrackingChange(e) {
+    e && (e.isRelative ? this._currentContext.charTrackingFactor = {
+      value: e.value + 1,
+      isRelative: !1
+    } : this._currentContext.charTrackingFactor = {
+      value: e.value,
+      isRelative: !1
+    });
+  }
+  /**
+   * Applies indent and margins from a paragraph snapshot only.
+   *
+   * Used when exiting `{}` formatting groups: the parser restores full context
+   * including `paragraph.align`, but paragraph alignment is not scoped to `{}`
+   * (see class comment on `_currentHorizontalAlignment`). Restoring align here
+   * would undo an active `\\p...` alignment before the line is finalized.
+   */
+  applyParagraphMarginsOnly(e) {
+    e && (typeof e.indent == "number" && (this._currentIndent = e.indent * this.defaultFontSize, this._hOffset += this._currentIndent), typeof e.left == "number" && (this._currentLeftMargin = e.left * this.defaultFontSize), typeof e.right == "number" && (this._currentRightMargin = e.right * this.defaultFontSize));
+  }
+  /**
+   * Apply paragraph-level changes such as alignment and margins.
+   * @param paragraph Paragraph change data.
+   */
+  applyParagraphChange(e) {
+    e && ("align" in e && (this._currentHorizontalAlignment = e.align), typeof e.indent == "number" && (this._currentIndent = e.indent * this.defaultFontSize, this._hOffset += this._currentIndent), typeof e.left == "number" && (this._currentLeftMargin = e.left * this.defaultFontSize), typeof e.right == "number" && (this._currentRightMargin = e.right * this.defaultFontSize));
+  }
+  /**
+   * Reset paragraph properties to their default values from options.
+   */
+  resetParagraphProperties() {
+    this._currentIndent = 0, this._currentLeftMargin = 0, this._currentRightMargin = 0, this._currentHorizontalAlignment = this._options.horizontalAlignment;
+  }
+  /**
+   * Start a new paragraph by processing current geometries, resetting paragraph properties,
+   * and starting a new line with indent applied.
+   * @param geometries Current text geometries to process
+   * @param lineGeometries Current line geometries to process
+   * @param meshCharBoxes Mesh char boxes to flush with the current line
+   * @param lineCharBoxes Line char boxes to flush with the current line
+   * @param group The group to add processed geometries to
+   */
+  startNewParagraph(e, n, r, s, i) {
+    this.recordVisualLineBreak(r, s), this.processGeometries(
+      e,
+      n,
+      r,
+      s,
+      i
+    ), this.advanceToNextLine(!1), this.resetParagraphProperties();
+  }
+  /**
+   * Renders one SHX shape glyph for AutoCAD SHAPE entities.
+   *
+   * @param shapeName Optional SHX shape name from the SHAPE entity.
+   * @param shapeNumber Optional SHX shape number from the SHAPE entity.
+   * @returns A single styled THREE.js object for the resolved shape, or `undefined` when lookup fails.
+   */
+  processShapeGlyph(e, n) {
+    const r = this.resolveShapeGlyph(e, n);
+    if (!r)
+      return;
+    this._lineBatchEntries = [];
+    const s = [], i = [], a = [], o = [], c = this.flowDirection === Ge.BOTTOM_TO_TOP ? 0 : -this.currentLayoutFontSize, l = this.buildShapeGeometry(
+      r.shape,
+      r.label,
+      0,
+      c,
+      s,
+      i,
+      a,
+      o
+    );
+    this._totalHeight = this.currentLayoutFontSize, this._maxFontSize = this.currentLayoutFontSize, this._maxLineAdvance = l;
+    const u = this.toThreeObject(
+      s,
+      i,
+      a,
+      o,
+      ue.CHAR
+    );
+    return u && (u.userData.logicalAdvanceWidth = l), u;
+  }
+  /**
+   * Resolves a SHX shape glyph by name and/or numeric code for SHAPE entities.
+   *
+   * Name lookup is attempted first; numeric lookup is used when the name is absent
+   * or does not match. Unlike MText, failed SHAPE lookups do not fall back to `?`.
+   *
+   * @param shapeName Optional SHX shape name.
+   * @param shapeNumber Optional SHX shape number.
+   * @returns Resolved shape and display label, or `undefined` when not found.
+   */
+  resolveShapeGlyph(e, n) {
+    const r = this.currentLayoutFontSize, s = this.textStyle.font.toLowerCase(), i = e == null ? void 0 : e.trim(), a = n != null && n !== 0;
+    if (i) {
+      const o = this.fontManager.getShapeByName(i, s, r);
+      if (o)
+        return { shape: o, label: i };
+    }
+    if (a) {
+      const o = this.fontManager.getShapeByCode(n, s, r);
+      if (o)
+        return { shape: o, label: String.fromCharCode(n) };
+    }
+  }
+  /**
+   * Builds geometry for one glyph and appends it to the output buffers.
+   *
+   * @returns Horizontal advance width after width factor and oblique skew.
+   */
+  buildShapeGeometry(e, n, r, s, i, a, o, c) {
+    const { matrix: l, obliqueExtraAdvance: u } = this.buildCharTransformMatrix(
+      r,
+      s,
+      this.currentLayoutFontSize
+    ), f = e.toGeometry();
+    return this.appendCharGeometry(
+      e,
+      n,
+      f,
+      l,
+      i,
+      o,
+      c
+    ), e.width * this.currentWidthFactor + u * this.currentWidthFactor;
+  }
+  /**
+   * Builds the world transform for one glyph (width factor, oblique, bold, translate).
+   *
+   * @param charX Horizontal glyph origin in drawing space.
+   * @param charY Vertical glyph origin in drawing space.
+   * @param charHeight Layout font height used for oblique advance calculation.
+   * @returns Composite transform matrix and extra horizontal advance introduced by oblique skew.
+   */
+  buildCharTransformMatrix(e, n, r) {
+    Wi.makeScale(this.currentWidthFactor, 1, 1);
+    let s = this._currentContext.oblique;
+    this._currentContext.italic && (s += 15);
+    let i = 0;
+    if (s) {
+      const c = s * Math.PI / 180;
+      Sr.set(
+        1,
+        Math.tan(c),
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ), i = Math.tan(c) * r;
+    } else
+      Sr.identity();
+    const a = this.fontManager.getFontType(this.currentFont);
+    this._currentContext.bold && a === "mesh" ? wr.makeScale(1.06, 1.06, 1) : wr.identity(), Vi.makeTranslation(e, n, 0);
+    const o = new I.Matrix4();
+    return o.copy(Vi).multiply(wr).multiply(Sr).multiply(Wi), { matrix: o, obliqueExtraAdvance: i };
+  }
+  /**
+   * Appends one glyph's geometry to the active batch buffers and optional char boxes.
+   *
+   * Mesh fonts (`ShapeGeometry`) are transformed immediately; line fonts are queued in
+   * {@link _lineBatchEntries} for later merge via {@link TextGeometryBuilder.mergeLineGeometries}.
+   *
+   * @param shape Source text shape for the glyph.
+   * @param label Character label stored on geometry and char boxes.
+   * @param canonical Untransformed glyph geometry from the font.
+   * @param matrix World transform to apply to the glyph.
+   * @param geometries Accumulator for mesh (`ShapeGeometry`) primitives.
+   * @param meshCharBoxes Accumulator for mesh-glyph picking boxes.
+   * @param lineCharBoxes Accumulator for line-glyph picking boxes.
+   */
+  appendCharGeometry(e, n, r, s, i, a, o) {
+    if (r instanceof I.ShapeGeometry) {
+      const c = r.clone();
+      c.applyMatrix4(s), i.push(c), this._options.collectCharBoxes !== !1 && (c.userData.char = n, c.boundingBox || c.computeBoundingBox(), a.push({
+        type: ue.CHAR,
+        box: new I.Box3().copy(c.boundingBox),
+        char: n,
+        children: []
+      }), this._lastCharBoxTarget = "mesh");
+      return;
+    }
+    this._lineBatchEntries.push({ geometry: r, matrix: s }), this._options.collectCharBoxes !== !1 && (r.boundingBox || r.computeBoundingBox(), qi.copy(r.boundingBox).applyMatrix4(s), o.push({
+      type: ue.CHAR,
+      box: new I.Box3().copy(qi),
+      char: n,
+      children: []
+    }), this._lastCharBoxTarget = "line");
+  }
+  /**
+   * Creates a two-point line decoration geometry (underline, overline, strike-through).
+   *
+   * @param lineGeometries Accumulator for line-based decoration geometry.
+   * @param vertices Six floats: start `(x,y,z)` and end `(x,y,z)` in drawing space.
+   */
+  pushDecorationLine(e, n) {
+    const r = new I.BufferGeometry();
+    r.setAttribute("position", new I.BufferAttribute(new Float32Array(n), 3)), r.setIndex([0, 1]), r.userData = { isDecoration: !0 }, e.push(r);
+  }
+  /**
+   * Render the specified texts
+   * @param tokens Parsed MText token stream from the parser.
+   * @returns A {@link THREE.Group} containing merged line/mesh objects and layout metadata.
+   */
+  processText(e) {
+    this._lastCharBoxTarget = void 0, this._lineBatchEntries = [];
+    const n = [], r = [], s = [], i = [], a = new I.Group();
+    for (const o of e)
+      if (o.type === Q.NEW_PARAGRAPH)
+        this.startNewParagraph(
+          n,
+          r,
+          s,
+          i,
+          a
+        );
+      else if (o.type === Q.WORD) {
+        const c = o.data;
+        Array.isArray(c) ? c.forEach(
+          (l) => this.processWord(
+            l,
+            n,
+            r,
+            s,
+            i
+          )
+        ) : typeof c == "string" && c.length > 0 && this.processWord(
+          c,
+          n,
+          r,
+          s,
+          i
+        );
+      } else if (o.type === Q.SPACE)
+        this.processBlank(s, i);
+      else if (o.type === Q.PERCENT_SYMBOL)
+        this.processPercentSymbol(
+          o.data,
+          n,
+          r,
+          s,
+          i
+        );
+      else if (o.type === Q.PROPERTIES_CHANGED) {
+        this.processGeometries(
+          n,
+          r,
+          s,
+          i,
+          a
+        );
+        const c = o.data;
+        if (c.command === void 0) {
+          for (; this._contextStack.length > c.depth; )
+            this._currentContext = this._contextStack.pop();
+          this.processFormat(c);
+        } else {
+          for (; this._contextStack.length < c.depth; )
+            this._contextStack.push(this._currentContext.clone());
+          this.processFormat(c);
+        }
+      } else if (o.type === Q.STACK) {
+        this.processGeometries(
+          n,
+          r,
+          s,
+          i,
+          a
+        );
+        const c = o.data;
+        this.processStack(
+          c,
+          n,
+          r,
+          s,
+          i
+        );
+        const l = c[2] === "^" ? ue.CHAR : ue.STACK;
+        this.processGeometries(
+          n,
+          r,
+          s,
+          i,
+          a,
+          l
+        );
+      }
+    return n.length > 0 || r.length > 0 || this._lineBatchEntries.length > 0 ? this.processGeometries(
+      n,
+      r,
+      s,
+      i,
+      a
+    ) : (s.length > 0 || i.length > 0) && this.processGeometries(
+      n,
+      r,
+      s,
+      i,
+      a
+    ), this.processLastLine(), this.captureCurrentLineAdvance(), this.recordCurrentLineLayout(), a.userData.lineLayouts = this._lineLayouts.map((o, c) => ({
+      ...o,
+      breakIndex: c < this._lineLayouts.length - 1 ? this._lineBreakIndices[c] : void 0
+    })), a.userData.logicalAdvanceWidth = this._maxLineAdvance, a;
+  }
+  /**
+   * Flushes pending geometry and char boxes into a styled THREE.js object on `group`.
+   *
+   * When only char boxes exist (spaces, empty lines), creates a marker object with
+   * layout metadata and no visible geometry.
+   *
+   * @param geometries Pending mesh geometries for the current style segment.
+   * @param lineGeometries Pending line geometries and decorations for the current style segment.
+   * @param meshCharBoxes Mesh-glyph char boxes collected since the last flush.
+   * @param lineCharBoxes Line-glyph char boxes collected since the last flush.
+   * @param group Parent group receiving the created object.
+   * @param charBoxType Char-box classification stored on the flushed object.
+   */
+  processGeometries(e, n, r, s, i, a = ue.CHAR) {
+    const o = this.countFinalCharBoxes(
+      r,
+      s,
+      a
+    );
+    if (e.length > 0 || n.length > 0 || this._lineBatchEntries.length > 0) {
+      const c = this.toThreeObject(
+        e,
+        n,
+        r,
+        s,
+        a
+      );
+      i.add(c), this._currentLineObjects.push(c), e.length = 0, n.length = 0, this._lineBatchEntries = [], r.length = 0, s.length = 0, this._processedCharCount += o;
+    } else if (r.length > 0 || s.length > 0) {
+      const c = new I.Object3D();
+      c.userData.bboxIntersectionCheck = !0, c.userData.charBoxType = a, c.userData.layout = {
+        chars: [...r, ...s]
+      }, i.add(c), this._currentLineObjects.push(c), r.length = 0, s.length = 0, this._processedCharCount += o;
+    }
+  }
+  /**
+   * Lays out and renders one parser word token, breaking to a new visual line when needed.
+   *
+   * @param word Character sequence for a single word token.
+   * @param geometries Mesh geometry accumulator for the active style segment.
+   * @param lineGeometries Line geometry accumulator for the active style segment.
+   * @param meshCharBoxes Mesh char-box accumulator.
+   * @param lineCharBoxes Line char-box accumulator.
+   */
+  processWord(e, n, r, s, i) {
+    const a = [];
+    let o = 0;
+    for (let c = 0; c < e.length; c++) {
+      const l = e[c], u = this.resolveCharShape(l), f = u == null ? void 0 : u.shape;
+      a.push({ char: l, shape: f }), f ? this.currentHorizontalAlignment == oe.DISTRIBUTED ? o += f.width * this.currentWidthFactor : o += f.width * this.currentWordSpace * this.currentWidthFactor : o += this.currentBlankAdvance;
+    }
+    this.hOffset + o > (this.maxLineWidth || 1 / 0) && (this._vOffset <= 0 && this._currentLineObjects.length <= 0 || (this.recordVisualLineBreak(s, i), this.advanceToNextLine(!1)));
+    for (const { char: c } of a)
+      this.processChar(
+        c,
+        n,
+        r,
+        s,
+        i
+      );
+  }
+  /**
+   * Renders an MText stack token (`\S...;`) as fraction, superscript, subscript, or tolerance layout.
+   *
+   * @param stackData Parser stack payload: `[numerator, denominator, divider]`.
+   * @param geometries Mesh geometry accumulator.
+   * @param lineGeometries Line geometry accumulator.
+   * @param meshCharBoxes Mesh char-box accumulator.
+   * @param lineCharBoxes Line char-box accumulator.
+   */
+  processStack(e, n, r, s, i) {
+    const [a, o, c] = e, l = this._hOffset, u = this._vOffset, f = this._currentContext.charTrackingFactor.value, h = this.currentFontSize, p = this._currentContext.fontSizeScaleFactor;
+    this._hOffset = l, this._currentContext.charTrackingFactor = { value: 1, isRelative: !1 };
+    let y = 0;
+    for (let C = 0; C < a.length; C++) {
+      const T = this.getCharShape(a[C]);
+      T && (y += T.width * this.currentWidthFactor);
+    }
+    this._hOffset = l;
+    let g = 0;
+    for (let C = 0; C < o.length; C++) {
+      const T = this.getCharShape(o[C]);
+      T && (g += T.width * this.currentWidthFactor);
+    }
+    const b = Math.max(y, g), v = (b - y) / 2, w = (b - g) / 2;
+    if (c === "^") {
+      if (a && !o) {
+        this._currentContext.fontSizeScaleFactor = p * 0.7, this.calcuateLineParams();
+        const C = [], T = [], E = [], R = [];
+        this._hOffset = l, this._vOffset = this.convertTopAlignedVOffset(
+          u + h * 0.1,
+          this.currentFontSize
+        );
+        for (let U = 0; U < a.length; U++)
+          this.processChar(
+            a[U],
+            C,
+            T,
+            E,
+            R
+          );
+        n.push(...C), r.push(...T), s.push(...E), i.push(...R), this._hOffset = l + y, this._currentContext.fontSizeScaleFactor = p, this.calcuateLineParams();
+      } else if (!a && o) {
+        this._currentContext.fontSizeScaleFactor = p * 0.7, this.calcuateLineParams();
+        const C = [], T = [], E = [], R = [];
+        this._hOffset = l, this._vOffset = this.convertTopAlignedVOffset(
+          u - h * 0.6,
+          this.currentFontSize
+        );
+        for (let U = 0; U < o.length; U++)
+          this.processChar(
+            o[U],
+            C,
+            T,
+            E,
+            R
+          );
+        n.push(...C), r.push(...T), s.push(...E), i.push(...R), this._hOffset = l + g, this._currentContext.fontSizeScaleFactor = p, this.calcuateLineParams();
+      } else if (a && o) {
+        const C = this._currentContext.fontScaleFactor || 1, T = (this._maxFontSize || this.currentFontSize) / C, E = Math.abs(this.currentLayoutFontSize - T) < 1e-6;
+        E && (this._currentContext.fontSizeScaleFactor = p * 0.7, this.calcuateLineParams());
+        const R = Math.max(y, g), U = 0, W = 0, j = this.currentLayoutFontSize, N = u - T + j, $ = N + this.currentFontSize, ie = [], P = [], D = [], _ = [];
+        this._hOffset = l + U, this._vOffset = $;
+        for (let fe = 0; fe < a.length; fe++)
+          this.processChar(
+            a[fe],
+            ie,
+            P,
+            D,
+            _
+          );
+        n.push(...ie), r.push(...P), s.push(...D), i.push(..._);
+        const re = [], Te = [], Qe = [], _e = [];
+        this._hOffset = l + W, this._vOffset = N;
+        for (let fe = 0; fe < o.length; fe++)
+          this.processChar(
+            o[fe],
+            re,
+            Te,
+            Qe,
+            _e
+          );
+        n.push(...re), r.push(...Te), s.push(...Qe), i.push(..._e), this._hOffset = l + R, E && (this._currentContext.fontSizeScaleFactor = p, this.calcuateLineParams());
+      }
+    } else {
+      const C = [], T = [], E = [], R = [];
+      this._hOffset = l + v, this._vOffset = this.convertTopAlignedVOffset(
+        u + this.currentFontSize * 0.3,
+        this.currentFontSize
+      );
+      for (let $ = 0; $ < a.length; $++)
+        this.processChar(
+          a[$],
+          C,
+          T,
+          E,
+          R
+        );
+      n.push(...C), r.push(...T), s.push(...E), i.push(...R), (c === "/" || c === "#") && this.recordStackDivider(
+        l,
+        u,
+        b,
+        s,
+        i
+      );
+      const U = [], W = [], j = [], N = [];
+      this._hOffset = l + w, this._vOffset = this.convertTopAlignedVOffset(
+        u - this.currentFontSize * 0.6,
+        this.currentFontSize
+      );
+      for (let $ = 0; $ < o.length; $++)
+        this.processChar(
+          o[$],
+          U,
+          W,
+          j,
+          N
+        );
+      if (n.push(...U), r.push(...W), s.push(...j), i.push(...N), c === "/" || c === "#") {
+        const $ = new I.BufferGeometry(), ie = new Float32Array([
+          l,
+          u - this.currentFontSize * 0.8 + this.defaultFontSize * bn,
+          0,
+          l + b,
+          u - this.currentFontSize * 0.8 + this.defaultFontSize * bn,
+          0
+        ]);
+        $.setAttribute(
+          "position",
+          new I.BufferAttribute(ie, 3)
+        ), $.setIndex([0, 1]), $.userData = { isDecoration: !0 }, r.push($);
+      }
+      this._hOffset = l + b;
+    }
+    this._vOffset = u, this._currentContext.charTrackingFactor = {
+      value: f,
+      isRelative: !1
+    };
+  }
+  /**
+   * Records a zero-height char box for a stack fraction divider in logical char order.
+   *
+   * @param startX Horizontal start of the fraction bar in drawing space.
+   * @param currentVOffset Vertical baseline of the stack relative to the main line.
+   * @param width Horizontal extent of the fraction bar.
+   * @param meshCharBoxes Mesh char-box accumulator.
+   * @param lineCharBoxes Line char-box accumulator.
+   */
+  recordStackDivider(e, n, r, s, i) {
+    if (this._options.collectCharBoxes === !1) return;
+    const a = n - this.currentFontSize * 0.8 + this.defaultFontSize * bn, o = new I.Box3(
+      new I.Vector3(e, a, 0),
+      new I.Vector3(e + r, a, 0)
+    );
+    this.resolveCharBoxTarget(s, i) === "mesh" ? s.push({
+      type: ue.CHAR,
+      box: o,
+      char: Tn,
+      children: []
+    }) : i.push({
+      type: ue.CHAR,
+      box: o,
+      char: Tn,
+      children: []
+    });
+  }
+  /**
+   * Convert a legacy top-anchored vOffset (used by stack/sub/sup logic) into
+   * the current baseline-anchored coordinate system.
+   *
+   * @param legacyTopAlignedVOffset Vertical position in the legacy top-anchored system.
+   * @param fontSize Font size associated with the legacy offset.
+   * @returns Baseline-anchored vertical offset for the current layout model.
+   */
+  convertTopAlignedVOffset(e, n) {
+    return e - n + this.defaultFontSize + this.defaultFontSize * bn;
+  }
+  /**
+   * Advances the pen by one space width and optionally records a space char box.
+   *
+   * @param meshCharBoxes Mesh char-box accumulator.
+   * @param lineCharBoxes Line char-box accumulator.
+   */
+  processBlank(e, n) {
+    if (this._options.collectCharBoxes !== !1) {
+      const r = this._hOffset, s = this.flowDirection == Ge.BOTTOM_TO_TOP ? this._vOffset : this._vOffset - this.currentLayoutFontSize, i = new I.Box3(
+        new I.Vector3(r, s, 0),
+        new I.Vector3(
+          r + this.currentBlankAdvance,
+          s + this.currentLayoutFontSize,
+          0
+        )
+      );
+      this.resolveCharBoxTarget(e, n) === "mesh" ? e.push({
+        type: ue.CHAR,
+        box: i,
+        char: " ",
+        children: []
+      }) : n.push({
+        type: ue.CHAR,
+        box: i,
+        char: " ",
+        children: []
+      });
+    }
+    this._hOffset += this.currentBlankAdvance;
+  }
+  /**
+   * Records the character index where a visual line break occurs.
+   *
+   * @param meshCharBoxes Optional pending mesh char boxes included in the break index.
+   * @param lineCharBoxes Optional pending line char boxes included in the break index.
+   */
+  recordVisualLineBreak(e, n) {
+    const r = this._processedCharCount + this.countFinalCharBoxes(
+      e ?? [],
+      n ?? [],
+      ue.CHAR
+    );
+    this._lineBreakIndices.push(r);
+  }
+  /**
+   * Appends vertical layout metadata for the current visual line to {@link _lineLayouts}.
+   */
+  recordCurrentLineLayout() {
+    const e = this.flowDirection == Ge.BOTTOM_TO_TOP ? this._vOffset : this._vOffset - this.defaultFontSize, n = this.currentLineHeight;
+    this._lineLayouts.push({
+      y: e + n / 2,
+      height: n
+    });
+  }
+  /**
+   * Renders a percent-control-code symbol (`%%...`) or its literal fallback character.
+   *
+   * @param data Parser payload describing the percent symbol kind and lookup data.
+   * @param geometries Mesh geometry accumulator.
+   * @param lineGeometries Line geometry accumulator.
+   * @param meshCharBoxes Mesh char-box accumulator.
+   * @param lineCharBoxes Line char-box accumulator.
+   */
+  processPercentSymbol(e, n, r, s, i) {
+    if (e.kind === "literal") {
+      this.processChar(e.char, n, r, s, i);
+      return;
+    }
+    const a = this.resolvePercentSymbolShape(e);
+    this.processChar(
+      e.char,
+      n,
+      r,
+      s,
+      i,
+      a
+    );
+  }
+  /**
+   * Renders one character glyph, including decorations and line-break handling.
+   *
+   * Missing glyphs are treated as spaces. When the pen exceeds {@link maxLineWidth},
+   * a visual line break is recorded before placement.
+   *
+   * @param char Character to render.
+   * @param geometries Mesh geometry accumulator.
+   * @param lineGeometries Line geometry accumulator.
+   * @param meshCharBoxes Mesh char-box accumulator.
+   * @param lineCharBoxes Line char-box accumulator.
+   * @param shapeOverride Optional pre-resolved shape (used by percent symbols and stacks).
+   */
+  processChar(e, n, r, s, i, a) {
+    const o = a ? { shape: a, sourceFont: this.currentFont } : this.resolveCharShape(e), c = o == null ? void 0 : o.shape;
+    if (!c) {
+      this.processBlank(s, i);
+      return;
+    }
+    this._lineHasRenderableChar || this.applyPendingEmptyLineYAdjust(), this.hOffset > (this.maxLineWidth || 1 / 0) && (this.recordVisualLineBreak(s, i), this.advanceToNextLine(!1));
+    const l = this.hOffset, u = this.flowDirection == Ge.BOTTOM_TO_TOP ? this.vOffset : this.vOffset - this.currentLayoutFontSize, f = this.currentLayoutFontSize, h = c.width * this.currentWidthFactor, { matrix: p, obliqueExtraAdvance: y } = this.buildCharTransformMatrix(
+      l,
+      u,
+      f
+    ), g = c.toGeometry();
+    this.appendCharGeometry(
+      c,
+      e,
+      g,
+      p,
+      n,
+      s,
+      i
+    );
+    const b = c.width * this.currentWidthFactor + y * this.currentWidthFactor;
+    this.currentHorizontalAlignment == oe.DISTRIBUTED ? this._hOffset += b : this._hOffset += c.width * this.currentWordSpace * this.currentWidthFactor + y * this.currentWidthFactor, this._lineHasRenderableChar = !0;
+    const v = f * 0.05, w = 1e-3;
+    if (this._currentContext.underline) {
+      const C = u - v;
+      this.pushDecorationLine(r, [
+        l,
+        C,
+        w,
+        l + h,
+        C,
+        w
+      ]);
+    }
+    if (this._currentContext.overline) {
+      const C = u + f + v;
+      this.pushDecorationLine(r, [
+        l,
+        C,
+        w,
+        l + h,
+        C,
+        w
+      ]);
+    }
+    if (this._currentContext.strikeThrough) {
+      const C = u + f / 2 - f * 0.2;
+      this.pushDecorationLine(r, [
+        l,
+        C,
+        w,
+        l + h,
+        C,
+        w
+      ]);
+    }
+  }
+  /**
+   * Applies horizontal alignment to the final visual line after all tokens are processed.
+   */
+  processLastLine() {
+    this.processAlignment();
+  }
+  /**
+   * Initializes line metric state from the current font and default text height.
+   */
+  initLineParams() {
+    this.calcuateLineParams();
+  }
+  /**
+   * Switches the active font family and recomputes derived line metrics.
+   *
+   * @param fontName Font family name from an inline `\f` command or text style.
+   */
+  changeFont(e) {
+    let n = e;
+    this._options.removeFontExtension && (n = e.replace(/\.(ttf|otf|woff|shx)$/, "")), this._currentContext.fontFace.family = this.fontManager.findAndReplaceFont(n), this.calcuateLineParams(), this._currentContext.blankWidth = this.calculateBlankWidthForFont(
+      this._currentContext.fontFace.family,
+      this.currentLayoutFontSize
+    );
+  }
+  /**
+   * Recalculates font scale factor and drawing-space font size from defaults and scale factors.
+   *
+   * @param newFontHeight Optional absolute font height override in drawing units.
+   */
+  calcuateLineParams(e) {
+    this._currentContext.fontScaleFactor = this.fontManager.getFontScaleFactor(
+      this.currentFont
+    );
+    const n = e || this.defaultFontSize || this.textStyle.fixedTextHeight;
+    this._currentContext.fontSize = n * this._currentContext.fontScaleFactor * this._currentContext.fontSizeScaleFactor;
+  }
+  /**
+   * Returns whether a shape contributes visible stroke or mesh geometry for rendering.
+   *
+   * @param shape Candidate text shape.
+   * @param char Character being resolved (spaces may still be renderable when width > 0).
+   * @returns `true` when the shape should be drawn instead of replaced with the not-found glyph.
+   */
+  shapeHasStrokeGeometry(e, n) {
+    return (typeof e.hasStrokeGeometry == "function" ? e.hasStrokeGeometry() : e.width > 0) ? !0 : n === " " && e.width > 0;
+  }
+  /**
+   * Resolves the best available shape for a percent-control-code symbol.
+   *
+   * Tries symbol-font lookup codes first, then falls back to the primary font glyph.
+   *
+   * @param data Parser percent-symbol payload.
+   * @returns A renderable text shape for the symbol.
+   */
+  resolvePercentSymbolShape(e) {
+    for (const n of z0(e)) {
+      const r = this.fontManager.getCodeShapeFromSymbolFonts(
+        n,
+        this.currentFontSize
+      );
+      if (r && this.shapeHasStrokeGeometry(r, e.char))
+        return this.currentFontSize > this._maxFontSize && (this._maxFontSize = this.currentFontSize), r;
+    }
+    return this.getCharShape(e.char);
+  }
+  /**
+   * Resolves the text shape for one character using primary font, big font, defaults, and symbol fonts.
+   *
+   * Updates {@link _maxFontSize} when the active font size exceeds the current line maximum.
+   * Falls back to the not-found glyph when no renderable geometry is available.
+   *
+   * @param char Character to resolve.
+   * @returns Renderable text shape and the font that supplied it.
+   */
+  resolveCharShape(e) {
+    var a;
+    const n = this.currentFont, r = (a = this.textStyle.bigFont) == null ? void 0 : a.trim();
+    let s, i = n;
+    if (this.canProbeFontOwnership() ? this.fontHasChar(n, e) && (s = this.fontManager.getCharShape(
+      e,
+      n,
+      this.currentFontSize
+    )) : s = this.fontManager.getCharShape(
+      e,
+      n,
+      this.currentFontSize
+    ), !s && r && (s = this.fontManager.getCharShape(
+      e,
+      r,
+      this.currentFontSize
+    ), s && (i = r)), s || (s = this.fontManager.getCharShapeFromDefaults(
+      e,
+      this.currentFontSize
+    ), s && (i = n)), !s) {
+      const o = e.codePointAt(0);
+      o != null && (s = this.fontManager.getCodeShapeFromSymbolFonts(
+        o,
+        this.currentFontSize
+      ), s && (i = n));
+    }
+    if (!s || !this.shapeHasStrokeGeometry(s, e)) {
+      if (s = this.fontManager.getNotFoundTextShape(this.currentFontSize), !s)
+        return;
+      i = n;
+    }
+    return this.currentFontSize > this._maxFontSize && (this._maxFontSize = this.currentFontSize), { shape: s, sourceFont: i };
+  }
+  canProbeFontOwnership() {
+    return typeof this.fontManager.getFontByName == "function";
+  }
+  fontHasChar(e, n) {
+    const r = this.fontManager.getFontByName;
+    if (typeof r != "function")
+      return !1;
+    const s = r.call(this.fontManager, e, !1);
+    return (s == null ? void 0 : s.hasChar(n)) ?? !1;
+  }
+  /**
+   * Returns the renderable shape for one character, discarding font provenance metadata.
+   *
+   * @param char Character to resolve.
+   * @returns Renderable text shape, or `undefined` when resolution fails entirely.
+   */
+  getCharShape(e) {
+    var n;
+    return (n = this.resolveCharShape(e)) == null ? void 0 : n.shape;
+  }
+  /**
+   * Finalizes the current visual line and starts the next one.
+   *
+   * Records layout metadata, resets horizontal pen state, updates vertical offset,
+   * and reapplies paragraph alignment to objects on the completed line.
+   *
+   * @param collectBreakIndex When `true`, records a char index for automatic wrapping.
+   */
+  advanceToNextLine(e = !0) {
+    e && this.recordVisualLineBreak(), this.captureCurrentLineAdvance(), this.recordCurrentLineLayout(), this._hOffset = 0, this._lineHasRenderableChar ? this._pendingEmptyLineFontSizeAdjust = void 0 : this._pendingEmptyLineFontSizeAdjust = this.currentFontSize, this.flowDirection == Ge.BOTTOM_TO_TOP ? this._vOffset += this.currentLineHeight : this._vOffset -= this.currentLineHeight, this._lineCount++, this.processAlignment(), this._currentLineObjects = [], this._lineCount == 2 ? this._totalHeight = this.currentMaxFontSize : this._totalHeight = this._totalHeight + this.currentLineHeight, this._maxFontSize = 0, this._lineHasRenderableChar = !1;
+  }
+  /**
+   * Updates {@link _maxLineAdvance} from the current line's horizontal pen position.
+   */
+  captureCurrentLineAdvance() {
+    Number.isFinite(this._hOffset) && (this._maxLineAdvance = Math.max(this._maxLineAdvance, this._hOffset));
+  }
+  /**
+   * Counts logical characters represented by pending char boxes for break-index accounting.
+   *
+   * Stack char boxes collapse numerator, divider, and denominator into one logical token.
+   *
+   * @param meshCharBoxes Pending mesh char boxes.
+   * @param lineCharBoxes Pending line char boxes.
+   * @param charBoxType Classification of the geometry group being flushed.
+   * @returns Number of logical characters contributed by the pending boxes.
+   */
+  countFinalCharBoxes(e, n, r) {
+    const s = [...e, ...n].filter(
+      (f) => f.char !== Tn
+    );
+    if (r !== ue.STACK)
+      return s.length;
+    const i = (f) => f.type === ue.CHAR && f.char.trim().length === 0, a = (f) => f.type === ue.CHAR && f.char.trim().length > 0, o = s.findIndex(a);
+    if (o < 0) return s.filter(i).length;
+    let c = -1;
+    for (let f = s.length - 1; f >= 0; f--)
+      if (a(s[f])) {
+        c = f;
+        break;
+      }
+    const l = s.slice(0, o).filter(i), u = s.slice(c + 1).filter(i);
+    return l.length + 1 + u.length;
+  }
+  /**
+   * Corrects vertical offset when the first glyph on a line uses a different font size
+   * than the empty line that preceded it.
+   */
+  applyPendingEmptyLineYAdjust() {
+    if (this._pendingEmptyLineFontSizeAdjust === void 0) return;
+    const e = this.currentFontSize - this._pendingEmptyLineFontSizeAdjust;
+    e !== 0 && (this.flowDirection == Ge.BOTTOM_TO_TOP ? this._vOffset += e : this._vOffset -= e), this._pendingEmptyLineFontSizeAdjust = void 0;
+  }
+  /**
+   * Chooses whether subsequent char boxes should attach to mesh or line geometry owners.
+   *
+   * @param meshCharBoxes Mesh char boxes already collected on the current line.
+   * @param lineCharBoxes Line char boxes already collected on the current line.
+   * @returns Target geometry family for the next char box.
+   */
+  resolveCharBoxTarget(e, n) {
+    return this._lastCharBoxTarget ? this._lastCharBoxTarget : e.length > 0 && n.length === 0 ? "mesh" : n.length > 0 && e.length === 0 ? "line" : this.fontManager.getFontType(this.currentFont) === "mesh" ? "mesh" : "line";
+  }
+  /**
+   * Applies translation on the specified buffer geometries according to text alignment setting.
+   *
+   * Translates both geometry vertices and attached char boxes on the current visual line.
+   */
+  processAlignment() {
+    const e = [];
+    if (this.currentLineObjects.forEach(
+      (o) => o.traverse((c) => {
+        "geometry" in c && e.push({
+          geometry: c.geometry,
+          owner: c
+        });
+      })
+    ), e.length == 0) return;
+    let n;
+    if (e.forEach((o, c) => {
+      o.geometry.boundingBox || o.geometry.computeBoundingBox(), c === 0 ? n = o.geometry.boundingBox : n.union(o.geometry.boundingBox);
+    }), !n) return;
+    const r = n, s = r.getSize(W0), i = (o, c) => {
+      var u, f;
+      const l = (f = (u = o.userData) == null ? void 0 : u.layout) == null ? void 0 : f.chars;
+      if (l && l.length > 0) {
+        const h = new I.Vector3(c, 0, 0);
+        l.forEach((p) => {
+          var y;
+          return (y = p.box) == null ? void 0 : y.translate(h);
+        });
+      }
+    }, a = () => {
+      const o = Number.isFinite(this.maxLineWidth) ? this._currentLeftMargin - r.min.x : this._currentLeftMargin, c = /* @__PURE__ */ new Set();
+      e.forEach((l) => {
+        l.geometry.translate(o, 0, 0), c.has(l.owner) || (i(l.owner, o), c.add(l.owner));
+      });
+    };
+    switch (this.currentHorizontalAlignment) {
+      case oe.LEFT:
+      case oe.JUSTIFIED: {
+        a();
+        break;
+      }
+      case oe.CENTER: {
+        if (!Number.isFinite(this.maxLineWidth)) {
+          a();
+          break;
+        }
+        const o = this._currentLeftMargin + (this.maxLineWidth - s.x) / 2 - r.min.x, c = /* @__PURE__ */ new Set();
+        e.forEach((l) => {
+          l.geometry.translate(o, 0, 0), c.has(l.owner) || (i(l.owner, o), c.add(l.owner));
+        });
+        break;
+      }
+      case oe.RIGHT: {
+        if (!Number.isFinite(this.maxLineWidth)) {
+          a();
+          break;
+        }
+        const o = this._currentLeftMargin + this.maxLineWidth - s.x - r.min.x, c = /* @__PURE__ */ new Set();
+        e.forEach((l) => {
+          l.geometry.translate(o, 0, 0), c.has(l.owner) || (i(l.owner, o), c.add(l.owner));
+        });
+        break;
+      }
+      case oe.DISTRIBUTED: {
+        if (!Number.isFinite(this.maxLineWidth)) {
+          a();
+          break;
+        }
+        const o = e.length > 1 ? (this.maxLineWidth - s.x) / (e.length - 1) : 0, c = /* @__PURE__ */ new Set();
+        e.forEach((l, u) => {
+          const f = o * u + (this._currentLeftMargin - r.min.x);
+          l.geometry.translate(f, 0, 0), c.has(l.owner) || (i(l.owner, f), c.add(l.owner));
+        });
+        break;
+      }
+    }
+  }
+  /**
+   * Resolves horizontal advance for an ASCII space in the active font.
+   *
+   * AutoCAD uses each font's own space glyph metrics (SHX pen advance or TrueType
+   * horizontal advance). A fixed fraction of text height (e.g. 50% for SHX) is only
+   * a rough fallback when the font has no space definition.
+   *
+   * @param font Font family name.
+   * @param fontSize Font size in drawing units.
+   * @returns Horizontal advance width for one space character.
+   */
+  calculateBlankWidthForFont(e, n) {
+    const r = this.fontManager.getCharShape(" ", e, n);
+    return r && r.width > 0 ? r.width : this.fontManager.getFontType(e) === "shx" ? n * 0.5 : n * 0.3;
+  }
+  /**
+   * Converts pending mesh and line geometries into a styled THREE.js object.
+   *
+   * @param geometries Mesh (`ShapeGeometry`) primitives for the current style segment.
+   * @param lineGeometries Line primitives and decorations for the current style segment.
+   * @param meshCharBoxes Mesh char boxes to attach to the created object.
+   * @param lineCharBoxes Line char boxes to attach to the created object.
+   * @param charBoxType Char-box classification stored on the created object.
+   * @returns A mesh, line segments object, or small group containing both.
+   */
+  toThreeObject(e, n, r, s, i) {
+    const a = new I.Group(), o = this.getMaterialColorSettings(), c = this.styleManager.getMeshBasicMaterial(
+      o
+    ), l = this.styleManager.getLineBasicMaterial(
+      o
+    ), u = o.color.copy(), f = this._options.collectCharBoxes !== !1, h = e.filter((y) => y instanceof I.ShapeGeometry);
+    if (h.length > 0) {
+      const y = h.length > 1 ? Kp(h) : h[0], g = new I.Mesh(y, c);
+      g.userData.bboxIntersectionCheck = !0, g.userData.charBoxType = i, g.userData.mtextColor = u, f && r.length > 0 && (g.userData.layout = { chars: r.slice() }), a.add(g);
+    }
+    const p = [
+      ...this._lineBatchEntries,
+      ...n.map((y) => ({
+        geometry: y,
+        matrix: zi
+      })),
+      ...e.filter((y) => !(y instanceof I.ShapeGeometry)).map((y) => ({ geometry: y, matrix: zi }))
+    ];
+    if (p.length > 0) {
+      const y = Ct.mergeLineGeometries(p), g = new I.LineSegments(y, l);
+      g.userData.bboxIntersectionCheck = !0, g.userData.charBoxType = i, g.userData.mtextColor = u, f && s.length > 0 && (g.userData.layout = { chars: s.slice() }), a.add(g);
+    }
+    return a.children.length === 1 ? a.children[0] : a;
+  }
+  /**
+   * Multiplies the active font-size scale factor and recomputes line metrics.
+   *
+   * @param value Relative scale multiplier (for example `0.7` for superscript).
+   */
+  changeFontSizeScaleFactor(e) {
+    this._currentContext.fontSizeScaleFactor *= e, this.calcuateLineParams();
+  }
+  /**
+   * Sets an absolute font height override and recomputes line metrics.
+   *
+   * @param value Font height in drawing units.
+   */
+  changeFontHeight(e) {
+    this.calcuateLineParams(e);
+  }
+  /**
+   * Resolves the initial text color from entity color settings.
+   *
+   * @returns Base color as `0xRRGGBB`.
+   */
+  resolveBaseColor() {
+    return Kt(this._colorSettings);
+  }
+  /**
+   * Builds color settings for material creation from the current render context.
+   *
+   * @returns Color settings including the active inline color snapshot.
+   */
+  getMaterialColorSettings() {
+    return {
+      byLayerColor: this._colorSettings.byLayerColor,
+      byBlockColor: this._colorSettings.byBlockColor,
+      layer: this._colorSettings.layer,
+      color: this._currentContext.color.copy()
+    };
+  }
+}
+const V0 = [
+  [/%%koff/gi, "\\k"],
+  [/%%kon/gi, "\\K"],
+  [/%%ooff/gi, "\\o"],
+  [/%%oon/gi, "\\O"],
+  [/%%uoff/gi, "\\l"],
+  [/%%uon/gi, "\\L"]
+], q0 = /%%([kou])/gi;
+function j0(t) {
+  let e = t;
+  for (const [i, a] of V0)
+    e = e.replace(i, a);
+  let n = !1, r = !1, s = !1;
+  return e.replace(q0, (i, a) => {
+    switch (a.toLowerCase()) {
+      case "k":
+        return n = !n, n ? "\\K" : "\\k";
+      case "o":
+        return r = !r, r ? "\\O" : "\\o";
+      case "u":
+        return s = !s, s ? "\\L" : "\\l";
+      default:
+        return `%%${a}`;
+    }
+  });
+}
+const $t = /* @__PURE__ */ new I.Vector3(), nt = /* @__PURE__ */ new I.Vector3(), rt = /* @__PURE__ */ new I.Vector3(), $i = /* @__PURE__ */ new I.Vector3(1, 0, 0);
+class tn extends I.Object3D {
+  /**
+   * Extracts all unique font names used in an MText string.
+   * This function searches for font commands in the format \f{fontname}| or \f{fontname}; and returns a set of unique font names.
+   * Font names are converted to lowercase to ensure case-insensitive uniqueness.
+   *
+   * @param mtext - The MText string to analyze for font names
+   * @param removeExtension - Whether to remove font file extensions (e.g., .ttf, .shx) from font names. Defaults to false.
+   * @returns A Set containing all unique font names found in the MText string, converted to lowercase
+   * @example
+   * ```ts
+   * const mtext = "\\fArial.ttf|Hello\\fTimes New Roman.otf|World";
+   * const fonts = getFonts(mtext, true);
+   * // Returns: Set(2) { "arial", "times new roman" }
+   * ```
+   */
+  static getFonts(e, n = !1) {
+    return O0(e, n);
+  }
+  /**
+   * Creates a new instance of MText.
+   * @param text - The MText data containing text content and properties
+   * @param style - The text style configuration
+   * @param styleManager - The style manager instance
+   * @param fontManager - The font manager instance
+   * @param colorSettings - Color settings used to decided font color
+   */
+  constructor(e, n, r, s, i = Ie()) {
+    super(), this._style = n, this._styleManager = r, this._fontManager = s, this._colorSettings = {
+      byLayerColor: i.byLayerColor,
+      byBlockColor: i.byBlockColor,
+      layer: i.layer,
+      color: i.color.copy()
+    }, this._box = new I.Box3(), this._layoutData = void 0, this._mtextData = e, this._fontsInStyleLoaded = !1;
+  }
+  /**
+   * Gets the font manager instance associated with this MText object.
+   * @returns The FontManager instance
+   */
+  get fontManager() {
+    return this._fontManager;
+  }
+  /**
+   * Remove the current object from its parent and release geometry and material resource used
+   * by the current object.
+   */
+  dispose() {
+    this.disposeThreeObject(this);
+  }
+  /**
+   * Draw the MText object.
+   *
+   * With {@link FontManager.lazyFontLoading} and without awaiting fonts, this
+   * schedules downloads in the background and builds geometry immediately with
+   * current fallbacks — redraw after {@link FontManager.events.fontLoaded} if
+   * you need the final faces. Pass `{ awaitFonts: true }` or set
+   * {@link FontManager.awaitFontsBeforeDraw} to wait for referenced fonts first.
+   */
+  async asyncDraw(e) {
+    const n = Array.from(tn.getFonts(this._mtextData.text || "", !0));
+    if (!this._fontsInStyleLoaded) {
+      if (this._style.font) {
+        const i = this.getFontName(this._style.font);
+        i && n.push(i);
+      }
+      if (this._style.bigFont) {
+        const i = this.getFontName(this._style.bigFont);
+        i && n.push(i);
+      }
+      if (this._style.extendedFont) {
+        const i = this.getFontName(this._style.extendedFont);
+        i && n.push(i);
+      }
+    }
+    const r = (e == null ? void 0 : e.awaitFonts) ?? (!this._fontManager.lazyFontLoading || this._fontManager.awaitFontsBeforeDraw), s = r ? [.../* @__PURE__ */ new Set([...n, ...this._fontManager.getFontsToLoad()])] : n;
+    s.length > 0 && (this._fontManager.lazyFontLoading ? r ? await this._fontManager.requestFonts(s) : this._fontManager.requestFonts(s) : await this._fontManager.loadFontsByNames(s), n.length > 0 && (this._fontsInStyleLoaded = !0)), this.syncDraw();
+  }
+  /**
+   * Draw the MText object. This method assumes that fonts needed are loaded. If font needed
+   * not found, the default font will be used.
+   */
+  syncDraw() {
+    const e = this.loadMText(this._mtextData, this._style);
+    if (e) {
+      this._layoutData = void 0, this._box.makeEmpty();
+      const n = {
+        hasLine: !1,
+        minX: 1 / 0,
+        maxX: -1 / 0,
+        minY: 1 / 0,
+        maxY: -1 / 0,
+        minZ: 1 / 0,
+        maxZ: -1 / 0,
+        hasLogicalBounds: !1
+      };
+      this.updateBoxFromObject(e, n), n.hasLine && !n.hasLogicalBounds && (this.box.isEmpty() ? (this.box.min.set(n.minX, n.minY, n.minZ), this.box.max.set(n.maxX, n.maxY, n.maxZ)) : (this.box.min.y = Math.min(this.box.min.y, n.minY), this.box.max.y = Math.max(this.box.max.y, n.maxY))), this.add(e);
+    }
+  }
+  /**
+   * Gets the style manager instance associated with this MText object.
+   * @returns The StyleManager instance
+   */
+  get styleManager() {
+    return this._styleManager;
+  }
+  /**
+   * Gets the text style configuration for this MText object.
+   * @returns The TextStyle configuration
+   */
+  get textStyle() {
+    return this._style;
+  }
+  /**
+   * Gets or sets the bounding box of this MText object.
+   * The bounding box is calculated without considering the transformation matrix.
+   * To get the bounding box with transformation, call `applyMatrix4` on this box.
+   */
+  get box() {
+    return this._box;
+  }
+  set box(e) {
+    this._box.copy(e);
+  }
+  /** Creates text layout data for cursor/picking/debug usage on demand. */
+  createLayoutData() {
+    if (this._layoutData)
+      return this._layoutData;
+    const e = { lines: [], chars: [] };
+    return this.updateWorldMatrix(!0, !0), this.getLayout(this, e.chars, e.lines), this._layoutData = e, e;
+  }
+  /**
+   * Calculates intersections between a ray and this MText object.
+   * Overrides the base THREE.Object3D raycast method to use the text's bounding boxes.
+   * @param raycaster - The raycaster to use for intersection testing
+   * @param intersects - Array to store intersection results
+   */
+  raycast(e, n) {
+    this.createLayoutData().chars.forEach((s) => {
+      if (s.box && e.ray.intersectBox(s.box, $t)) {
+        const i = e.ray.origin.distanceTo($t);
+        n.push({
+          distance: i,
+          point: $t.clone(),
+          object: this,
+          face: null,
+          faceIndex: void 0,
+          uv: void 0
+        });
+      }
+    });
+  }
+  /**
+   * Loads and processes MText data to create a Three.js object.
+   * @param mtextData - The MText data to process
+   * @param style - The text style configuration
+   * @returns The created Three.js object, or undefined if creation fails
+   */
+  loadMText(e, n) {
+    const { object: r, height: s } = this.createMTextGroup(
+      e,
+      n
+    );
+    if (r)
+      return this.finalizePlacement(r, e, s);
+  }
+  /**
+   * Builds and places one SHX shape glyph.
+   */
+  loadShape(e, n) {
+    const { object: r, height: s } = this.createShapeGroup(
+      e,
+      n
+    );
+    if (!r)
+      return;
+    const i = {
+      text: "",
+      height: e.size,
+      width: 1 / 0,
+      widthFactor: e.widthFactor ?? n.widthFactor ?? 1,
+      position: e.position,
+      rotation: e.rotation,
+      directionVector: e.directionVector,
+      drawingDirection: Ge.BOTTOM_TO_TOP,
+      collectCharBoxes: !1
+    };
+    return this.finalizePlacement(
+      r,
+      i,
+      s,
+      { shxFontType: this._fontManager.getShxFontType(n.font) }
+    );
+  }
+  /**
+   * 
+   * @param options.shxFontType The type of SHX font.
+   */
+  finalizePlacement(e, n, r, s) {
+    var p;
+    let i = Hi(n);
+    e.updateWorldMatrix(!0, !0);
+    const a = new I.Box3().setFromObject(e);
+    if (!Number.isFinite(i)) {
+      const y = (p = e.userData) == null ? void 0 : p.logicalAdvanceWidth, g = typeof y == "number" && y > 0 ? y : a.max.x - a.min.x;
+      i = Number.isFinite(g) && g > 0 ? g : 0;
+    }
+    const o = this.measureAnchorMetrics(
+      e,
+      i,
+      r,
+      a,
+      n.drawingDirection
+    );
+    let c = { x: 0, y: 0 };
+    (s == null ? void 0 : s.shxFontType) === J.SHAPES ? c = { x: 0, y: 0 } : c = this.calculateAnchorPoint(o, n.attachmentPoint), e.userData.logicalBounds = {
+      minX: o.minX + c.x,
+      maxX: o.maxX + c.x,
+      minY: o.minY + c.y,
+      maxY: o.maxY + c.y
+    };
+    const l = (y) => {
+      if (!y || y.length === 0) return;
+      const g = new I.Vector3(c.x, c.y, 0), b = (v) => {
+        var w;
+        (w = v.box) == null || w.translate(g), v.children && v.children.length > 0 && v.children.forEach(b);
+      };
+      y.forEach(b);
+    }, u = (y) => {
+      !y || y.length === 0 || y.forEach((g) => {
+        g.y += c.y;
+      });
+    };
+    e.traverse((y) => {
+      var g, b, v;
+      if ("geometry" in y) {
+        const w = y.geometry;
+        Number.isFinite(c.x) && Number.isFinite(c.y) && w.translate(c.x, c.y, 0);
+      }
+      l(
+        (b = (g = y.userData) == null ? void 0 : g.layout) == null ? void 0 : b.chars
+      ), u(
+        (v = y.userData) == null ? void 0 : v.lineLayouts
+      ), y.layers.enableAll();
+    });
+    let f = n.rotation || 0;
+    if (n.directionVector && (s == null ? void 0 : s.shxFontType) !== J.SHAPES) {
+      const y = n.directionVector, g = new I.Vector3(y.x, y.y, y.z), b = g.clone().cross($i), v = $i.angleTo(g);
+      f = b.z > 0 ? -v : v;
+    }
+    const h = n.position;
+    return e.position.set((h == null ? void 0 : h.x) ?? 0, (h == null ? void 0 : h.y) ?? 0, (h == null ? void 0 : h.z) ?? 0), e.quaternion.setFromAxisAngle(new I.Vector3(0, 0, 1), f), e.scale.set(1, 1, 1), e.updateMatrix(), e.updateMatrixWorld(!0), e;
+  }
+  createShapeGroup(e, n) {
+    const r = e.size || n.fixedTextHeight || 0, s = e.widthFactor ?? n.widthFactor ?? 1, i = {
+      fontSize: r,
+      widthFactor: s,
+      lineSpaceFactor: Ni,
+      horizontalAlignment: oe.LEFT,
+      maxWidth: 0,
+      flowDirection: Ge.BOTTOM_TO_TOP,
+      byBlockColor: this._colorSettings.byBlockColor,
+      byLayerColor: this._colorSettings.byLayerColor,
+      removeFontExtension: !0,
+      collectCharBoxes: !1
+    }, a = new ji(
+      n,
+      this._colorSettings,
+      this._styleManager,
+      this._fontManager,
+      i
+    );
+    return {
+      object: a.processShapeGlyph(
+        e.name,
+        e.shapeNumber
+      ),
+      height: a.totalHeight
+    };
+  }
+  /**
+   * Creates a group of text elements from MText data.
+   * @param mtextData - The MText data to process
+   * @param style - The text style configuration
+   * @returns An object containing the created Three.js object and its height
+   */
+  createMTextGroup(e, n) {
+    if (n && n.font && n.font.endsWith(".shx")) {
+      const v = `${n.font}_${n.name}`;
+      this.styleManager.unsupportedTextStyles[v] || (this.styleManager.unsupportedTextStyles[v] = 0), this.styleManager.unsupportedTextStyles[v]++;
+    }
+    const r = Hi(e) || 0, s = Number.isFinite(r) && r > 0;
+    let i = oe.LEFT;
+    s && e.attachmentPoint && ([
+      Z.TopLeft,
+      Z.MiddleLeft,
+      Z.BottomLeft,
+      Z.BaselineLeft
+    ].includes(e.attachmentPoint) ? i = oe.LEFT : [
+      Z.TopCenter,
+      Z.MiddleCenter,
+      Z.BottomCenter,
+      Z.BaselineCenter
+    ].includes(e.attachmentPoint) ? i = oe.CENTER : [
+      Z.TopRight,
+      Z.MiddleRight,
+      Z.BottomRight,
+      Z.BaselineRight
+    ].includes(e.attachmentPoint) && (i = oe.RIGHT));
+    let a = dt.BOTTOM;
+    e.attachmentPoint && ([
+      Z.TopLeft,
+      Z.TopCenter,
+      Z.TopRight
+    ].includes(e.attachmentPoint) ? a = dt.TOP : [
+      Z.MiddleLeft,
+      Z.MiddleCenter,
+      Z.MiddleRight
+    ].includes(e.attachmentPoint) ? a = dt.MIDDLE : a = dt.BOTTOM);
+    const o = e.height || n.fixedTextHeight || 0, c = e.widthFactor || n.widthFactor || 1, l = e.lineSpaceFactor ?? Ni, u = e.drawingDirection ?? Ge.LEFT_TO_RIGHT, f = {
+      fontSize: o,
+      widthFactor: c,
+      lineSpaceFactor: l,
+      horizontalAlignment: i,
+      maxWidth: r,
+      flowDirection: u,
+      byBlockColor: this._colorSettings.byBlockColor,
+      byLayerColor: this._colorSettings.byLayerColor,
+      removeFontExtension: !0,
+      collectCharBoxes: e.collectCharBoxes ?? !0
+    }, h = new ln();
+    h.fontFace.family = n.font, h.capHeight = {
+      value: o,
+      isRelative: !1
+    }, h.widthFactor = {
+      value: c,
+      isRelative: !1
+    }, h.align = a, h.paragraph.align = i;
+    const p = new ji(
+      n,
+      this._colorSettings,
+      this.styleManager,
+      this.fontManager,
+      f
+    ), g = new I0(j0(e.text), h, {
+      resetParagraphParameters: !0,
+      yieldPropertyCommands: !0,
+      yieldPercentSymbols: !0
+    }).parse();
+    return {
+      object: p.processText(g),
+      height: p.totalHeight
+    };
+  }
+  /**
+   * Measures the logical text frame used by attachment-point anchoring.
+   *
+   * @remarks
+   * Line-layout boxes include inter-line leading that is useful for hit testing, but
+   * that leading must not become extra padding above the first rendered line when
+   * aligning to top/middle/bottom attachment points. This method therefore prefers the
+   * visible geometry height from `geometryBox` when it is non-empty, and only falls
+   * back to `layoutHeight` when there are no measurable glyphs (e.g. empty or
+   * whitespace-only runs).
+   *
+   * @param object - Root group produced by layout; traversed for {@link LineLayout}
+   *   metadata to locate the first line baseline.
+   * @param width - Column width used for horizontal anchoring when finite and
+   *   positive; if not, horizontal extents are taken from `geometryBox`.
+   * @param layoutHeight - Total laid-out height from {@link MTextProcessor} when
+   *   geometry height is unavailable or zero.
+   * @param geometryBox - Axis-aligned bounds of rendered primitives under `object`,
+   *   typically from {@link THREE.Box3.setFromObject}.
+   * @param flowDirection - Optional flow; when {@link MTextFlowDirection.BOTTOM_TO_TOP},
+   *   the vertical frame is anchored from the geometry minimum upward.
+   * @returns Metrics consumed by {@link MText.calculateAnchorPoint}.
+   */
+  measureAnchorMetrics(e, n, r, s, i) {
+    const a = {
+      hasLine: !1,
+      minY: 1 / 0,
+      maxY: -1 / 0,
+      baselineY: 0
+    };
+    let o = !1;
+    e.traverse((g) => {
+      var v;
+      const b = (v = g.userData) == null ? void 0 : v.lineLayouts;
+      !b || b.length === 0 || b.forEach((w) => {
+        const C = w.y - w.height / 2, T = w.y + w.height / 2;
+        a.hasLine = !0, a.minY = Math.min(a.minY, C), a.maxY = Math.max(a.maxY, T), o || (a.baselineY = C, o = !0);
+      });
+    });
+    const c = s.isEmpty() ? 0 : s.max.y - s.min.y, l = Number.isFinite(c) && c > 0 ? c : Number.isFinite(r) && r > 0 ? r : 0;
+    let u = 0, f = Number.isFinite(n) && n > 0 ? n : 0;
+    f <= u && !s.isEmpty() && (u = s.min.x, f = s.max.x);
+    let h = 0, p = 0;
+    i == Ge.BOTTOM_TO_TOP ? (h = s.isEmpty() ? 0 : s.min.y, p = h + l) : (p = s.isEmpty() ? 0 : s.max.y, h = p - l);
+    const y = a.hasLine ? a.baselineY : h;
+    return { minX: u, maxX: f, minY: h, maxY: p, baselineY: y };
+  }
+  /**
+   * Computes the 2D translation that maps the logical frame described by `metrics`
+   * so that the chosen AutoCAD-style attachment point coincides with the insertion
+   * origin (before rotation/insertion-point transforms applied later in
+   * {@link MText.loadMText}).
+   *
+   * @remarks
+   * The returned vector is **added** to vertex positions and char-box metadata via
+   * `geometry.translate` / `CharBox.box.translate` / line `y` offsets. For `undefined`
+   * attachment, behavior matches {@link MTextAttachmentPoint.TopLeft}.
+   *
+   * @param metrics - Pre-anchoring frame from {@link MText.measureAnchorMetrics}.
+   * @param attachmentPoint - DWG attachment constant; determines which corner, edge
+   *   center, or baseline of the frame is pinned to `(0,0)` in anchored space.
+   * @returns Translation `(x, y)` in drawing units applied uniformly to the laid-out
+   *   group and its layout sidecars.
+   */
+  calculateAnchorPoint(e, n) {
+    const r = (e.minX + e.maxX) / 2, s = (e.minY + e.maxY) / 2;
+    let i = 0, a = 0;
+    switch (n) {
+      case void 0:
+      case Z.TopLeft:
+        i = -e.minX, a = -e.maxY;
+        break;
+      case Z.TopCenter:
+        i = -r, a = -e.maxY;
+        break;
+      case Z.TopRight:
+        i = -e.maxX, a = -e.maxY;
+        break;
+      case Z.MiddleLeft:
+        i = -e.minX, a = -s;
+        break;
+      case Z.MiddleCenter:
+        i = -r, a = -s;
+        break;
+      case Z.MiddleRight:
+        i = -e.maxX, a = -s;
+        break;
+      case Z.BottomLeft:
+        i = -e.minX, a = -e.minY;
+        break;
+      case Z.BottomCenter:
+        i = -r, a = -e.minY;
+        break;
+      case Z.BottomRight:
+        i = -e.maxX, a = -e.minY;
+        break;
+      case Z.BaselineLeft:
+        i = -e.minX, a = -e.baselineY;
+        break;
+      case Z.BaselineCenter:
+        i = -r, a = -e.baselineY;
+        break;
+      case Z.BaselineRight:
+        i = -e.maxX, a = -e.baselineY;
+        break;
+    }
+    return { x: i, y: a };
+  }
+  /**
+   * Walks a laid-out MText subgraph and accumulates world-space character hit boxes and
+   * soft line rectangles for {@link MText.createLayoutData} (raycasting, cursors, debug).
+   *
+   * @remarks
+   * - When `userData.layout.chars` is present, entries are transformed with
+   *   {@link buildCharBoxesFromObject} and appended to `chars`, then recursion stops
+   *   for that branch (char metadata is authoritative).
+   * - When only mesh/line geometry exists, a single synthetic {@link CharBox} wrapping
+   *   the geometry AABB may be emitted.
+   * - `userData.lineLayouts` rows are converted to world-space center `y` and height.
+   *
+   * @param object - Node to traverse (typically the root group from {@link MText.loadMText}).
+   * @param chars - Output collection; receives merged {@link CharBox} entries in world space.
+   * @param lines - Output collection; receives {@link LineLayout} summaries per line break.
+   */
+  getLayout(e, n, r) {
+    var o, c, l, u, f;
+    e.updateWorldMatrix(!1, !1);
+    const s = (c = (o = e.userData) == null ? void 0 : o.layout) == null ? void 0 : c.chars, i = (l = e.userData) == null ? void 0 : l.lineLayouts;
+    if (i && i.length > 0 && i.forEach((h) => {
+      $t.set(0, h.y, 0).applyMatrix4(e.matrixWorld), nt.set(0, h.y - h.height / 2, 0).applyMatrix4(e.matrixWorld), rt.set(0, h.y + h.height / 2, 0).applyMatrix4(e.matrixWorld), r.push({
+        y: $t.y,
+        height: Math.abs(rt.y - nt.y),
+        breakIndex: h.breakIndex
+      });
+    }), s && s.length > 0) {
+      const h = (u = e.userData) == null ? void 0 : u.charBoxType, p = Hr(
+        s,
+        e.matrixWorld,
+        h
+      );
+      n.push(...p);
+      return;
+    }
+    if (e instanceof I.Line || e instanceof I.Mesh) {
+      const h = e.geometry;
+      if (!((f = h.userData) != null && f.isDecoration)) {
+        h.boundingBox === null && h.computeBoundingBox();
+        const p = new I.Box3().copy(h.boundingBox);
+        p.applyMatrix4(e.matrixWorld), n.push({
+          type: ue.CHAR,
+          box: p,
+          char: "",
+          children: []
+        });
+      }
+    }
+    const a = e.children;
+    for (let h = 0, p = a.length; h < p; h++)
+      this.getLayout(a[h], n, r);
+  }
+  /**
+   * Depth-first union of this MText’s {@link MText.box} from layout metadata and mesh
+   * geometry, while optionally tracking coarse line AABB in `lineBounds`.
+   *
+   * @remarks
+   * Priority order per node:
+   * 1. If `userData.logicalBounds` exists (set in {@link MText.loadMText}), union that
+   *    axis-aligned rectangle transformed by `matrixWorld` — this reflects anchored
+   *    logical extents even when individual glyphs are expensive to union.
+   * 2. Else if `userData.lineLayouts` exists, expand `lineBounds` from the world-space
+   *    top/bottom of each line strip (used as a fallback when no logical bounds were
+   *    written, e.g. legacy paths).
+   * 3. Else if `userData.layout.chars` exists, union each transformed char AABB.
+   * 4. Else for mesh/line primitives, union non-decoration geometry bounds.
+   * 5. Always recurse into children.
+   *
+   * @param object - Current scene graph node.
+   * @param lineBounds - Mutable accumulator: `hasLine`/`min*`/`max*` track the union of
+   *   line-layout strips in world space; `hasLogicalBounds` flips true when any child
+   *   contributed `logicalBounds` so {@link MText.syncDraw} can avoid double-counting
+   *   vertical extent from line strips alone.
+   */
+  updateBoxFromObject(e, n) {
+    var o, c, l, u, f, h;
+    e.updateWorldMatrix(!1, !1);
+    const r = (o = e.userData) == null ? void 0 : o.logicalBounds;
+    if (r) {
+      n.hasLogicalBounds = !0;
+      const p = new I.Box3(
+        new I.Vector3(r.minX, r.minY, 0),
+        new I.Vector3(r.maxX, r.maxY, 0)
+      );
+      p.applyMatrix4(e.matrixWorld), this.box.union(p);
+    }
+    const s = (c = e.userData) == null ? void 0 : c.lineLayouts;
+    s && s.length > 0 && s.forEach((p) => {
+      nt.set(0, p.y - p.height / 2, 0).applyMatrix4(e.matrixWorld), rt.set(0, p.y + p.height / 2, 0).applyMatrix4(e.matrixWorld), n.hasLine = !0, n.minX = Math.min(n.minX, nt.x, rt.x), n.maxX = Math.max(n.maxX, nt.x, rt.x), n.minY = Math.min(n.minY, nt.y, rt.y), n.maxY = Math.max(n.maxY, nt.y, rt.y), n.minZ = Math.min(n.minZ, nt.z, rt.z), n.maxZ = Math.max(n.maxZ, nt.z, rt.z);
+    });
+    const i = (u = (l = e.userData) == null ? void 0 : l.layout) == null ? void 0 : u.chars;
+    if (i && i.length > 0) {
+      const p = (f = e.userData) == null ? void 0 : f.charBoxType;
+      Hr(
+        i,
+        e.matrixWorld,
+        p
+      ).forEach((g) => {
+        g.box && this.box.union(g.box);
+      });
+      return;
+    }
+    if (e instanceof I.Line || e instanceof I.Mesh) {
+      const p = e.geometry;
+      if (!((h = p.userData) != null && h.isDecoration)) {
+        p.boundingBox === null && p.computeBoundingBox();
+        const y = new I.Box3().copy(p.boundingBox);
+        y.applyMatrix4(e.matrixWorld), this.box.union(y);
+      }
+    }
+    const a = e.children;
+    for (let p = 0, y = a.length; p < y; p++)
+      this.updateBoxFromObject(a[p], n);
+  }
+  /**
+   * Remove the specified object from its parent and release geometry and material resource used
+   * by the object.
+   * @param obj - Input object to dispose
+   */
+  disposeThreeObject(e) {
+    e.traverse((n) => {
+      if (n.geometry && typeof n.geometry.dispose == "function")
+        try {
+          n.geometry.dispose();
+        } catch {
+        }
+      if (n.material) {
+        const r = (s) => {
+          if (s && typeof s.dispose == "function")
+            try {
+              s.dispose();
+            } catch {
+            }
+        };
+        Array.isArray(n.material) ? n.material.forEach(r) : r(n.material);
+      }
+    });
+  }
+  /**
+   * Normalizes a font file reference to the lowercase stem used by
+   * {@link FontManager.loadFontsByNames} (strip extension).
+   *
+   * @param fontFileName - Style font path such as `arial.ttf` or extension-less name.
+   * @returns Lowercase name without the last extension segment, or `undefined` if empty.
+   */
+  getFontName(e) {
+    if (e) {
+      const n = e.lastIndexOf(".");
+      return n >= 0 ? e.substring(0, n).toLowerCase() : e.toLowerCase();
+    }
+  }
+}
+class Yi extends I.Object3D {
+  constructor(e, n, r, s, i = Ie()) {
+    super(), this._shapeData = e, this._style = n, this._styleManager = r, this._fontManager = s, this._colorSettings = {
+      byLayerColor: i.byLayerColor,
+      byBlockColor: i.byBlockColor,
+      layer: i.layer,
+      color: i.color.copy()
+    }, this._box = new I.Box3(), this._fontsInStyleLoaded = !1;
+  }
+  get box() {
+    return this._box;
+  }
+  get styleManager() {
+    return this._styleManager;
+  }
+  get textStyle() {
+    return this._style;
+  }
+  createLayoutData() {
+    return { lines: [], chars: [] };
+  }
+  async asyncDraw(e) {
+    const n = [];
+    if (!this._fontsInStyleLoaded)
+      for (const i of ["font", "bigFont", "extendedFont"]) {
+        const a = this.getFontName(this._style[i]);
+        a && n.push(a);
+      }
+    const r = (e == null ? void 0 : e.awaitFonts) ?? (!this._fontManager.lazyFontLoading || this._fontManager.awaitFontsBeforeDraw), s = r ? [.../* @__PURE__ */ new Set([...n, ...this._fontManager.getFontsToLoad()])] : n;
+    s.length > 0 && (this._fontManager.lazyFontLoading ? r ? await this._fontManager.requestFonts(s) : this._fontManager.requestFonts(s) : await this._fontManager.loadFontsByNames(s), n.length > 0 && (this._fontsInStyleLoaded = !0)), this.syncDraw();
+  }
+  syncDraw() {
+    const n = new tn(
+      this.createPlacementData(),
+      this._style,
+      this._styleManager,
+      this._fontManager,
+      this._colorSettings
+    ).loadShape(this._shapeData, this._style);
+    if (super.clear(), !n) {
+      this._box.makeEmpty();
+      return;
+    }
+    this.add(n), this._box.setFromObject(n);
+  }
+  createPlacementData() {
+    return {
+      text: "",
+      height: this._shapeData.size,
+      width: 1 / 0,
+      widthFactor: this._shapeData.widthFactor ?? this._style.widthFactor ?? 1,
+      position: this._shapeData.position,
+      rotation: this._shapeData.rotation,
+      directionVector: this._shapeData.directionVector,
+      drawingDirection: Ge.BOTTOM_TO_TOP,
+      collectCharBoxes: !1
+    };
+  }
+  getFontName(e) {
+    if (!e) return;
+    const n = e.trim().toLowerCase();
+    if (n)
+      return n.endsWith(".shx") ? n.slice(0, -4) : n;
+  }
+}
+class Eo {
+  constructor() {
+    this.lineBasicMaterials = {}, this.meshBasicMaterials = {}, this.unsupportedTextStyles = {};
+  }
+  getMeshBasicMaterial(e) {
+    const n = this.buildKey(e);
+    if (!this.meshBasicMaterials[n]) {
+      const r = Kt(e);
+      this.meshBasicMaterials[n] = new I.MeshBasicMaterial({
+        color: r
+      });
+    }
+    return this.meshBasicMaterials[n];
+  }
+  getLineBasicMaterial(e) {
+    const n = this.buildKey(e);
+    if (!this.lineBasicMaterials[n]) {
+      const r = Kt(e);
+      this.lineBasicMaterials[n] = new I.LineBasicMaterial({
+        color: r
+      });
+    }
+    return this.lineBasicMaterials[n];
+  }
+  /**
+   * Returns occupancy of the material caches (counts + heuristic bytes).
+   */
+  getMaterialStats() {
+    const e = Object.keys(this.meshBasicMaterials).length, n = Object.keys(this.lineBasicMaterials).length;
+    return {
+      meshCount: e,
+      lineCount: n,
+      estimatedBytes: Ko(e, n)
+    };
+  }
+  /**
+   * Builds a stable material key from traits.
+   * Key differs for shader vs basic, ByLayer vs ByEntity.
+   */
+  buildKey(e) {
+    const n = e.color.aci === 256, r = Kt(e);
+    return n && e.layer ? `layer_${e.layer}_${r}` : `entity_${r}`;
+  }
+}
+const Xi = /* @__PURE__ */ new I.Vector3(), Ki = /* @__PURE__ */ new I.Vector3(), Zi = /* @__PURE__ */ new I.Vector3();
+class $0 {
+  constructor(e = {}) {
+    this.workers = [], this.inFlightPerWorker = [], this.pendingRequests = /* @__PURE__ */ new Map(), this.requestId = 0, this.readyPromise = null, this.poolSyncedFonts = /* @__PURE__ */ new Set(), this.poolFontSyncInFlight = /* @__PURE__ */ new Map(), this.poolFontLoadedDispatched = /* @__PURE__ */ new Set(), this.poolSize = e.poolSize ?? Math.max(
+      1,
+      navigator.hardwareConcurrency ? Math.min(4, navigator.hardwareConcurrency) : 2
+    ), this.defaultStyleManager = new Eo();
+    const n = e.workerUrl ?? "./assets/mtext-renderer-worker.js";
+    this.timeOut = e.timeOut ?? 12e4;
+    for (let r = 0; r < this.poolSize; r++) {
+      const s = new Worker(n, {
+        type: "module"
+      });
+      this.attachWorkerHandlers(s, r), this.workers.push(s), this.inFlightPerWorker.push(0);
+    }
+    this.isInitialized = !1;
+  }
+  /**
+   * Used to manage materials used by texts
+   */
+  get styleManager() {
+    return this.defaultStyleManager;
+  }
+  set styleManager(e) {
+    this.defaultStyleManager = e;
+  }
+  async ensureInitialized() {
+    this.isInitialized || (ee.instance.lazyFontLoading || await this.loadFonts(ee.instance.getFontsToLoad()), this.isInitialized = !0);
+  }
+  /**
+   * Handles messages coming from any worker.
+   */
+  handleWorkerMessage(e, n) {
+    var c;
+    if (e.type === "fontLoaded") {
+      const l = (c = e.data) == null ? void 0 : c.fontName;
+      l && this.syncFontToWorkerPool(l).then((u) => {
+        u && ee.instance.events.fontLoaded.dispatch({ fontName: l });
+      }).catch((u) => {
+        console.warn(
+          `Failed to sync lazy-loaded font "${l}" across worker pool:`,
+          u
+        );
+      });
+      return;
+    }
+    const { id: r, success: s, data: i, error: a } = e, o = this.pendingRequests.get(r);
+    o ? (this.pendingRequests.delete(r), this.inFlightPerWorker[n] = Math.max(
+      0,
+      this.inFlightPerWorker[n] - 1
+    ), s ? o.resolve(i) : o.reject(new Error(a || "Unknown worker error"))) : console.warn(`No pending request found for worker response id=${r}`);
+  }
+  /**
+   * Ensures every worker has `fontName`, then returns whether the main thread
+   * should emit {@link FontManager.events.fontLoaded} for this name.
+   */
+  syncFontToWorkerPool(e) {
+    const n = e.toLowerCase();
+    if (!n || this.workers.length === 0 || this.poolFontLoadedDispatched.has(n))
+      return Promise.resolve(!1);
+    const r = this.poolFontSyncInFlight.get(n), s = r ?? (async () => {
+      this.poolSyncedFonts.has(n) || (await this.sendMessageToAllWorkers({
+        type: "loadFonts",
+        data: { fonts: [e] }
+      })).every(
+        (o) => {
+          var c;
+          return (c = o == null ? void 0 : o.loaded) == null ? void 0 : c.some((l) => l.toLowerCase() === n);
+        }
+      ) && this.poolSyncedFonts.add(n);
+    })().finally(() => {
+      this.poolFontSyncInFlight.delete(n);
+    });
+    return r || this.poolFontSyncInFlight.set(n, s), s.then(() => !this.poolSyncedFonts.has(n) || this.poolFontLoadedDispatched.has(n) ? !1 : (this.poolFontLoadedDispatched.add(n), !0));
+  }
+  /**
+   * Attaches message and error handlers to a worker.
+   */
+  attachWorkerHandlers(e, n) {
+    e.onmessage = (r) => {
+      this.handleWorkerMessage(r.data, n);
+    }, e.onerror = (r) => {
+      console.error(`Worker ${n} error:`, r);
+      const s = [];
+      this.pendingRequests.forEach((i, a) => {
+        i.workerIndex === n && s.push(a);
+      }), s.forEach((i) => {
+        const a = this.pendingRequests.get(i);
+        a && (a.reject(new Error("Worker error occurred")), this.pendingRequests.delete(i));
+      }), this.inFlightPerWorker[n] = 0;
+    };
+  }
+  pickLeastLoadedWorker() {
+    let e = 0, n = this.inFlightPerWorker[0] ?? 0;
+    for (let r = 1; r < this.inFlightPerWorker.length; r++) {
+      const s = this.inFlightPerWorker[r] ?? 0;
+      s < n && (n = s, e = r);
+    }
+    return e;
+  }
+  sendMessageToAllWorkers(e) {
+    return Promise.all(
+      this.workers.map(
+        (n, r) => this.sendMessageToOneWorker(e, r)
+      )
+    );
+  }
+  sendMessageToOneWorker(e, n) {
+    const r = n ?? this.pickLeastLoadedWorker(), s = this.workers[r];
+    return new Promise((i, a) => {
+      const o = `req_${++this.requestId}`, c = { ...e, id: o };
+      this.pendingRequests.set(o, {
+        resolve: (l) => i(l),
+        reject: a,
+        workerIndex: r
+      }), this.inFlightPerWorker[r] = (this.inFlightPerWorker[r] ?? 0) + 1, s.postMessage(c), setTimeout(() => {
+        this.pendingRequests.get(o) && (this.pendingRequests.delete(o), this.inFlightPerWorker[r] = Math.max(
+          0,
+          this.inFlightPerWorker[r] - 1
+        ), a(new Error("Worker request timeout")));
+      }, this.timeOut);
+    });
+  }
+  ensureTasksFinished() {
+    return this.readyPromise ? this.readyPromise : this.workers.length === 0 ? Promise.resolve() : (this.readyPromise = Promise.all(
+      this.workers.map(
+        (e, n) => new Promise((r, s) => {
+          const i = `req_${++this.requestId}`;
+          this.pendingRequests.set(i, {
+            resolve: () => r(),
+            reject: s,
+            workerIndex: n
+          }), this.inFlightPerWorker[n] = (this.inFlightPerWorker[n] ?? 0) + 1, e.postMessage({ type: "getAvailableFonts", id: i }), setTimeout(() => {
+            this.pendingRequests.get(i) && (this.pendingRequests.delete(i), this.inFlightPerWorker[n] = Math.max(
+              0,
+              this.inFlightPerWorker[n] - 1
+            ), s(new Error("Worker init timeout")));
+          }, this.timeOut);
+        })
+      )
+    ).then(() => {
+    }), this.readyPromise);
+  }
+  /**
+   * Set URL to load fonts
+   * @param value - URL to load fonts
+   */
+  async setFontUrl(e) {
+    await this.sendMessageToAllWorkers({
+      type: "setFontUrl",
+      data: { url: e }
+    });
+  }
+  /**
+   * Syncs the default font fallback chain to all workers.
+   */
+  async setDefaultFonts(e, n) {
+    ee.instance.setDefaultFonts(e), ee.instance.setSymbolFonts(n), await this.sendMessageToAllWorkers({
+      type: "setDefaultFonts",
+      data: {
+        fonts: [...e],
+        symbolFonts: [...n]
+      }
+    });
+  }
+  /**
+   * Mirrors {@link FontManager.lazyFontLoading} into every worker isolate.
+   */
+  async setLazyFontLoading(e) {
+    ee.instance.lazyFontLoading = e, await this.sendMessageToAllWorkers({
+      type: "setLazyFontLoading",
+      data: { enabled: e }
+    });
+  }
+  /**
+   * Mirrors {@link FontManager.awaitFontsBeforeDraw} into every worker isolate.
+   */
+  async setAwaitFontsBeforeDraw(e) {
+    ee.instance.awaitFontsBeforeDraw = e, await this.sendMessageToAllWorkers({
+      type: "setAwaitFontsBeforeDraw",
+      data: { enabled: e }
+    });
+  }
+  /**
+   * Render MText in one worker and return serialized data asynchronously.
+   */
+  async asyncRenderMText(e, n, r = Ie()) {
+    await this.ensureInitialized();
+    const s = await this.sendMessageToOneWorker({
+      type: "render",
+      data: { mtextContent: e, textStyle: n, colorSettings: r }
+    });
+    return this.reconstructMText(s, r);
+  }
+  /**
+   * Render MText synchronously.
+   * Notes: It isn't supported yet.
+   */
+  syncRenderMText(e, n, r = Ie()) {
+    throw new Error(
+      "Fuction 'syncRenderMText' isn't supported in 'WebWorkerRenderer'!"
+    );
+  }
+  async asyncRenderShape(e, n, r = Ie()) {
+    throw new Error(
+      "Function 'asyncRenderShape' isn't supported in 'WebWorkerRenderer'!"
+    );
+  }
+  syncRenderShape(e, n, r = Ie()) {
+    throw new Error(
+      "Function 'syncRenderShape' isn't supported in 'WebWorkerRenderer'!"
+    );
+  }
+  async loadFonts(e) {
+    await this.ensureTasksFinished();
+    const n = await this.sendMessageToAllWorkers({
+      type: "loadFonts",
+      data: { fonts: [...e] }
+    }), r = /* @__PURE__ */ new Set();
+    n.forEach((s) => {
+      var i;
+      return (i = s == null ? void 0 : s.loaded) == null ? void 0 : i.forEach((a) => r.add(a));
+    });
+    for (const s of e) {
+      const i = s.toLowerCase();
+      if (!i)
+        continue;
+      n.every(
+        (o) => {
+          var c;
+          return (c = o == null ? void 0 : o.loaded) == null ? void 0 : c.some((l) => l.toLowerCase() === i);
+        }
+      ) && (this.poolSyncedFonts.add(i), this.poolFontLoadedDispatched.add(i));
+    }
+    return { loaded: Array.from(r) };
+  }
+  async getAvailableFonts() {
+    return (await this.sendMessageToAllWorkers({
+      type: "getAvailableFonts"
+    }))[0] ?? { fonts: [] };
+  }
+  /**
+   * Collects memory estimates from each worker in the pool.
+   *
+   * Worker ids are rewritten to `worker-0`, `worker-1`, … and
+   * {@link inFlightPerWorker} counts are attached.
+   */
+  async estimateMemoryUsage() {
+    return this.workers.length === 0 ? [] : (await this.sendMessageToAllWorkers({
+      type: "getMemoryStats"
+    })).map((n, r) => ({
+      ...n,
+      id: `worker-${r}`,
+      inFlightRequests: this.inFlightPerWorker[r] ?? 0
+    }));
+  }
+  /**
+   * Reconstruct MText object from JSON serialized data
+   */
+  reconstructMText(e, n) {
+    const r = n.color.aci === 256, s = new I.Group();
+    s.position.set(
+      e.position.x,
+      e.position.y,
+      e.position.z
+    ), s.quaternion.set(
+      e.rotation.x,
+      e.rotation.y,
+      e.rotation.z,
+      e.rotation.w
+    ), s.scale.set(
+      e.scale.x,
+      e.scale.y,
+      e.scale.z
+    ), e.children.forEach((a) => {
+      const o = new I.BufferGeometry();
+      if (Object.keys(a.geometry.attributes).forEach((f) => {
+        const h = a.geometry.attributes[f], p = new Float32Array(
+          h.arrayBuffer,
+          h.byteOffset,
+          h.length
+        ), y = new I.BufferAttribute(
+          p,
+          h.itemSize,
+          h.normalized
+        );
+        o.setAttribute(f, y);
+      }), a.geometry.index)
+        if (a.geometry.index.componentType === "uint32") {
+          const h = new Uint32Array(
+            a.geometry.index.arrayBuffer,
+            a.geometry.index.byteOffset,
+            a.geometry.index.length
+          );
+          o.setIndex(new I.Uint32BufferAttribute(h, 1));
+        } else {
+          const h = new Uint16Array(
+            a.geometry.index.arrayBuffer,
+            a.geometry.index.byteOffset,
+            a.geometry.index.length
+          );
+          o.setIndex(new I.Uint16BufferAttribute(h, 1));
+        }
+      const c = B0(
+        n,
+        a.material.color,
+        r,
+        a.material.mtextColor
+      );
+      let l;
+      a.type === "mesh" ? (l = this.defaultStyleManager.getMeshBasicMaterial({
+        ...c
+      }), a.material.transparent !== void 0 && (l.transparent = a.material.transparent), a.material.opacity !== void 0 && (l.opacity = a.material.opacity), a.material.side !== void 0 && (l.side = a.material.side)) : (l = this.defaultStyleManager.getLineBasicMaterial({
+        ...c
+      }), a.material.transparent !== void 0 && (l.transparent = a.material.transparent), a.material.opacity !== void 0 && (l.opacity = a.material.opacity), a.material.linewidth !== void 0 && (l.linewidth = a.material.linewidth));
+      let u;
+      a.type === "mesh" ? u = new I.Mesh(o, l) : u = new I.LineSegments(
+        o,
+        l
+      ), o.boundingBox || o.computeBoundingBox(), o.boundingSphere || o.computeBoundingSphere(), u.position.set(
+        a.position.x,
+        a.position.y,
+        a.position.z
+      ), u.quaternion.set(
+        a.rotation.x,
+        a.rotation.y,
+        a.rotation.z,
+        a.rotation.w
+      ), u.scale.set(a.scale.x, a.scale.y, a.scale.z), a.charBoxType && (u.userData.charBoxType = a.charBoxType), a.lineLayouts && a.lineLayouts.length > 0 && (u.userData.lineLayouts = a.lineLayouts.map((f) => ({
+        y: f.y,
+        height: f.height,
+        breakIndex: f.breakIndex
+      }))), a.charBoxes && a.charBoxes.length > 0 && (u.userData.layout = {
+        chars: this.deserializeCharBoxes(a.charBoxes)
+      }), u.userData.mtextColor = c.color, s.add(u);
+    }), s.box = new I.Box3(
+      new I.Vector3(
+        e.box.min.x,
+        e.box.min.y,
+        e.box.min.z
+      ),
+      new I.Vector3(
+        e.box.max.x,
+        e.box.max.y,
+        e.box.max.z
+      )
+    );
+    const i = s;
+    return i.createLayoutData = () => {
+      var c;
+      const a = (c = s.userData) == null ? void 0 : c.layoutCache;
+      if (a)
+        return a;
+      const o = { lines: [], chars: [] };
+      return s.updateWorldMatrix(!0, !0), this.collectLayout(s, o.chars, o.lines), s.userData.layoutCache = o, o;
+    }, i;
+  }
+  deserializeCharBoxes(e) {
+    return e.map((n) => ({
+      type: n.type,
+      char: n.char,
+      box: new I.Box3(
+        new I.Vector3(n.box.min.x, n.box.min.y, n.box.min.z),
+        new I.Vector3(n.box.max.x, n.box.max.y, n.box.max.z)
+      ),
+      children: this.deserializeCharBoxes(n.children ?? [])
+    }));
+  }
+  collectLayout(e, n, r) {
+    var o, c, l, u, f;
+    e.updateWorldMatrix(!1, !1);
+    const s = (c = (o = e.userData) == null ? void 0 : o.layout) == null ? void 0 : c.chars, i = (l = e.userData) == null ? void 0 : l.lineLayouts;
+    if (i && i.length > 0 && i.forEach((h) => {
+      Xi.set(0, h.y, 0).applyMatrix4(e.matrixWorld), Ki.set(0, h.y - h.height / 2, 0).applyMatrix4(e.matrixWorld), Zi.set(0, h.y + h.height / 2, 0).applyMatrix4(e.matrixWorld), r.push({
+        y: Xi.y,
+        height: Math.abs(Zi.y - Ki.y),
+        breakIndex: h.breakIndex
+      });
+    }), s && s.length > 0) {
+      const h = (u = e.userData) == null ? void 0 : u.charBoxType, p = Hr(
+        s,
+        e.matrixWorld,
+        h
+      );
+      n.push(...p);
+      return;
+    }
+    if (e instanceof I.LineSegments || e instanceof I.Mesh) {
+      const h = e.geometry;
+      if (!((f = h.userData) != null && f.isDecoration)) {
+        h.boundingBox === null && h.computeBoundingBox();
+        const p = new I.Box3().copy(h.boundingBox);
+        p.applyMatrix4(e.matrixWorld), n.push({
+          type: ue.CHAR,
+          box: p,
+          char: "",
+          children: []
+        });
+      }
+    }
+    const a = e.children;
+    for (let h = 0, p = a.length; h < p; h++)
+      this.collectLayout(a[h], n, r);
+  }
+  /**
+   * Terminate the worker
+   */
+  terminate() {
+    this.workers.forEach((e) => e.terminate()), this.workers = [], this.inFlightPerWorker = [], this.readyPromise = null, this.poolSyncedFonts.clear(), this.poolFontSyncInFlight.clear(), this.poolFontLoadedDispatched.clear(), this.pendingRequests.forEach(({ reject: e }) => {
+      e(new Error("Renderer terminated"));
+    }), this.pendingRequests.clear();
+  }
+  destroy() {
+    this.terminate();
+  }
+}
+class Y0 {
+  constructor() {
+    this.fontManager = ee.instance, this.defaultStyleManager = new Eo(), this.isInitialized = !1;
+  }
+  /**
+   * Used to manage materials used by texts
+   */
+  get styleManager() {
+    return this.defaultStyleManager;
+  }
+  set styleManager(e) {
+    this.defaultStyleManager = e;
+  }
+  /**
+   * Set URL to load fonts
+   * @param value - URL to load fonts
+   */
+  async setFontUrl(e) {
+    this.fontManager.baseUrl = e;
+  }
+  /**
+   * Render MText directly in the main thread asynchronously. Fonts referenced by
+   * the text/style are scheduled via {@link FontManager.requestFonts} when
+   * {@link FontManager.lazyFontLoading} is enabled (unless
+   * {@link FontManager.awaitFontsBeforeDraw} waits for them first); otherwise
+   * they are awaited.
+   */
+  async asyncRenderMText(e, n, r = Ie()) {
+    await this.ensureInitialized();
+    const s = new tn(
+      e,
+      n,
+      this.defaultStyleManager,
+      this.fontManager,
+      r
+    );
+    return await s.asyncDraw(), s.updateMatrixWorld(!0), s;
+  }
+  /**
+   * Render MText directly in the main thread synchronously. It is user's responsibility to ensure
+   * that default font is loaded and fonts needed in mtext are loaded.
+   */
+  syncRenderMText(e, n, r = Ie()) {
+    const s = new tn(
+      e,
+      n,
+      this.defaultStyleManager,
+      this.fontManager,
+      r
+    );
+    return s.syncDraw(), s.updateMatrixWorld(!0), s;
+  }
+  async asyncRenderShape(e, n, r = Ie()) {
+    await this.ensureInitialized();
+    const s = new Yi(
+      e,
+      n,
+      this.defaultStyleManager,
+      this.fontManager,
+      r
+    );
+    return await s.asyncDraw(), s.updateMatrixWorld(!0), s;
+  }
+  syncRenderShape(e, n, r = Ie()) {
+    const s = new Yi(
+      e,
+      n,
+      this.defaultStyleManager,
+      this.fontManager,
+      r
+    );
+    return s.syncDraw(), s.updateMatrixWorld(!0), s;
+  }
+  /**
+   * Load fonts in the main thread
+   */
+  async loadFonts(e) {
+    return await this.fontManager.loadFontsByNames(e), {
+      loaded: e.filter((n) => this.fontManager.isFontLoaded(n))
+    };
+  }
+  /**
+   * Get available fonts from the main thread
+   */
+  async getAvailableFonts() {
+    return { fonts: await this.fontManager.getAvailableFonts() };
+  }
+  /**
+   * Estimates memory used by fonts and materials in the main-thread isolate.
+   */
+  estimateMemoryUsage() {
+    return ko(this.fontManager, {
+      id: "main",
+      styleManager: this.defaultStyleManager
+    });
+  }
+  destroy() {
+  }
+  async ensureInitialized() {
+    this.isInitialized || (this.fontManager.lazyFontLoading || await this.loadFonts(this.fontManager.getFontsToLoad()), this.isInitialized = !0);
+  }
+}
+class t1 {
+  /**
+   * Constructor
+   *
+   * @param defaultMode - Default rendering mode. Default is 'main' which means rendering in main thread.
+   * @param workerConfig - Configuration options for WebWorkerRenderer which is used
+   *                     when render mode is 'worker'.
+   */
+  constructor(e = "main", n = {}) {
+    this.webWorkerRenderer = null, this.webWorkerConfigured = !1, this.workerLazyFontLoading = null, this.workerAwaitFontsBeforeDraw = null, this.defaultMode = e, this.workerConfig = n, this.mainThreadRenderer = new Y0(), this.renderer = this.mainThreadRenderer, e === "worker" && (this.renderer = this.ensureWebWorkerRenderer());
+  }
+  ensureWebWorkerRenderer() {
+    return this.webWorkerRenderer || (this.webWorkerRenderer = new $0(this.workerConfig), this.webWorkerRenderer.styleManager = this.mainThreadRenderer.styleManager, this.webWorkerConfigured = !1), this.webWorkerRenderer;
+  }
+  async activateWebWorkerRenderer() {
+    const e = this.ensureWebWorkerRenderer();
+    this.webWorkerConfigured || (await e.setDefaultFonts(
+      [...ee.instance.defaultFonts],
+      [...ee.instance.symbolFonts]
+    ), this.webWorkerConfigured = !0);
+    const n = ee.instance.lazyFontLoading;
+    this.workerLazyFontLoading !== n && (await e.setLazyFontLoading(n), this.workerLazyFontLoading = n);
+    const r = ee.instance.awaitFontsBeforeDraw;
+    return this.workerAwaitFontsBeforeDraw !== r && (await e.setAwaitFontsBeforeDraw(r), this.workerAwaitFontsBeforeDraw = r), e;
+  }
+  /**
+   * Sets one new style manager to override the default style manager.
+   *
+   * Both renderers receive the override so that `syncRenderMText`
+   * (which always uses `mainThreadRenderer`) and `asyncRenderMText`
+   * (which may use either renderer) produce materials from the same
+   * manager.
+   *
+   * @param value - New style manager
+   */
+  setStyleManager(e) {
+    this.mainThreadRenderer.styleManager = e, this.webWorkerRenderer && (this.webWorkerRenderer.styleManager = e);
+  }
+  /**
+   * Sets the default rendering mmode
+   * @param mode The default rendering mode
+   */
+  setDefaultMode(e) {
+    this.defaultMode !== e && (this.defaultMode = e, e === "worker" ? this.renderer = this.ensureWebWorkerRenderer() : this.renderer = this.mainThreadRenderer);
+  }
+  /**
+   * Set URL to load fonts
+   * @param value - URL to load fonts
+   */
+  setFontUrl(e) {
+    return this.renderer.setFontUrl(e);
+  }
+  /**
+   * Get the default rendering mode
+   */
+  getDefaultMode() {
+    return this.defaultMode;
+  }
+  /**
+   * Render MText using the current mode asynchronously.
+   * @param colorSettings - Optional color context (ByLayer, ByBlock colors).
+   * @param mode - Rendering mode used. If undefined, the default rendering mode is used.
+   */
+  async asyncRenderMText(e, n, r = Ie(), s) {
+    return (s ?? this.defaultMode) === "worker" ? (await this.activateWebWorkerRenderer()).asyncRenderMText(e, n, r) : this.mainThreadRenderer.asyncRenderMText(
+      e,
+      n,
+      r
+    );
+  }
+  /**
+   * Render MText using the current mode synchronously. Main thread render is always used
+   * for this function because web worker renderer doesn't support rendering synchronously.
+   * @param colorSettings - Optional color context (ByLayer, ByBlock colors).
+   */
+  syncRenderMText(e, n, r = Ie()) {
+    return this.mainThreadRenderer.syncRenderMText(
+      e,
+      n,
+      r
+    );
+  }
+  async asyncRenderShape(e, n, r = Ie(), s) {
+    return this.mainThreadRenderer.asyncRenderShape(
+      e,
+      n,
+      r
+    );
+  }
+  syncRenderShape(e, n, r = Ie()) {
+    return this.mainThreadRenderer.syncRenderShape(
+      e,
+      n,
+      r
+    );
+  }
+  /**
+   * Sets the default font fallback chain on the active renderer and workers.
+   */
+  async setDefaultFonts(e) {
+    ee.instance.setDefaultFonts(e), this.webWorkerRenderer && (await this.webWorkerRenderer.setDefaultFonts(
+      [...ee.instance.defaultFonts],
+      [...ee.instance.symbolFonts]
+    ), this.webWorkerConfigured = !0);
+  }
+  /**
+   * Mirrors {@link FontManager.lazyFontLoading} onto the main thread and any
+   * existing worker pool.
+   */
+  async setLazyFontLoading(e) {
+    ee.instance.lazyFontLoading = e, this.webWorkerRenderer && (await this.webWorkerRenderer.setLazyFontLoading(e), this.workerLazyFontLoading = e);
+  }
+  /**
+   * Mirrors {@link FontManager.awaitFontsBeforeDraw} onto the main thread and
+   * any existing worker pool.
+   */
+  async setAwaitFontsBeforeDraw(e) {
+    ee.instance.awaitFontsBeforeDraw = e, this.webWorkerRenderer && (await this.webWorkerRenderer.setAwaitFontsBeforeDraw(e), this.workerAwaitFontsBeforeDraw = e);
+  }
+  /**
+   * Returns font names for a predefined default-font preset.
+   */
+  getDefaultFontsPreset(e) {
+    return ee.instance.getDefaultFontsPreset(e);
+  }
+  /**
+   * Returns symbol-font names for a predefined preset.
+   */
+  getSymbolFontsPreset(e) {
+    return ee.instance.getSymbolFontsPreset(e);
+  }
+  /**
+   * Load fonts using the current mode
+   */
+  async loadFonts(e) {
+    return this.renderer.loadFonts(e);
+  }
+  /**
+   * Get available fonts using the current mode
+   */
+  async getAvailableFonts() {
+    return this.renderer.getAvailableFonts();
+  }
+  /**
+   * Estimates memory used by mtext-renderer across the main thread and workers.
+   *
+   * @remarks
+   * `totalEstimatedBytes` covers **live** isolate memory only (fonts still loaded
+   * in memory, caches, materials). IndexedDB font blobs are reported separately
+   * under {@link MemoryUsageReport.indexedDbFontCache} and are **not** included
+   * in the total — they remain after {@link FontManager.release}. Disposed /
+   * released font caches are excluded. Application-held scene graphs are not
+   * included. Collecting IndexedDB stats temporarily loads cached blobs into
+   * the JS heap.
+   */
+  async estimateMemoryUsage() {
+    const e = ko(ee.instance, {
+      id: "main",
+      styleManager: this.mainThreadRenderer.styleManager
+    }), n = this.webWorkerRenderer ? await this.webWorkerRenderer.estimateMemoryUsage() : [];
+    let r = {
+      fontCount: 0,
+      totalBytes: 0,
+      fonts: []
+    };
+    try {
+      r = await st.instance.getStorageStats();
+    } catch {
+    }
+    const s = e.totalEstimatedBytes + n.reduce((i, a) => i + a.totalEstimatedBytes, 0);
+    return {
+      collectedAt: Date.now(),
+      totalEstimatedBytes: s,
+      mainThread: e,
+      workers: n,
+      indexedDbFontCache: r,
+      jsHeap: w0()
+    };
+  }
+  /**
+   * Parse and cache a user-uploaded font file in IndexedDB.
+   * Always runs on the main-thread {@link FontManager} so the cache is shared
+   * with the web worker renderer.
+   */
+  async cacheFont(e, n, r, s) {
+    return ee.instance.cacheFont(e, n, r, s);
+  }
+  /**
+   * Terminate web workers and release their memory.
+   *
+   * The unified renderer keeps working on the main thread. Workers are
+   * recreated lazily the next time worker rendering is requested.
+   * Safe to call when no workers were created.
+   */
+  terminateWorkers() {
+    var e;
+    (e = this.webWorkerRenderer) == null || e.terminate(), this.webWorkerRenderer = null, this.webWorkerConfigured = !1, this.workerLazyFontLoading = null, this.renderer = this.mainThreadRenderer;
+  }
+  /**
+   * Clean up resources
+   */
+  destroy() {
+    this.terminateWorkers(), this.mainThreadRenderer.destroy();
+  }
+}
+export {
+  sa as BaseFont,
+  ia as BaseTextShape,
+  U0 as CJK_MTEXT_CHAR_WIDTH_HEIGHT_RATIO,
+  ue as CharBoxType,
+  Ar as DEFAULT_FONTS_PRESETS,
+  Ni as DEFAULT_LINE_SPACE_FACTOR,
+  v0 as DefaultFontLoader,
+  gs as EventManager,
+  Ke as FontFactory,
+  ee as FontManager,
+  D0 as LINE_SPACING_SCALE_FACTOR,
+  Xo as MATERIAL_ESTIMATED_BYTES,
+  N0 as MAX_REASONABLE_MTEXT_WIDTH_CONTENT_EXCESS,
+  P0 as MAX_REASONABLE_MTEXT_WIDTH_HEIGHT_RATIO,
+  Zo as MESH_PARSED_FONT_OVERHEAD,
+  _0 as MIN_REASONABLE_MTEXT_WIDTH_HEIGHT_RATIO,
+  tn as MText,
+  Z as MTextAttachmentPoint,
+  bt as MTextColor,
+  ln as MTextContext,
+  Ge as MTextFlowDirection,
+  dt as MTextLineAlignment,
+  oe as MTextParagraphAlignment,
+  I0 as MTextParser,
+  ht as MTextStroke,
+  vr as MTextToken,
+  Y0 as MainThreadRenderer,
+  Jo as SHX_PARSED_FONT_OVERHEAD,
+  Tn as STACK_DIVIDER_CHAR,
+  bn as STACK_VERTICAL_SHIFT_FACTOR,
+  Zn as SYMBOL_FONTS_PRESETS,
+  Yi as Shape,
+  _d as ShxParserFont,
+  xr as TextScanner,
+  Q as TokenType,
+  t1 as UnifiedRenderer,
+  $0 as WebWorkerRenderer,
+  B0 as buildWorkerMaterialColorSettings,
+  ko as collectIsolateMemoryStats,
+  Ie as createDefaultColorSettings,
+  R0 as deserializeMTextColor,
+  ca as emptyMaterialStats,
+  J0 as escapeDxfLineEndings,
+  na as estimateGeometryBytes,
+  Gi as estimateMTextWrapWidth,
+  Ko as estimateMaterialBytes,
+  Do as estimateStringBytes,
+  Le as formatBytes,
+  K0 as formatMemoryUsageReport,
+  ta as getColorByIndex,
+  O0 as getFonts,
+  S0 as getMaterialStatsFromStyleManager,
+  ra as getSourceByteLength,
+  Q0 as hasInlineFormattingCodes,
+  Z0 as int2rgb,
+  Ss as isDefaultFontsPreset,
+  w0 as readJsHeapStats,
+  Kt as resolveMTextColor,
+  Hi as resolveMTextWrapWidth,
+  k0 as rgb2int,
+  e1 as serializeMTextColor
+};
