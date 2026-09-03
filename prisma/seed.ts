@@ -62,6 +62,58 @@ async function main() {
   console.log(" Creating users and personnel...")
 
   const hashedPassword = await bcrypt.hash("admin123", 10)
+  const demoPassword = await bcrypt.hash("123456", 10)
+
+  // ============================================================================
+  // DEMO KULLANICILAR (Quick Login için)
+  // ============================================================================
+  console.log(" Creating demo users for quick login...")
+
+  // Müteahhit Yöneticisi
+  await prisma.user.upsert({
+    where: { email: "admin@nexa.com" },
+    update: {},
+    create: {
+      email: "admin@nexa.com",
+      password: demoPassword,
+      name: "Müteahhit Yöneticisi",
+      role: UserRole.ADMIN,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["dashboard", "projects", "personnel", "finance", "inventory", "subcontractors", "contracts", "procurement"]
+    }
+  })
+
+  // Yapı Denetim Yöneticisi
+  await prisma.user.upsert({
+    where: { email: "denetim@nexa.com" },
+    update: {},
+    create: {
+      email: "denetim@nexa.com",
+      password: demoPassword,
+      name: "Yapı Denetim Yöneticisi",
+      role: UserRole.ADMIN,
+      companyType: CompanyType.INSPECTION,
+      permissions: ["dashboard", "inspection", "reports", "documents", "qa-qc", "isg"]
+    }
+  })
+
+  // Saha Personeli
+  await prisma.user.upsert({
+    where: { email: "personel@nexa.com" },
+    update: {},
+    create: {
+      email: "personel@nexa.com",
+      password: demoPassword,
+      name: "Saha Personeli",
+      role: UserRole.STAFF,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["my-tasks", "my-attendance", "my-salary"]
+    }
+  })
+
+  console.log(` Created demo user: admin@nexa.com (Müteahhit Yöneticisi)`)
+  console.log(` Created demo user: denetim@nexa.com (Yapı Denetim Yöneticisi)`)
+  console.log(` Created demo user: personel@nexa.com (Saha Personeli)`)
 
   // Patron / Super Admin
   const patron = await prisma.user.upsert({

@@ -57,7 +57,7 @@ export default function Navbar() {
               whileHover={{ scale: 1.05 }}
               className="text-2xl font-bold text-white"
             >
-              <span className="text-blue-500">Mahir</span> Bakay
+              <span className="text-blue-500">Nexa</span> ERP
             </motion.div>
           </Link>
 
