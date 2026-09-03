@@ -9,7 +9,7 @@ import { motion } from "framer-motion"
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Building, ShieldCheck, ArrowLeft } from "lucide-react"
+import { Building, ShieldCheck, ArrowLeft, Wrench, User } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
