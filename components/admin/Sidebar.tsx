@@ -329,7 +329,7 @@ export default function AdminSidebar({
                 </div>
               )}
               <div className="flex items-center gap-3">
-                {!isCollapsed && <NotificationBell />
+                {!isCollapsed && <NotificationBell />}
                 <button
                   type="button"
                   onClick={() => setIsCollapsed(!isCollapsed)}
