@@ -141,6 +141,7 @@ export default function AdminSidebar({
     inspectorOnly?: boolean
     adminOnly?: boolean
     personnelOnly?: boolean
+    subcontractorAllowed?: boolean
   }
 
   const allNavItems: NavItem[] = [
