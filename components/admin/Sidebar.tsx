@@ -130,7 +130,20 @@ export default function AdminSidebar({
   // @ts-ignore - companyType field exists in schema but TypeScript needs regeneration
   const companyType = session?.user?.companyType || "MAIN_CONTRACTOR" // Default to construction
 
-  const allNavItems = [
+  interface NavItem {
+    href: string
+    label: string
+    requiredPermission: string | null
+    icon: any
+    category: string
+    moduleType: "construction" | "inspection" | "shared"
+    contractorOnly?: boolean
+    inspectorOnly?: boolean
+    adminOnly?: boolean
+    personnelOnly?: boolean
+  }
+
+  const allNavItems: NavItem[] = [
     // === 📊 ANA MENÜ ===
     { href: "/admin", label: "Dashboard", requiredPermission: null, icon: LayoutDashboard, category: "📊 ANA MENÜ", moduleType: "shared" },
     { href: "/admin/map", label: "Şantiye Haritası", requiredPermission: null, icon: Map, category: "📊 ANA MENÜ", moduleType: "shared" },
