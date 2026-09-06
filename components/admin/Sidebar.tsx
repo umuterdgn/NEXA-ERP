@@ -82,7 +82,17 @@ import {
   FileWarning,
   ClipboardCopy,
   Network,
-  FileDigit
+  FileDigit,
+  Paperclip,
+  Files,
+  ImagePlus,
+  PenTool,
+  PencilRuler,
+  Award,
+  Activity,
+  FileBadge,
+  Construction,
+  XCircle
 } from "lucide-react"
 
 export default function AdminSidebar({
@@ -176,34 +186,34 @@ export default function AdminSidebar({
     { href: "/admin/bim", label: "BIM & 3D Modeller", requiredPermission: null, icon: Box, category: "PROJE YÖNETİMİ", moduleType: "construction" },
     
     // === YAPI DENETİM & KONTROL ===
-    { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", requiredPermission: null, icon: FileSearch, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", requiredPermission: null, icon: FileWarning, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     { href: "/admin/inspection", label: "Numune & Karot Takip", requiredPermission: null, icon: TestTube, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
-    { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", requiredPermission: null, icon: Hammer, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
-    { href: "/admin/inspection/attachment", label: "Ataşman & Delil", requiredPermission: null, icon: FileCheck, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", requiredPermission: null, icon: Construction, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/inspection/attachment", label: "Ataşman & Delil", requiredPermission: null, icon: Paperclip, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", requiredPermission: null, icon: Archive, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
-    { href: "/admin/documents", label: "Dijital Evrak Arşivi", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/documents", label: "Dijital Evrak Arşivi", requiredPermission: null, icon: Files, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", requiredPermission: null, icon: ScanText, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     { href: "/admin/reports", label: "Saha Raporları", requiredPermission: null, icon: ClipboardList, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     { href: "/admin/ai-assistant", label: "AI Asistan", requiredPermission: null, icon: Bot, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
-    { href: "/admin/ai-vision", label: "AI Görsel Analiz", requiredPermission: null, icon: Camera, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
-    { href: "/admin/revisions", label: "Proje Revizyonları", requiredPermission: null, icon: GitCompare, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
-    { href: "/admin/routes", label: "Rota Optimizasyonu", requiredPermission: null, icon: Route, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/ai-vision", label: "AI Görsel Analiz", requiredPermission: null, icon: ImagePlus, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/revisions", label: "Proje Revizyonları", requiredPermission: null, icon: History, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/routes", label: "Rota Optimizasyonu", requiredPermission: null, icon: Map, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     { href: "/admin/drone-maps", label: "Hava & Drone Gözlem", requiredPermission: null, icon: Plane, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
-    { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
-    { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: PenTool, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
+    { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: PencilRuler, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     { href: "/admin/inspections", label: "Denetim Kayıtları", requiredPermission: null, icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     { href: "/admin/deficiencies", label: "Saha Eksiklikleri", requiredPermission: null, icon: AlertTriangle, category: "YAPI DENETİM & KONTROL", moduleType: "inspection" },
     
     // === YAPI DENETİM & KALİTE ===
-    { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckCircle, category: "YAPI DENETİM & KALİTE", moduleType: "inspection" },
-    { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", requiredPermission: null, icon: AlertOctagon, category: "YAPI DENETİM & KALİTE", moduleType: "inspection" },
+    { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckSquare, category: "YAPI DENETİM & KALİTE", moduleType: "inspection" },
+    { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", requiredPermission: null, icon: XCircle, category: "YAPI DENETİM & KALİTE", moduleType: "inspection" },
     
     // === İSG & RİSK YÖNETİMİ ===
-    { href: "/admin/isg", label: "İSG Dashboard & Analiz", requiredPermission: null, icon: MapPin, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", requiredPermission: null, icon: Map, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", requiredPermission: null, icon: FileText, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", requiredPermission: null, icon: AlertTriangle, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
-    { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", requiredPermission: null, icon: Shield, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg", label: "İSG Dashboard & Analiz", requiredPermission: null, icon: Activity, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", requiredPermission: null, icon: MapPin, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", requiredPermission: null, icon: FileBadge, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", requiredPermission: null, icon: AlertOctagon, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
+    { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", requiredPermission: null, icon: UserCheck, category: "İSG & RİSK YÖNETİMİ", moduleType: "inspection" },
     
     // === İLETİŞİM & OPERASYON ===
     { href: "/admin/cms", label: "İçerik Yönetimi", requiredPermission: null, icon: FileText, category: "İLETİŞİM & OPERASYON", moduleType: "shared" },
@@ -234,8 +244,8 @@ export default function AdminSidebar({
     "FİNANS & TEDARİK": DollarSign,
     "PROJE YÖNETİMİ": FolderKanban,
     "YAPI DENETİM & KONTROL": ShieldCheck,
-    "YAPI DENETİM & KALİTE": CheckCircle,
-    "İSG & RİSK YÖNETİMİ": Shield,
+    "YAPI DENETİM & KALİTE": Award,
+    "İSG & RİSK YÖNETİMİ": HardHat,
     "İLETİŞİM & OPERASYON": MessageSquare,
     "SİSTEM & AYARLAR": Settings,
     "PERSONEL": UserCheck,
