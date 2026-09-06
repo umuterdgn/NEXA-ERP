@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { personelId, lat, lng, detectedEquipments } = body
+    const { personelId, lat, lng } = body
 
     // Validate required fields
     if (!personelId || lat === undefined || lng === undefined) {
@@ -32,46 +32,15 @@ export async function POST(request: Request) {
     // Update personnel location log
     await prisma.locationLog.create({
       data: {
-        lat,
-        lng,
-        personelId
+        latitude: lat,
+        longitude: lng,
+        userId: personelId
       }
     })
 
-    // If detected equipment is provided, update their locations
-    if (detectedEquipments && Array.isArray(detectedEquipments) && detectedEquipments.length > 0) {
-      for (const serialNumber of detectedEquipments) {
-        // Find equipment by serial number
-        const equipment = await prisma.equipment.findFirst({
-          where: { serialNumber }
-        })
-
-        if (equipment) {
-          // Update equipment last location
-          await prisma.equipment.update({
-            where: { id: equipment.id },
-            data: {
-              lastLat: lat,
-              lastLng: lng
-            }
-          })
-
-          // Create location log for equipment
-          await prisma.locationLog.create({
-            data: {
-              lat,
-              lng,
-              equipmentId: equipment.id
-            }
-          })
-        }
-      }
-    }
-
     return NextResponse.json({ 
       success: true, 
-      message: "Location updated successfully",
-      detectedEquipmentCount: detectedEquipments?.length || 0
+      message: "Location updated successfully"
     })
   } catch (error) {
     console.error("Error tracking location:", error)
