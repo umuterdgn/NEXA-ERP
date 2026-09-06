@@ -8,7 +8,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
-import { LayoutDashboard, Building2, AlertTriangle, ArrowLeft, Shield, ChevronLeft, ChevronRight, Download } from "lucide-react"
+import { LayoutDashboard, Building2, Database, CreditCard, Settings, ArrowLeft, Shield, ChevronLeft, ChevronRight, Download } from "lucide-react"
 
 export default function SuperAdminSidebar({
   isCollapsed,
@@ -28,13 +28,23 @@ export default function SuperAdminSidebar({
     },
     {
       href: "/super-admin/tenants",
-      label: "Kiracı Yönetimi",
+      label: "Firmalar (Tenants)",
       icon: Building2,
     },
     {
-      href: "/super-admin/logs",
-      label: "Sistem Logları",
-      icon: AlertTriangle,
+      href: "/super-admin/quotas",
+      label: "Kota Yönetimi",
+      icon: Database,
+    },
+    {
+      href: "/super-admin/subscriptions",
+      label: "Abonelikler",
+      icon: CreditCard,
+    },
+    {
+      href: "/super-admin/settings",
+      label: "Sistem Ayarları",
+      icon: Settings,
     },
   ]
 

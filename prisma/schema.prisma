@@ -37,6 +37,7 @@ model User {
   uploadedDocuments ProjectDocument[]
   uploadedDocs    Document[]
   auditLogs       AuditLog[]
+  locationLogs    LocationLog[]
 }
 
 enum UserRole {
@@ -78,7 +79,6 @@ model Tenant {
   projects  Project[]
   personnel Personel[]
   equipment Equipment[]
-  locationLogs LocationLog[]
   droneMedia DroneMedia[]
   chatThreads ChatThread[]
   systemLogs SystemLog[]
@@ -324,7 +324,6 @@ model Equipment {
   project          Project? @relation(fields: [projectId], references: [id])
   tenantId         String?
   tenant           Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  locationLogs     LocationLog[]
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -342,21 +341,15 @@ model Equipment {
 // ============================================================================
 
 model LocationLog {
-  id          String     @id @default(cuid())
-  lat         Float
-  lng         Float
-  personelId  String?
-  personel    Personel?  @relation(fields: [personelId], references: [id])
-  equipmentId String?
-  equipment   Equipment? @relation(fields: [equipmentId], references: [id])
-  tenantId    String?
-  tenant      Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  timestamp   DateTime   @default(now())
-
-  @@index([personelId])
-  @@index([equipmentId])
-  @@index([tenantId])
-  @@index([timestamp])
+  id        String   @id @default(cuid())
+  userId    String
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@index([userId, timestamp])
 }
 
 // ============================================================================
@@ -725,7 +718,6 @@ model Personel {
   leaveRequests   LeaveRequest[]
   assignedTasks   WorkOrder[] @relation("PersonelTasks")
   assignedEquipment Equipment[]
-  locationLogs    LocationLog[]
   chatParticipants ChatParticipant[]
   materialRequests MaterialRequest[]
   assignedProjectTasks ProjectTask[] @relation("AssignedTasks")
