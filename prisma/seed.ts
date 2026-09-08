@@ -631,15 +631,804 @@ async function main() {
 
   console.log(` Created ${contractTemplates.length} contract templates`)
 
+  // ============================================================================
+  // PROJELER (ERP PROJECTS)
+  // ============================================================================
+  console.log(" Creating ERP projects...")
+
+  const vadiEvleri = await prisma.project.upsert({
+    where: { id: "project-vadi" },
+    update: {},
+    create: {
+      id: "project-vadi",
+      name: "Vadi Evleri Konut Projesi",
+      title: "Vadi Evleri Konut Projesi",
+      description: "İstanbul'un Avrupa yakasında 1200 konutluk lüks konut projesi",
+      status: "SAHA",
+      category: "Konut",
+      city: "İstanbul",
+      district: "Büyükçekmece",
+      mintika: "Büyükçekmece",
+      ada: "1234",
+      parsel: "5",
+      pafta: "A-12",
+      yapiSinifi: "A-3",
+      clientName: "Vadi Yapı A.Ş.",
+      mapUrl: "https://maps.google.com",
+      startDate: new Date("2024-01-01"),
+      endDate: new Date("2026-12-31"),
+      managerId: patron.id,
+      siteManager: "Ahmet Yılmaz",
+      engineer: "Mehmet Demir",
+      architect: "Ayşe Kaya",
+      yibfNo: "YIBF-2024-IST-001",
+      healthScore: 85,
+      progress: 65,
+      gpsRequired: true,
+      latitude: 41.0122,
+      longitude: 28.8825,
+      gpsRadius: 200,
+      contractValue: 250000000,
+      companyId: contractorCompany.id
+    }
+  })
+
+  const nexaPlaza = await prisma.project.upsert({
+    where: { id: "project-plaza" },
+    update: {},
+    create: {
+      id: "project-plaza",
+      name: "Nexa Plaza İş Merkezi",
+      title: "Nexa Plaza İş Merkezi",
+      description: "Leed sertifikalı 25 katlı ofis binası",
+      status: "SAHA",
+      category: "Ticari",
+      city: "İstanbul",
+      district: "Kadıköy",
+      mintika: "Kadıköy",
+      ada: "567",
+      parsel: "8",
+      pafta: "B-3",
+      yapiSinifi: "A-2",
+      clientName: "Nexa Gayrimenkul",
+      mapUrl: "https://maps.google.com",
+      startDate: new Date("2024-03-01"),
+      endDate: new Date("2027-06-30"),
+      managerId: patron.id,
+      siteManager: "Ali Öztürk",
+      engineer: "Can Yılmaz",
+      architect: "Zeynep Demir",
+      yibfNo: "YIBF-2024-IST-002",
+      healthScore: 92,
+      progress: 45,
+      gpsRequired: true,
+      latitude: 40.9901,
+      longitude: 29.0292,
+      gpsRadius: 150,
+      contractValue: 180000000,
+      companyId: contractorCompany.id
+    }
+  })
+
+  const iskenderun = await prisma.project.upsert({
+    where: { id: "project-iskenderun" },
+    update: {},
+    create: {
+      id: "project-iskenderun",
+      name: "İskenderun Sahil Yolu Altyapı İşi",
+      title: "İskenderun Sahil Yolu Altyapı İşi",
+      description: "12 km sahil yolu altyapı yenileme projesi",
+      status: "SAHA",
+      category: "Altyapı",
+      city: "Hatay",
+      district: "İskenderun",
+      mintika: "İskenderun",
+      ada: "890",
+      parsel: "12",
+      pafta: "C-7",
+      yapiSinifi: "A-1",
+      clientName: "Hatay Büyükşehir Belediyesi",
+      mapUrl: "https://maps.google.com",
+      startDate: new Date("2024-06-01"),
+      endDate: new Date("2025-12-31"),
+      managerId: patron.id,
+      siteManager: "Mehmet Kaya",
+      engineer: "Hakan Öz",
+      architect: "Selin Ak",
+      yibfNo: "YIBF-2024-HAT-001",
+      healthScore: 78,
+      progress: 30,
+      gpsRequired: true,
+      latitude: 36.2023,
+      longitude: 36.1605,
+      gpsRadius: 500,
+      contractValue: 95000000,
+      companyId: contractorCompany.id
+    }
+  })
+
+  console.log(` Created ${vadiEvleri.name} (%${vadiEvleri.progress} tamamlandı)`)
+  console.log(` Created ${nexaPlaza.name} (%${nexaPlaza.progress} tamamlandı)`)
+  console.log(` Created ${iskenderun.name} (%${iskenderun.progress} tamamlandı)`)
+
+  // ============================================================================
+  // TAŞERON FİRMALARI (SUBCONTRACTORS)
+  // ============================================================================
+  console.log(" Creating subcontractor companies...")
+
+  const yildizDemirci = await prisma.company.upsert({
+    where: { id: "sub-yildiz" },
+    update: {},
+    create: {
+      id: "sub-yildiz",
+      name: "Yıldız Demirci Ltd. Şti.",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "Hasan Yıldız",
+      phone: "+90 532 111 2233",
+      email: "info@yildizdemirci.com",
+      taxNumber: "5555555555",
+      taxOffice: "Gaziosmanpaşa Vergi Dairesi"
+    }
+  })
+
+  const guvenKalip = await prisma.company.upsert({
+    where: { id: "sub-guven" },
+    update: {},
+    create: {
+      id: "sub-guven",
+      name: "Güven Kalıpçılık",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "İsmail Güven",
+      phone: "+90 533 444 5566",
+      email: "info@guvenkalip.com",
+      taxNumber: "6666666666",
+      taxOffice: "Ümraniye Vergi Dairesi"
+    }
+  })
+
+  const apexElektrik = await prisma.company.upsert({
+    where: { id: "sub-apex" },
+    update: {},
+    create: {
+      id: "sub-apex",
+      name: "Apex Elektrik",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "Kemal Apex",
+      phone: "+90 534 777 8899",
+      email: "info@apexelektrik.com",
+      taxNumber: "7777777777",
+      taxOffice: "Kartal Vergi Dairesi"
+    }
+  })
+
+  console.log(` Created ${yildizDemirci.name}`)
+  console.log(` Created ${guvenKalip.name}`)
+  console.log(` Created ${apexElektrik.name}`)
+
+  // ============================================================================
+  // TAŞERON SÖZLEŞMELERİ (SUBCONTRACTOR CONTRACTS)
+  // ============================================================================
+  console.log(" Creating subcontractor contracts...")
+
+  await prisma.subcontractorContract.create({
+    data: {
+      contractType: "UNIT_PRICE",
+      totalValue: 3500000,
+      startDate: new Date("2024-01-15"),
+      endDate: new Date("2025-12-31"),
+      status: "ACTIVE",
+      notes: "Demir işleri birim fiyat sözleşmesi",
+      projectId: vadiEvleri.id,
+      subcontractorId: yildizDemirci.id
+    }
+  })
+
+  await prisma.subcontractorContract.create({
+    data: {
+      contractType: "LUMP_SUM",
+      totalValue: 2800000,
+      startDate: new Date("2024-02-01"),
+      endDate: new Date("2025-06-30"),
+      status: "ACTIVE",
+      notes: "Kalıp işleri toplam fiyat sözleşmesi",
+      projectId: vadiEvleri.id,
+      subcontractorId: guvenKalip.id
+    }
+  })
+
+  await prisma.subcontractorContract.create({
+    data: {
+      contractType: "UNIT_PRICE",
+      totalValue: 4200000,
+      startDate: new Date("2024-03-01"),
+      endDate: new Date("2026-03-31"),
+      status: "ACTIVE",
+      notes: "Elektrik tesisatı birim fiyat sözleşmesi",
+      projectId: nexaPlaza.id,
+      subcontractorId: apexElektrik.id
+    }
+  })
+
+  console.log(" Created 3 subcontractor contracts")
+
+  // ============================================================================
+  // HAKEDİŞLER (PROGRESS BILLINGS)
+  // ============================================================================
+  console.log(" Creating progress billings...")
+
+  await prisma.progressBilling.create({
+    data: {
+      periodMonth: 1,
+      periodYear: 2024,
+      totalAmount: 450000,
+      netAmount: 435000,
+      status: "PAID",
+      notes: "Ocak ayı hakedişi - Demir işleri",
+      projectId: vadiEvleri.id,
+      subcontractorId: yildizDemirci.id
+    }
+  })
+
+  await prisma.progressBilling.create({
+    data: {
+      periodMonth: 2,
+      periodYear: 2024,
+      totalAmount: 520000,
+      netAmount: 505000,
+      status: "PAID",
+      notes: "Şubat ayı hakedişi - Kalıp işleri",
+      projectId: vadiEvleri.id,
+      subcontractorId: guvenKalip.id
+    }
+  })
+
+  await prisma.progressBilling.create({
+    data: {
+      periodMonth: 3,
+      periodYear: 2024,
+      totalAmount: 380000,
+      netAmount: 370000,
+      status: "APPROVED",
+      notes: "Mart ayı hakedişi - Elektrik işleri",
+      projectId: nexaPlaza.id,
+      subcontractorId: apexElektrik.id
+    }
+  })
+
+  console.log(" Created 3 progress billings")
+
+  // ============================================================================
+  // KESİNTİLER VE CEZALAR (DEDUCTIONS)
+  // ============================================================================
+  console.log(" Creating deductions...")
+
+  await prisma.deduction.create({
+    data: {
+      amount: 15000,
+      reason: "İş programına uyulmaması nedeniyle gecikme cezası",
+      date: new Date("2024-02-15"),
+      notes: "1 hafta gecikme için %3 ceza uygulanmıştır",
+      projectId: vadiEvleri.id,
+      subcontractorId: yildizDemirci.id
+    }
+  })
+
+  await prisma.deduction.create({
+    data: {
+      amount: 8000,
+      reason: "Kalite uygunsuzluğu - Kalıp yüzeyi düzensizliği",
+      date: new Date("2024-03-01"),
+      notes: "TS 500 standartlarına uygun olmayan kalıp yüzeyleri",
+      projectId: vadiEvleri.id,
+      subcontractorId: guvenKalip.id
+    }
+  })
+
+  await prisma.deduction.create({
+    data: {
+      amount: 12000,
+      reason: "İSG kurallarına uyulmaması",
+      date: new Date("2024-03-10"),
+      notes: "Baret takmayan personel tespiti",
+      projectId: nexaPlaza.id,
+      subcontractorId: apexElektrik.id
+    }
+  })
+
+  console.log(" Created 3 deductions")
+
+  // ============================================================================
+  // EK PERSONEL (ADDITIONAL PERSONNEL)
+  // ============================================================================
+  console.log(" Creating additional personnel...")
+
+  const mehmetKaya = await prisma.personel.upsert({
+    where: { personnelNo: "P003" },
+    update: {},
+    create: {
+      personnelNo: "P003",
+      name: "Mehmet Kaya",
+      tcNo: "11122233344",
+      age: 42,
+      birthDate: new Date("1982-03-10"),
+      gender: Gender.MALE,
+      phone: "+90 544 555 6677",
+      email: "mehmet.kaya@mahirbakay.com",
+      address: "İstanbul, Beyoğlu",
+      department: "Makine",
+      position: "Kule Vinç Operatörü",
+      currentSite: "Vadi Evleri",
+      hireDate: new Date("2018-06-01"),
+      employmentType: EmploymentType.WORKER,
+      status: PersonelStatus.ACTIVE,
+      salary: 32000,
+      salaryPayDay: 25,
+      companyId: contractorCompany.id,
+      role: UserRole.STAFF,
+      bloodType: "O+",
+      gunlukYevmiye: 500
+    }
+  })
+
+  const ayseDemir = await prisma.personel.upsert({
+    where: { personnelNo: "P004" },
+    update: {},
+    create: {
+      personnelNo: "P004",
+      name: "Ayşe Demir",
+      tcNo: "55566677788",
+      age: 30,
+      birthDate: new Date("1994-07-22"),
+      gender: Gender.FEMALE,
+      phone: "+90 555 888 9900",
+      email: "ayse.demir@mahirbakay.com",
+      address: "İstanbul, Beşiktaş",
+      department: "İSG",
+      position: "İSG Uzmanı",
+      currentSite: "Nexa Plaza",
+      hireDate: new Date("2021-09-15"),
+      employmentType: EmploymentType.OFFICER,
+      status: PersonelStatus.ACTIVE,
+      salary: 38000,
+      salaryPayDay: 25,
+      companyId: contractorCompany.id,
+      role: UserRole.ENGINEER,
+      bloodType: "AB+"
+    }
+  })
+
+  const mustafaOz = await prisma.personel.upsert({
+    where: { personnelNo: "P005" },
+    update: {},
+    create: {
+      personnelNo: "P005",
+      name: "Mustafa Öz",
+      tcNo: "99988877766",
+      age: 38,
+      birthDate: new Date("1986-11-05"),
+      gender: Gender.MALE,
+      phone: "+90 542 333 4455",
+      email: "mustafa.oz@mahirbakay.com",
+      address: "İstanbul, Fatih",
+      department: "İnşaat",
+      position: "Beton Masteri",
+      currentSite: "İskenderun",
+      hireDate: new Date("2019-04-01"),
+      employmentType: EmploymentType.WORKER,
+      status: PersonelStatus.ACTIVE,
+      salary: 29000,
+      salaryPayDay: 25,
+      companyId: contractorCompany.id,
+      role: UserRole.STAFF,
+      bloodType: "B-",
+      gunlukYevmiye: 450
+    }
+  })
+
+  console.log(` Created ${mehmetKaya.name} (Kule Vinç Operatörü)`)
+  console.log(` Created ${ayseDemir.name} (İSG Uzmanı)`)
+  console.log(` Created ${mustafaOz.name} (Beton Masteri)`)
+
+  // ============================================================================
+  // PUANTAJ KAYITLARI (ATTENDANCE RECORDS)
+  // ============================================================================
+  console.log(" Creating attendance records...")
+
+  const attendanceData = []
+  const today = new Date()
+  
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(today)
+    date.setDate(date.getDate() - i)
+    
+    // Hafta sonu hariç
+    if (date.getDay() !== 0 && date.getDay() !== 6) {
+      attendanceData.push({
+        date: date,
+        checkIn: new Date(date.setHours(8, 0, 0)),
+        checkOut: new Date(date.setHours(17, 0, 0)),
+        dayMultiplier: 1,
+        overtimeHours: 0,
+        status: "PRESENT",
+        personelId: mehmetKaya.id,
+        projectId: vadiEvleri.id
+      })
+      
+      attendanceData.push({
+        date: new Date(date),
+        checkIn: new Date(date.setHours(8, 15, 0)),
+        checkOut: new Date(date.setHours(17, 30, 0)),
+        dayMultiplier: 1,
+        overtimeHours: 0.25,
+        status: "PRESENT",
+        personelId: ayseDemir.id,
+        projectId: nexaPlaza.id
+      })
+      
+      attendanceData.push({
+        date: new Date(date),
+        checkIn: new Date(date.setHours(7, 45, 0)),
+        checkOut: new Date(date.setHours(16, 45, 0)),
+        dayMultiplier: 1,
+        overtimeHours: 0,
+        status: "PRESENT",
+        personelId: mustafaOz.id,
+        projectId: iskenderun.id
+      })
+    }
+  }
+
+  for (const record of attendanceData) {
+    await prisma.attendanceRecord.create({ data: record })
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+
+  console.log(` Created ${attendanceData.length} attendance records`)
+
+  // ============================================================================
+  // FİNANS İŞLEMLERİ (TRANSACTIONS)
+  // ============================================================================
+  console.log(" Creating finance transactions...")
+
+  await prisma.transaction.create({
+    data: {
+      type: "GIDER",
+      amount: 250000,
+      description: "Hazır Beton Alımı - Vadi Evleri A Blok Temel",
+      date: new Date("2024-01-20"),
+      category: "Malzeme",
+      project: { connect: { id: vadiEvleri.id } },
+      personnel: { connect: { id: mehmetKaya.id } }
+    }
+  })
+
+  await prisma.transaction.create({
+    data: {
+      type: "GIDER",
+      amount: 435000,
+      description: "Hakediş Ödemesi - Yıldız Demirci Ocak Ayı",
+      date: new Date("2024-02-01"),
+      category: "Taşeron Ödemesi",
+      project: { connect: { id: vadiEvleri.id } },
+      personnel: { connect: { id: mehmetKaya.id } }
+    }
+  })
+
+  await prisma.transaction.create({
+    data: {
+      type: "GELIR",
+      amount: 15000000,
+      description: "Proje Avans Ödemesi - Nexa Plaza",
+      date: new Date("2024-02-15"),
+      category: "Proje Geliri",
+      project: { connect: { id: nexaPlaza.id } },
+      personnel: { connect: { id: ayseDemir.id } }
+    }
+  })
+
+  await prisma.transaction.create({
+    data: {
+      type: "GIDER",
+      amount: 85000,
+      description: "Demir Alımı - 20 Ton Nervürlü Çelik",
+      date: new Date("2024-03-01"),
+      category: "Malzeme",
+      project: { connect: { id: vadiEvleri.id } },
+      personnel: { connect: { id: mehmetKaya.id } }
+    }
+  })
+
+  await prisma.transaction.create({
+    data: {
+      type: "GIDER",
+      amount: 45000,
+      description: "Çimento Alımı - 50 Torba Çimento",
+      date: new Date("2024-03-05"),
+      category: "Malzeme",
+      project: { connect: { id: iskenderun.id } },
+      personnel: { connect: { id: mustafaOz.id } }
+    }
+  })
+
+  console.log(" Created 5 finance transactions")
+
+  // ============================================================================
+  // STOK KAYITLARI (STOCK)
+  // ============================================================================
+  console.log(" Creating stock items...")
+
+  await prisma.stock.upsert({
+    where: { code: "S001" },
+    update: {},
+    create: {
+      code: "S001",
+      name: "Nervürlü Çelik S420",
+      category: "Demir",
+      unit: "TON",
+      quantity: 45.5,
+      minStock: 20,
+      maxStock: 100,
+      costPrice: 4250,
+      sellPrice: 4800
+    }
+  })
+
+  await prisma.stock.upsert({
+    where: { code: "S002" },
+    update: {},
+    create: {
+      code: "S002",
+      name: "Portland Çimento CEM I",
+      category: "Çimento",
+      unit: "PAKET",
+      quantity: 250,
+      minStock: 100,
+      maxStock: 500,
+      costPrice: 90,
+      sellPrice: 110
+    }
+  })
+
+  await prisma.stock.upsert({
+    where: { code: "S003" },
+    update: {},
+    create: {
+      code: "S003",
+      name: "Kalıp Plywood 18mm",
+      category: "Kalıp",
+      unit: "ADET",
+      quantity: 150,
+      minStock: 50,
+      maxStock: 300,
+      costPrice: 450,
+      sellPrice: 550
+    }
+  })
+
+  console.log(" Created 3 stock items")
+
+  // ============================================================================
+  // AI ANALİZLERİ (AI ANALYSIS)
+  // ============================================================================
+  console.log(" Creating AI analysis records...")
+
+  await prisma.aIAnalysis.create({
+    data: {
+      type: "REINFORCEMENT",
+      title: "Vadi Evleri - Kolon Demir Aralığı Analizi",
+      description: "A Blok 3. Kat Kolon K12 donatı aralığı kontrol edildi. Şartnameye göre %15 sapma tespit edildi.",
+      result: "WARNING",
+      confidence: 87.5,
+      imageUrl: "/images/ai-reinforcement-1.jpg",
+      projectId: vadiEvleri.id
+    }
+  })
+
+  await prisma.aIAnalysis.create({
+    data: {
+      type: "CRACK_DETECTION",
+      title: "Drone Çatlak Tespiti - Nexa Plaza",
+      description: "B Blok cephe yüzeyinde 3 adet mikro çatlak tespit edildi. Risk seviyesi düşük.",
+      result: "PASS",
+      confidence: 92.3,
+      imageUrl: "/images/ai-crack-1.jpg",
+      projectId: nexaPlaza.id
+    }
+  })
+
+  await prisma.aIAnalysis.create({
+    data: {
+      type: "DRONE_ANALYSIS",
+      title: "İskenderun Sahil Yolu İlerleme Analizi",
+      description: "Drone görüntüleri ile %30 ilerleme tespit edildi. Planlanan programa uygun ilerleme.",
+      result: "PASS",
+      confidence: 95.0,
+      imageUrl: "/images/ai-drone-1.jpg",
+      projectId: iskenderun.id
+    }
+  })
+
+  await prisma.aIAnalysis.create({
+    data: {
+      type: "SAFETY",
+      title: "İSG Güvenlik Analizi - Vadi Evleri",
+      description: "İSG ekipman kullanımı analizi: %92 uyum. Baret takmayan 2 personel tespit edildi.",
+      result: "WARNING",
+      confidence: 89.7,
+      imageUrl: "/images/ai-safety-1.jpg",
+      projectId: vadiEvleri.id
+    }
+  })
+
+  console.log(" Created 4 AI analysis records")
+
+  // ============================================================================
+  // İSG RAPORLARI (ISG REPORTS)
+  // ============================================================================
+  console.log(" Creating İSG reports...")
+
+  await prisma.isgReport.create({
+    data: {
+      type: "TEHLIKE",
+      status: "COZULDU",
+      description: "A Blok 4. Kat İskele Korkuluğu Gevşemiş - A Blok 4. katta iskele korkuluğunda gevşeklik tespit edildi. Acil düzeltme yapıldı.",
+      location: "Vadi Evleri - A Blok 4. Kat",
+      projectId: vadiEvleri.id,
+      personelId: ayseDemir.id
+    }
+  })
+
+  await prisma.isgReport.create({
+    data: {
+      type: "TEHLIKE",
+      status: "INCELEMEDE",
+      description: "Baret Takmayan Personel Tespiti - Nexa Plaza şantiyesinde baret takmadan çalışan 2 personel tespit edildi. İkaz yapıldı.",
+      location: "Nexa Plaza - Şantiye Girişi",
+      projectId: nexaPlaza.id,
+      personelId: ayseDemir.id
+    }
+  })
+
+  await prisma.isgReport.create({
+    data: {
+      type: "KAZA_TUTANAGI",
+      status: "ACIL",
+      description: "Vinç Operatörü Düşme Riski - İskenderun şantiyesinde vinç operatörü platformunda güvenlik eksikliği tespit edildi.",
+      location: "İskenderun - Vinç Platformu",
+      projectId: iskenderun.id,
+      personelId: ayseDemir.id
+    }
+  })
+
+  await prisma.isgReport.create({
+    data: {
+      type: "EKSIK_DOKUM",
+      status: "COZULDU",
+      description: "İSG Eğitim Belgesi Eksikliği - Yeni personel İSG eğitimi belgesi eksik. Eğitim tamamlandı.",
+      location: "Vadi Evleri - Şantiye Ofisi",
+      projectId: vadiEvleri.id,
+      personelId: ayseDemir.id
+    }
+  })
+
+  console.log(" Created 4 İSG reports")
+
+  // ============================================================================
+  // İŞ EMİRLERİ (WORK ORDERS)
+  // ============================================================================
+  console.log(" Creating work orders...")
+
+  await prisma.workOrder.create({
+    data: {
+      title: "A Blok Temel Kazı Tamamlama",
+      description: "A Blok temel kazı işlerinin tamamlanması ve zemin hazırlığı",
+      status: "IN_PROGRESS",
+      priority: "HIGH",
+      department: "INSAAT",
+      projectId: vadiEvleri.id,
+      assignedToId: mehmetKaya.id,
+      dueDate: new Date("2024-04-15")
+    }
+  })
+
+  await prisma.workOrder.create({
+    data: {
+      title: "Elektrik Tesisatı Proje Revizyonu",
+      description: "Nexa Plaza elektrik tesisatı projesinde revizyon gerekiyor",
+      status: "TODO",
+      priority: "MEDIUM",
+      department: "ELEKTRIK",
+      projectId: nexaPlaza.id,
+      assignedToId: mustafaOz.id,
+      dueDate: new Date("2024-04-30")
+    }
+  })
+
+  await prisma.workOrder.create({
+    data: {
+      title: "İSG Ekipman Kontrolü",
+      description: "Tüm şantiyelerde İSG ekipmanlarının periyodik kontrolü",
+      status: "IN_PROGRESS",
+      priority: "HIGH",
+      department: "GENEL",
+      projectId: vadiEvleri.id,
+      assignedToId: ayseDemir.id,
+      dueDate: new Date("2024-04-10")
+    }
+  })
+
+  await prisma.workOrder.create({
+    data: {
+      title: "Sahil Yolu Asfalt Serme",
+      description: "İskenderun sahil yolunda asfalt serme işi",
+      status: "TODO",
+      priority: "MEDIUM",
+      department: "INSAAT",
+      projectId: iskenderun.id,
+      assignedToId: mehmetKaya.id,
+      dueDate: new Date("2024-05-15")
+    }
+  })
+
+  console.log(" Created 4 work orders")
+
+  // ============================================================================
+  // VARDİYALAR (SHIFTS)
+  // ============================================================================
+  console.log(" Creating shifts...")
+
+  await prisma.shift.create({
+    data: {
+      name: "Sabah Vardiyası",
+      timeRange: "08:00 - 17:00",
+      personnelCount: 45,
+      projectId: vadiEvleri.id,
+      status: "Active"
+    }
+  })
+
+  await prisma.shift.create({
+    data: {
+      name: "Gece Vardiyası",
+      timeRange: "20:00 - 05:00",
+      personnelCount: 15,
+      projectId: vadiEvleri.id,
+      status: "Active"
+    }
+  })
+
+  await prisma.shift.create({
+    data: {
+      name: "Sabah Vardiyası",
+      timeRange: "08:00 - 17:00",
+      personnelCount: 30,
+      projectId: nexaPlaza.id,
+      status: "Active"
+    }
+  })
+
+  console.log(" Created 3 shifts")
+
   console.log(" Seed completed successfully!")
   console.log(" Summary:")
-  console.log("   - 2 Companies (INSPECTION, CONTRACTOR)")
-  console.log("   - 3 Users (Patron, Denetçi, Kontrol Elemanı)")
-  console.log("   - 3 Personnel Records")
+  console.log("   - 5 Companies (2 Main, 3 Subcontractors)")
+  console.log("   - 6 Users (Demo + Patron + Denetçi + Kontrol + Additional)")
+  console.log("   - 6 Personnel Records")
+  console.log("   - 3 ERP Projects (Vadi Evleri, Nexa Plaza, İskenderun)")
   console.log("   - 3 YİBF Projects (LOW, MEDIUM, HIGH Risk)")
   console.log("   - 6 Inspection Records")
   console.log("   - 5 Deficiencies")
   console.log("   - 7 YİBF Events")
+  console.log("   - 3 Subcontractor Contracts")
+  console.log("   - 3 Progress Billings")
+  console.log("   - 3 Deductions")
+  console.log("   - ~90 Attendance Records (30 days x 3 personnel)")
+  console.log("   - 5 Finance Transactions")
+  console.log("   - 3 Stock Items")
+  console.log("   - 4 AI Analysis Records")
+  console.log("   - 4 İSG Reports")
+  console.log("   - 4 Work Orders")
+  console.log("   - 3 Shifts")
   console.log("   - CMS Content (About, Services, Projects)")
   console.log("   - 3 Contract Templates")
 

@@ -228,6 +228,7 @@ model Project {
   inspections Inspection[]
   deficiencies Deficiency[]
   shifts Shift[]
+  aiAnalyses AIAnalysis[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -2280,6 +2281,31 @@ model Document {
   @@index([uploadedById])
   @@index([status])
   @@index([tenantId])
+}
+
+// ============================================================================
+// AI ANALYSIS (Yapay Zeka Analizleri)
+// ============================================================================
+
+model AIAnalysis {
+  id          String   @id @default(cuid())
+  type        String   // REINFORCEMENT, CRACK_DETECTION, DRONE_ANALYSIS, SAFETY
+  title       String
+  description String   @db.Text
+  result      String   // PASS, WARNING, FAIL
+  confidence  Float    // 0-100 arası güven skoru
+  imageUrl    String?
+  metadata    String?  @db.Text // Ek JSON verileri
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([type])
+  @@index([result])
+  @@index([createdAt])
 }
 
 // ============================================================================
