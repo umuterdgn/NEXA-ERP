@@ -38,7 +38,7 @@ export default function EquipmentsPage() {
       const response = await fetch("/api/admin/equipments")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Equipments):", data)
+        console.log("Gelen Veri (Equipments):", data)
         setEquipments(Array.isArray(data) ? data : [])
       }
     } catch (error) {
@@ -54,7 +54,7 @@ export default function EquipmentsPage() {
       const response = await fetch("/api/admin/projects")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Projects):", data)
+        console.log("Gelen Veri (Projects):", data)
         setProjects(Array.isArray(data) ? data : [])
       }
     } catch (error) {

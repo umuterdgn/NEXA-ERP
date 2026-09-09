@@ -43,7 +43,6 @@ export default function AdminPersonelPage() {
   const isAdmin = userPermissions.length === 0
 
   const [personnel, setPersonnel] = useState<PersonnelRecord[]>([])
-  const [inspectorStats, setInspectorStats] = useState<InspectorStat[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
@@ -67,23 +66,16 @@ export default function AdminPersonelPage() {
 
     const loadData = async () => {
       try {
-        const [personnelResponse, statsResponse] = await Promise.all([
-          fetch('/api/admin/personnel'),
-          fetch('/api/admin/personnel/stats')
-        ])
+        const personnelResponse = await fetch('/api/admin/personnel')
 
         if (!isActive) return
 
         if (personnelResponse.ok) {
           setPersonnel(await personnelResponse.json())
         }
-
-        if (statsResponse.ok) {
-          setInspectorStats(await statsResponse.json())
-        }
       } catch (error) {
         if (!isActive) return
-        console.error('Failed to fetch personnel dashboard data:', error)
+        console.error('Failed to fetch personnel:', error)
       } finally {
         if (isActive) {
           setIsLoading(false)
@@ -149,71 +141,6 @@ export default function AdminPersonelPage() {
         </button>
       </div>
 
-      {/* Inspector Performance Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {inspectorStats.slice(0, 3).map((inspector, index) => {
-          const colors = [
-            {
-              bg: 'from-blue-900/20 to-indigo-900/20',
-              border: 'border-blue-500/30',
-              iconBg: 'bg-blue-500/20',
-              iconColor: 'text-blue-400',
-              statColor: 'text-blue-400'
-            },
-            {
-              bg: 'from-purple-900/20 to-pink-900/20',
-              border: 'border-purple-500/30',
-              iconBg: 'bg-purple-500/20',
-              iconColor: 'text-purple-400',
-              statColor: 'text-purple-400'
-            },
-            {
-              bg: 'from-emerald-900/20 to-teal-900/20',
-              border: 'border-emerald-500/30',
-              iconBg: 'bg-emerald-500/20',
-              iconColor: 'text-emerald-400',
-              statColor: 'text-emerald-400'
-            }
-          ]
-          const color = colors[index % colors.length]
-
-          return (
-            <div key={inspector.id} className={`bg-gradient-to-br ${color.bg} rounded-xl p-4 border ${color.border}`}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 ${color.iconBg} rounded-lg flex items-center justify-center`}>
-                  <svg className={`w-5 h-5 ${color.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Denetçi {String.fromCharCode(65 + index)}</h3>
-                  <p className="text-slate-400 text-xs">{inspector.name}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className={`text-2xl font-bold ${color.statColor}`}>{inspector.inspectionCount}</p>
-                  <p className="text-xs text-slate-400">Kontrol</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-green-400">{inspector.averageDuration}dk</p>
-                  <p className="text-xs text-slate-400">Ort. Süre</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-orange-400">{inspector.deficiencyCount}</p>
-                  <p className="text-xs text-slate-400">Eksiklik</p>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-        {inspectorStats.length === 0 && (
-          <div className="col-span-3 text-center text-slate-400 py-8">
-            Henüz denetçi kaydı bulunmuyor
-          </div>
-        )}
-      </div>
-
       {isAdding ? (
         <PersonelForm
           onSave={() => {
@@ -223,12 +150,11 @@ export default function AdminPersonelPage() {
           onCancel={() => setIsAdding(false)}
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
           {isLoading ? (
             <div className="p-8 text-center text-slate-400">Yükleniyor...</div>
           ) : (
-            <div className="mobile-table-shell">
-              <table className="min-w-[880px] w-full">
+            <table className="min-w-full">
               <thead className="bg-slate-800">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Personel No</th>
@@ -237,17 +163,17 @@ export default function AdminPersonelPage() {
                   <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">TC No</th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Birim</th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Mevcut Şantiye</th>
-                  <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {personnel.map((person) => (
-                  <tr key={person.id} className="hover:bg-slate-800">
+                  <tr key={person.id} className="hover:bg-slate-800/50">
                     <td className="px-6 py-4 text-sm text-white">{person.personnelNo}</td>
-                    <td className="px-6 py-4 text-sm text-white">
+                    <td className="px-6 py-4 text-sm">
                       <Link 
                         href={`/admin/personel/${person.id}`}
-                        className="text-blue-400 hover:text-blue-300 font-medium"
+                        className="text-blue-500 hover:text-blue-400"
                       >
                         {person.name}
                       </Link>
@@ -256,16 +182,16 @@ export default function AdminPersonelPage() {
                     <td className="px-6 py-4 text-sm text-slate-400">{person.tcNo || "-"}</td>
                     <td className="px-6 py-4 text-sm text-slate-400">{person.department}</td>
                     <td className="px-6 py-4 text-sm text-slate-400">{person.currentSite}</td>
-                    <td className="px-6 py-4 text-right text-sm space-x-2">
+                    <td className="px-6 py-4 text-sm">
                       <Link
                         href={`/admin/personel/${person.id}`}
-                        className="text-blue-400 hover:text-blue-300"
+                        className="text-blue-400 hover:text-blue-300 mr-3"
                       >
                         Detay
                       </Link>
                       <button
                         onClick={() => handleDelete(person.id)}
-                        className="text-red-400 hover:text-red-300 ml-2"
+                        className="text-red-500 hover:text-red-400"
                       >
                         Sil
                       </button>
@@ -274,7 +200,6 @@ export default function AdminPersonelPage() {
                 ))}
               </tbody>
             </table>
-            </div>
           )}
         </div>
       )}

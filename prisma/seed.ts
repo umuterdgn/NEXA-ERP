@@ -1377,6 +1377,7 @@ async function main() {
   // ============================================================================
   console.log(" Creating shifts...")
 
+  // Shifts (Vardiyalar)
   await prisma.shift.create({
     data: {
       name: "Sabah Vardiyası",
@@ -1407,7 +1408,854 @@ async function main() {
     }
   })
 
-  console.log(" Created 3 shifts")
+  await prisma.shift.create({
+    data: {
+      name: "Öğle Vardiyası",
+      timeRange: "12:00 - 21:00",
+      personnelCount: 25,
+      projectId: nexaPlaza.id,
+      status: "Active"
+    }
+  })
+
+  await prisma.shift.create({
+    data: {
+      name: "Sabah Vardiyası",
+      timeRange: "07:00 - 16:00",
+      personnelCount: 35,
+      projectId: iskenderun.id,
+      status: "Active"
+    }
+  })
+
+  await prisma.shift.create({
+    data: {
+      name: "Gece Vardiyası",
+      timeRange: "19:00 - 04:00",
+      personnelCount: 20,
+      projectId: iskenderun.id,
+      status: "Active"
+    }
+  })
+
+  await prisma.shift.create({
+    data: {
+      name: "Hafta Sonu Vardiyası",
+      timeRange: "09:00 - 18:00",
+      personnelCount: 15,
+      projectId: vadiEvleri.id,
+      status: "Active"
+    }
+  })
+
+  await prisma.shift.create({
+    data: {
+      name: "Part-Time Vardiya",
+      timeRange: "14:00 - 20:00",
+      personnelCount: 10,
+      projectId: nexaPlaza.id,
+      status: "Active"
+    }
+  })
+
+  console.log(" Created 8 shifts")
+
+  // ============================================================================
+  // DRONE ANALYSIS (Drone Gözlem Analizi)
+  // ============================================================================
+  console.log(" Creating drone analyses...")
+
+  await prisma.droneAnalysis.create({
+    data: {
+      title: "A Blok Temel Atımı Drone Gözlemi",
+      description: "Temel kazı alanının havadan görüntülenmesi ve ilerleme durumu analizi",
+      flightDate: new Date("2024-01-15"),
+      areaCovered: 2.5,
+      imageUrl: "https://example.com/drone1.jpg",
+      status: "COMPLETED",
+      projectId: vadiEvleri.id
+    }
+  })
+
+  await prisma.droneAnalysis.create({
+    data: {
+      title: "Nexa Plaza Çatı İzolasyon Kontrolü",
+      description: "Çatı izolasyon malzemesi uygulama kalitesi drone ile kontrol edildi",
+      flightDate: new Date("2024-02-20"),
+      areaCovered: 1.8,
+      imageUrl: "https://example.com/drone2.jpg",
+      status: "COMPLETED",
+      projectId: nexaPlaza.id
+    }
+  })
+
+  await prisma.droneAnalysis.create({
+    data: {
+      title: "İskenderun Sahil Yolu Topografya",
+      description: "Yol güzergahı ve çevre alanın topografik haritalandırılması",
+      flightDate: new Date("2024-03-10"),
+      areaCovered: 5.0,
+      imageUrl: "https://example.com/drone3.jpg",
+      status: "COMPLETED",
+      projectId: iskenderun.id
+    }
+  })
+
+  console.log(" Created 3 drone analyses")
+
+  // ============================================================================
+  // LAB DOCUMENT (Laboratuvar ve Evrak)
+  // ============================================================================
+  console.log(" Creating lab documents...")
+
+  await prisma.labDocument.create({
+    data: {
+      title: "C25 Beton Dayanım Testi",
+      documentNo: "LAB-2024-001",
+      sampleType: "BETON",
+      testResult: "PASS",
+      testDate: new Date("2024-01-20"),
+      imageUrl: "https://example.com/lab1.jpg",
+      notes: "28 günlük dayanım testi sonucu 32 MPa",
+      projectId: vadiEvleri.id
+    }
+  })
+
+  await prisma.labDocument.create({
+    data: {
+      title: "Donatı Çekme Testi",
+      documentNo: "LAB-2024-002",
+      sampleType: "DONATI",
+      testResult: "PASS",
+      testDate: new Date("2024-02-15"),
+      imageUrl: "https://example.com/lab2.jpg",
+      notes: "S420 donatı çeliği çekme testi başarılı",
+      projectId: nexaPlaza.id
+    }
+  })
+
+  await prisma.labDocument.create({
+    data: {
+      title: "Zemin Taşıma Kapasitesi Testi",
+      documentNo: "LAB-2024-003",
+      sampleType: "TOPRAK",
+      testResult: "PASS",
+      testDate: new Date("2024-03-05"),
+      imageUrl: "https://example.com/lab3.jpg",
+      notes: "Taşıma kapasitesi TS 500 standartlarına uygun",
+      projectId: iskenderun.id
+    }
+  })
+
+  console.log(" Created 3 lab documents")
+
+  // ============================================================================
+  // REBAR FORMWORK CHECK (Demir & Kalıp Kontrol)
+  // ============================================================================
+  console.log(" Creating rebar formwork checks...")
+
+  await prisma.rebarFormworkCheck.create({
+    data: {
+      title: "A Blok 3. Kat Kolon Demirleri Kontrolü",
+      type: "REBAR",
+      location: "A Blok 3. Kat Kolonlar",
+      status: "APPROVED",
+      checkDate: new Date("2024-01-25"),
+      imageUrl: "https://example.com/rebar1.jpg",
+      notes: "Demir aralıkları ve bağlantı detayları onaylandı",
+      projectId: vadiEvleri.id,
+      inspectorId: mehmetKaya.id
+    }
+  })
+
+  await prisma.rebarFormworkCheck.create({
+    data: {
+      title: "B Blok 2. Kat Döşeme Kalıp Kontrolü",
+      type: "FORMWORK",
+      location: "B Blok 2. Kat Döşeme",
+      status: "APPROVED",
+      checkDate: new Date("2024-02-18"),
+      imageUrl: "https://example.com/formwork1.jpg",
+      notes: "Kalıp düzlemi ve destekler uygun",
+      projectId: nexaPlaza.id,
+      inspectorId: ayseDemir.id
+    }
+  })
+
+  await prisma.rebarFormworkCheck.create({
+    data: {
+      title: "Kiriş Demiri ve Kalıp Birleşik Kontrol",
+      type: "BOTH",
+      location: "C Blok 1. Kat Kirişler",
+      status: "PENDING",
+      checkDate: new Date("2024-03-20"),
+      imageUrl: "https://example.com/both1.jpg",
+      notes: "Kontrol devam ediyor",
+      projectId: iskenderun.id,
+      inspectorId: mustafaOz.id
+    }
+  })
+
+  console.log(" Created 3 rebar formwork checks")
+
+  // ============================================================================
+  // ATTACHMENT (Ataşman & Dijital Delil)
+  // ============================================================================
+  console.log(" Creating attachments...")
+
+  await prisma.attachment.create({
+    data: {
+      title: "Temel Kazı Fotoğrafı",
+      type: "PHOTO",
+      fileUrl: "https://example.com/att1.jpg",
+      description: "A Blok temel kazı alanı görüntüsü",
+      projectId: vadiEvleri.id,
+      uploadedById: patron.id
+    }
+  })
+
+  await prisma.attachment.create({
+    data: {
+      title: "İş Güvenliği Eğitim Videosu",
+      type: "VIDEO",
+      fileUrl: "https://example.com/att1.mp4",
+      description: "Şantiye giriş eğitimi kaydı",
+      projectId: nexaPlaza.id,
+      uploadedById: patron.id
+    }
+  })
+
+  await prisma.attachment.create({
+    data: {
+      title: "Proje Teknik Şartnamesi",
+      type: "DOCUMENT",
+      fileUrl: "https://example.com/att1.pdf",
+      description: "Teknik şartname PDF dosyası",
+      projectId: iskenderun.id,
+      uploadedById: patron.id
+    }
+  })
+
+  console.log(" Created 3 attachments")
+
+  // ============================================================================
+  // LICENSE ARCHIVE (Ruhsat ve Evrak Arşivi)
+  // ============================================================================
+  console.log(" Creating license archives...")
+
+  await prisma.licenseArchive.create({
+    data: {
+      title: "Yapı Ruhsatı - Vadi Evleri",
+      licenseNo: "YR-2024-001",
+      type: "YAPI_RUHSAT",
+      issueDate: new Date("2024-01-01"),
+      expiryDate: new Date("2026-01-01"),
+      status: "ACTIVE",
+      fileUrl: "https://example.com/license1.pdf",
+      notes: "Belediye onaylı yapı ruhsatı",
+      projectId: vadiEvleri.id
+    }
+  })
+
+  await prisma.licenseArchive.create({
+    data: {
+      title: "İSG Belgelendirme Sertifikası",
+      licenseNo: "ISG-2024-002",
+      type: "ISG_BELGESI",
+      issueDate: new Date("2024-02-01"),
+      expiryDate: new Date("2025-02-01"),
+      status: "ACTIVE",
+      fileUrl: "https://example.com/license2.pdf",
+      notes: "İş güvenliği belgesi",
+      projectId: nexaPlaza.id
+    }
+  })
+
+  await prisma.licenseArchive.create({
+    data: {
+      title: "Çevre İzin Belgesi",
+      licenseNo: "CEVRE-2024-003",
+      type: "DIGER",
+      issueDate: new Date("2024-03-01"),
+      expiryDate: new Date("2025-03-01"),
+      status: "ACTIVE",
+      fileUrl: "https://example.com/license3.pdf",
+      notes: "Çevre bakanlığı izni",
+      projectId: iskenderun.id
+    }
+  })
+
+  console.log(" Created 3 license archives")
+
+  // ============================================================================
+  // DIGITAL ARCHIVE (Dijital Evrak Arşivi)
+  // ============================================================================
+  console.log(" Creating digital archives...")
+
+  await prisma.digitalArchive.create({
+    data: {
+      title: "Mimari Proje Dosyaları",
+      category: "PROJE",
+      fileUrl: "https://example.com/arch1.zip",
+      fileSize: 52428800,
+      mimeType: "application/zip",
+      description: "Mimari çizimler ve detaylar",
+      projectId: vadiEvleri.id,
+      uploadedById: patron.id
+    }
+  })
+
+  await prisma.digitalArchive.create({
+    data: {
+      title: "Aylık İlerleme Raporu - Şubat",
+      category: "RAPOR",
+      fileUrl: "https://example.com/arch2.pdf",
+      fileSize: 2097152,
+      mimeType: "application/pdf",
+      description: "Şubat ayı ilerleme raporu",
+      projectId: nexaPlaza.id,
+      uploadedById: patron.id
+    }
+  })
+
+  await prisma.digitalArchive.create({
+    data: {
+      title: "Ana Sözleşme",
+      category: "SOZLESME",
+      fileUrl: "https://example.com/arch3.pdf",
+      fileSize: 10485760,
+      mimeType: "application/pdf",
+      description: "İdare ile yapılan ana sözleşme",
+      projectId: iskenderun.id,
+      uploadedById: patron.id
+    }
+  })
+
+  console.log(" Created 3 digital archives")
+
+  // ============================================================================
+  // OCR DOCUMENT (Akıllı Evrak Denetimi)
+  // ============================================================================
+  console.log(" Creating OCR documents...")
+
+  await prisma.oCRDocument.create({
+    data: {
+      title: "Fatura OCR İşlemi",
+      originalText: "YILDIZ DEMİR A.Ş. Fatura No: 2024-001",
+      extractedText: "YILDIZ DEMİR A.Ş. Fatura No: 2024-001 Tutar: 125.000 TL",
+      confidence: 95.5,
+      status: "PROCESSED",
+      fileUrl: "https://example.com/ocr1.pdf",
+      imageUrl: "https://example.com/ocr1.jpg",
+      projectId: vadiEvleri.id
+    }
+  })
+
+  await prisma.oCRDocument.create({
+    data: {
+      title: "Teklif OCR İşlemi",
+      originalText: "GÜVEN KALIPÇILIK Teklif No: TK-2024-001",
+      extractedText: "GÜVEN KALIPÇILIK Teklif No: TK-2024-001 Tutar: 85.000 TL",
+      confidence: 92.3,
+      status: "PROCESSED",
+      fileUrl: "https://example.com/ocr2.pdf",
+      imageUrl: "https://example.com/ocr2.jpg",
+      projectId: nexaPlaza.id
+    }
+  })
+
+  await prisma.oCRDocument.create({
+    data: {
+      title: "Sözleşme OCR İşlemi",
+      originalText: "APEX ELEKTRİK Sözleşme No: SZ-2024-001",
+      extractedText: "APEX ELEKTRİK Sözleşme No: SZ-2024-001 Tutar: 250.000 TL",
+      confidence: 88.7,
+      status: "PROCESSED",
+      fileUrl: "https://example.com/ocr3.pdf",
+      imageUrl: "https://example.com/ocr3.jpg",
+      projectId: iskenderun.id
+    }
+  })
+
+  console.log(" Created 3 OCR documents")
+
+  // ============================================================================
+  // AI IMAGE ANALYSIS (AI Görsel Analiz)
+  // ============================================================================
+  console.log(" Creating AI image analyses...")
+
+  await prisma.aIImageAnalysis.create({
+    data: {
+      title: "Çatlak Tespiti - A Blok Duvar",
+      imageUrl: "https://example.com/ai1.jpg",
+      analysisType: "CRACK_DETECTION",
+      result: "WARNING",
+      confidence: 87.5,
+      boundingBoxes: '[{"x":100,"y":200,"width":50,"height":30,"label":"crack"}]',
+      notes: "Duvar yüzeyinde küçük çatlak tespit edildi",
+      projectId: vadiEvleri.id
+    }
+  })
+
+  await prisma.aIImageAnalysis.create({
+    data: {
+      title: "İş Güvenliği Analizi - Baret Kontrolü",
+      imageUrl: "https://example.com/ai2.jpg",
+      analysisType: "SAFETY_HAZARD",
+      result: "PASS",
+      confidence: 94.2,
+      boundingBoxes: '[{"x":150,"y":100,"width":40,"height":40,"label":"helmet"}]',
+      notes: "Tüm personel baret taktı",
+      projectId: nexaPlaza.id
+    }
+  })
+
+  await prisma.aIImageAnalysis.create({
+    data: {
+      title: "Ekipman Sayımı - Vinçler",
+      imageUrl: "https://example.com/ai3.jpg",
+      analysisType: "EQUIPMENT_COUNT",
+      result: "PASS",
+      confidence: 91.8,
+      boundingBoxes: '[{"x":200,"y":150,"width":60,"height":80,"label":"crane"}]',
+      notes: "3 adet kule vinç tespit edildi",
+      projectId: iskenderun.id
+    }
+  })
+
+  console.log(" Created 3 AI image analyses")
+
+  // ============================================================================
+  // PROJECT REVISION (Proje Revizyonları)
+  // ============================================================================
+  console.log(" Creating project revisions...")
+
+  await prisma.projectRevision.create({
+    data: {
+      version: "v1.0",
+      title: "İlk Proje Revizyonu",
+      description: "Mimari düzenlemeler ve plan değişiklikleri",
+      status: "APPROVED",
+      fileUrl: "https://example.com/rev1.pdf",
+      projectId: vadiEvleri.id,
+      createdById: patron.id
+    }
+  })
+
+  await prisma.projectRevision.create({
+    data: {
+      version: "v1.1",
+      title: "İkinci Proje Revizyonu",
+      description: "Statik güçlendirme detayları",
+      status: "APPROVED",
+      fileUrl: "https://example.com/rev2.pdf",
+      projectId: nexaPlaza.id,
+      createdById: patron.id
+    }
+  })
+
+  await prisma.projectRevision.create({
+    data: {
+      version: "v2.0",
+      title: "Üçüncü Proje Revizyonu",
+      description: "Mekanik tesisat değişiklikleri",
+      status: "DRAFT",
+      fileUrl: "https://example.com/rev3.pdf",
+      projectId: iskenderun.id,
+      createdById: patron.id
+    }
+  })
+
+  console.log(" Created 3 project revisions")
+
+  // ============================================================================
+  // DIGITAL DRAWING (Dijital Projeler / Çizimler)
+  // ============================================================================
+  console.log(" Creating digital drawings...")
+
+  await prisma.digitalDrawing.create({
+    data: {
+      title: "Mimari Plan - Zemin Kat",
+      drawingNo: "M-001",
+      type: "MIMARI",
+      scale: "1/100",
+      status: "ACTIVE",
+      fileUrl: "https://example.com/draw1.dwg",
+      thumbnailUrl: "https://example.com/draw1.jpg",
+      notes: "Zemin kat mimari planı",
+      projectId: vadiEvleri.id,
+      uploadedById: patron.id
+    }
+  })
+
+  await prisma.digitalDrawing.create({
+    data: {
+      title: "Statik Proje - Kolon Detayları",
+      drawingNo: "S-002",
+      type: "STATIK",
+      scale: "1/50",
+      status: "ACTIVE",
+      fileUrl: "https://example.com/draw2.dwg",
+      thumbnailUrl: "https://example.com/draw2.jpg",
+      notes: "Kolon donatı detayları",
+      projectId: nexaPlaza.id,
+      uploadedById: patron.id
+    }
+  })
+
+  await prisma.digitalDrawing.create({
+    data: {
+      title: "Elektrik Tesisat - Aydınlatma",
+      drawingNo: "E-003",
+      type: "ELEKTRIK",
+      scale: "1/100",
+      status: "ACTIVE",
+      fileUrl: "https://example.com/draw3.dwg",
+      thumbnailUrl: "https://example.com/draw3.jpg",
+      notes: "Aydınlatma tesisat planı",
+      projectId: iskenderun.id,
+      uploadedById: patron.id
+    }
+  })
+
+  console.log(" Created 3 digital drawings")
+
+  // ============================================================================
+  // AUDIT RECORD (Denetim Kayıtları)
+  // ============================================================================
+  console.log(" Creating audit records...")
+
+  await prisma.auditRecord.create({
+    data: {
+      title: "İç Kalite Denetimi - Ocak",
+      type: "INTERNAL",
+      status: "COMPLETED",
+      auditDate: new Date("2024-01-30"),
+      findings: "Genel durum iyi, küçük eksiklikler tespit edildi",
+      score: 92,
+      projectId: vadiEvleri.id,
+      auditorId: mehmetKaya.id
+    }
+  })
+
+  await prisma.auditRecord.create({
+    data: {
+      title: "Dış Denetim - İSG",
+      type: "EXTERNAL",
+      status: "COMPLETED",
+      auditDate: new Date("2024-02-28"),
+      findings: "İSG standartlarına uygunluk sağlandı",
+      score: 88,
+      projectId: nexaPlaza.id,
+      auditorId: ayseDemir.id
+    }
+  })
+
+  await prisma.auditRecord.create({
+    data: {
+      title: "OHS Denetimi - Mart",
+      type: "OHS",
+      status: "IN_PROGRESS",
+      auditDate: new Date("2024-03-25"),
+      findings: null,
+      score: null,
+      projectId: iskenderun.id,
+      auditorId: mustafaOz.id
+    }
+  })
+
+  console.log(" Created 3 audit records")
+
+  // ============================================================================
+  // MATERIAL APPROVAL (Malzeme Onayları)
+  // ============================================================================
+  console.log(" Creating material approvals...")
+
+  await prisma.materialApproval.create({
+    data: {
+      materialName: "C25 Beton",
+      supplier: "Oyak Beton",
+      batchNo: "B-2024-001",
+      testResult: "APPROVED",
+      testDate: new Date("2024-01-22"),
+      certificateUrl: "https://example.com/cert1.pdf",
+      notes: "Beton dayanım testi başarılı",
+      projectId: vadiEvleri.id,
+      approvedById: mehmetKaya.id
+    }
+  })
+
+  await prisma.materialApproval.create({
+    data: {
+      materialName: "S420 Donatı Çeliği",
+      supplier: "Yıldız Demir",
+      batchNo: "B-2024-002",
+      testResult: "APPROVED",
+      testDate: new Date("2024-02-17"),
+      certificateUrl: "https://example.com/cert2.pdf",
+      notes: "Donatı çekme testi başarılı",
+      projectId: nexaPlaza.id,
+      approvedById: ayseDemir.id
+    }
+  })
+
+  await prisma.materialApproval.create({
+    data: {
+      materialName: "PVC Boru",
+      supplier: "Ege Plastik",
+      batchNo: "B-2024-003",
+      testResult: "PENDING",
+      testDate: new Date("2024-03-22"),
+      certificateUrl: null,
+      notes: "Test sonuçları bekleniyor",
+      projectId: iskenderun.id,
+      approvedById: null
+    }
+  })
+
+  console.log(" Created 3 material approvals")
+
+  // ============================================================================
+  // NONCONFORMITY DOF (Uygunsuzluk & DÖF)
+  // ============================================================================
+  console.log(" Creating nonconformity DOFs...")
+
+  await prisma.nonconformityDOF.create({
+    data: {
+      title: "C25 Beton Dayanım Düşüklüğü",
+      type: "QUALITY",
+      severity: "HIGH",
+      status: "CLOSED",
+      description: "Beton dayanım testi sonuçları beklenen değerlerin altında çıktı",
+      rootCause: "Çimento kalitesi",
+      correctiveAction: "Çimento tedarikçisi değiştirildi",
+      dueDate: new Date("2024-02-01"),
+      projectId: vadiEvleri.id,
+      reportedById: mehmetKaya.id
+    }
+  })
+
+  await prisma.nonconformityDOF.create({
+    data: {
+      title: "İSG Eksikliği - Baret Kullanımı",
+      type: "SAFETY",
+      severity: "MEDIUM",
+      status: "CLOSED",
+      description: "Bazı personel baret kullanmıyordu",
+      rootCause: "Eğitim eksikliği",
+      correctiveAction: "İSG eğitimi verildi",
+      dueDate: new Date("2024-02-15"),
+      projectId: nexaPlaza.id,
+      reportedById: ayseDemir.id
+    }
+  })
+
+  await prisma.nonconformityDOF.create({
+    data: {
+      title: "Evrak Eksikliği - Malzeme Sertifikası",
+      type: "DOCUMENT",
+      severity: "LOW",
+      status: "OPEN",
+      description: "Malzeme sertifikası eksik",
+      rootCause: null,
+      correctiveAction: null,
+      dueDate: new Date("2024-04-01"),
+      projectId: iskenderun.id,
+      reportedById: mustafaOz.id
+    }
+  })
+
+  console.log(" Created 3 nonconformity DOFs")
+
+  // ============================================================================
+  // LEGAL CERTIFICATE (Yasal Evrak ve Sertifika Takibi)
+  // ============================================================================
+  console.log(" Creating legal certificates...")
+
+  await prisma.legalCertificate.create({
+    data: {
+      title: "İSG Sertifikası",
+      type: "ISG_CERTIFICATE",
+      certificateNo: "ISG-2024-001",
+      issueDate: new Date("2024-01-10"),
+      expiryDate: new Date("2025-01-10"),
+      status: "ACTIVE",
+      fileUrl: "https://example.com/legal1.pdf",
+      notes: "İş güvenliği sertifikası",
+      personelId: mehmetKaya.id
+    }
+  })
+
+  await prisma.legalCertificate.create({
+    data: {
+      title: "Mühendislik Yeterlik Belgesi",
+      type: "PROFESSIONAL_LICENSE",
+      certificateNo: "MYB-2024-002",
+      issueDate: new Date("2024-02-15"),
+      expiryDate: new Date("2026-02-15"),
+      status: "ACTIVE",
+      fileUrl: "https://example.com/legal2.pdf",
+      notes: "İnşaat mühendisliği yeterlik belgesi",
+      personelId: ayseDemir.id
+    }
+  })
+
+  await prisma.legalCertificate.create({
+    data: {
+      title: "Kepçe Operatörlük Belgesi",
+      type: "OTHER",
+      certificateNo: "KOP-2024-003",
+      issueDate: new Date("2024-03-20"),
+      expiryDate: new Date("2025-03-20"),
+      status: "ACTIVE",
+      fileUrl: "https://example.com/legal3.pdf",
+      notes: "Kepçe operatörlük belgesi",
+      personelId: mustafaOz.id
+    }
+  })
+
+  console.log(" Created 3 legal certificates")
+
+  // ============================================================================
+  // NEAR MISS (Ramak Kala Bildirim)
+  // ============================================================================
+  console.log(" Creating near misses...")
+
+  await prisma.nearMiss.create({
+    data: {
+      title: "Düşen Malzeme Tehlikesi",
+      description: "Yüksekten düşen malzeme personelin yanına düştü",
+      severity: "HIGH",
+      status: "CLOSED",
+      incidentDate: new Date("2024-01-28"),
+      location: "A Blok 3. Kat",
+      imageUrl: "https://example.com/near1.jpg",
+      projectId: vadiEvleri.id,
+      reportedById: mehmetKaya.id
+    }
+  })
+
+  await prisma.nearMiss.create({
+    data: {
+      title: "Elektrik Kaçağı Riski",
+      description: "Kablo kopması nedeniyle elektrik kaçağı riski oluştu",
+      severity: "MEDIUM",
+      status: "CLOSED",
+      incidentDate: new Date("2024-02-25"),
+      location: "B Blok 2. Kat",
+      imageUrl: "https://example.com/near2.jpg",
+      projectId: nexaPlaza.id,
+      reportedById: ayseDemir.id
+    }
+  })
+
+  await prisma.nearMiss.create({
+    data: {
+      title: "Kayak Zemin Riski",
+      description: "Yağmurlu hava nedeniyle zemin kaygan",
+      severity: "LOW",
+      status: "OPEN",
+      incidentDate: new Date("2024-03-28"),
+      location: "Şantiye Girişi",
+      imageUrl: "https://example.com/near3.jpg",
+      projectId: iskenderun.id,
+      reportedById: mustafaOz.id
+    }
+  })
+
+  console.log(" Created 3 near misses")
+
+  // ============================================================================
+  // PPE ASSIGNMENT (KKD Dijital Zimmet)
+  // ============================================================================
+  console.log(" Creating PPE assignments...")
+
+  await prisma.pPEAssignment.create({
+    data: {
+      itemName: "Baret",
+      type: "HELMET",
+      serialNo: "B-001",
+      status: "ASSIGNED",
+      assignmentDate: new Date("2024-01-15"),
+      returnDate: null,
+      notes: "Sarı renk baret",
+      personelId: mehmetKaya.id,
+      projectId: vadiEvleri.id
+    }
+  })
+
+  await prisma.pPEAssignment.create({
+    data: {
+      itemName: "Reflektörlü Yelek",
+      type: "VEST",
+      serialNo: "Y-002",
+      status: "ASSIGNED",
+      assignmentDate: new Date("2024-02-10"),
+      returnDate: null,
+      notes: "Turuncu renk yelek",
+      personelId: ayseDemir.id,
+      projectId: nexaPlaza.id
+    }
+  })
+
+  await prisma.pPEAssignment.create({
+    data: {
+      itemName: "Güvenlik Ayakkabısı",
+      type: "BOOTS",
+      serialNo: "A-003",
+      status: "ASSIGNED",
+      assignmentDate: new Date("2024-03-05"),
+      returnDate: null,
+      notes: "Çelik burunlu ayakkabı",
+      personelId: mustafaOz.id,
+      projectId: iskenderun.id
+    }
+  })
+
+  console.log(" Created 3 PPE assignments")
+
+  // ============================================================================
+  // LOGISTICS APPOINTMENT (Lojistik & Randevu Ağı)
+  // ============================================================================
+  console.log(" Creating logistics appointments...")
+
+  await prisma.logisticsAppointment.create({
+    data: {
+      title: "Beton Döküm Randevusu",
+      supplier: "Oyak Beton",
+      type: "DELIVERY",
+      appointmentDate: new Date("2024-04-15T09:00:00"),
+      status: "SCHEDULED",
+      notes: "15 mikser beton dökümü",
+      projectId: vadiEvleri.id
+    }
+  })
+
+  await prisma.logisticsAppointment.create({
+    data: {
+      title: "Demir Teslimatı",
+      supplier: "Yıldız Demir",
+      type: "DELIVERY",
+      appointmentDate: new Date("2024-04-16T10:00:00"),
+      status: "SCHEDULED",
+      notes: "50 ton donatı çeliği",
+      projectId: nexaPlaza.id
+    }
+  })
+
+  await prisma.logisticsAppointment.create({
+    data: {
+      title: "Atık Malzeme Toplama",
+      supplier: "Çevre Temizlik",
+      type: "PICKUP",
+      appointmentDate: new Date("2024-04-17T14:00:00"),
+      status: "SCHEDULED",
+      notes: "Şantiye atıklarının toplanması",
+      projectId: iskenderun.id
+    }
+  })
+
+  console.log(" Created 3 logistics appointments")
 
   console.log(" Seed completed successfully!")
   console.log(" Summary:")
@@ -1428,7 +2276,24 @@ async function main() {
   console.log("   - 4 AI Analysis Records")
   console.log("   - 4 İSG Reports")
   console.log("   - 4 Work Orders")
-  console.log("   - 3 Shifts")
+  console.log("   - 8 Shifts (Vardiyalar)")
+  console.log("   - 3 Drone Analyses")
+  console.log("   - 3 Lab Documents")
+  console.log("   - 3 Rebar Formwork Checks")
+  console.log("   - 3 Attachments")
+  console.log("   - 3 License Archives")
+  console.log("   - 3 Digital Archives")
+  console.log("   - 3 OCR Documents")
+  console.log("   - 3 AI Image Analyses")
+  console.log("   - 3 Project Revisions")
+  console.log("   - 3 Digital Drawings")
+  console.log("   - 3 Audit Records")
+  console.log("   - 3 Material Approvals")
+  console.log("   - 3 Nonconformity DOFs")
+  console.log("   - 3 Legal Certificates")
+  console.log("   - 3 Near Misses")
+  console.log("   - 3 PPE Assignments")
+  console.log("   - 3 Logistics Appointments")
   console.log("   - CMS Content (About, Services, Projects)")
   console.log("   - 3 Contract Templates")
 

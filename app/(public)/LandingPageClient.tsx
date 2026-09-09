@@ -46,6 +46,7 @@ import {
   Moon,
   Search,
   Calendar,
+  CalendarClock,
   ShieldAlert,
   ShieldCheck,
   TrendingDown,
@@ -73,7 +74,21 @@ import {
   ShieldCheck as ShieldCheckIcon,
   Target,
   TrendingUp,
-  Smartphone
+  Smartphone,
+  Camera,
+  Eye,
+  FileWarning,
+  Paperclip,
+  Files,
+  ImagePlus,
+  PenTool,
+  PencilRuler,
+  Award,
+  Activity,
+  FileBadge,
+  Construction,
+  XCircle,
+  HardHat
 } from "lucide-react"
 
 interface ModulePreview {
@@ -372,6 +387,596 @@ export default function LandingPageClient() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   const currentPreview = modulePreviews[selectedModule] || modulePreviews["/admin"]
+
+  // Render dynamic mockup content based on selected module
+  const renderMockupContent = (module: string) => {
+    switch (module) {
+      // Dashboard/Statistics Template
+      case "/admin":
+      case "/admin/finance":
+      case "/admin/isg":
+      case "/admin/collection-risk":
+      case "/admin/isg/dashboard":
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-blue-600/20 rounded-lg p-3 border border-blue-500/30">
+                <div className="text-2xl font-bold text-blue-400 mb-1">24</div>
+                <div className="text-xs text-slate-400">Aktif Proje</div>
+              </div>
+              <div className="bg-purple-600/20 rounded-lg p-3 border border-purple-500/30">
+                <div className="text-2xl font-bold text-purple-400 mb-1">156</div>
+                <div className="text-xs text-slate-400">Personel</div>
+              </div>
+              <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
+                <div className="text-2xl font-bold text-green-400 mb-1">89%</div>
+                <div className="text-xs text-slate-400">Verimlilik</div>
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-400">İlerleme Grafiği</span>
+                <span className="text-xs text-green-400">+12%</span>
+              </div>
+              <div className="flex gap-1 h-8">
+                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95].map((height, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ height: 0 }}
+                    animate={{ height: `${height}%` }}
+                    transition={{ duration: 0.5, delay: i * 0.05 }}
+                    className="flex-1 bg-gradient-to-t from-blue-600 to-cyan-400 rounded-sm"
+                    style={{ height: `${height}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+
+      // Map/Location Template
+      case "/admin/map":
+      case "/admin/routes":
+      case "/admin/isg/master-plan":
+      case "/admin/drone-maps":
+        return (
+          <div className="relative h-64 bg-slate-800 rounded-lg overflow-hidden">
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: `
+                linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px'
+            }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative">
+                <motion.div
+                  animate={{ scale: [1, 1.5, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute inset-0 bg-blue-500/30 rounded-full"
+                />
+                <MapPin className="w-8 h-8 text-blue-400 relative z-10" />
+              </div>
+              <div className="absolute top-8 left-12">
+                <motion.div
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                  className="relative"
+                >
+                  <div className="absolute inset-0 bg-green-500/30 rounded-full" />
+                  <MapPin className="w-6 h-6 text-green-400" />
+                </motion.div>
+              </div>
+              <div className="absolute bottom-12 right-16">
+                <motion.div
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                  className="relative"
+                >
+                  <div className="absolute inset-0 bg-red-500/30 rounded-full" />
+                  <MapPin className="w-6 h-6 text-red-400" />
+                </motion.div>
+              </div>
+            </div>
+            <div className="absolute bottom-2 left-2 right-2 bg-slate-900/80 rounded-lg p-2">
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                <span>3 Aktif Lokasyon</span>
+              </div>
+            </div>
+          </div>
+        )
+
+      // AI/Visual Analysis Template
+      case "/admin/ai-assistant":
+      case "/admin/ai-vision":
+      case "/admin/smart-documents":
+        return (
+          <div className="space-y-3">
+            <div className="relative h-48 bg-slate-800 rounded-lg overflow-hidden border-2 border-dashed border-slate-600">
+              <div className="absolute inset-4 bg-slate-700/50 rounded" />
+              <div className="absolute top-8 left-8 right-8 h-16 border-2 border-red-500/50 rounded bg-red-500/10">
+                <div className="absolute -top-6 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                  Çatlak %87
+                </div>
+              </div>
+              <div className="absolute bottom-8 left-12 right-12 h-12 border-2 border-yellow-500/50 rounded bg-yellow-500/10">
+                <div className="absolute -top-6 left-0 bg-yellow-500 text-black text-xs px-2 py-1 rounded">
+                  Risk %45
+                </div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="text-center"
+                >
+                  <Scan className="w-12 h-12 text-blue-400 mx-auto mb-2" />
+                  <div className="text-xs text-slate-400">Analiz Ediliyor...</div>
+                </motion.div>
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400">AI Güven Skoru</span>
+                <span className="text-green-400 font-semibold">94.5%</span>
+              </div>
+              <div className="mt-2 h-2 bg-slate-700 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: '94.5%' }}
+                  transition={{ duration: 1 }}
+                  className="h-full bg-gradient-to-r from-green-500 to-emerald-400"
+                />
+              </div>
+            </div>
+          </div>
+        )
+
+      // Kanban Template
+      case "/admin/work-orders":
+      case "/admin/tasks":
+      case "/admin/projects":
+      case "/admin/shifts":
+        return (
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-slate-800 rounded-lg p-2">
+              <div className="text-xs font-semibold text-slate-300 mb-2">Yapılacak</div>
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-slate-700 rounded p-2 text-xs text-slate-300">
+                    <div className="font-medium mb-1">Görev {i}</div>
+                    <div className="text-slate-400">Yüksek öncelik</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-2">
+              <div className="text-xs font-semibold text-blue-400 mb-2">Devam Eden</div>
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="bg-blue-600/20 rounded p-2 text-xs text-slate-300 border border-blue-500/30">
+                    <div className="font-medium mb-1">Görev {i + 3}</div>
+                    <div className="text-slate-400">İşleniyor</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-2">
+              <div className="text-xs font-semibold text-green-400 mb-2">Biten</div>
+              <div className="space-y-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-green-600/20 rounded p-2 text-xs text-slate-300 border border-green-500/30">
+                    <div className="font-medium mb-1">Görev {i + 5}</div>
+                    <div className="text-slate-400">Tamamlandı</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+
+      // Modern Data Table Template
+      case "/admin/personnel":
+      case "/admin/personnel/tracking":
+      case "/admin/billing":
+      case "/admin/inventory":
+      case "/admin/equipments":
+      case "/admin/audits":
+      case "/admin/subcontractors/contracts":
+      case "/admin/subcontractors/deductions":
+      case "/admin/contracts":
+      case "/admin/progress-payments":
+      case "/admin/procurement":
+      case "/admin/crm":
+      case "/admin/inspection":
+      case "/admin/inspection/reinforcement":
+      case "/admin/inspection/attachment":
+      case "/admin/inspection/documents":
+      case "/admin/documents":
+      case "/admin/reports":
+      case "/admin/inspections":
+      case "/admin/deficiencies":
+      case "/admin/isg/certificates":
+      case "/admin/isg/ppe-forms":
+      case "/admin/users":
+        return (
+          <div className="bg-slate-800 rounded-lg overflow-hidden">
+            <div className="grid grid-cols-4 gap-2 p-2 bg-slate-700 text-xs font-semibold text-slate-300">
+              <div>İsim</div>
+              <div>Durum</div>
+              <div>Tarih</div>
+              <div>Tutar</div>
+            </div>
+            <div className="divide-y divide-slate-700">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="grid grid-cols-4 gap-2 p-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-blue-600/20 rounded-full flex items-center justify-center">
+                      <Users className="w-3 h-3 text-blue-400" />
+                    </div>
+                    <span className="text-slate-300">Öğe {i}</span>
+                  </div>
+                  <div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${i % 2 === 0 ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>
+                      {i % 2 === 0 ? 'Aktif' : 'Beklemede'}
+                    </span>
+                  </div>
+                  <div className="text-slate-400">2024-01-{10 + i}</div>
+                  <div className="text-slate-300">₺{(i * 1250).toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+
+      // Chat/Log Template
+      case "/admin/communication/chat":
+      case "/admin/logs":
+      case "/admin/audit-logs":
+      case "/admin/notifications":
+      case "/admin/announcements":
+      case "/admin/cms":
+        return (
+          <div className="bg-slate-800 rounded-lg p-3 h-64 overflow-y-auto">
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div className="w-8 h-8 bg-blue-600/20 rounded-full flex items-center justify-center shrink-0">
+                  <Users className="w-4 h-4 text-blue-400" />
+                </div>
+                <div className="bg-slate-700 rounded-lg p-2 text-xs text-slate-300 max-w-[80%]">
+                  <div className="font-semibold mb-1">Ahmet Yılmaz</div>
+                  <div>Proje durumu hakkında bilgi alabilir miyim?</div>
+                  <div className="text-slate-500 text-[10px] mt-1">10:30</div>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <div className="bg-blue-600/20 rounded-lg p-2 text-xs text-slate-300 max-w-[80%]">
+                  <div>Proje %65 tamamlandı. Detayları dashboard'da görebilirsiniz.</div>
+                  <div className="text-slate-500 text-[10px] mt-1">10:32</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div className="w-8 h-8 bg-purple-600/20 rounded-full flex items-center justify-center shrink-0">
+                  <Bot className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="bg-slate-700 rounded-lg p-2 text-xs text-slate-300 max-w-[80%]">
+                  <div className="font-semibold mb-1">AI Asistan</div>
+                  <div>Risk analizi tamamlandı. 2 kritik uyarı tespit edildi.</div>
+                  <div className="text-slate-500 text-[10px] mt-1">10:35</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div className="w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center shrink-0">
+                  <FileLogIcon className="w-4 h-4 text-green-400" />
+                </div>
+                <div className="bg-slate-700 rounded-lg p-2 text-xs text-slate-300 max-w-[80%]">
+                  <div className="font-semibold mb-1">Sistem Log</div>
+                  <div className="text-slate-400">[INFO] Kullanıcı girişi başarılı</div>
+                  <div className="text-slate-500 text-[10px] mt-1">10:40</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      // Specialized Templates
+      case "/admin/inspection/reports/create":
+        return (
+          <div className="space-y-3">
+            <div className="bg-slate-800 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <FileWarning className="w-5 h-5 text-red-400" />
+                <span className="text-sm font-semibold text-white">Hasar Tespiti</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Kritik Hasar</span>
+                  <span className="text-red-400">3</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Orta Risk</span>
+                  <span className="text-yellow-400">7</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Düşük Risk</span>
+                  <span className="text-green-400">12</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-3">
+              <div className="text-xs text-slate-400 mb-2">Son Raporlar</div>
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-slate-300">
+                    <FileText className="w-4 h-4 text-blue-400" />
+                    <span>Rapor-{i}.pdf</span>
+                    <span className="text-slate-500 ml-auto">2d önce</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "/admin/blueprints":
+      case "/admin/blueprints/draw":
+        return (
+          <div className="relative h-64 bg-slate-800 rounded-lg overflow-hidden">
+            <div className="absolute inset-0 opacity-10" style={{
+              backgroundImage: `
+                linear-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.3) 1px, transparent 1px)
+              `,
+              backgroundSize: '10px 10px'
+            }} />
+            <div className="absolute inset-4 border-2 border-blue-500/30 rounded">
+              <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 border-2 border-blue-400/50 rounded" />
+              <div className="absolute top-1/3 left-1/3 w-1/3 h-1/3 border-2 border-purple-400/50 rounded" />
+            </div>
+            <div className="absolute bottom-2 left-2 bg-slate-900/80 rounded-lg p-2">
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <PenTool className="w-4 h-4 text-blue-400" />
+                <span>Çizim Modu</span>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "/admin/bim":
+        return (
+          <div className="space-y-3">
+            <div className="relative h-48 bg-slate-800 rounded-lg overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Box className="w-16 h-16 text-blue-400 opacity-50" />
+              </div>
+              <div className="absolute top-2 right-2 bg-slate-900/80 rounded-lg p-2">
+                <div className="text-xs text-slate-300">3D Görünüm</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-slate-800 rounded-lg p-2 text-center">
+                <div className="text-lg font-bold text-blue-400">12</div>
+                <div className="text-xs text-slate-400">Model</div>
+              </div>
+              <div className="bg-slate-800 rounded-lg p-2 text-center">
+                <div className="text-lg font-bold text-purple-400">45</div>
+                <div className="text-xs text-slate-400">Katman</div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "/admin/revisions":
+        return (
+          <div className="space-y-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-slate-800 rounded-lg p-2 flex items-center gap-2">
+                <GitCompare className="w-4 h-4 text-purple-400" />
+                <div className="flex-1">
+                  <div className="text-xs text-slate-300">Revizyon v{i}.0</div>
+                  <div className="text-[10px] text-slate-500">{i} gün önce</div>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded ${i % 2 === 0 ? 'bg-green-600/20 text-green-400' : 'bg-blue-600/20 text-blue-400'}`}>
+                  {i % 2 === 0 ? 'Onaylandı' : 'Beklemede'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )
+
+      case "/admin/qa-qc/materials":
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-green-600/20 rounded-lg p-2 text-center border border-green-500/30">
+                <div className="text-xl font-bold text-green-400">45</div>
+                <div className="text-xs text-slate-400">Onaylı</div>
+              </div>
+              <div className="bg-yellow-600/20 rounded-lg p-2 text-center border border-yellow-500/30">
+                <div className="text-xl font-bold text-yellow-400">12</div>
+                <div className="text-xs text-slate-400">Beklemede</div>
+              </div>
+              <div className="bg-red-600/20 rounded-lg p-2 text-center border border-red-500/30">
+                <div className="text-xl font-bold text-red-400">3</div>
+                <div className="text-xs text-slate-400">Reddedildi</div>
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-2">
+              <div className="text-xs text-slate-400 mb-2">Son Malzeme Onayları</div>
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300">Malzeme {i}</span>
+                    <span className={`px-2 py-0.5 rounded ${i === 1 ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>
+                      {i === 1 ? 'Onaylandı' : 'İnceleniyor'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "/admin/qa-qc/ncr":
+        return (
+          <div className="space-y-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-slate-800 rounded-lg p-2 border-l-4 border-red-500">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-white">DÖF-{i}</span>
+                  <span className="text-[10px] text-slate-400">{i}d önce</span>
+                </div>
+                <div className="text-xs text-slate-300">Uygunsuzluk tespit edildi</div>
+              </div>
+            ))}
+          </div>
+        )
+
+      case "/admin/isg/near-miss":
+        return (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-slate-800 rounded-lg p-2 border-l-4 border-orange-500">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="w-4 h-4 text-orange-400" />
+                  <span className="text-xs font-semibold text-white">Ramak Kala #{i}</span>
+                </div>
+                <div className="text-xs text-slate-300">Potansiyel kaza riski</div>
+              </div>
+            ))}
+          </div>
+        )
+
+      case "/admin/subcontractors/documents":
+        return (
+          <div className="space-y-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-slate-800 rounded-lg p-2 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-green-400" />
+                <div className="flex-1">
+                  <div className="text-xs text-slate-300">İSG Belgesi {i}</div>
+                  <div className="text-[10px] text-slate-500">Geçerli: 2025-12-31</div>
+                </div>
+                <span className="text-xs text-green-400">✓</span>
+              </div>
+            ))}
+          </div>
+        )
+
+      case "/admin/communication/logistics":
+        return (
+          <div className="space-y-3">
+            <div className="bg-slate-800 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Truck className="w-5 h-5 text-blue-400" />
+                <span className="text-sm font-semibold text-white">Lojistik Takibi</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-blue-400">8</div>
+                  <div className="text-xs text-slate-400">Aktif Araç</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-green-400">23</div>
+                  <div className="text-xs text-slate-400">Teslimat</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-2">
+              <div className="text-xs text-slate-400 mb-2">Yaklaşan Teslimatlar</div>
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-slate-300">
+                    <PackageSearch className="w-4 h-4 text-purple-400" />
+                    <span>Teslimat {i}</span>
+                    <span className="text-slate-500 ml-auto">14:00</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "/admin/ayarlar":
+        return (
+          <div className="space-y-3">
+            <div className="bg-slate-800 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-300">Bildirimler</span>
+                <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                  <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-300">Otomatik Yedekleme</span>
+                <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                  <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-300">Karanlık Mod</span>
+                <div className="w-8 h-4 bg-slate-600 rounded-full relative">
+                  <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-3">
+              <div className="text-xs text-slate-400 mb-2">Sistem Bilgisi</div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-300">Versiyon</span>
+                  <span className="text-slate-400">2.4.1</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-300">Son Güncelleme</span>
+                  <span className="text-slate-400">2024-01-15</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      // Default fallback for any other modules
+      default:
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-blue-600/20 rounded-lg p-3 border border-blue-500/30">
+                <div className="text-2xl font-bold text-blue-400 mb-1">24</div>
+                <div className="text-xs text-slate-400">Toplam</div>
+              </div>
+              <div className="bg-purple-600/20 rounded-lg p-3 border border-purple-500/30">
+                <div className="text-2xl font-bold text-purple-400 mb-1">156</div>
+                <div className="text-xs text-slate-400">Aktif</div>
+              </div>
+              <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
+                <div className="text-2xl font-bold text-green-400 mb-1">89%</div>
+                <div className="text-xs text-slate-400">Başarı</div>
+              </div>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-400">İstatistikler</span>
+                <span className="text-xs text-green-400">+8%</span>
+              </div>
+              <div className="flex gap-1 h-8">
+                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95].map((height, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ height: 0 }}
+                    animate={{ height: `${height}%` }}
+                    transition={{ duration: 0.5, delay: i * 0.05 }}
+                    className="flex-1 bg-gradient-to-t from-blue-600 to-cyan-400 rounded-sm"
+                    style={{ height: `${height}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+    }
+  }
 
   const filteredNavItems = navItems.filter(item => {
     if (selectedCategory === "all") return true
@@ -709,70 +1314,7 @@ export default function LandingPageClient() {
                   </div>
                   
                   {/* Mockup Content */}
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-blue-600/20 rounded-lg p-3 border border-blue-500/30">
-                        <div className="text-2xl font-bold text-blue-400 mb-1">{currentPreview.stats?.value1 || "24"}</div>
-                        <div className="text-xs text-slate-400">{currentPreview.stats?.label1 || "Aktif Proje"}</div>
-                      </div>
-                      <div className="bg-purple-600/20 rounded-lg p-3 border border-purple-500/30">
-                        <div className="text-2xl font-bold text-purple-400 mb-1">{currentPreview.stats?.value2 || "156"}</div>
-                        <div className="text-xs text-slate-400">{currentPreview.stats?.label2 || "Personel"}</div>
-                      </div>
-                      <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
-                        <div className="text-2xl font-bold text-green-400 mb-1">{currentPreview.stats?.value3 || "89%"}</div>
-                        <div className="text-xs text-slate-400">{currentPreview.stats?.label3 || "Verimlilik"}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-slate-800 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs text-slate-400">İlerleme Grafiği</span>
-                        <span className="text-xs text-green-400">+12%</span>
-                      </div>
-                      <div className="flex gap-1 h-8">
-                        {(currentPreview.chartData || [40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95]).map((height, i) => (
-                          <motion.div
-                            key={i}
-                            initial={{ height: 0 }}
-                            animate={{ height: `${height}%` }}
-                            transition={{ duration: 0.5, delay: i * 0.05 }}
-                            className="flex-1 bg-gradient-to-t from-blue-600 to-cyan-400 rounded-sm"
-                            style={{ height: `${height}%` }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-800 rounded-lg p-3">
-                        <div className="text-xs text-slate-400 mb-2">Son Aktiviteler</div>
-                        <div className="space-y-2">
-                          {(currentPreview.activities || ["Proje oluşturuldu", "Personel atandı", "Rapor tamamlandı"]).map((activity, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${i === 0 ? "bg-green-500" : i === 1 ? "bg-blue-500" : "bg-purple-500"}`} />
-                              <span className="text-xs text-slate-300">{activity}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="bg-slate-800 rounded-lg p-3">
-                        <div className="text-xs text-slate-400 mb-2">Bekleyen Görevler</div>
-                        <div className="space-y-2">
-                          {(currentPreview.tasks || [
-                            { label: "Onay bekleyen", count: "5", color: "text-orange-400" },
-                            { label: "Süre aşan", count: "2", color: "text-red-400" },
-                            { label: "Tamamlanan", count: "23", color: "text-green-400" }
-                          ]).map((task, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                              <span className="text-xs text-slate-300">{task.label}</span>
-                              <span className={`text-xs ${task.color}`}>{task.count}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {renderMockupContent(selectedModule)}
                 </motion.div>
 
                 <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">

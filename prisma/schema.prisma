@@ -38,6 +38,10 @@ model User {
   uploadedDocs    Document[]
   auditLogs       AuditLog[]
   locationLogs    LocationLog[]
+  attachments     Attachment[]
+  digitalArchives DigitalArchive[]
+  projectRevisions ProjectRevision[]
+  digitalDrawings DigitalDrawing[]
 }
 
 enum UserRole {
@@ -229,6 +233,22 @@ model Project {
   deficiencies Deficiency[]
   shifts Shift[]
   aiAnalyses AIAnalysis[]
+  droneAnalyses DroneAnalysis[]
+  labDocuments LabDocument[]
+  rebarFormworkChecks RebarFormworkCheck[]
+  attachments Attachment[]
+  licenseArchives LicenseArchive[]
+  digitalArchives DigitalArchive[]
+  ocrDocuments OCRDocument[]
+  aiImageAnalyses AIImageAnalysis[]
+  projectRevisions ProjectRevision[]
+  digitalDrawings DigitalDrawing[]
+  auditRecords AuditRecord[]
+  materialApprovals MaterialApproval[]
+  nonconformityDOFs NonconformityDOF[]
+  nearMisses NearMiss[]
+  ppeAssignments PPEAssignment[]
+  logisticsAppointments LogisticsAppointment[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -729,6 +749,13 @@ model Personel {
   audits          Audit[]
   inspections     Inspection[]
   reportedDeficiencies Deficiency[] @relation("DeficiencyReporter")
+  rebarFormworkChecks RebarFormworkCheck[]
+  materialApprovals MaterialApproval[]
+  reportedNonconformities NonconformityDOF[] @relation("NonconformityReporter")
+  reportedNearMisses NearMiss[] @relation("NearMissReporter")
+  ppeAssignments  PPEAssignment[]
+  legalCertificates LegalCertificate[]
+  auditRecords    AuditRecord[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
@@ -2330,4 +2357,468 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ============================================================================
+// DRONE ANALYSIS (Drone Gözlem Analizi)
+// ============================================================================
+
+model DroneAnalysis {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  flightDate  DateTime
+  areaCovered Float    // km²
+  imageUrl    String?
+  status      String   @default("COMPLETED") // COMPLETED, PROCESSING, FAILED
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([flightDate])
+  @@index([status])
+}
+
+// ============================================================================
+// LAB DOCUMENT (Laboratuvar ve Evrak)
+// ============================================================================
+
+model LabDocument {
+  id          String   @id @default(cuid())
+  title       String
+  documentNo  String   // Laboratuvar belge no
+  sampleType  String   // BETON, DONATI, TOPRAK, DIGER
+  testResult  String   // PASS, FAIL, PENDING
+  testDate    DateTime
+  imageUrl    String?
+  notes       String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([sampleType])
+  @@index([testResult])
+  @@index([testDate])
+}
+
+// ============================================================================
+// REBAR FORMWORK CHECK (Demir & Kalıp Kontrol)
+// ============================================================================
+
+model RebarFormworkCheck {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // REBAR, FORMWORK, BOTH
+  location    String   // Örn: "A Blok 3. Kat Kolonlar"
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  checkDate   DateTime
+  imageUrl    String?
+  notes       String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  inspectorId String
+  inspector   Personel @relation(fields: [inspectorId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+  @@index([checkDate])
+  @@index([inspectorId])
+}
+
+// ============================================================================
+// ATTACHMENT (Ataşman & Dijital Delil)
+// ============================================================================
+
+model Attachment {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // PHOTO, VIDEO, DOCUMENT, OTHER
+  fileUrl     String
+  description String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  uploadedById String
+  uploadedBy   User    @relation(fields: [uploadedById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+  @@index([uploadedById])
+}
+
+// ============================================================================
+// LICENSE ARCHIVE (Ruhsat ve Evrak Arşivi)
+// ============================================================================
+
+model LicenseArchive {
+  id          String   @id @default(cuid())
+  title       String
+  licenseNo   String
+  type        String   // YAPI_RUHSAT, ISG_BELGESI, DIGER
+  issueDate   DateTime
+  expiryDate  DateTime
+  status      String   @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
+  fileUrl     String?
+  notes       String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+  @@index([expiryDate])
+}
+
+// ============================================================================
+// DIGITAL ARCHIVE (Dijital Evrak Arşivi)
+// ============================================================================
+
+model DigitalArchive {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   // PROJE, RAPOR, SOZLESME, DIGER
+  fileUrl     String
+  fileSize    Int      // bytes
+  mimeType    String
+  description String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  uploadedById String
+  uploadedBy   User    @relation(fields: [uploadedById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([category])
+  @@index([uploadedById])
+}
+
+// ============================================================================
+// OCR DOCUMENT (Akıllı Evrak Denetimi)
+// ============================================================================
+
+model OCRDocument {
+  id          String   @id @default(cuid())
+  title       String
+  originalText String  @db.Text
+  extractedText String @db.Text
+  confidence  Float    // 0-100 arası OCR güven skoru
+  status      String   @default("PROCESSED") // PROCESSED, FAILED, PENDING
+  fileUrl     String
+  imageUrl    String?
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([confidence])
+}
+
+// ============================================================================
+// AI IMAGE ANALYSIS (AI Görsel Analiz)
+// ============================================================================
+
+model AIImageAnalysis {
+  id          String   @id @default(cuid())
+  title       String
+  imageUrl    String
+  analysisType String // CRACK_DETECTION, SAFETY_HAZARD, EQUIPMENT_COUNT, PROGRESS
+  result      String   // PASS, WARNING, FAIL
+  confidence  Float    // 0-100 arası güven skoru
+  boundingBoxes String? @db.Text // JSON formatında bounding box verileri
+  notes       String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([analysisType])
+  @@index([result])
+}
+
+// ============================================================================
+// PROJECT REVISION (Proje Revizyonları)
+// ============================================================================
+
+model ProjectRevision {
+  id          String   @id @default(cuid())
+  version     String   // v1.0, v1.1, v2.0
+  title       String
+  description String   @db.Text
+  status      String   @default("DRAFT") // DRAFT, APPROVED, REJECTED
+  fileUrl     String?
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdById])
+}
+
+// ============================================================================
+// DIGITAL DRAWING (Dijital Projeler / Çizimler)
+// ============================================================================
+
+model DigitalDrawing {
+  id          String   @id @default(cuid())
+  title       String
+  drawingNo   String
+  type        String   // MIMARI, STATIK, MEKANIK, ELEKTRIK
+  scale       String?  // 1/100, 1/50, vb.
+  status      String   @default("ACTIVE") // ACTIVE, OBSOLETE, DELETED
+  fileUrl     String
+  thumbnailUrl String?
+  notes       String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  uploadedById String
+  uploadedBy   User    @relation(fields: [uploadedById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+  @@index([uploadedById])
+}
+
+// ============================================================================
+// AUDIT RECORD (Denetim Kayıtları)
+// ============================================================================
+
+model AuditRecord {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // INTERNAL, EXTERNAL, OHS, QUALITY
+  status      String   @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED
+  auditDate   DateTime
+  findings    String?  @db.Text
+  score       Int?     // 0-100 arası puan
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  auditorId   String
+  auditor     Personel @relation(fields: [auditorId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+  @@index([auditDate])
+  @@index([auditorId])
+}
+
+// ============================================================================
+// MATERIAL APPROVAL (Malzeme Onayları)
+// ============================================================================
+
+model MaterialApproval {
+  id          String   		 @id @default(cuid())
+  materialName String
+  supplier    String
+  batchNo     String
+  testResult  String   		 @default("PENDING") // PENDING, APPROVED, REJECTED
+  testDate    DateTime
+  certificateUrl String?
+  notes       String?  		 @db.Text
+  
+  projectId   String
+  project     Project  		 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  approvedById String?
+  approvedBy   Personel? @relation(fields: [approvedById], references: [id])
+  
+  createdAt   DateTime 		 @default(now())
+  updatedAt   DateTime 		 @updatedAt
+
+  @@index([projectId])
+  @@index([testResult])
+  @@index([testDate])
+  @@index([approvedById])
+}
+
+// ============================================================================
+// NONCONFORMITY DOF (Uygunsuzluk & DÖF)
+// ============================================================================
+
+model NonconformityDOF {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // QUALITY, SAFETY, DOCUMENT
+  severity    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, CLOSED
+  description String   @db.Text
+  rootCause   String?  @db.Text
+  correctiveAction String? @db.Text
+  dueDate     DateTime?
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  reportedById String
+  reportedBy   Personel @relation("NonconformityReporter", fields: [reportedById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+  @@index([severity])
+  @@index([status])
+  @@index([reportedById])
+}
+
+// ============================================================================
+// LEGAL CERTIFICATE (Yasal Evrak ve Sertifika Takibi)
+// ============================================================================
+
+model LegalCertificate {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // ISG_CERTIFICATE, PROFESSIONAL_LICENSE, OTHER
+  certificateNo String
+  issueDate   DateTime
+  expiryDate  DateTime
+  status      String   @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
+  fileUrl     String?
+  notes       String?  @db.Text
+  
+  personelId  String
+  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([personelId])
+  @@index([type])
+  @@index([status])
+  @@index([expiryDate])
+}
+
+// ============================================================================
+// NEAR MISS (Ramak Kala Bildirim)
+// ============================================================================
+
+model NearMiss {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  severity    String   @default("LOW") // LOW, MEDIUM, HIGH
+  status      String   @default("OPEN") // OPEN, INVESTIGATING, CLOSED
+  incidentDate DateTime
+  location    String?
+  imageUrl    String?
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  reportedById String
+  reportedBy   Personel @relation("NearMissReporter", fields: [reportedById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([severity])
+  @@index([status])
+  @@index([incidentDate])
+  @@index([reportedById])
+}
+
+// ============================================================================
+// PPE ASSIGNMENT (KKD Dijital Zimmet)
+// ============================================================================
+
+model PPEAssignment {
+  id          String   @id @default(cuid())
+  itemName    String
+  type        String   // HELMET, VEST, BOOTS, GLOVES, OTHER
+  serialNo    String?
+  status      String   @default("ASSIGNED") // ASSIGNED, RETURNED, DAMAGED, LOST
+  assignmentDate DateTime
+  returnDate  DateTime?
+  notes       String?  @db.Text
+  
+  personelId  String
+  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([personelId])
+  @@index([type])
+  @@index([status])
+  @@index([projectId])
+}
+
+// ============================================================================
+// LOGISTICS APPOINTMENT (Lojistik & Randevu Ağı)
+// ============================================================================
+
+model LogisticsAppointment {
+  id          String   @id @default(cuid())
+  title       String
+  supplier    String
+  type        String   // DELIVERY, PICKUP, OTHER
+  appointmentDate DateTime
+  status      String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  notes       String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([appointmentDate])
+  @@index([status])
 }
