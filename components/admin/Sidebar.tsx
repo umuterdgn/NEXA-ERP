@@ -46,6 +46,7 @@ import {
   Bot,
   Search,
   Calendar,
+  CalendarClock,
   ShieldAlert,
   ShieldCheck,
   TrendingDown,
@@ -90,9 +91,10 @@ const menuItems: MenuItem[] = [
   { href: "/admin/map", label: "Şantiye Haritası", icon: Map, category: "ANA MENÜ" },
   
   // İNSAN KAYNAKLARI
-  { href: "/admin/personnel", label: "Personel Takibi", icon: Users, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/payroll", label: "Puantaj & Bordro", icon: CalendarDays, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/shifts", label: "Vardiya Planlaması", icon: Clock, category: "İNSAN KAYNAKLARI" },
+  { href: "/admin/personnel", label: "Personeller", icon: Users, category: "İNSAN KAYNAKLARI" },
+  { href: "/admin/personnel/tracking", label: "Personel Takibi", icon: UserCheck, category: "İNSAN KAYNAKLARI" },
+  { href: "/admin/payroll", label: "Puantaj & Bordro", icon: Calculator, category: "İNSAN KAYNAKLARI" },
+  { href: "/admin/shifts", label: "Vardiya Planlaması", icon: CalendarClock, category: "İNSAN KAYNAKLARI" },
   
   // TAŞERON YÖNETİMİ
   { href: "/admin/audits", label: "Taşeron Denetimleri", icon: ShieldAlert, category: "TAŞERON YÖNETİMİ" },
