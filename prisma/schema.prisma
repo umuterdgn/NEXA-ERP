@@ -2392,6 +2392,8 @@ model LabDocument {
   title       String
   documentNo  String   // Laboratuvar belge no
   sampleType  String   // BETON, DONATI, TOPRAK, DIGER
+  testType    String?  // 7_GUN, 28_GUN, KAROT
+  result      String?  // Dayanım değeri (örn: "32 MPa")
   testResult  String   // PASS, FAIL, PENDING
   testDate    DateTime
   imageUrl    String?
@@ -2405,6 +2407,7 @@ model LabDocument {
 
   @@index([projectId])
   @@index([sampleType])
+  @@index([testType])
   @@index([testResult])
   @@index([testDate])
 }
