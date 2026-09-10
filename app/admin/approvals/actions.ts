@@ -18,9 +18,9 @@ export async function approveLeave(formData: FormData) {
       data: { status: "APPROVED", reviewedAt: new Date() },
     });
     revalidatePath("/admin/approvals");
-    return { success: true };
   } catch (error) {
-    return { success: false, error: "İzin onaylama işlemi başarısız oldu." };
+    console.error("İzin onaylama işlemi başarısız oldu:", error);
+    throw error;
   }
 }
 
@@ -33,9 +33,9 @@ export async function rejectLeave(formData: FormData) {
       data: { status: "REJECTED", reviewedAt: new Date() },
     });
     revalidatePath("/admin/approvals");
-    return { success: true };
   } catch (error) {
-    return { success: false, error: "İzin reddetme işlemi başarısız oldu." };
+    console.error("İzin reddetme işlemi başarısız oldu:", error);
+    throw error;
   }
 }
 
@@ -48,9 +48,9 @@ export async function approveAdvance(formData: FormData) {
       data: { status: "APPROVED" },
     });
     revalidatePath("/admin/approvals");
-    return { success: true };
   } catch (error) {
-    return { success: false, error: "Avans onaylama işlemi başarısız oldu." };
+    console.error("Avans onaylama işlemi başarısız oldu:", error);
+    throw error;
   }
 }
 
@@ -63,8 +63,8 @@ export async function rejectAdvance(formData: FormData) {
       data: { status: "REJECTED" },
     });
     revalidatePath("/admin/approvals");
-    return { success: true };
   } catch (error) {
-    return { success: false, error: "Avans reddetme işlemi başarısız oldu." };
+    console.error("Avans reddetme işlemi başarısız oldu:", error);
+    throw error;
   }
 }
