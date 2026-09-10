@@ -88,7 +88,7 @@ export default async function ApprovalsPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex gap-2 justify-end">
-                        <form action={async (formData) => { await approveLeave(formData); }}>
+                        <form action={approveLeave}>
                           <input type="hidden" name="id" value={leave.id} />
                           <button
                             type="submit"
@@ -98,7 +98,7 @@ export default async function ApprovalsPage() {
                             <Check className="w-4 h-4" />
                           </button>
                         </form>
-                        <form action={async (formData) => { await rejectLeave(formData); }}>
+                        <form action={rejectLeave}>
                           <input type="hidden" name="id" value={leave.id} />
                           <button
                             type="submit"
@@ -160,7 +160,7 @@ export default async function ApprovalsPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex gap-2 justify-end">
-                        <form action={async (formData) => { await approveAdvance(formData); }}>
+                        <form action={approveAdvance}>
                           <input type="hidden" name="id" value={advance.id} />
                           <button
                             type="submit"
@@ -170,7 +170,7 @@ export default async function ApprovalsPage() {
                             <Check className="w-4 h-4" />
                           </button>
                         </form>
-                        <form action={async (formData) => { await rejectAdvance(formData); }}>
+                        <form action={rejectAdvance}>
                           <input type="hidden" name="id" value={advance.id} />
                           <button
                             type="submit"
