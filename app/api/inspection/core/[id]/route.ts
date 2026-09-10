@@ -16,15 +16,15 @@ export async function PUT(
     const body = await request.json();
     const { strength, status, reportUrl } = body;
 
-    const existing = await prisma.concreteTest.findUnique({ where: { id } });
+    const existing = await prisma.coreTest.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Kayıt bulunamadı! Lütfen tablodaki sahte verileri değil, gerçek bir kaydı güncelleyin." }, { status: 404 });
     }
 
-    const updatedKarot = await prisma.concreteTest.update({
+    const updatedKarot = await prisma.coreTest.update({
       where: { id },
       data: {
-        day28Result: strength ? parseFloat(strength) : undefined,
+        strength: strength ? parseFloat(strength) : undefined,
         status: status || undefined,
         reportUrl: reportUrl !== undefined ? reportUrl : undefined,
       },
@@ -43,12 +43,12 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
-    const existing = await prisma.concreteTest.findUnique({ where: { id } });
+    const existing = await prisma.coreTest.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Kayıt bulunamadı!" }, { status: 404 });
     }
 
-    await prisma.concreteTest.delete({ where: { id } });
+    await prisma.coreTest.delete({ where: { id } });
 
     return NextResponse.json({ message: "Kayıt başarıyla silindi" });
   } catch (error: any) {

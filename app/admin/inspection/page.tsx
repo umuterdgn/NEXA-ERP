@@ -10,6 +10,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Building2, TestTube, FileText, Plus, CheckCircle, XCircle, Clock, AlertTriangle, X, Edit, Upload, Trash2, Sparkles } from "lucide-react"
 import AIAssistantModal from "@/components/AIAssistantModal"
+import toast from "react-hot-toast"
 
 export default function InspectionPage() {
   const router = useRouter()
@@ -19,7 +20,7 @@ export default function InspectionPage() {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedTest, setSelectedTest] = useState<any>(null)
-  const [showToast, setShowToast] = useState(false)
+
   const [updating, setUpdating] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
@@ -164,11 +165,10 @@ export default function InspectionPage() {
         fetchKarotTests()
       }
       
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
+      toast.success("Kayıt başarıyla silindi")
     } catch (error) {
       console.error('Delete error:', error)
-      alert('Silme işlemi sırasında hata oluştu')
+      toast.error('Silme işlemi sırasında hata oluştu')
     }
   }
 
@@ -199,11 +199,10 @@ export default function InspectionPage() {
 
       fetchConcreteTests()
       setIsEditModalOpen(false)
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
+      toast.success("Kayıt başarıyla güncellendi")
     } catch (error) {
       console.error('Edit error:', error)
-      alert('Güncelleme sırasında hata oluştu')
+      toast.error('Güncelleme sırasında hata oluştu')
     }
   }
 
@@ -261,13 +260,14 @@ export default function InspectionPage() {
 
       if (updateResponse.ok) {
         setIsKarotUpdateModalOpen(false)
-        setShowToast(true)
-        setTimeout(() => setShowToast(false), 3000)
+        toast.success("Kayıt başarıyla güncellendi")
         router.refresh()
+      } else {
+        throw new Error("Güncelleme başarısız")
       }
     } catch (error) {
       console.error('Karot update error:', error)
-      alert('Bir hata oluştu')
+      toast.error('Bir hata oluştu')
     } finally {
       setUpdating(false)
     }
@@ -313,13 +313,14 @@ export default function InspectionPage() {
 
       if (updateResponse.ok) {
         setIsUpdateModalOpen(false)
-        setShowToast(true)
-        setTimeout(() => setShowToast(false), 3000)
+        toast.success("Kayıt başarıyla güncellendi")
         router.refresh()
+      } else {
+        throw new Error("Güncelleme başarısız")
       }
     } catch (error) {
       console.error('Update error:', error)
-      alert('Bir hata oluştu')
+      toast.error('Bir hata oluştu')
     } finally {
       setUpdating(false)
     }
@@ -651,21 +652,27 @@ export default function InspectionPage() {
               </button>
               <button 
                 onClick={async () => {
-                  if (!sampleFormData.projectId || !sampleFormData.castDate || !sampleFormData.concreteClass) {
-                    alert("Lütfen proje, tarih ve beton sınıfı seçin")
+                  if (!sampleFormData.projectId || !sampleFormData.castDate || !sampleFormData.concreteClass || !sampleFormData.waybillNo) {
+                    alert("Lütfen proje, tarih, beton sınıfı ve irsaliye no girin")
                     return
                   }
                   setUploading(true)
                   try {
-                    // Save sample data (API endpoint to be created)
-                    console.log("Sample data:", sampleFormData)
+                    const response = await fetch('/api/inspection/concrete', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(sampleFormData)
+                    })
+
+                    if (!response.ok) throw new Error("Kayıt başarısız")
+
                     setIsModalOpen(false)
                     setSampleFormData({ castDate: "", concreteClass: "", element: "", waybillNo: "", projectId: "" })
-                    setShowToast(true)
-                    setTimeout(() => setShowToast(false), 3000)
+                    toast.success("Başarıyla kaydedildi!")
+                    fetchConcreteTests()
                   } catch (error) {
                     console.error('Sample save error:', error)
-                    alert('Bir hata oluştu')
+                    toast.error('Bir hata oluştu')
                   } finally {
                     setUploading(false)
                   }
@@ -817,15 +824,26 @@ export default function InspectionPage() {
                         reportUrl = uploadData.secure_url
                       }
                     }
-                    // Save karot data (API endpoint to be created)
-                    console.log("Karot data:", { ...karotFormData, reportUrl })
+
+                    const response = await fetch('/api/inspection/core', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        ...karotFormData,
+                        reportUrl,
+                        reportFile: undefined
+                      })
+                    })
+
+                    if (!response.ok) throw new Error("Kayıt başarısız")
+
                     setIsKarotModalOpen(false)
                     setKarotFormData({ location: "", element: "", strength: "", testDate: "", projectId: "", reportFile: null, aiWeatherContext: "", aiExpertAdvice: "" })
-                    setShowToast(true)
-                    setTimeout(() => setShowToast(false), 3000)
+                    toast.success("Başarıyla kaydedildi!")
+                    fetchKarotTests()
                   } catch (error) {
                     console.error('Karot save error:', error)
-                    alert('Bir hata oluştu')
+                    toast.error('Bir hata oluştu')
                   } finally {
                     setUploading(false)
                   }
@@ -1086,14 +1104,6 @@ export default function InspectionPage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
-          <CheckCircle className="w-5 h-5" />
-          Numune sonuçları güncellendi
         </div>
       )}
 

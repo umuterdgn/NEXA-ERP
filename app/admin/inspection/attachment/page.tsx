@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from "react"
 import { Plus, X, MapPin, Calendar, Image as ImageIcon, Edit, Trash2, ExternalLink } from "lucide-react"
+import toast from "react-hot-toast"
 
 interface AttachmentEvidence {
   id: string
@@ -136,10 +137,13 @@ export default function AttachmentPage() {
           createdBy: ""
         })
         fetchAttachments()
+        toast.success("Başarıyla kaydedildi!")
+      } else {
+        throw new Error("Kayıt başarısız")
       }
     } catch (error) {
       console.error('Upload error:', error)
-      alert('Bir hata oluştu')
+      toast.error("Kaydedilirken bir hata oluştu.")
     } finally {
       setUploading(false)
     }
@@ -158,9 +162,10 @@ export default function AttachmentPage() {
       }
 
       fetchAttachments()
+      toast.success("Kayıt başarıyla silindi")
     } catch (error) {
       console.error('Delete error:', error)
-      alert('Silme işlemi sırasında hata oluştu')
+      toast.error('Silme işlemi sırasında hata oluştu')
     }
   }
 
@@ -191,9 +196,10 @@ export default function AttachmentPage() {
 
       fetchAttachments()
       setIsEditModalOpen(false)
+      toast.success("Kayıt başarıyla güncellendi")
     } catch (error) {
       console.error('Edit error:', error)
-      alert('Güncelleme sırasında hata oluştu')
+      toast.error('Güncelleme sırasında hata oluştu')
     }
   }
 

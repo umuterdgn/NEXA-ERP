@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from "react"
 import { Plus, X, Camera, CheckCircle, XCircle, Clock, Edit, Trash2 } from "lucide-react"
+import toast from "react-hot-toast"
 
 interface ReinforcementInspection {
   id: string
@@ -135,10 +136,13 @@ export default function ReinforcementPage() {
           inspectorName: ""
         })
         fetchInspections()
+        toast.success("Başarıyla kaydedildi!")
+      } else {
+        throw new Error("Kayıt başarısız")
       }
     } catch (error) {
       console.error('Upload error:', error)
-      alert('Bir hata oluştu')
+      toast.error("Kaydedilirken bir hata oluştu.")
     } finally {
       setUploading(false)
     }
@@ -157,9 +161,10 @@ export default function ReinforcementPage() {
       }
 
       fetchInspections()
+      toast.success("Kayıt başarıyla silindi")
     } catch (error) {
       console.error('Delete error:', error)
-      alert('Silme işlemi sırasında hata oluştu')
+      toast.error('Silme işlemi sırasında hata oluştu')
     }
   }
 
@@ -190,9 +195,10 @@ export default function ReinforcementPage() {
 
       fetchInspections()
       setIsEditModalOpen(false)
+      toast.success("Kayıt başarıyla güncellendi")
     } catch (error) {
       console.error('Edit error:', error)
-      alert('Güncelleme sırasında hata oluştu')
+      toast.error('Güncelleme sırasında hata oluştu')
     }
   }
 
