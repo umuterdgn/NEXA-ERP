@@ -161,7 +161,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-white font-medium">
-                          {billing.periodMonth}/{billing.periodYear} Dönemi
+                          {billing.period ? new Date(billing.period).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }) : '-'} Dönemi
                         </p>
                         <p className="text-sm text-slate-400 mt-1">
                           {billing.createdAt ? new Date(billing.createdAt).toLocaleDateString("tr-TR") : '-'}
