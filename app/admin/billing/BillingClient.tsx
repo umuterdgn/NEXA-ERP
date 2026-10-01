@@ -153,13 +153,13 @@ export default function BillingClient({ initialBillings, subcontractors, project
         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
           <div className="text-slate-400 text-sm">Toplam Tutar</div>
           <div className="text-2xl font-bold text-green-400 mt-2">
-            ₺{billings.reduce((sum, b) => sum + b.totalAmount, 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+            ₺{(billings.reduce((sum, b) => sum + (b.totalAmount || 0), 0) || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
           </div>
         </div>
         <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
           <div className="text-slate-400 text-sm">Ödenen Tutar</div>
           <div className="text-2xl font-bold text-purple-400 mt-2">
-            ₺{billings.filter(b => b.status === "PAID").reduce((sum, b) => sum + b.totalAmount, 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+            ₺{(billings.filter(b => b.status === "PAID").reduce((sum, b) => sum + (b.totalAmount || 0), 0) || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
           </div>
         </div>
       </div>
@@ -216,7 +216,7 @@ export default function BillingClient({ initialBillings, subcontractors, project
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-white">
-                        ₺{billing.totalAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                        ₺{((billing.totalAmount || 0) || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -226,7 +226,7 @@ export default function BillingClient({ initialBillings, subcontractors, project
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-400">
-                        {new Date(billing.createdAt).toLocaleDateString("tr-TR")}
+                        {billing.createdAt ? new Date(billing.createdAt).toLocaleDateString("tr-TR") : '-'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -369,7 +369,7 @@ export default function BillingClient({ initialBillings, subcontractors, project
                     <div className="col-span-2">
                       <span className="text-slate-400">Önerilen Tutar:</span>
                       <span className="text-green-400 ml-2 font-medium">
-                        ₺{calculationResult.estimatedAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                        ₺{((calculationResult.estimatedAmount || 0) || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
