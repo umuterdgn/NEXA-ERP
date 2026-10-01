@@ -31,11 +31,21 @@ export default async function SubcontractorContractsPage() {
     select: { id: true, name: true }
   })
 
+  const formattedSubcontractors = subcontractors.map(s => ({
+    id: s.id,
+    name: s.name || 'İsimsiz Taşeron'
+  }))
+
+  const formattedProjects = projects.map(p => ({
+    id: p.id,
+    name: p.name || 'İsimsiz Proje'
+  }))
+
   return (
     <ContractsClient 
       initialContracts={contracts}
-      subcontractors={subcontractors}
-      projects={projects}
+      subcontractors={formattedSubcontractors}
+      projects={formattedProjects}
     />
   )
 }
