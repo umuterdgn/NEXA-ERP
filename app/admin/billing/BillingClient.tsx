@@ -204,10 +204,10 @@ export default function BillingClient({ initialBillings, subcontractors, project
                 billings.map((billing) => (
                   <tr key={billing.id} className="hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-white">{billing.project.name}</div>
+                      <div className="text-sm font-medium text-white">{billing.contract?.project?.name ?? 'Bilinmiyor'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-300">{billing.subcontractor.name}</div>
+                      <div className="text-sm text-slate-300">{billing.contract?.subcontractor?.name ?? 'Bilinmiyor'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-300">

@@ -4,21 +4,38 @@
  * This code is the property of NXA Software.
  */
 
-export default function SubcontractorContractsPage() {
+import { prisma } from "@/lib/prisma"
+import ContractsClient from "./ContractsClient"
+
+export const dynamic = 'force-dynamic'
+
+export default async function SubcontractorContractsPage() {
+  const contracts = await prisma.contract.findMany({
+    include: {
+      subcontractor: {
+        select: { id: true, name: true }
+      },
+      project: {
+        select: { id: true, name: true }
+      }
+    },
+    orderBy: { createdAt: "desc" }
+  })
+
+  const subcontractors = await prisma.subcontractor.findMany({
+    select: { id: true, name: true }
+  })
+
+  const projects = await prisma.project.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true }
+  })
+
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white mb-2">📑 Taşeron Sözleşmeleri</h1>
-        <p className="text-slate-400">Taşeron sözleşmelerini yönetin, izleyin ve raporlayın.</p>
-      </div>
-      
-      <div className="bg-slate-900 rounded-xl p-12 border border-slate-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🚧</div>
-          <h2 className="text-xl font-semibold text-white mb-2">Yapım Aşamasında</h2>
-          <p className="text-slate-400">Bu modül geliştirilmektedir. Yakında aktif olacaktır.</p>
-        </div>
-      </div>
-    </div>
-  );
+    <ContractsClient 
+      initialContracts={contracts}
+      subcontractors={subcontractors}
+      projects={projects}
+    />
+  )
 }
