@@ -14,8 +14,8 @@ export default async function BillingsPage() {
   const billingsResult = await getBillings()
   const statsResult = await getBillingStats()
 
-  const billings = billingsResult.success ? billingsResult.data : []
-  const stats = statsResult.success ? statsResult.data : { totalGross: 0, pendingApprovals: 0, totalDeductions: 0 }
+  const billings = billingsResult.success ? (billingsResult.data ?? []) : []
+  const stats = statsResult.success ? (statsResult.data ?? { totalGross: 0, pendingApprovals: 0, totalDeductions: 0 }) : { totalGross: 0, pendingApprovals: 0, totalDeductions: 0 }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('tr-TR', {
@@ -92,7 +92,7 @@ export default async function BillingsPage() {
               </div>
               <span className="text-xs text-slate-400">Kümülatif Toplam</span>
             </div>
-            <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.totalGross)}</p>
+            <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats?.totalGross ?? 0)}</p>
             <p className="text-sm text-slate-400">Toplam Hakediş Tutarı</p>
           </motion.div>
 
@@ -106,7 +106,7 @@ export default async function BillingsPage() {
               </div>
               <span className="text-xs text-slate-400">Bekleyen</span>
             </div>
-            <p className="text-3xl font-bold text-white mb-1">{stats.pendingApprovals}</p>
+            <p className="text-3xl font-bold text-white mb-1">{stats?.pendingApprovals ?? 0}</p>
             <p className="text-sm text-slate-400">Onay Bekleyen Hakediş</p>
           </motion.div>
 
@@ -120,7 +120,7 @@ export default async function BillingsPage() {
               </div>
               <span className="text-xs text-slate-400">Kesintiler</span>
             </div>
-            <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.totalDeductions)}</p>
+            <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats?.totalDeductions ?? 0)}</p>
             <p className="text-sm text-slate-400">Toplam Kesinti Tutarı</p>
           </motion.div>
         </motion.div>
@@ -164,7 +164,7 @@ export default async function BillingsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/50">
-                {billings.length === 0 ? (
+                {!billings || billings.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center gap-3">

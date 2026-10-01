@@ -11,28 +11,28 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
-    const workerId = searchParams.get("workerId")
+    const subcontractorId = searchParams.get("subcontractorId")
 
     const contracts = await prisma.contract.findMany({
       where: {
         ...(projectId && { projectId }),
-        ...(workerId && { personelId: workerId })
+        ...(subcontractorId && { subcontractorId })
       },
       include: {
         project: {
           select: {
+            id: true,
             name: true,
             title: true
           }
         },
-        personel: {
+        subcontractor: {
           select: {
-            name: true
-          }
-        },
-        template: {
-          select: {
-            name: true
+            id: true,
+            name: true,
+            taxNumber: true,
+            contactName: true,
+            phone: true
           }
         }
       },
@@ -49,28 +49,33 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { title, type, fileUrl, content, projectId, workerId, templateId } = body
+    const { projectId, subcontractorId, title, totalAmount, startDate, endDate, status } = body
 
     const contract = await prisma.contract.create({
       data: {
+        projectId,
+        subcontractorId,
         title,
-        type,
-        fileUrl,
-        content: content || null,
-        projectId: projectId || null,
-        personelId: workerId || null,
-        templateId: templateId || null
+        totalAmount: parseFloat(totalAmount),
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        status: status || 'ACTIVE'
       },
       include: {
         project: {
           select: {
+            id: true,
             name: true,
             title: true
           }
         },
-        personel: {
+        subcontractor: {
           select: {
-            name: true
+            id: true,
+            name: true,
+            taxNumber: true,
+            contactName: true,
+            phone: true
           }
         }
       }

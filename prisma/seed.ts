@@ -752,150 +752,161 @@ async function main() {
   console.log(` Created ${iskenderun.name} (%${iskenderun.progress} tamamlandı)`)
 
   // ============================================================================
-  // TAŞERON FİRMALARI (SUBCONTRACTORS)
+  // TAŞERON FİRMALARI (SUBCONTRACTORS - New Model)
   // ============================================================================
-  console.log(" Creating subcontractor companies...")
+  console.log(" Creating subcontractors...")
 
-  const yildizDemirci = await prisma.company.upsert({
-    where: { id: "sub-yildiz" },
+  const demirtasElektrik = await prisma.subcontractor.upsert({
+    where: { id: "sub-demirtas" },
     update: {},
     create: {
-      id: "sub-yildiz",
-      name: "Yıldız Demirci Ltd. Şti.",
-      type: CompanyType.SUBCONTRACTOR,
-      contactName: "Hasan Yıldız",
-      phone: "+90 532 111 2233",
-      email: "info@yildizdemirci.com",
-      taxNumber: "5555555555",
-      taxOffice: "Gaziosmanpaşa Vergi Dairesi"
+      id: "sub-demirtas",
+      name: "Demirtaş Elektrik Ltd. Şti.",
+      taxNumber: "1234567890",
+      contactName: "Ahmet Demirtaş",
+      phone: "+90 532 111 2233"
     }
   })
 
-  const guvenKalip = await prisma.company.upsert({
-    where: { id: "sub-guven" },
+  const yilmazlarKalip = await prisma.subcontractor.upsert({
+    where: { id: "sub-yilmazlar" },
     update: {},
     create: {
-      id: "sub-guven",
-      name: "Güven Kalıpçılık",
-      type: CompanyType.SUBCONTRACTOR,
-      contactName: "İsmail Güven",
-      phone: "+90 533 444 5566",
-      email: "info@guvenkalip.com",
-      taxNumber: "6666666666",
-      taxOffice: "Ümraniye Vergi Dairesi"
+      id: "sub-yilmazlar",
+      name: "Yılmazlar Kalıpçılık",
+      taxNumber: "0987654321",
+      contactName: "Mehmet Yılmaz",
+      phone: "+90 533 444 5566"
     }
   })
 
-  const apexElektrik = await prisma.company.upsert({
-    where: { id: "sub-apex" },
-    update: {},
-    create: {
-      id: "sub-apex",
-      name: "Apex Elektrik",
-      type: CompanyType.SUBCONTRACTOR,
-      contactName: "Kemal Apex",
-      phone: "+90 534 777 8899",
-      email: "info@apexelektrik.com",
-      taxNumber: "7777777777",
-      taxOffice: "Kartal Vergi Dairesi"
-    }
-  })
-
-  console.log(` Created ${yildizDemirci.name}`)
-  console.log(` Created ${guvenKalip.name}`)
-  console.log(` Created ${apexElektrik.name}`)
+  console.log(` Created ${demirtasElektrik.name}`)
+  console.log(` Created ${yilmazlarKalip.name}`)
 
   // ============================================================================
-  // TAŞERON SÖZLEŞMELERİ (SUBCONTRACTOR CONTRACTS)
+  // SÖZLEŞMELER (CONTRACTS - New Model)
   // ============================================================================
-  console.log(" Creating subcontractor contracts...")
+  console.log(" Creating contracts...")
 
-  await prisma.subcontractorContract.create({
+  const contract1 = await prisma.contract.create({
     data: {
-      contractType: "UNIT_PRICE",
-      totalValue: 3500000,
+      projectId: vadiEvleri.id,
+      subcontractorId: demirtasElektrik.id,
+      title: "Vadi Evleri - Elektrik Tesisatı Sözleşmesi",
+      totalAmount: 3500000,
       startDate: new Date("2024-01-15"),
       endDate: new Date("2025-12-31"),
-      status: "ACTIVE",
-      notes: "Demir işleri birim fiyat sözleşmesi",
-      projectId: vadiEvleri.id,
-      subcontractorId: yildizDemirci.id
+      status: "ACTIVE"
     }
   })
 
-  await prisma.subcontractorContract.create({
+  const contract2 = await prisma.contract.create({
     data: {
-      contractType: "LUMP_SUM",
-      totalValue: 2800000,
+      projectId: vadiEvleri.id,
+      subcontractorId: yilmazlarKalip.id,
+      title: "Vadi Evleri - Kalıp İşleri Sözleşmesi",
+      totalAmount: 2800000,
       startDate: new Date("2024-02-01"),
       endDate: new Date("2025-06-30"),
-      status: "ACTIVE",
-      notes: "Kalıp işleri toplam fiyat sözleşmesi",
-      projectId: vadiEvleri.id,
-      subcontractorId: guvenKalip.id
+      status: "ACTIVE"
     }
   })
 
-  await prisma.subcontractorContract.create({
+  const contract3 = await prisma.contract.create({
     data: {
-      contractType: "UNIT_PRICE",
-      totalValue: 4200000,
+      projectId: nexaPlaza.id,
+      subcontractorId: demirtasElektrik.id,
+      title: "Nexa Plaza - Elektrik Altyapı Sözleşmesi",
+      totalAmount: 4200000,
       startDate: new Date("2024-03-01"),
       endDate: new Date("2026-03-31"),
-      status: "ACTIVE",
-      notes: "Elektrik tesisatı birim fiyat sözleşmesi",
-      projectId: nexaPlaza.id,
-      subcontractorId: apexElektrik.id
+      status: "ACTIVE"
     }
   })
 
-  console.log(" Created 3 subcontractor contracts")
+  console.log(" Created 3 contracts")
 
   // ============================================================================
-  // HAKEDİŞLER (PROGRESS BILLINGS)
+  // HAKEDİŞLER (PROGRESS BILLINGS - New Schema)
   // ============================================================================
   console.log(" Creating progress billings...")
 
+  // Billing 1: Paid with advance deduction
   await prisma.progressBilling.create({
     data: {
-      periodMonth: 1,
-      periodYear: 2024,
-      totalAmount: 450000,
-      netAmount: 435000,
-      status: "PAID",
-      notes: "Ocak ayı hakedişi - Demir işleri",
-      projectId: vadiEvleri.id,
-      subcontractorId: yildizDemirci.id
+      contractId: contract1.id,
+      billingNumber: 1,
+      period: new Date("2024-01-31"),
+      grossAmount: 450000,
+      advanceDeduction: 10000,
+      penaltyDeduction: 0,
+      retentionDeduction: 5000,
+      netPayable: 435000,
+      status: "PAID"
     }
   })
 
+  // Billing 2: Paid with penalty deduction
   await prisma.progressBilling.create({
     data: {
-      periodMonth: 2,
-      periodYear: 2024,
-      totalAmount: 520000,
-      netAmount: 505000,
-      status: "PAID",
-      notes: "Şubat ayı hakedişi - Kalıp işleri",
-      projectId: vadiEvleri.id,
-      subcontractorId: guvenKalip.id
+      contractId: contract2.id,
+      billingNumber: 1,
+      period: new Date("2024-02-28"),
+      grossAmount: 520000,
+      advanceDeduction: 0,
+      penaltyDeduction: 10000,
+      retentionDeduction: 5000,
+      netPayable: 505000,
+      status: "PAID"
     }
   })
 
+  // Billing 3: Approved with no deductions
   await prisma.progressBilling.create({
     data: {
-      periodMonth: 3,
-      periodYear: 2024,
-      totalAmount: 380000,
-      netAmount: 370000,
-      status: "APPROVED",
-      notes: "Mart ayı hakedişi - Elektrik işleri",
-      projectId: nexaPlaza.id,
-      subcontractorId: apexElektrik.id
+      contractId: contract3.id,
+      billingNumber: 1,
+      period: new Date("2024-03-31"),
+      grossAmount: 380000,
+      advanceDeduction: 0,
+      penaltyDeduction: 0,
+      retentionDeduction: 10000,
+      netPayable: 370000,
+      status: "APPROVED"
     }
   })
 
-  console.log(" Created 3 progress billings")
+  // Billing 4: Draft with all deductions
+  await prisma.progressBilling.create({
+    data: {
+      contractId: contract1.id,
+      billingNumber: 2,
+      period: new Date("2024-02-29"),
+      grossAmount: 500000,
+      advanceDeduction: 15000,
+      penaltyDeduction: 5000,
+      retentionDeduction: 10000,
+      netPayable: 470000,
+      status: "DRAFT"
+    }
+  })
+
+  // Billing 5: Pending approval
+  await prisma.progressBilling.create({
+    data: {
+      contractId: contract2.id,
+      billingNumber: 2,
+      period: new Date("2024-03-31"),
+      grossAmount: 480000,
+      advanceDeduction: 0,
+      penaltyDeduction: 0,
+      retentionDeduction: 0,
+      netPayable: 480000,
+      status: "PENDING_APPROVAL"
+    }
+  })
+
+  console.log(" Created 5 progress billings")
 
   // ============================================================================
   // KESİNTİLER VE CEZALAR (DEDUCTIONS)
@@ -909,7 +920,7 @@ async function main() {
       date: new Date("2024-02-15"),
       notes: "1 hafta gecikme için %3 ceza uygulanmıştır",
       projectId: vadiEvleri.id,
-      subcontractorId: yildizDemirci.id
+      subcontractorId: demirtasElektrik.id
     }
   })
 
@@ -920,7 +931,7 @@ async function main() {
       date: new Date("2024-03-01"),
       notes: "TS 500 standartlarına uygun olmayan kalıp yüzeyleri",
       projectId: vadiEvleri.id,
-      subcontractorId: guvenKalip.id
+      subcontractorId: yilmazlarKalip.id
     }
   })
 
@@ -931,7 +942,7 @@ async function main() {
       date: new Date("2024-03-10"),
       notes: "Baret takmayan personel tespiti",
       projectId: nexaPlaza.id,
-      subcontractorId: apexElektrik.id
+      subcontractorId: demirtasElektrik.id
     }
   })
 

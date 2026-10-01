@@ -10,50 +10,43 @@ import { prisma } from "@/lib/prisma"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { projectId, subcontractorId, periodMonth, periodYear, totalAmount, notes } = body
-
-    // İlgili taşeron ve projeye ait, henüz hakedişe yansıtılmamış kesintileri çek
-    const pendingDeductions = await prisma.deduction.findMany({
-      where: {
-        subcontractorId,
-        projectId: projectId || null,
-        appliedToBillingId: null,
-      },
-    })
-
-    // Toplam kesinti tutarını hesapla
-    const totalDeductions = pendingDeductions.reduce((sum, d) => sum + d.amount, 0)
+    const { contractId, billingNumber, period, grossAmount, advanceDeduction, penaltyDeduction, retentionDeduction, status } = body
 
     // Net ödenecek tutarı hesapla
-    const netAmount = totalAmount - totalDeductions
+    const netPayable = grossAmount - (advanceDeduction || 0) - (penaltyDeduction || 0) - (retentionDeduction || 0)
 
     // Hakedişi oluştur
     const billing = await prisma.progressBilling.create({
       data: {
-        projectId,
-        subcontractorId,
-        periodMonth,
-        periodYear,
-        totalAmount,
-        netAmount,
-        notes,
-        status: "DRAFT"
+        contractId,
+        billingNumber: parseInt(billingNumber),
+        period: new Date(period),
+        grossAmount: parseFloat(grossAmount),
+        advanceDeduction: parseFloat(advanceDeduction || 0),
+        penaltyDeduction: parseFloat(penaltyDeduction || 0),
+        retentionDeduction: parseFloat(retentionDeduction || 0),
+        netPayable,
+        status: status || 'DRAFT'
+      },
+      include: {
+        contract: {
+          include: {
+            project: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            subcontractor: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
       }
     })
-
-    // İşleme alınan kesintilerin appliedToBillingId alanını güncelle
-    if (pendingDeductions.length > 0) {
-      await prisma.deduction.updateMany({
-        where: {
-          id: {
-            in: pendingDeductions.map(d => d.id),
-          },
-        },
-        data: {
-          appliedToBillingId: billing.id,
-        },
-      })
-    }
 
     return NextResponse.json(billing)
   } catch (error) {
@@ -65,21 +58,32 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const projectId = searchParams.get("projectId")
-    const subcontractorId = searchParams.get("subcontractorId")
+    const contractId = searchParams.get("contractId")
 
     const where: any = {}
-    if (projectId) where.projectId = projectId
-    if (subcontractorId) where.subcontractorId = subcontractorId
+    if (contractId) where.contractId = contractId
 
     const billings = await prisma.progressBilling.findMany({
       where,
       include: {
-        project: {
-          select: { name: true }
-        },
-        subcontractor: {
-          select: { name: true }
+        contract: {
+          include: {
+            project: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            subcontractor: {
+              select: {
+                id: true,
+                name: true,
+                taxNumber: true,
+                contactName: true,
+                phone: true
+              }
+            }
+          }
         }
       },
       orderBy: { createdAt: "desc" }

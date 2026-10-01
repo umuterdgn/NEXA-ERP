@@ -38,11 +38,28 @@ export default async function SubcontractorBillingPage() {
 
   const subcontractorId = personel.companyId
 
-  const billings = await prisma.progressBilling.findMany({
+  // Get contracts for this subcontractor
+  const contracts = await prisma.contract.findMany({
     where: { subcontractorId },
+    select: { id: true }
+  })
+
+  const contractIds = contracts.map(c => c.id)
+
+  const billings = await prisma.progressBilling.findMany({
+    where: {
+      contractId: { in: contractIds }
+    },
     include: {
-      project: {
-        select: { name: true }
+      contract: {
+        include: {
+          project: {
+            select: { name: true }
+          },
+          subcontractor: {
+            select: { name: true }
+          }
+        }
       }
     },
     orderBy: { createdAt: "desc" }
@@ -62,9 +79,9 @@ export default async function SubcontractorBillingPage() {
     PAID: "Ödendi"
   }
 
-  const totalAmount = billings.reduce((sum, b) => sum + b.totalAmount, 0)
-  const paidAmount = billings.filter(b => b.status === "PAID").reduce((sum, b) => sum + b.totalAmount, 0)
-  const pendingAmount = billings.filter(b => b.status === "PENDING_APPROVAL" || b.status === "APPROVED").reduce((sum, b) => sum + b.totalAmount, 0)
+  const totalAmount = billings.reduce((sum, b) => sum + b.grossAmount, 0)
+  const paidAmount = billings.filter(b => b.status === "PAID").reduce((sum, b) => sum + b.grossAmount, 0)
+  const pendingAmount = billings.filter(b => b.status === "PENDING_APPROVAL" || b.status === "APPROVED").reduce((sum, b) => sum + b.grossAmount, 0)
 
   return (
     <div className="p-6 space-y-6">
@@ -129,16 +146,16 @@ export default async function SubcontractorBillingPage() {
                 billings.map((billing) => (
                   <tr key={billing.id} className="hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-white">{billing.project.name}</div>
+                      <div className="text-sm font-medium text-white">{billing.contract?.project?.name || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-300">
-                        {billing.periodMonth}/{billing.periodYear}
+                        {new Date(billing.period).toLocaleDateString("tr-TR", { month: "long", year: "numeric" })}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-white">
-                        ₺{billing.totalAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                        ₺{billing.grossAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
