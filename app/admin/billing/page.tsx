@@ -12,11 +12,15 @@ export const dynamic = 'force-dynamic'
 export default async function AdminBillingPage() {
   const billings = await prisma.progressBilling.findMany({
     include: {
-      project: {
-        select: { name: true }
-      },
-      subcontractor: {
-        select: { name: true }
+      contract: {
+        include: {
+          project: {
+            select: { name: true }
+          },
+          subcontractor: {
+            select: { name: true }
+          }
+        }
       }
     },
     orderBy: { createdAt: "desc" }

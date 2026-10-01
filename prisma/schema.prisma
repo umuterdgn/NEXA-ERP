@@ -196,6 +196,7 @@ model Project {
   siteReports SiteReport[]
   equipments  Equipment[]
   contracts   Contract[]
+  personnelContracts PersonnelContract[]
   inventory   Inventory[]
   attendanceRecords AttendanceRecord[]
   visitorRecords VisitorRecord[]
@@ -216,7 +217,6 @@ model Project {
   audits      Audit[]
   dailyProgress DailyProgress[]
   bimIssues   BimIssue[]
-  progressBillings ProgressBilling[]
   subcontractorContracts SubcontractorContract[]
   deductions Deduction[]
   materialRequests MaterialRequest[]
@@ -480,7 +480,6 @@ model Company {
   transactions Transaction[]
   audits      Audit[]
   dailyProgress DailyProgress[]
-  progressBillings ProgressBilling[]
   subcontractorContracts SubcontractorContract[]
   workerDocuments WorkerDocument[]
   deductions Deduction[]
@@ -730,7 +729,7 @@ model Personel {
   transactions    Transaction[]
   movements       StockMovement[]
   attendanceRecords AttendanceRecord[]
-  contracts       Contract[]
+  contracts       PersonnelContract[]
   conversationParticipants ConversationParticipant[]
   sentMessages    Message[] @relation("PersonelSender")
   isgReports      IsgReport[]
@@ -852,28 +851,78 @@ model BimIssue {
 // ============================================================================
 
 model ProgressBilling {
-  id               String   @id @default(cuid())
-  periodMonth      Int      // Ay (1-12)
-  periodYear       Int      // Yıl (2024, 2025, vb.)
-  totalAmount      Float
-  netAmount        Float    // Brüt tutardan kesintiler çıkarıldıktan sonra ödenecek net tutar
-  status           String   // DRAFT, PENDING_APPROVAL, APPROVED, PAID
-  notes            String?  @db.Text
-  
-  projectId        String
-  project          Project  @relation(fields: [projectId], references: [id])
-  
+  id                  String        @id @default(cuid())
+  contractId          String?
+  billingNumber       Int          @default(0)
+  period              DateTime      @default(now())
+  grossAmount         Float         @default(0)
+  advanceDeduction    Float         @default(0)
+  penaltyDeduction    Float         @default(0)
+  retentionDeduction  Float         @default(0)
+  netPayable          Float         @default(0)
+  status              BillingStatus @default(DRAFT)
+
+  contract            Contract?     @relation(fields: [contractId], references: [id])
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([contractId])
+  @@index([status])
+  @@index([period])
+}
+
+// ============================================================================
+// SUBCONTRACTOR (Taşeron Yönetimi - Hakediş Modülü İçin)
+// ============================================================================
+
+model Subcontractor {
+  id          String     @id @default(cuid())
+  name        String
+  taxNumber   String?
+  contactName String?
+  phone       String?
+  contracts   Contract[]
+  createdAt   DateTime   @default(now())
+}
+
+// ============================================================================
+// CONTRACT (Taşeron Sözleşmeleri - Hakediş Modülü İçin)
+// ============================================================================
+
+model Contract {
+  id              String         @id @default(cuid())
+  projectId       String
   subcontractorId String
-  subcontractor   Company  @relation(fields: [subcontractorId], references: [id])
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  title           String
+  totalAmount     Float
+  startDate       DateTime
+  endDate         DateTime
+  status          ContractStatus @default(ACTIVE)
+
+  project         Project        @relation(fields: [projectId], references: [id])
+  subcontractor   Subcontractor  @relation(fields: [subcontractorId], references: [id])
+  billings        ProgressBilling[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([projectId])
   @@index([subcontractorId])
   @@index([status])
-  @@index([periodYear, periodMonth])
-  @@index([createdAt])
+}
+
+enum ContractStatus {
+  ACTIVE
+  COMPLETED
+  TERMINATED
+}
+
+enum BillingStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PAID
 }
 
 // ============================================================================
@@ -1584,10 +1633,10 @@ model Inventory {
 // This model is deprecated, use AttendanceRecord instead
 
 // ============================================================================
-// CONTRACT (Sözleşmeler)
+// PERSONNEL CONTRACT (Personel Sözleşmeleri)
 // ============================================================================
 
-model Contract {
+model PersonnelContract {
   id        String   @id @default(cuid())
   title     String
   content   String?  @db.Text // Rich Text (legacy)
@@ -1829,7 +1878,7 @@ model ContractTemplate {
   content   String   @db.Text // İçinde {{PERSONEL_ADI}}, {{PROJE_ADI}}, {{TARİH}} gibi dinamik değişkenler
   createdAt DateTime @default(now())
 
-  contracts Contract[]
+  contracts PersonnelContract[]
 }
 enum ContractType {
   UPLOADED

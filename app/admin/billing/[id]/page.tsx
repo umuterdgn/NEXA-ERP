@@ -15,24 +15,21 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
   const billing = await prisma.progressBilling.findUnique({
     where: { id: resolvedParams.id },
     include: {
-      project: {
-        select: { name: true, contractValue: true, location: true }
-      },
-      subcontractor: {
-        select: { name: true, taxNumber: true, taxOffice: true, phone: true, email: true }
+      contract: {
+        include: {
+          project: {
+            select: { name: true, contractValue: true, location: true }
+          },
+          subcontractor: {
+            select: { name: true, taxNumber: true, phone: true }
+          }
+        }
       }
     }
   })
 
   // Bu hakedişe bağlı kesintileri çek
-  const appliedDeductions = await prisma.deduction.findMany({
-    where: {
-      appliedToBillingId: resolvedParams.id,
-    },
-    orderBy: {
-      date: 'desc',
-    },
-  })
+  const appliedDeductions: any[] = [] // Yeni yapıda deductions bağı farklı olacak
 
   if (!billing) {
     notFound()
@@ -92,9 +89,8 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
           </div>
           <div>
             <h3 className="font-semibold text-slate-700 mb-2">Taşeron Firma</h3>
-            <p className="text-slate-600 font-medium">{billing.subcontractor.name}</p>
-            <p className="text-slate-500 text-sm mt-1">Vergi No: {billing.subcontractor.taxNumber || "-"}</p>
-            <p className="text-slate-500 text-sm">Vergi Dairesi: {billing.subcontractor.taxOffice || "-"}</p>
+            <p className="text-slate-600 font-medium">{billing.contract?.subcontractor?.name || "-"}</p>
+            <p className="text-slate-500 text-sm mt-1">Vergi No: {billing.contract?.subcontractor?.taxNumber || "-"}</p>
           </div>
         </div>
 
@@ -103,12 +99,12 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <span className="text-slate-500 text-sm">Proje Adı:</span>
-              <p className="text-slate-900 font-medium">{billing.project.name}</p>
+              <p className="text-slate-900 font-medium">{billing.contract?.project?.name || "-"}</p>
             </div>
             <div>
               <span className="text-slate-500 text-sm">Dönem:</span>
               <p className="text-slate-900 font-medium">
-                {monthNames[billing.periodMonth - 1]} {billing.periodYear}
+                {new Date(billing.period).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })}
               </p>
             </div>
             <div>
@@ -133,7 +129,7 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-blue-600">
-                ₺{billing.totalAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                ₺{billing.grossAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
               </p>
             </div>
           </div>
@@ -188,7 +184,7 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-green-600">
-                ₺{(billing.netAmount || billing.totalAmount).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                ₺{billing.netPayable.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
               </p>
             </div>
           </div>
@@ -201,16 +197,6 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
             {statusLabels[billing.status as keyof typeof statusLabels]}
           </span>
         </div>
-
-        {/* Notlar */}
-        {billing.notes && (
-          <div className="mb-6">
-            <h3 className="font-semibold text-slate-700 mb-2">Notlar</h3>
-            <div className="bg-slate-50 rounded-lg p-4 text-slate-600">
-              {billing.notes}
-            </div>
-          </div>
-        )}
 
         {/* İmza Alanı */}
         <div className="grid grid-cols-2 gap-8 mt-12 pt-8 border-t border-slate-300">
