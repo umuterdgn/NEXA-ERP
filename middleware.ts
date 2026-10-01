@@ -36,9 +36,37 @@ const PUBLIC_PATHS = [
   "/static"
 ]
 
+// Multi-tenant domain configuration
+const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "app.nxa.com.tr"
+const LOCALHOST = "localhost"
+
 export default auth((req) => {
   const { pathname } = req.nextUrl
   const session = req.auth
+
+  // --- 1. MULTI-TENANT DOMAIN (SaaS) YÖNLENDİRMESİ ---
+  
+  const hostname = req.headers.get("host") || ""
+  const cleanHostname = hostname.replace(/^https?:\/\//, "")
+
+  // Vercel domainlerini localhost gibi güvenli kabul et
+  const isVercelDomain = cleanHostname.endsWith(".vercel.app")
+
+  // Custom domain tanımları
+  const isCustomDomain = cleanHostname === "nexa-erp.com" || 
+                         cleanHostname === "www.nexa-erp.com"
+
+  // Eğer ana domain, localhost, Vercel test domaini veya custom domain ise, normal rotalara devam et
+  if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST) || isVercelDomain || isCustomDomain) {
+    // Devam et - normal auth kontrolüne geç
+  } else {
+    // Eğer özel domain veya subdomain (Müşterinin sitesi) ise, public route'a yönlendir
+    const url = req.nextUrl.clone()
+    url.pathname = `/${cleanHostname}${url.pathname}`
+    return NextResponse.rewrite(url)
+  }
+
+  // --- 2. AUTH & RBAC KONTROLLERİ ---
 
   // Check if path is public
   const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path))
@@ -59,6 +87,22 @@ export default auth((req) => {
   }
 
   const userRole = session.user?.role as string
+  const isOnAdminPanel = pathname.startsWith("/admin")
+  const isOnSubcontractorPanel = pathname.startsWith("/subcontractor")
+  const isOnPersonnelPage = pathname.startsWith("/personnel")
+  const isOnLoginPage = pathname === "/login"
+
+  // SUBCONTRACTOR rolü için ek güvenlik kontrolü
+  if (userRole === "SUBCONTRACTOR") {
+    // Taşeronlar sadece /subcontractor rotasına erişebilir
+    if (isOnAdminPanel || isOnPersonnelPage) {
+      return NextResponse.redirect(new URL("/subcontractor", req.url))
+    }
+    // Taşeron /subcontractor dışındaki sayfalara girmeye çalışırsa
+    if (!isOnSubcontractorPanel && !isOnLoginPage) {
+      return NextResponse.redirect(new URL("/subcontractor", req.url))
+    }
+  }
 
   // Get the protected route prefix
   const protectedRoute = Object.keys(ROUTE_PROTECTION).find(route => pathname.startsWith(route))
@@ -74,14 +118,17 @@ export default auth((req) => {
   }
 
   // If user is logged in and tries to access login page, redirect to appropriate dashboard
-  if (pathname === "/login" && session) {
-    if (userRole === "SUBCONTRACTOR") {
-      return NextResponse.redirect(new URL("/subcontractor", req.url))
-    } else if (userRole === "STAFF" || userRole === "WORKER") {
-      return NextResponse.redirect(new URL("/personnel", req.url))
-    } else {
+  if (isOnLoginPage && session) {
+    if (userRole === "SUPER_ADMIN") {
       return NextResponse.redirect(new URL("/admin", req.url))
     }
+    if (userRole === "SUBCONTRACTOR") {
+      return NextResponse.redirect(new URL("/subcontractor", req.url))
+    }
+    if (userRole === "STAFF" || userRole === "WORKER") {
+      return NextResponse.redirect(new URL("/personnel", req.url))
+    }
+    return NextResponse.redirect(new URL("/admin", req.url))
   }
 
   return NextResponse.next()
