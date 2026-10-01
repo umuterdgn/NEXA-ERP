@@ -913,6 +913,9 @@ async function main() {
   // ============================================================================
   console.log(" Creating deductions...")
 
+  // Clear existing deductions to avoid foreign key conflicts
+  await prisma.deduction.deleteMany({})
+
   await prisma.deduction.create({
     data: {
       amount: 15000,

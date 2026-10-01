@@ -482,7 +482,6 @@ model Company {
   dailyProgress DailyProgress[]
   subcontractorContracts SubcontractorContract[]
   workerDocuments WorkerDocument[]
-  deductions Deduction[]
 
   @@index([type])
 }
@@ -883,6 +882,7 @@ model Subcontractor {
   contactName String?
   phone       String?
   contracts   Contract[]
+  deductions  Deduction[] @relation("DeductionSubcontractor")
   createdAt   DateTime   @default(now())
 }
 
@@ -992,7 +992,7 @@ model Deduction {
   project          Project? @relation(fields: [projectId], references: [id])
   
   subcontractorId String
-  subcontractor   Company  @relation(fields: [subcontractorId], references: [id])
+  subcontractor   Subcontractor  @relation("DeductionSubcontractor", fields: [subcontractorId], references: [id])
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
