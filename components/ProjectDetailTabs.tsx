@@ -817,7 +817,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold text-white">İş Programı (Gantt Şeması)</h3>
             </div>
-            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 overflow-x-auto">
               <GanttChart projectId={project.id} />
             </div>
           </div>

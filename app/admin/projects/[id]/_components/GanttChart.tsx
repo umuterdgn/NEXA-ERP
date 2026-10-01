@@ -183,38 +183,50 @@ export default function GanttChart({ projectId }: GanttChartProps) {
             color: #e2e8f0 !important;
           }
           .gantt-task {
-            background-color: #334155 !important;
+            background-color: #1e293b !important;
             color: #e2e8f0 !important;
-            border: 1px solid #475569 !important;
+            border: 1px solid #334155 !important;
           }
           .gantt-task:hover {
-            background-color: #475569 !important;
+            background-color: #334155 !important;
           }
           .gantt-timeline {
             background-color: #0f172a !important;
           }
           .gantt-timeline-date {
             color: #94a3b8 !important;
+            font-size: 11px !important;
           }
           .gantt-timeline-row {
             border-color: #1e293b !important;
           }
+          .gantt-table-header-label {
+            color: #e2e8f0 !important;
+            font-size: 12px !important;
+          }
+          .gantt-table-cell {
+            color: #cbd5e1 !important;
+            font-size: 12px !important;
+          }
         `}</style>
-        <Gantt
-          tasks={tasks}
-          viewMode={ViewMode.Day}
-          onDateChange={(task) => {
-            console.log("Date changed:", task);
-          }}
-          onProgressChange={(task) => {
-            console.log("Progress changed:", task);
-          }}
-          onDoubleClick={(task) => {
-            console.log("Double clicked:", task);
-          }}
-          listCellWidth="155px"
-          ganttHeight={400}
-        />
+        <div className="overflow-x-auto">
+          <Gantt
+            tasks={tasks}
+            viewMode={ViewMode.Day}
+            onDateChange={(task) => {
+              console.log("Date changed:", task);
+            }}
+            onProgressChange={(task) => {
+              console.log("Progress changed:", task);
+            }}
+            onDoubleClick={(task) => {
+              console.log("Double clicked:", task);
+            }}
+            listCellWidth="200px"
+            ganttHeight={400}
+            columnWidth={60}
+          />
+        </div>
       </div>
 
       {tasks.length === 0 && (
