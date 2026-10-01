@@ -61,7 +61,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
   const totalPaid = contract.billings
     .filter(b => b.status === "PAID")
-    .reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+    .reduce((sum, b) => sum + (b.netPayable || 0), 0)
 
   const remainingAmount = contract.totalAmount - totalPaid
 
@@ -169,7 +169,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                       </div>
                       <div className="text-right">
                         <p className="text-white font-semibold">
-                          ₺{(billing.totalAmount || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                          ₺{(billing.netPayable || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
                         </p>
                         <span className={`text-xs px-2 py-1 rounded mt-1 inline-block ${
                           billing.status === "PAID" ? "bg-green-500/20 text-green-400" :
