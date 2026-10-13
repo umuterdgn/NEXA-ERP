@@ -101,6 +101,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/food-menu", label: "Yemek Menüsü", icon: Utensils, category: "İNSAN KAYNAKLARI" },
   
   // TAŞERON YÖNETİMİ
+  { href: "/admin/subcontractor-inspections", label: "İş Kanıtı Denetimi", icon: ShieldCheck, category: "TAŞERON YÖNETİMİ" },
   { href: "/admin/audits", label: "Taşeron Denetimleri", icon: ShieldAlert, category: "TAŞERON YÖNETİMİ" },
   { href: "/admin/billing", label: "Hakediş Yönetimi", icon: Wallet, category: "TAŞERON YÖNETİMİ" },
   { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", icon: FileSignature, category: "TAŞERON YÖNETİMİ" },

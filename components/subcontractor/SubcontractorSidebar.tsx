@@ -16,6 +16,7 @@ import {
   X,
   ChevronDown,
   Building2,
+  Camera,
   Download,
 } from "lucide-react"
 
@@ -35,6 +36,7 @@ export default function SubcontractorSidebar({
 
   const navItems = [
     { href: "/subcontractor", label: "Ana Sayfa", icon: Home },
+    { href: "/subcontractor/proofs/new", label: "İş Kanıtı Yükle", icon: Camera },
     { href: "/subcontractor/tasks", label: "Görevlerim", icon: ClipboardList },
     { href: "/subcontractor/report", label: "Günlük Rapor Gir", icon: FileText },
     { href: "/subcontractor/billing", label: "Hakedişlerim", icon: DollarSign },

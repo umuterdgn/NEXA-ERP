@@ -249,6 +249,7 @@ model Project {
   nearMisses NearMiss[]
   ppeAssignments PPEAssignment[]
   logisticsAppointments LogisticsAppointment[]
+  foodMenus    FoodMenu[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -333,6 +334,10 @@ model Equipment {
   status           String   @default("AVAILABLE") // AVAILABLE, ASSIGNED, MAINTENANCE
   serialNumber     String?  @unique // BLE MAC adresi veya Seri No (zorunlu)
   plateOrSerialNo  String?  // @deprecated - Use serialNumber instead
+  bleTagId         String?  @unique
+  latitude         Float?
+  longitude        Float?
+  lastSeenAt       DateTime?
   nextMaintenance  DateTime?
   
   assignedToId     String?  // Kime zimmetli
@@ -354,6 +359,7 @@ model Equipment {
   @@index([type])
   @@index([assignedToId])
   @@index([serialNumber])
+  @@index([bleTagId])
   @@index([tenantId])
 }
 
@@ -883,6 +889,7 @@ model Subcontractor {
   phone       String?
   contracts   Contract[]
   deductions  Deduction[] @relation("DeductionSubcontractor")
+  workProofs  WorkProof[]
   createdAt   DateTime   @default(now())
 }
 
@@ -903,6 +910,7 @@ model Contract {
   project         Project        @relation(fields: [projectId], references: [id])
   subcontractor   Subcontractor  @relation(fields: [subcontractorId], references: [id])
   billings        ProgressBilling[]
+  workProofs      WorkProof[]
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -2261,17 +2269,51 @@ model LogisticsSchedule {
 }
 
 // ============================================================================
-// YEMEK MENÜSÜ
+// YEMEK MENÜSÜ (Proje Bazlı)
 // ============================================================================
 
 model FoodMenu {
   id        String   @id @default(cuid())
-  date      DateTime @unique // Her gün için tek bir menü
+  date      DateTime
   items     String   // Yemekler (Virgülle veya alt alta ayrılmış metin)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([projectId, date])
+  @@index([projectId])
   @@index([date])
+}
+
+// ============================================================================
+// WORK PROOF (Taşeron İş Kanıtı / Proof of Work)
+// ============================================================================
+
+model WorkProof {
+  id              String      @id @default(cuid())
+  contractId      String      // Hangi sözleşmeye ait
+  subcontractorId String      // Kim yükledi
+  title           String      // Yapılan işin özeti (Örn: 1. Kat Kolon Kalıpları)
+  description     String?
+  imageUrl        String      // Fotoğraf kanıtı (Upload URL)
+  status          ProofStatus @default(PENDING) // PENDING, APPROVED, REJECTED
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  contract        Contract      @relation(fields: [contractId], references: [id])
+  subcontractor   Subcontractor @relation(fields: [subcontractorId], references: [id])
+
+  @@index([contractId])
+  @@index([subcontractorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ProofStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // ============================================================================

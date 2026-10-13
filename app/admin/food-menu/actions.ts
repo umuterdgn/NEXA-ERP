@@ -37,6 +37,11 @@ function parseExcelDate(rawDate: any): Date | null {
 export async function uploadMenuExcel(formData: FormData) {
   try {
     const file = formData.get("file") as File
+    const projectId = formData.get("projectId") as string
+
+    if (!projectId) {
+      return { success: false, error: "Lütfen Excel yüklemeden önce bir proje seçiniz" }
+    }
 
     if (!file) {
       return { success: false, error: "Dosya seçilmedi" }
@@ -69,13 +74,19 @@ export async function uploadMenuExcel(formData: FormData) {
       }
       
       // Get menu items
-      const items = row[1].toString()
+      const items = row[1].toString().trim()
+      if (!items) continue
       
-      // Upsert to database
+      // Upsert to database (unique per project and date)
       await prisma.foodMenu.upsert({
-        where: { date },
+        where: {
+          projectId_date: {
+            projectId,
+            date
+          }
+        },
         update: { items },
-        create: { date, items }
+        create: { date, items, projectId }
       })
       
       count++
@@ -89,16 +100,66 @@ export async function uploadMenuExcel(formData: FormData) {
   }
 }
 
+export async function createFoodMenu(projectId: string, dateStr: string, items: string) {
+  try {
+    if (!projectId) {
+      return { success: false, error: "Proje seçimi zorunludur" }
+    }
+    if (!dateStr || !items) {
+      return { success: false, error: "Tarih ve menü içeriği zorunludur" }
+    }
+
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) {
+      return { success: false, error: "Geçersiz tarih" }
+    }
+
+    const menu = await prisma.foodMenu.upsert({
+      where: {
+        projectId_date: {
+          projectId,
+          date
+        }
+      },
+      update: { items: items.trim() },
+      create: {
+        projectId,
+        date,
+        items: items.trim()
+      }
+    })
+
+    revalidatePath("/admin/food-menu")
+    return { success: true, menu }
+  } catch (error) {
+    console.error("Create food menu error:", error)
+    return { success: false, error: "Menü kaydedilirken hata oluştu" }
+  }
+}
+
 export async function updateFoodMenu(id: string, newItems: string) {
   try {
     await prisma.foodMenu.update({
       where: { id },
-      data: { items: newItems }
+      data: { items: newItems.trim() }
     })
     revalidatePath("/admin/food-menu")
     return { success: true }
   } catch (error) {
-    console.error("Update menu error:", error)
-    return { success: false, error: "Menü güncellenemedi" }
+    console.error("Update food menu error:", error)
+    return { success: false, error: "Güncelleme başarısız" }
+  }
+}
+
+export async function deleteFoodMenuAction(id: string) {
+  try {
+    await prisma.foodMenu.delete({
+      where: { id }
+    })
+    revalidatePath("/admin/food-menu")
+    return { success: true }
+  } catch (error) {
+    console.error("Delete food menu error:", error)
+    return { success: false, error: "Silme başarısız" }
   }
 }

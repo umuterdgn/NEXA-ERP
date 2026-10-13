@@ -1,8 +1,8 @@
 /**
- * 2026 NXA Software. All rights reserved.
- * Developer: Umut Erdoğan
- * This code is the property of NXA Software.
- */
+* 2026 NXA Software. All rights reserved.
+* Developer: Umut Erdoğan
+* This code is the property of NXA Software.
+*/
 
 import { PrismaClient, CompanyType, UserRole, Gender, EmploymentType, PersonelStatus } from "@prisma/client"
 import bcrypt from "bcryptjs"
@@ -1050,11 +1050,11 @@ async function main() {
 
   const attendanceData = []
   const today = new Date()
-  
+
   for (let i = 0; i < 30; i++) {
     const date = new Date(today)
     date.setDate(date.getDate() - i)
-    
+
     // Hafta sonu hariç
     if (date.getDay() !== 0 && date.getDay() !== 6) {
       attendanceData.push({
@@ -1067,7 +1067,7 @@ async function main() {
         personelId: mehmetKaya.id,
         projectId: vadiEvleri.id
       })
-      
+
       attendanceData.push({
         date: new Date(date),
         checkIn: new Date(date.setHours(8, 15, 0)),
@@ -1078,7 +1078,7 @@ async function main() {
         personelId: ayseDemir.id,
         projectId: nexaPlaza.id
       })
-      
+
       attendanceData.push({
         date: new Date(date),
         checkIn: new Date(date.setHours(7, 45, 0)),
