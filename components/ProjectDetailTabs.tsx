@@ -17,9 +17,8 @@ import GeofencedCheckIn from "@/components/GeofencedCheckIn"
 import StructureTree from "@/components/StructureTree"
 import { toast } from "react-hot-toast"
 import { jsPDF } from "jspdf"
-import * as htmlToImage from 'html-to-image'
-import { UploadDropzone } from "@uploadthing/react"
-import type { OurFileRouter } from "@/app/api/uploadthing/core"
+import * as htmlToImage from "html-to-image"
+import { UploadDropzone } from "@/lib/uploadthing"
 import { updateProjectBimModel } from "@/app/actions/project"
 
 // Leaflet SSR'da hata verdiği için dynamic import kullanıyoruz
@@ -86,6 +85,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [deleteReportId, setDeleteReportId] = useState<string | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isUploadingBim, setIsUploadingBim] = useState(false)
+  const [showBimUploader, setShowBimUploader] = useState(false)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
   const [droneMedia, setDroneMedia] = useState<any[]>([])
   const [editForm, setEditForm] = useState({
@@ -674,18 +674,18 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold text-white">3D BIM Modeli</h3>
               <button
-                onClick={() => router.push(`/admin/projects/${project.id}/edit`)}
+                onClick={() => setShowBimUploader(!showBimUploader)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
-                IFC Yükle
+                {showBimUploader ? "Görüntüleyiciye Dön" : (project.ifcModelUrl ? "Modeli Değiştir" : "IFC Yükle")}
               </button>
             </div>
 
             <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              {project.ifcModelUrl ? (
+              {project.ifcModelUrl && !showBimUploader ? (
                 <div className="h-150">
                   <BimViewer ifcUrl={project.ifcModelUrl} />
                 </div>
@@ -694,25 +694,23 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                   {isUploadingBim ? (
                     <div className="flex flex-col items-center justify-center py-20">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                      <p className="text-slate-400">IFC Modeli yükleniyor...</p>
+                      <p className="text-slate-400">BIM Modeli kaydediliyor...</p>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-20">
-                      <svg className="w-16 h-16 text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                      <p className="text-slate-400 text-lg mb-2">IFC Modeli Yüklenmemiş</p>
-                      <p className="text-slate-500 text-sm mb-6">Bu proje için henüz 3D BIM modeli eklenmemiş.</p>
+                    <div className="flex flex-col items-center justify-center py-10">
+                      <p className="text-slate-400 text-base mb-2">IFC / 3D BIM Modeli Yükleyin</p>
+                      <p className="text-slate-500 text-xs mb-6">Proje için .ifc formatında 3D BIM modelini yükleyin (Maks 128MB)</p>
                       
-                      <UploadDropzone<OurFileRouter, "bimModelUploader">
+                      <UploadDropzone
                         endpoint="bimModelUploader"
-                        config={{ mode: "auto" }}
                         onClientUploadComplete={async (res) => {
+                          console.log("Upload Completed: ", res)
                           if (res && res.length > 0) {
                             setIsUploadingBim(true)
                             const result = await updateProjectBimModel(project.id, res[0].url)
                             if (result.success) {
                               toast.success("BIM modeli başarıyla yüklendi!")
+                              setShowBimUploader(false)
                               router.refresh()
                             } else {
                               toast.error("BIM modeli kaydedilirken hata oluştu")
@@ -722,6 +720,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                         }}
                         onUploadError={(error: Error) => {
                           toast.error(`Yükleme hatası: ${error.message}`)
+                          console.error("BIM Model Upload Error:", error)
                         }}
                       />
                     </div>

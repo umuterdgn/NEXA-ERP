@@ -10,8 +10,9 @@ const f = createUploadthing()
 
 // FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
-  // BIM Model Uploader - Only .ifc files, max 128MB
+  // BIM Model Uploader - IFC files and blobs, max 128MB
   bimModelUploader: f({
+    blob: { maxFileSize: "128MB", maxFileCount: 1 },
     "application/octet-stream": { maxFileSize: "128MB", maxFileCount: 1 },
   })
     .middleware(() => {
