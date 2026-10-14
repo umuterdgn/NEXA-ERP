@@ -266,11 +266,13 @@ export default function BleEquipmentMap({
         className="z-0 h-full w-full"
         scrollWheelZoom={true}
       >
-        {/* Esri World Dark Gray Canvas Layer */}
+        {/* High-Zoom Dark Matter Layer supporting deep zoom up to 20 */}
         <TileLayer
-          attribution="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-          maxZoom={19}
+          attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url={process.env.NEXT_PUBLIC_CARTO_API_KEY ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}` : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"}
+          maxZoom={20}
+          maxNativeZoom={19}
+          subdomains="abcd"
         />
 
         {/* Dynamic View Controller */}
