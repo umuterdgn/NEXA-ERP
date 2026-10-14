@@ -18,6 +18,7 @@ import StructureTree from "@/components/StructureTree"
 import { toast } from "react-hot-toast"
 import { jsPDF } from "jspdf"
 import * as htmlToImage from "html-to-image"
+import { QRCodeSVG } from "qrcode.react"
 import { UploadDropzone } from "@/lib/uploadthing"
 import { updateProjectBimModel } from "@/app/actions/project"
 
@@ -88,7 +89,24 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [bimUrl, setBimUrl] = useState<string | null>(
     project.bimModelUrl || project.ifcModelUrl || null
   )
+  const [showARModal, setShowARModal] = useState(false)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
+
+  const isMobileDevice = () => {
+    if (typeof window === "undefined") return false
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth < 768
+    )
+  }
+
+  const handleOpenAR = () => {
+    if (isMobileDevice()) {
+      window.location.href = `/ar/${project.id}`
+    } else {
+      setShowARModal(true)
+    }
+  }
 
   useEffect(() => {
     if (project.bimModelUrl || project.ifcModelUrl) {
@@ -679,11 +697,40 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
 
         {activeTab === "bim" && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap justify-between items-center gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-white">3D BIM Modeli</h3>
                 <p className="text-xs text-slate-400">Projenin 3D Yapı Bilgi Modellemesi ve dijital ikiz görünümü</p>
               </div>
+
+              {bimUrl && (
+                <div className="flex items-center gap-2">
+                  {/* Neon AR ile Sahada Gör Button */}
+                  <button
+                    onClick={handleOpenAR}
+                    className="relative group overflow-hidden px-4 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-lg font-semibold text-sm shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:shadow-[0_0_30px_rgba(6,182,212,0.8)] border border-cyan-300/40 transition-all flex items-center gap-2 transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
+                    </span>
+                    <svg className="w-4 h-4 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>AR ile Sahada Gör</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setBimUrl(null)} 
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-sm font-medium border border-slate-700 transition-colors flex items-center gap-1.5"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Modeli Değiştir
+                  </button>
+                </div>
+              )}
             </div>
 
             {bimUrl ? (
@@ -691,16 +738,26 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 {/* Eski çalışan 3D Viewer bileşenini buraya koy */}
                 <BimViewer url={bimUrl} ifcUrl={bimUrl} projectId={project.id} />
 
-                {/* Yeni model yüklemek için ufak bir sıfırlama butonu */}
-                <button 
-                  onClick={() => setBimUrl(null)} 
-                  className="absolute top-4 right-4 z-50 bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded text-sm font-medium shadow-lg transition-colors flex items-center gap-1.5"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
-                  Modeli Değiştir
-                </button>
+                {/* AR & Modeli Değiştir floating controls */}
+                <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+                  <button
+                    onClick={handleOpenAR}
+                    className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg text-xs font-semibold shadow-[0_0_15px_rgba(6,182,212,0.6)] border border-cyan-300/40 transition-all flex items-center gap-1.5 backdrop-blur-md"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-cyan-300 animate-ping"></span>
+                    AR Sahada Gör
+                  </button>
+
+                  <button 
+                    onClick={() => setBimUrl(null)} 
+                    className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-lg transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Modeli Değiştir
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="bg-slate-800 rounded-xl border border-slate-700 p-8">
@@ -1232,6 +1289,81 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors"
               >
                 Evet, Sil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AR QR Code Modal */}
+      {showARModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="relative bg-slate-900 border border-cyan-500/30 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-[0_0_50px_rgba(6,182,212,0.25)] text-center animate-in fade-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowARModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              ✕
+            </button>
+
+            {/* Neon Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold tracking-wider uppercase mb-3">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              Artırılmış Gerçeklik (AR)
+            </div>
+
+            <h3 className="text-xl font-bold text-white mb-1">
+              AR ile Sahada Canlandır
+            </h3>
+            <p className="text-xs text-slate-400 mb-6 max-w-xs mx-auto">
+              {project.name || project.title} projesinin 3D BIM modelini şantiye sahasında 1:1 ölçekte kameranızla görüntüleyin.
+            </p>
+
+            {/* QR Code Container with neon frame */}
+            <div className="relative group p-4 bg-white rounded-2xl shadow-2xl mx-auto w-fit mb-5 border-4 border-cyan-400/40">
+              <QRCodeSVG
+                value={
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}/ar/${project.id}`
+                    : `/ar/${project.id}`
+                }
+                size={220}
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+
+            {/* Instructional Subtitle */}
+            <div className="bg-slate-800/80 rounded-xl p-3 border border-slate-700/60 mb-5">
+              <p className="text-xs font-medium text-cyan-300 flex items-center justify-center gap-1.5 mb-1">
+                <span>📷</span> Cihazınızın kamerasıyla okutarak modeli sahada canlandırın.
+              </p>
+              <p className="text-[11px] text-slate-400">
+                iOS veya Android telefonunuzun kamerasını yukarıdaki QR koda doğrultun.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const arUrl = `${window.location.origin}/ar/${project.id}`
+                  navigator.clipboard.writeText(arUrl)
+                  toast.success("AR bağlantısı panoya kopyalandı!")
+                }}
+                className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium border border-slate-700 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <span>🔗</span> Bağlantıyı Kopyala
+              </button>
+
+              <button
+                onClick={() => {
+                  window.open(`/ar/${project.id}`, "_blank")
+                }}
+                className="flex-1 py-2.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-600/30 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>🚀</span> Yeni Sekmede Aç
               </button>
             </div>
           </div>
