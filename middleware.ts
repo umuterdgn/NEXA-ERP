@@ -12,7 +12,7 @@ import { authConfig } from "@/lib/auth.config"
 const ROUTE_PROTECTION = {
   "/admin": ["ADMIN", "SUPER_ADMIN", "SITE_MANAGER", "MUHASEBE", "ENGINEER", "INSPECTOR", "AUDITOR"],
   "/subcontractor": ["SUBCONTRACTOR"],
-  "/personnel": ["STAFF", "WORKER"],
+  "/personnel": ["STAFF", "WORKER", "SITE_MANAGER", "ENGINEER", "ADMIN", "SUPER_ADMIN"],
   "/inspection": ["INSPECTOR", "AUDITOR"]
 }
 

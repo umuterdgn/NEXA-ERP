@@ -28,7 +28,8 @@ import {
   ClipboardList,
   ClipboardCheck,
   ShoppingCart,
-  Download
+  Download,
+  Truck
 } from "lucide-react"
 
 export default function PersonnelSidebar({
@@ -48,6 +49,7 @@ export default function PersonnelSidebar({
   const navItems = [
     { href: "/personnel", label: "Ana Sayfa", icon: Home },
     { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList },
+    { href: "/personnel/deliveries", label: "Malzeme Kabul & Teslimat", icon: Truck },
     { href: "/personnel/requests", label: "Malzeme Talepleri", icon: ShoppingCart },
     { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
     { href: "/personnel/qr-checkin", label: "QR Giriş/Çıkış", icon: QrCode },

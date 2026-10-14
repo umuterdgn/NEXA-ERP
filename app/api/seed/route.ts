@@ -115,9 +115,9 @@ export async function GET() {
     // 7. Lojistik ve Randevu Takibi
     await prisma.logisticsSchedule.createMany({
       data: [
-        { title: "C30 Beton Dökümü - A Blok", type: "BETON", location: "A Blok - Zemin", supplierName: "Çimsa", driverContact: "0555 123 45 67", status: "Yolda", scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000) },
-        { title: "İSG Genel Denetimi", type: "DENETİM", location: "Tüm Şantiye", supplierName: "Bakanlık Müfettişleri", driverContact: "-", status: "Planlandı", scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
-        { title: "Demir Sevkiyatı (20 Ton)", type: "MALZEME", location: "B Blok Depo Alanı", supplierName: "Erdemir", driverContact: "0532 987 65 43", status: "Şantiyede", scheduledAt: new Date(Date.now() - 1 * 60 * 60 * 1000) }
+        { title: "C30 Beton Dökümü - A Blok", type: "BETON", location: "A Blok - Zemin", supplierName: "Çimsa", driverContact: "0555 123 45 67", status: "IN_TRANSIT", scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000) },
+        { title: "İSG Genel Denetimi", type: "DENETİM", location: "Tüm Şantiye", supplierName: "Bakanlık Müfettişleri", driverContact: "-", status: "PLANNED", scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+        { title: "Demir Sevkiyatı (20 Ton)", type: "MALZEME", location: "B Blok Depo Alanı", supplierName: "Erdemir", driverContact: "0532 987 65 43", status: "DELIVERED", scheduledAt: new Date(Date.now() - 1 * 60 * 60 * 1000) }
       ]
     });
 

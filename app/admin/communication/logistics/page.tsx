@@ -15,11 +15,19 @@ interface LogisticsItem {
   title: string
   type: string
   location: string
-  supplierName?: string
-  driverContact?: string
-  status: "Planlandı" | "Yolda" | "Şantiyede" | "Tamamlandı" | "İptal"
-  scheduledAt: Date
-  notes?: string
+  supplierName?: string | null
+  driverContact?: string | null
+  status: "PLANNED" | "IN_TRANSIT" | "DELIVERED" | "ISSUE_REPORTED" | string
+  scheduledAt: string | Date
+  notes?: string | null
+  deliveryProofImageUrl?: string | null
+  deliveryNotes?: string | null
+  receivedById?: string | null
+  receivedBy?: {
+    id: string
+    name: string
+  } | null
+  projectId?: string | null
 }
 
 export default function LogisticsPage() {
@@ -27,6 +35,7 @@ export default function LogisticsPage() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: "",
     type: "BETON",
@@ -34,7 +43,8 @@ export default function LogisticsPage() {
     supplierName: "",
     driverContact: "",
     scheduledAt: "",
-    notes: ""
+    notes: "",
+    status: "PLANNED"
   })
 
   useEffect(() => {
@@ -73,7 +83,7 @@ export default function LogisticsPage() {
       if (response.ok) {
         toast.success("Randevu başarıyla oluşturuldu")
         setIsModalOpen(false)
-        setFormData({ title: "", type: "BETON", location: "", supplierName: "", driverContact: "", scheduledAt: "", notes: "" })
+        setFormData({ title: "", type: "BETON", location: "", supplierName: "", driverContact: "", scheduledAt: "", notes: "", status: "PLANNED" })
         fetchItems()
       } else {
         toast.error("Randevu oluşturulurken hata oluştu")
@@ -88,29 +98,55 @@ export default function LogisticsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "PLANNED":
       case "Planlandı":
-        return "bg-slate-500/20 text-slate-400 border-slate-500/50"
+        return "bg-slate-500/20 text-slate-300 border-slate-500/50"
+      case "IN_TRANSIT":
       case "Yolda":
         return "bg-blue-500/20 text-blue-400 border-blue-500/50"
-      case "Şantiyede":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/50"
+      case "DELIVERED":
       case "Tamamlandı":
-        return "bg-green-500/20 text-green-400 border-green-500/50"
+        return "bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
+      case "ISSUE_REPORTED":
       case "İptal":
         return "bg-red-500/20 text-red-400 border-red-500/50"
       default:
-        return "bg-slate-500/20 text-slate-400 border-slate-500/50"
+        return "bg-slate-500/20 text-slate-300 border-slate-500/50"
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "PLANNED":
+      case "Planlandı":
+        return "Planlandı"
+      case "IN_TRANSIT":
+      case "Yolda":
+        return "Yolda"
+      case "DELIVERED":
+      case "Tamamlandı":
+        return "Teslim Alındı"
+      case "ISSUE_REPORTED":
+      case "İptal":
+        return "Sorunlu / Eksik"
+      default:
+        return status
     }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case "DELIVERED":
       case "Tamamlandı":
-        return <CheckCircle className="w-4 h-4 text-green-400" />
+        return <CheckCircle className="w-4 h-4 text-emerald-400" />
+      case "ISSUE_REPORTED":
       case "İptal":
         return <AlertCircle className="w-4 h-4 text-red-400" />
+      case "IN_TRANSIT":
+      case "Yolda":
+        return <Truck className="w-4 h-4 text-blue-400" />
       default:
-        return <Clock className="w-4 h-4 text-yellow-400" />
+        return <Clock className="w-4 h-4 text-slate-400" />
     }
   }
 
@@ -127,10 +163,30 @@ export default function LogisticsPage() {
     }
   }
 
-  const handleStatusChange = (itemId: string, newStatus: string) => {
+  const handleStatusChange = async (itemId: string, newStatus: string) => {
+    const prevItems = [...items]
     setItems(items.map(item =>
       item.id === itemId ? { ...item, status: newStatus as any } : item
     ))
+
+    try {
+      const res = await fetch("/api/admin/logistics", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: itemId, status: newStatus })
+      })
+
+      if (!res.ok) {
+        setItems(prevItems)
+        toast.error("Durum güncellenirken hata oluştu")
+      } else {
+        toast.success(`Durum "${getStatusLabel(newStatus)}" olarak güncellendi`)
+      }
+    } catch (err) {
+      console.error(err)
+      setItems(prevItems)
+      toast.error("Bağlantı hatası oluştu")
+    }
   }
 
   return (
@@ -325,24 +381,70 @@ export default function LogisticsPage() {
 
                 {/* Right: Status Badge and Actions */}
                 <div className="flex-shrink-0 flex flex-col items-end gap-2">
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(item.status)}`}>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(item.status)}`}>
                     {getStatusIcon(item.status)}
-                    {item.status}
+                    {getStatusLabel(item.status)}
                   </span>
 
                   <select
                     value={item.status}
                     onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                    className="px-3 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                    className="px-3 py-1.5 bg-slate-900 border border-slate-700 hover:border-slate-500 rounded-lg text-white text-xs font-medium focus:outline-none focus:border-blue-500 transition-colors"
                   >
-                    <option value="Planlandı">Planlandı</option>
-                    <option value="Yolda">Yolda</option>
-                    <option value="Şantiyede">Şantiyede</option>
-                    <option value="Tamamlandı">Tamamlandı</option>
-                    <option value="İptal">İptal</option>
+                    <option value="PLANNED">Planlandı</option>
+                    <option value="IN_TRANSIT">Yolda</option>
+                    <option value="DELIVERED">Teslim Alındı</option>
+                    <option value="ISSUE_REPORTED">Sorunlu / Eksik</option>
                   </select>
                 </div>
               </div>
+
+              {/* ISSUE_REPORTED Alert Box with Photo Thumbnail and Chief's Note */}
+              {item.status === "ISSUE_REPORTED" && (
+                <div className="mt-3.5 p-3.5 bg-red-950/40 border border-red-500/50 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg shadow-red-950/30">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <AlertCircle className="w-5 h-5 text-red-400 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-red-300 uppercase tracking-wide">
+                          Teslimat Sorunu Bildirildi (Eksik / Hasarlı)
+                        </span>
+                        {item.receivedBy && (
+                          <span className="text-[11px] text-red-400 bg-red-900/30 px-2 py-0.5 rounded border border-red-800/40">
+                            Şef: {item.receivedBy.name}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-red-100 font-medium mt-1 leading-relaxed">
+                        <span className="text-red-300 font-semibold">Şef Notu: </span>
+                        {item.deliveryNotes || "Herhangi bir açıklama girilmedi."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {item.deliveryProofImageUrl && (
+                    <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPhotoUrl(item.deliveryProofImageUrl || null)}
+                        className="relative group block w-14 h-14 rounded-lg overflow-hidden border-2 border-red-400 hover:border-red-300 shadow-md shadow-red-950/60 transition-transform hover:scale-105"
+                        title="Kanıt fotoğrafını büyüt"
+                      >
+                        <img
+                          src={item.deliveryProofImageUrl}
+                          alt="Teslimat Sorun Kanıtı"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors flex items-center justify-center text-[10px] text-white font-bold">
+                          Büyüt
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
 
@@ -443,6 +545,19 @@ export default function LogisticsPage() {
                   rows={2}
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Başlangıç Durumu</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                >
+                  <option value="PLANNED">Planlandı</option>
+                  <option value="IN_TRANSIT">Yolda</option>
+                  <option value="DELIVERED">Teslim Alındı</option>
+                  <option value="ISSUE_REPORTED">Sorunlu / Eksik</option>
+                </select>
+              </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -460,6 +575,38 @@ export default function LogisticsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Lightbox Modal */}
+      {selectedPhotoUrl && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setSelectedPhotoUrl(null)}
+        >
+          <div 
+            className="relative max-w-3xl max-h-[90vh] bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-3 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between text-white text-sm font-semibold">
+              <span className="flex items-center gap-2 text-red-400">
+                <AlertCircle className="w-4 h-4" /> Teslimat Hasar / Eksik Kanıt Fotoğrafı
+              </span>
+              <button
+                onClick={() => setSelectedPhotoUrl(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-2 flex items-center justify-center bg-black">
+              <img
+                src={selectedPhotoUrl}
+                alt="Teslimat Kanıtı Tam Boyut"
+                className="max-h-[75vh] w-auto object-contain rounded-lg"
+              />
+            </div>
           </div>
         </div>
       )}

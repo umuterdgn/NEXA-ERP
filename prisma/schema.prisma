@@ -42,6 +42,7 @@ model User {
   digitalArchives DigitalArchive[]
   projectRevisions ProjectRevision[]
   digitalDrawings DigitalDrawing[]
+  receivedLogistics LogisticsSchedule[] @relation("LogisticsReceivedBy")
 }
 
 enum UserRole {
@@ -249,6 +250,7 @@ model Project {
   nearMisses NearMiss[]
   ppeAssignments PPEAssignment[]
   logisticsAppointments LogisticsAppointment[]
+  logisticsSchedules LogisticsSchedule[] @relation("ProjectLogistics")
   foodMenus    FoodMenu[]
 
   @@index([isActive, displayOrder])
@@ -2249,23 +2251,38 @@ model ChatMessage {
   @@index([createdAt])
 }
 
+enum LogisticsStatus {
+  PLANNED
+  IN_TRANSIT
+  DELIVERED
+  ISSUE_REPORTED
+}
+
 model LogisticsSchedule {
-  id              String   @id @default(cuid())
-  title           String   // Örn: "C30 Beton Dökümü - A Blok"
-  type            String   // Örn: BETON, MALZEME_TESLİMAT, DENETİM
-  location        String   // Şantiye içi konum
-  supplierName    String?  // Tedarikçi/Firma Adı
-  driverContact   String?  // Şoför/İrtibat no
-  status          String   @default("Planlandı") // Planlandı, Yolda, Şantiyede, Tamamlandı, İptal
-  scheduledAt     DateTime // Planlanan varış zamanı
-  completedAt     DateTime?
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                    String          @id @default(cuid())
+  title                 String          // Örn: "C30 Beton Dökümü - A Blok"
+  type                  String          // Örn: BETON, MALZEME_TESLİMAT, DENETİM
+  location              String          // Şantiye içi konum
+  supplierName          String?         // Tedarikçi/Firma Adı
+  driverContact         String?         // Şoför/İrtibat no
+  status                LogisticsStatus @default(PLANNED)
+  scheduledAt           DateTime        // Planlanan varış zamanı
+  completedAt           DateTime?
+  notes                 String?
+  deliveryProofImageUrl String?         // Şefin çekeceği kanıt fotoğrafı
+  deliveryNotes         String?         // Şefin ekleyeceği not
+  receivedById          String?         // Teslim alan kullanıcının ID'si
+  receivedBy            User?           @relation("LogisticsReceivedBy", fields: [receivedById], references: [id])
+  projectId             String?
+  project               Project?        @relation("ProjectLogistics", fields: [projectId], references: [id])
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
   @@index([status])
   @@index([scheduledAt])
   @@index([type])
+  @@index([projectId])
+  @@index([receivedById])
 }
 
 // ============================================================================
