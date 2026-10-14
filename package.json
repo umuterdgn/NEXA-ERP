@@ -94,6 +94,7 @@
     "typescript": "^5"
   },
   "overrides": {
+    "effect": "^3.21.0",
     "three": "0.165.0",
     "web-ifc-three": {
       "three": "0.165.0"
