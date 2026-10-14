@@ -43,6 +43,7 @@ model User {
   projectRevisions ProjectRevision[]
   digitalDrawings DigitalDrawing[]
   receivedLogistics LogisticsSchedule[] @relation("LogisticsReceivedBy")
+  formSubmissions FormSubmission[]
 }
 
 enum UserRole {
@@ -252,6 +253,7 @@ model Project {
   logisticsAppointments LogisticsAppointment[]
   logisticsSchedules LogisticsSchedule[] @relation("ProjectLogistics")
   foodMenus    FoodMenu[]
+  formSubmissions FormSubmission[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -2932,4 +2934,43 @@ model LogisticsAppointment {
   @@index([projectId])
   @@index([appointmentDate])
   @@index([status])
+}
+
+// ============================================================================
+// DYNAMIC FORMS & SUBMISSIONS (Dinamik Denetim Formu Modülü)
+// ============================================================================
+
+model DynamicForm {
+  id          String           @id @default(cuid())
+  title       String           // Örn: Yangın Tesisatı Denetim Formu
+  description String?          @db.Text
+  category    String?          @default("GENEL") // Yangın, İSG, Kalıp & Donatı, Elektrik, Genel
+  fields      Json             // Form alanları (Örn: [{ id, type, label, required, options }])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  submissions FormSubmission[]
+
+  @@index([category])
+  @@index([createdAt])
+}
+
+model FormSubmission {
+  id        String      @id @default(cuid())
+  formId    String
+  projectId String
+  userId    String      // Dolduran personel/denetçi
+  answers   Json        // Verilen cevaplar (Örn: { "f1": true, "f2": "Uygun", "f3": "https://..." })
+  status    String      @default("COMPLETED") // COMPLETED, PENDING_REVIEW, REJECTED
+  notes     String?     @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  form      DynamicForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  project   Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([formId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }

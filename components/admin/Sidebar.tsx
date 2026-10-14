@@ -115,6 +115,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/contracts", label: "Sözleşmeler", icon: FileSignature, category: "FİNANS & TEDARİK" },
   { href: "/admin/progress-payments", label: "Hakediş ve Metraj", icon: Calculator, category: "FİNANS & TEDARİK" },
   { href: "/admin/procurement", label: "Satınalma & Talepler", icon: ShoppingCart, category: "FİNANS & TEDARİK" },
+  { href: "/admin/ai-assistant", label: "AI Tahsilat & Risk Asistanı", icon: Bot, category: "FİNANS & TEDARİK" },
   { href: "/admin/collection-risk", label: "Tahsilat Risk AI", icon: PieChart, category: "FİNANS & TEDARİK" },
   
   // PROJE YÖNETİMİ
@@ -123,6 +124,8 @@ const menuItems: MenuItem[] = [
   { href: "/admin/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ" },
   
   // YAPI DENETİM & KONTROL
+  { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/forms/builder", label: "Dinamik Form Oluşturucu", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", icon: FileWarning, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection", label: "Numune & Karot Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL" },
@@ -131,7 +134,6 @@ const menuItems: MenuItem[] = [
   { href: "/admin/documents", label: "Dijital Evrak Arşivi", icon: Files, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", icon: ScanText, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/reports", label: "Saha Raporları", icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/ai-assistant", label: "AI Asistan", icon: Bot, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/ai-vision", label: "AI Görsel Analiz", icon: ImagePlus, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/revisions", label: "Proje Revizyonları", icon: History, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/routes", label: "Rota Optimizasyonu", icon: Map, category: "YAPI DENETİM & KONTROL" },

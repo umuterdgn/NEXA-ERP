@@ -130,6 +130,42 @@ export async function GET() {
       ]
     });
 
+    // 9. Dinamik Denetim Formları (DynamicForm)
+    const existingForms = await prisma.dynamicForm.count();
+    if (existingForms === 0) {
+      await prisma.dynamicForm.create({
+        data: {
+          title: "Yangın Tesisatı ve Kaçış Yolu Denetimi",
+          category: "Yangın Güvenliği",
+          description: "Şantiyedeki yangın dolapları, sprinkler hatları ve acil kaçış yollarının periyodik uygunluk kontrolü.",
+          fields: [
+            { id: "f1", type: "checkbox", label: "Yangın kaçış holü ve merdivenleri açık ve engelsiz mi?", required: true },
+            { id: "f2", type: "checkbox", label: "Sprinkler borularında basınç testi ve sızdırmazlık kontrolü yapıldı mı?", required: true },
+            { id: "f3", type: "number", label: "Hattaki test manometre basınç değeri (Bar):", placeholder: "Örn: 8.5", required: true },
+            { id: "f4", type: "photo", label: "Ana yangın kollektörü veya yangın dolabı görsel kanıtı:", required: true },
+            { id: "f5", type: "select", label: "Genel Tesisat Uygunluk Notu:", options: ["Kusursuz / Onaylandı", "Giderilebilir Eksikler Mevcut", "Kritik Hata / Reddedildi"], required: true },
+            { id: "f6", type: "textarea", label: "Denetçi Şantiye Notları ve Eksiklik Tutanakları:", placeholder: "Varsa giderilmesi gereken aksaklıkları yazın...", required: false }
+          ]
+        }
+      });
+
+      await prisma.dynamicForm.create({
+        data: {
+          title: "Demir Donatı ve Kalıp Teslim Formu",
+          category: "Kalıp & Donatı",
+          description: "Beton dökümü öncesi kolon, kiriş ve perde demir donatı ve kalıp terazisi onay formu.",
+          fields: [
+            { id: "f1", type: "text", label: "Denetlenen Blok, Kat ve Aks Bilgisi:", placeholder: "Örn: B Blok 4. Kat Kolonları (A3-B7 aksı)", required: true },
+            { id: "f2", type: "checkbox", label: "Paspayları şartnameye uygun yerleştirildi mi?", required: true },
+            { id: "f3", type: "checkbox", label: "Kolon etriye aralıkları ve kanca kıvrımları projeye uygun mu?", required: true },
+            { id: "f4", type: "number", label: "Ölçülen filiz boyu (cm):", placeholder: "Örn: 45", required: true },
+            { id: "f5", type: "photo", label: "Donatı bağlama ve kalıp temizliği fotoğrafı:", required: true },
+            { id: "f6", type: "select", label: "Beton Döküm Onayı:", options: ["Döküme Uygundur", "Eksikler Tamamlanınca Dökülebilir", "Döküm İptal / Düzeltme Gerekli"], required: true }
+          ]
+        }
+      });
+    }
+
     return NextResponse.json({ message: "Veritabanı başarıyla demo verileriyle dolduruldu!" }, { status: 200 });
   } catch (error) {
     console.error("Seed hatası:", error);

@@ -50,6 +50,7 @@ export default function PersonnelSidebar({
     { href: "/personnel", label: "Ana Sayfa", icon: Home },
     { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList },
     { href: "/personnel/deliveries", label: "Malzeme Kabul & Teslimat", icon: Truck },
+    { href: "/personnel/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck },
     { href: "/personnel/requests", label: "Malzeme Talepleri", icon: ShoppingCart },
     { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
     { href: "/personnel/qr-checkin", label: "QR Giriş/Çıkış", icon: QrCode },
