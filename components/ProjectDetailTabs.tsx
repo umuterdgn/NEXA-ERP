@@ -25,7 +25,7 @@ import { updateProjectBimModel } from "@/app/actions/project"
 const MapLocationPicker = dynamic(() => import('@/components/MapLocationPicker'), { ssr: false })
 const SiteMasterPlan = dynamic(() => import('@/components/SiteMasterPlan'), { ssr: false })
 // IFC Viewer SSR'da hata verdiği için dynamic import kullanıyoruz
-const BimViewer = dynamic(() => import('@/app/admin/projects/[id]/_components/BimViewer'), { ssr: false })
+const BimViewer = dynamic(() => import('@/components/BimViewer'), { ssr: false })
 // Gantt Chart SSR'da hata verdiği için dynamic import kullanıyoruz
 const GanttChart = dynamic(() => import('@/app/admin/projects/[id]/_components/GanttChart'), { ssr: false })
 // Project Documents SSR'da hata verdiği için dynamic import kullanıyoruz
@@ -55,6 +55,7 @@ interface Project {
   longitude: number | null
   geofenceRadius: number | null
   ifcModelUrl?: string | null
+  bimModelUrl?: string | null
 }
 
 type InspectionReport = {
@@ -84,9 +85,18 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [loadingReports, setLoadingReports] = useState(false)
   const [deleteReportId, setDeleteReportId] = useState<string | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [bimModelUrl, setBimModelUrl] = useState<string | null>(
+    project.bimModelUrl || project.ifcModelUrl || null
+  )
   const [isUploadingBim, setIsUploadingBim] = useState(false)
   const [showBimUploader, setShowBimUploader] = useState(false)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
+
+  useEffect(() => {
+    if (project.bimModelUrl || project.ifcModelUrl) {
+      setBimModelUrl(project.bimModelUrl || project.ifcModelUrl || null)
+    }
+  }, [project.bimModelUrl, project.ifcModelUrl])
   const [droneMedia, setDroneMedia] = useState<any[]>([])
   const [editForm, setEditForm] = useState({
     city: project.city || "",
@@ -672,57 +682,76 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
         {activeTab === "bim" && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-white">3D BIM Modeli</h3>
-              <button
-                onClick={() => setShowBimUploader(!showBimUploader)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                {showBimUploader ? "Görüntüleyiciye Dön" : (project.ifcModelUrl ? "Modeli Değiştir" : "IFC Yükle")}
-              </button>
+              <div>
+                <h3 className="text-lg font-semibold text-white">3D BIM Modeli</h3>
+                <p className="text-xs text-slate-400">Projenin 3D Yapı Bilgi Modellemesi ve dijital ikiz görünümü</p>
+              </div>
+              {bimModelUrl && (
+                <button
+                  onClick={() => setShowBimUploader(!showBimUploader)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition-colors flex items-center gap-2 text-sm shadow-md"
+                >
+                  <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  {showBimUploader ? "Modele Geri Dön" : "Yeni Model Yükle / Değiştir"}
+                </button>
+              )}
             </div>
 
             <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              {project.ifcModelUrl && !showBimUploader ? (
-                <div className="h-150">
-                  <BimViewer ifcUrl={project.ifcModelUrl} />
+              {bimModelUrl && !showBimUploader ? (
+                <div className="w-full">
+                  <BimViewer url={bimModelUrl} ifcUrl={bimModelUrl} projectId={project.id} />
                 </div>
               ) : (
-                <div className="p-6">
+                <div className="p-8">
                   {isUploadingBim ? (
                     <div className="flex flex-col items-center justify-center py-20">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                      <p className="text-slate-400">BIM Modeli kaydediliyor...</p>
+                      <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                      <p className="text-slate-200 font-medium">BIM Modeli kaydediliyor...</p>
+                      <p className="text-slate-500 text-xs mt-1">Veritabanı güncelleniyor ve 3D sahne hazırlanıyor</p>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-10">
-                      <p className="text-slate-400 text-base mb-2">IFC / 3D BIM Modeli Yükleyin</p>
-                      <p className="text-slate-500 text-xs mb-6">Proje için .ifc formatında 3D BIM modelini yükleyin (Maks 128MB)</p>
+                    <div className="flex flex-col items-center justify-center py-10 max-w-xl mx-auto text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      </div>
+                      <h4 className="text-white text-base font-medium mb-1">
+                        {bimModelUrl ? "Yeni Bir BIM (IFC) Modeli Yükleyin" : "IFC / 3D BIM Modeli Yükleyin"}
+                      </h4>
+                      <p className="text-slate-400 text-xs mb-6 max-w-md">
+                        Projenin 3D modelini görüntülemek için .ifc formatındaki model dosyasını sürükleyip bırakın (Maks 128MB).
+                      </p>
                       
-                      <UploadDropzone
-                        endpoint="bimModelUploader"
-                        onClientUploadComplete={async (res) => {
-                          console.log("Upload Completed: ", res)
-                          if (res && res.length > 0) {
-                            setIsUploadingBim(true)
-                            const result = await updateProjectBimModel(project.id, res[0].url)
-                            if (result.success) {
-                              toast.success("BIM modeli başarıyla yüklendi!")
-                              setShowBimUploader(false)
-                              router.refresh()
-                            } else {
-                              toast.error("BIM modeli kaydedilirken hata oluştu")
+                      <div className="w-full">
+                        <UploadDropzone
+                          endpoint="bimModelUploader"
+                          onClientUploadComplete={async (res) => {
+                            console.log("Upload Completed: ", res)
+                            if (res && res.length > 0 && res[0].url) {
+                              const uploadedUrl = res[0].url
+                              setIsUploadingBim(true)
+                              const result = await updateProjectBimModel(project.id, uploadedUrl)
+                              if (result.success) {
+                                setBimModelUrl(uploadedUrl)
+                                setShowBimUploader(false)
+                                toast.success("BIM modeli başarıyla yüklendi!")
+                                router.refresh()
+                              } else {
+                                toast.error("BIM modeli kaydedilirken hata oluştu")
+                              }
+                              setIsUploadingBim(false)
                             }
-                            setIsUploadingBim(false)
-                          }
-                        }}
-                        onUploadError={(error: Error) => {
-                          toast.error(`Yükleme hatası: ${error.message}`)
-                          console.error("BIM Model Upload Error:", error)
-                        }}
-                      />
+                          }}
+                          onUploadError={(error: Error) => {
+                            toast.error(`Yükleme hatası: ${error.message}`)
+                            console.error("BIM Model Upload Error:", error)
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

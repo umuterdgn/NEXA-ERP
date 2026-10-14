@@ -189,6 +189,7 @@ model Project {
   gpsRadius      Float?   @default(100) // Metre cinsinden izin verilen çap
   geofenceRadius Float?   @default(100) // Güvenlik/çit alanı metre cinsinden çap (uyumluluk)
   ifcModelUrl    String?  // 3D BIM modelinin dosya yolu (.ifc)
+  bimModelUrl    String?  // 3D BIM model URL (.ifc)
   locationCity   String?  // Proje lokasyon şehri (hava durumu için)
   contractValue  Float?   // Sözleşme bedeli (hakediş hesaplamaları için)
   // Relations
