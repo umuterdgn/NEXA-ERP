@@ -266,12 +266,11 @@ export default function BleEquipmentMap({
         className="z-0 h-full w-full"
         scrollWheelZoom={true}
       >
-        {/* CartoDB Dark Matter Layer for futuristic dark UI */}
+        {/* Esri World Dark Gray Canvas Layer */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url={process.env.NEXT_PUBLIC_CARTO_API_KEY ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}` : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"}
-          maxZoom={20}
-          subdomains="abcd"
+          attribution="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={19}
         />
 
         {/* Dynamic View Controller */}
