@@ -253,6 +253,9 @@ export default function BleEquipmentMap({
           background: #090d16 !important;
           font-family: inherit !important;
         }
+        .dark-map-tiles {
+          filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%) !important;
+        }
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.5; transform: scale(1.15); }
@@ -266,13 +269,12 @@ export default function BleEquipmentMap({
         className="z-0 h-full w-full"
         scrollWheelZoom={true}
       >
-        {/* High-Zoom Dark Matter Layer supporting deep zoom up to 20 */}
+        {/* Standard OpenStreetMap with CSS Invert Dark Mode */}
         <TileLayer
-          attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url={process.env.NEXT_PUBLIC_CARTO_API_KEY ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}` : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"}
-          maxZoom={20}
-          maxNativeZoom={19}
-          subdomains="abcd"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+          className="dark-map-tiles"
         />
 
         {/* Dynamic View Controller */}

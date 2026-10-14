@@ -142,3 +142,9 @@ textarea {
   scrollbar-width: thin;
   scrollbar-color: #334155 transparent;
 }
+
+/* OpenStreetMap Dark Mode Invert Filter */
+.dark-map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
