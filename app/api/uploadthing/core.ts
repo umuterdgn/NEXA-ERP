@@ -20,7 +20,7 @@ export const ourFileRouter = {
       return {}
     })
     .onUploadComplete(({ file }) => {
-      return { url: file.url }
+      return { url: file.url, key: file.key, name: file.name }
     }),
 
   // Drone Video Uploader - Video files, max 256MB
