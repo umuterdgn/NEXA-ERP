@@ -559,12 +559,16 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   useEffect(() => {
     const timer = setTimeout(() => {
       window.dispatchEvent(new Event("resize"))
-      if (ifcViewerRef.current?.context?.resize) {
+      // TypeScript 'private' hatasını engellemek için any olarak cast ediyoruz:
+      const context = ifcViewerRef.current?.context as any
+      if (context && typeof context.resize === "function") {
         try {
-          ifcViewerRef.current.context.resize()
-        } catch {}
+          context.resize()
+        } catch (e) {
+          console.warn("IFC Context resize hatası:", e)
+        }
       }
-    }, 150)
+    }, 100)
     return () => clearTimeout(timer)
   }, [isFullscreen])
 
