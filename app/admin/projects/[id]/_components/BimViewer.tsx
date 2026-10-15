@@ -391,8 +391,7 @@ function IfcCanvasModel({
 
   // BU SATIR KRİTİKTİR, WASM OLMADAN TARAYICI IFC OKUYAMAZ VE SESSİZCE ÇÖKER:
   const ifcModel = useLoader(IFCLoader, url, (loader: any) => {
-    // CORS hatasını aşmak için local wasm dosyalarını kullan veya CDN'i güncelle
-    const wasmPath = "https://cdn.jsdelivr.net/npm/web-ifc@0.0.36/"
+    const wasmPath = "/wasm/" // LOCAL PATH KULLAN!
     loader.setWasmPath(wasmPath)
     if (loader.ifcManager?.setWasmPath) {
       loader.ifcManager.setWasmPath(wasmPath)
@@ -753,14 +752,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
         // BU SATIR HAYATİDİR: Browser WebAssembly (WASM) dosyasını doğrudan ve hatasız indirir
         try {
-          await viewer.IFC.setWasmPath("https://cdn.jsdelivr.net/npm/web-ifc@0.0.36/")
+          await viewer.IFC.setWasmPath("/wasm/") // LOCAL PATH KULLAN!
         } catch (wasmErr) {
-          console.warn("WASM jsdelivr path error, trying fallback:", wasmErr)
-          try {
-            await viewer.IFC.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
-          } catch {
-            await viewer.IFC.setWasmPath("/wasm/")
-          }
+          console.warn("WASM local path error, trying fallback:", wasmErr)
         }
 
         if (activeModelUrl) {

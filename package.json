@@ -6,7 +6,7 @@
     "predev": "node -e \"const fs=require('fs'); const dest1='public/admin/blueprints/assets'; const dest2='public/admin/inspection/reports/assets'; fs.mkdirSync(dest1, {recursive:true}); fs.mkdirSync(dest2, {recursive:true}); try { fs.cpSync('node_modules/@mlightcad/mtext-renderer/dist', dest1, {recursive:true}); fs.cpSync('node_modules/@mlightcad/mtext-renderer/dist', dest2, {recursive:true}); } catch(e) { console.log('Worker kopyalama atlandi...'); }\"",
     "prebuild": "node -e \"const fs=require('fs'); try { fs.rmSync('.next', { recursive: true, force: true }); } catch(e) { }\"",
     "dev": "next dev --webpack",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build --webpack",
+    "build": "prisma generate && prisma db push --accept-data-loss && node -e \"const fs=require('fs'); const dst='public/wasm'; fs.mkdirSync(dst,{recursive:true}); try{ fs.copyFileSync('node_modules/web-ifc/web-ifc.wasm', dst+'/web-ifc.wasm'); fs.copyFileSync('node_modules/web-ifc/web-ifc-mt.wasm', dst+'/web-ifc-mt.wasm'); console.log('WASM Kopyalandi!'); }catch(e){console.error('WASM Hata:',e);}\" && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
