@@ -53,6 +53,7 @@ interface Project {
   geofenceRadius: number | null
   ifcModelUrl?: string | null
   bimModelUrl?: string | null
+  bimFiles?: any[]
 }
 
 type InspectionReport = {

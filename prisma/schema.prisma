@@ -255,6 +255,7 @@ model Project {
   logisticsSchedules LogisticsSchedule[] @relation("ProjectLogistics")
   foodMenus    FoodMenu[]
   formSubmissions FormSubmission[]
+  bimFiles    BimFile[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -854,6 +855,24 @@ model BimIssue {
   @@index([projectId])
   @@index([status])
   @@index([createdAt])
+}
+
+// ============================================================================
+// BIM FILE ARCHIVE (Kalıcı 3D BIM Model Arşivi)
+// ============================================================================
+
+model BimFile {
+  id          String   @id @default(cuid())
+  projectId   String
+  fileName    String   // Örn: "A-Blok-Statik.ifc"
+  fileUrl     String   // UploadThing'den gelen URL
+  fileType    String?  // ifc, gltf, glb vb.
+  uploadedAt  DateTime @default(now())
+  isActive    Boolean  @default(false) // Seçili (Ekranda açık olan) model mi?
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([isActive])
 }
 
 // ============================================================================

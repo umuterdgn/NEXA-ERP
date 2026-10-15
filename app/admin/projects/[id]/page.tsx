@@ -68,6 +68,11 @@ export default async function ProjectDetailPage({
         archives: true,
         transactions: true,
         siteZones: true,
+        bimFiles: {
+          orderBy: {
+            uploadedAt: 'desc',
+          },
+        },
         inspections: {
           include: {
             inspector: {
