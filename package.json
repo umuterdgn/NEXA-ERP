@@ -6,13 +6,13 @@
     "predev": "node -e \"const fs=require('fs'); const dest1='public/admin/blueprints/assets'; const dest2='public/admin/inspection/reports/assets'; fs.mkdirSync(dest1, {recursive:true}); fs.mkdirSync(dest2, {recursive:true}); try { fs.cpSync('node_modules/@mlightcad/mtext-renderer/dist', dest1, {recursive:true}); fs.cpSync('node_modules/@mlightcad/mtext-renderer/dist', dest2, {recursive:true}); } catch(e) { console.log('Worker kopyalama atlandi...'); }\"",
     "prebuild": "node -e \"const fs=require('fs'); try { fs.rmSync('.next', { recursive: true, force: true }); } catch(e) { }\"",
     "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "build": "prisma generate && prisma db push --accept-data-loss && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
     "seed:contracts": "tsx prisma/seed-contracts.ts",
     "fix:admin": "tsx scripts/fix-admin-role.ts",
-    "postinstall": "prisma generate && prisma db push && node patch-ifc-viewer.js"
+    "postinstall": "prisma generate && prisma db push && node patch-ifc-viewer.js && node -e \"const fs=require('fs'); const dst='public/wasm'; fs.mkdirSync(dst,{recursive:true}); try{ fs.copyFileSync('node_modules/web-ifc/web-ifc.wasm', dst+'/web-ifc.wasm'); fs.copyFileSync('node_modules/web-ifc/web-ifc-mt.wasm', dst+'/web-ifc-mt.wasm'); console.log('✅ WASM files copied to public/wasm/'); }catch(e){ console.log('⚠️ WASM copy failed:',e.message); }\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1124.0",

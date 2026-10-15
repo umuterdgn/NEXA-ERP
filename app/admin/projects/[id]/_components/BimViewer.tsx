@@ -357,13 +357,15 @@ function IfcCanvasModel({
   xRayOpacity: number
 }) {
   // BU SATIR KRİTİKTİR, WASM OLMADAN TARAYICI IFC OKUYAMAZ VE SESSİZCE ÇÖKER:
+  // WASM local /wasm/ klasöründen okunur (CORS sorunu yok, CDN bağımlılığı yok)
   const ifcModel = useLoader(IFCLoader, url, (loader: any) => {
-    loader.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
+    const wasmPath = "/wasm/" // public/wasm/ klasöründen local olarak okunur
+    loader.setWasmPath(wasmPath)
     if (loader.ifcManager?.setWasmPath) {
-      loader.ifcManager.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
+      loader.ifcManager.setWasmPath(wasmPath)
     }
     if (loader.ifcManager?.state?.api?.SetWasmPath) {
-      loader.ifcManager.state.api.SetWasmPath("https://unpkg.com/web-ifc@0.0.36/")
+      loader.ifcManager.state.api.SetWasmPath(wasmPath)
     }
   }) as any
 
@@ -434,6 +436,54 @@ class ModelErrorBoundary extends Component<
   render() {
     if (this.state.hasError && this.state.error) {
       return this.props.fallback(this.state.error, () => this.setState({ hasError: false, error: null }))
+    }
+    return this.props.children
+  }
+}
+
+// Outer Error Boundary for the entire BimViewer component (catches all React tree errors)
+class BimViewerErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("[BimViewer] Outer Error Boundary caught:", error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      return (
+        <div className="w-full h-full min-h-[650px] bg-slate-950 rounded-2xl border border-red-500/30 flex flex-col items-center justify-center p-6 text-center shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-4">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h4 className="text-white font-bold text-base mb-2">3D Görüntüleyici Hatası</h4>
+          <p className="text-slate-400 text-xs max-w-sm mb-2 leading-relaxed">
+            {this.state.error.message || "Beklenmeyen bir render hatası oluştu."}
+          </p>
+          <p className="text-slate-500 text-xs max-w-sm mb-5">
+            Model formatını kontrol edin veya farklı bir model deneyin.
+          </p>
+          <button
+            type="button"
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-all"
+          >
+            🔄 Görüntüleyiciyi Yeniden Başlat
+          </button>
+        </div>
+      )
     }
     return this.props.children
   }
@@ -787,6 +837,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   }
 
   return (
+    <BimViewerErrorBoundary>
     <div className="relative w-full h-full min-h-[650px] bg-slate-950 rounded-2xl overflow-hidden select-none border border-slate-800 shadow-2xl">
       {/* Top Left: Engine Switcher & Auto Rotate Toolbar */}
       <div className="absolute top-4 left-4 z-40 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/80 shadow-2xl">
@@ -1361,5 +1412,6 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </div>
       )}
     </div>
+    </BimViewerErrorBoundary>
   )
 }
