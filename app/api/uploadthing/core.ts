@@ -15,12 +15,14 @@ export const ourFileRouter = {
     blob: { maxFileSize: "128MB", maxFileCount: 1 },
     "application/octet-stream": { maxFileSize: "128MB", maxFileCount: 1 },
   })
-    .middleware(() => {
-      // Add authentication middleware here if needed
-      return {}
+    .middleware(async () => {
+      return { userId: "admin" }
     })
-    .onUploadComplete(({ file }) => {
-      return { url: file.url, key: file.key, name: file.name }
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log("Upload complete for userId:", metadata.userId)
+      console.log("file url", file.url)
+      // BU RETURN SATIRI EKSİKSE EKLENMELİDİR!
+      return { uploadedBy: metadata.userId, url: file.url, key: file.key }
     }),
 
   // Drone Video Uploader - Video files, max 256MB

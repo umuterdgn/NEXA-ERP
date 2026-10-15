@@ -62,9 +62,17 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
     )
   }
 
+  const getARUrl = () => {
+    const query = bimUrl ? `?url=${encodeURIComponent(bimUrl)}` : ""
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/ar/${project.id}${query}`
+    }
+    return `/ar/${project.id}${query}`
+  }
+
   const handleOpenAR = () => {
     if (isMobileDevice()) {
-      window.location.href = `/ar/${project.id}`
+      window.location.href = getARUrl()
     } else {
       setShowARModal(true)
     }
@@ -116,19 +124,19 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           {/* Eski çalışan 3D Viewer bileşeni */}
           <BimViewer url={bimUrl} ifcUrl={bimUrl} projectId={project.id} />
 
-          {/* Floating Action Overlay */}
-          <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+          {/* Floating Action Overlay with high visibility & z-50 */}
+          <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
             <button
               onClick={handleOpenAR}
-              className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg text-xs font-semibold shadow-[0_0_15px_rgba(6,182,212,0.6)] border border-cyan-300/40 transition-all flex items-center gap-1.5 backdrop-blur-md"
+              className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-lg text-xs font-bold shadow-[0_0_20px_rgba(6,182,212,0.8)] border border-cyan-300/60 transition-all flex items-center gap-2 backdrop-blur-md transform hover:scale-105 active:scale-95"
             >
-              <span className="w-2 h-2 rounded-full bg-cyan-300 animate-ping"></span>
-              AR Sahada Gör
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-300 animate-ping"></span>
+              <span>📱 AR ile Sahada Gör</span>
             </button>
 
             <button
               onClick={() => setBimUrl(null)}
-              className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-lg transition-colors flex items-center gap-1"
+              className="bg-red-600/90 hover:bg-red-600 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5 backdrop-blur-md hover:scale-105"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -168,35 +176,33 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                   toast.dismiss("bim-upload")
                   console.log("Upload Başarılı, ham yanıt:", res)
 
-                  const uploadedUrl =
-                    res?.[0]?.url ||
-                    (res?.[0] as any)?.ufsUrl ||
-                    (res?.[0] as any)?.serverData?.url ||
-                    (res?.[0]?.key ? `https://utfs.io/f/${res[0].key}` : null)
+                  const resolvedUrl =
+                    (res && res.length > 0 && res[0].url) ||
+                    (res && res.length > 0 && (res[0] as any).serverData?.url) ||
+                    (res && res.length > 0 && (res[0] as any).ufsUrl) ||
+                    (res && res[0]?.key ? `https://utfs.io/f/${res[0].key}` : null)
 
-                  if (uploadedUrl) {
-                    console.log("Upload Başarılı, URL:", uploadedUrl)
-                    setBimUrl(uploadedUrl) // BU SATIR EKRANI DERHAL 3D VIEWER'A ÇEVİRİR
+                  if (res && res.length > 0 && resolvedUrl) {
+                    setBimUrl(resolvedUrl) // State anında güncellenmeli!
+                    alert("Model başarıyla yüklendi! 3D ortam hazırlanıyor...")
 
                     try {
-                      const updateRes = await updateProjectBimModel(project.id, uploadedUrl)
+                      const updateRes = await updateProjectBimModel(project.id, resolvedUrl)
                       if (updateRes.success) {
                         toast.success("BIM modeli başarıyla kaydedildi!")
                         router.refresh()
-                      } else {
-                        toast.error("BIM modeli URL'si veritabanına kaydedilemedi")
                       }
                     } catch (e) {
                       console.error("Veritabanı güncelleme hatası:", e)
                     }
                   } else {
-                    toast.error("Yükleme tamamlandı ancak dosya URL'si alınamadı.")
+                    alert("Yükleme tamamlandı ancak dosya URL'si alınamadı.")
                   }
                 }}
                 onUploadError={(error: Error) => {
                   setIsUploading(false)
                   toast.dismiss("bim-upload")
-                  toast.error(`Hata: ${error.message}`)
+                  alert(`Hata: ${error.message}`)
                   console.error("UploadThing Error:", error)
                 }}
               />
@@ -237,11 +243,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
             <div className="relative group p-4 bg-white rounded-2xl shadow-2xl mx-auto w-fit mb-5 border-4 border-cyan-400/40">
               <QRCodeSVG
-                value={
-                  typeof window !== "undefined"
-                    ? `${window.location.origin}/ar/${project.id}`
-                    : `/ar/${project.id}`
-                }
+                value={getARUrl()}
                 size={220}
                 level="H"
                 includeMargin={false}
@@ -260,8 +262,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             <div className="flex gap-2">
               <button
                 onClick={() => {
-                  const arUrl = `${window.location.origin}/ar/${project.id}`
-                  navigator.clipboard.writeText(arUrl)
+                  navigator.clipboard.writeText(getARUrl())
                   toast.success("AR bağlantısı panoya kopyalandı!")
                 }}
                 className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium border border-slate-700 transition-colors flex items-center justify-center gap-1.5"
@@ -271,7 +272,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
               <button
                 onClick={() => {
-                  window.open(`/ar/${project.id}`, "_blank")
+                  window.open(getARUrl(), "_blank")
                 }}
                 className="flex-1 py-2.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-600/30 transition-all flex items-center justify-center gap-1.5"
               >

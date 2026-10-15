@@ -621,13 +621,23 @@ export default function BimViewer({ url, ifcUrl, projectId }: BimViewerProps) {
         )}
 
         {/* AR Button Container */}
-        <div ref={arButtonRef} className="flex justify-end">
-          {!isARSupported && (
-            <div className="bg-red-900/50 text-red-400 px-3 py-2 rounded-lg text-sm border border-red-700">
-              AR Desteklenmiyor
-            </div>
-          )}
-        </div>
+        {projectId && (
+          <button
+            onClick={() => {
+              const targetUrl = effectiveUrl
+                ? `/ar/${projectId}?url=${encodeURIComponent(effectiveUrl)}`
+                : `/ar/${projectId}`
+              window.open(targetUrl, "_blank")
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg text-sm font-semibold shadow-[0_0_15px_rgba(6,182,212,0.5)] border border-cyan-300/40 transition-all hover:scale-105 active:scale-95"
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-300 animate-ping" />
+            <svg className="w-4 h-4 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            AR ile Sahada Gör
+          </button>
+        )}
 
         {/* Opacity Slider */}
         <div className="bg-slate-900/95 backdrop-blur-sm rounded-lg border border-slate-700 p-3 w-48">

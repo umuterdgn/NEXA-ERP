@@ -13,10 +13,13 @@ export const dynamic = "force-dynamic"
 
 export default async function ProjectARPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams?: Promise<{ url?: string }>
 }) {
   const { id } = await params
+  const resolvedSearchParams = searchParams ? await searchParams : {}
 
   const project = await prisma.project.findUnique({
     where: { id },
@@ -33,7 +36,7 @@ export default async function ProjectARPage({
     notFound()
   }
 
-  const modelUrl = project.bimModelUrl || project.ifcModelUrl
+  const modelUrl = resolvedSearchParams?.url || project.bimModelUrl || project.ifcModelUrl
 
   if (!modelUrl) {
     return (
