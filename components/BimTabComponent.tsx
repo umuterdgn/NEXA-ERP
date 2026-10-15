@@ -216,12 +216,12 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           <button
             type="button"
             onClick={() => {
-              setBimUrl("/models/bina.glb")
+              setBimUrl("https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb")
               setShowUploader(false)
-              toast.success("🏢 3D Dijital İkiz Modeli yüklendi!")
+              toast.success("🏢 3D Test Modeli (GLB) yüklendi!")
             }}
             className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-lg text-xs font-semibold border border-cyan-500/30 transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(6,182,212,0.15)] active:scale-95"
-            title="3.9MB Hazır GLB Yapı Modeli ile test edin"
+            title="Public GLB Yapı Modeli ile test edin"
           >
             <span>🏢 3D Bina (GLB)</span>
           </button>
@@ -229,7 +229,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           <button
             type="button"
             onClick={() => {
-              setBimUrl("/sample.ifc")
+              setBimUrl("https://raw.githubusercontent.com/IFCjs/test-datasets/main/ifc/small/small_test_1.ifc")
               setShowUploader(false)
               toast.success("🏛️ Örnek IFC Modeli yüklendi!")
             }}
@@ -345,6 +345,9 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                     }
                   } catch (e: any) {
                     console.error("FRONTEND: addBimFile hatası:", e)
+                    // KRİTİK BYPASS: Veritabanı çökse bile setBimUrl çalışmaya KESİN devam eder
+                    setBimUrl(resolvedUrl)
+                    setShowUploader(false)
                     toast.error(e.message || "Arşive kaydetme hatası! Model sadece bu oturum için açık kalacak.")
                   }
                 } else {
