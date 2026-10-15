@@ -21,9 +21,9 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("UploadThing Core: Upload complete for", metadata.userId)
-      console.log("UploadThing Core: File URL", file.url)
-      const fileUrl = file.url || (file as any).ufsUrl || `https://utfs.io/f/${file.key}`
-      return { uploadedBy: metadata.userId, url: fileUrl, name: file.name, key: file.key }
+      const safeUrl = (file as any).ufsUrl || file.url || `https://utfs.io/f/${file.key}`
+      console.log("UploadThing Core: File URL", safeUrl)
+      return { uploadedBy: metadata.userId, url: safeUrl, name: file.name, key: file.key }
     }),
 
   // Drone Video Uploader - Video files, max 256MB
