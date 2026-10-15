@@ -357,9 +357,8 @@ function IfcCanvasModel({
   xRayOpacity: number
 }) {
   // BU SATIR KRİTİKTİR, WASM OLMADAN TARAYICI IFC OKUYAMAZ VE SESSİZCE ÇÖKER:
-  // WASM local /wasm/ klasöründen okunur (CORS sorunu yok, CDN bağımlılığı yok)
   const ifcModel = useLoader(IFCLoader, url, (loader: any) => {
-    const wasmPath = "/wasm/" // public/wasm/ klasöründen local olarak okunur
+    const wasmPath = "https://unpkg.com/web-ifc@0.0.36/"
     loader.setWasmPath(wasmPath)
     if (loader.ifcManager?.setWasmPath) {
       loader.ifcManager.setWasmPath(wasmPath)

@@ -10,6 +10,8 @@ import { revalidatePath } from "next/cache";
 
 export async function addBimFile(projectId: string, url: string, name: string) {
   try {
+    console.log("SERVER ACTION: addBimFile ÇAĞRILDI. Parametreler:", { projectId, url, name });
+
     // Önce aynı projedeki diğer modelleri pasif yap
     await db.bimFile.updateMany({ where: { projectId }, data: { isActive: false } });
     
@@ -39,10 +41,12 @@ export async function addBimFile(projectId: string, url: string, name: string) {
     });
     
     revalidatePath(`/admin/projects/${projectId}`); // Cache'i anında temizle!
+    console.log("SERVER ACTION: addBimFile BAŞARILI.");
     return newFile;
-  } catch (error) {
-    console.error("addBimFile hatası:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("SERVER ACTION HATASI (addBimFile):", error);
+    // Frontend'in hatayı yakalayabilmesi için hatayı fırlat
+    throw new Error(`BIM modeli arşive kaydedilemedi: ${error.message}`);
   }
 }
 

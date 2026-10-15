@@ -312,10 +312,6 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
               }}
               onClientUploadComplete={async (res) => {
                 setIsUploading(false)
-                setShowUploader(false) // MUTLAKA yükleme kutusunu ekrandan kaldır!
-                toast.dismiss("bim-upload")
-                console.log("Upload Başarılı, ham yanıt:", res)
-
                 const resolvedUrl =
                   (res && res.length > 0 && res[0].url) ||
                   (res && res.length > 0 && (res[0] as any).ufsUrl) ||
@@ -328,31 +324,34 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                   "Yeni-Model.ifc"
 
                 if (res && res.length > 0 && resolvedUrl) {
-                  // 1. Yeni modeli anında 3D Canvas'a yolla ve uploader'ı gizle
+                  console.log("FRONTEND: UploadThing URL döndürdü:", resolvedUrl)
+                  // 1. ZORUNLU BYPASS: Beklemeden 3D Canvas'ı anında aç!
                   setBimUrl(resolvedUrl)
                   setShowUploader(false)
-                  toast.success("Model başarıyla yüklendi! 3D Canvas açılıyor...")
+                  toast.dismiss("bim-upload")
+                  toast.success("Dosya yüklendi! 3D motor başlatılıyor...")
 
+                  // 2. Arka planda veritabanına kaydetmeyi dene
                   try {
-                    // 2. KESİN OLARAK BEKLE: addBimFile Server Action'ı ile veritabanına kaydet
                     const newSavedFile = await addBimFile(project.id, resolvedUrl, originalName)
-
                     if (newSavedFile) {
+                      // Arşivi state üzerinde manuel olarak güncelle
                       setBimFiles((prev) => [
                         newSavedFile as BimFileItem,
                         ...prev.map((f) => ({ ...f, isActive: false })),
                       ])
-                      toast.success("Model veritabanına ve arşive kaydedildi!")
+                      toast.success("Model arşive kalıcı olarak kaydedildi.")
+                      router.refresh() // Vercel cache'ini zorla temizle
                     }
-
-                    // 3. Cache'i temizleyip sayfayı yenile
-                    router.refresh()
                   } catch (e: any) {
-                    console.error("Arşive kaydetme hatası:", e)
-                    toast.error(`Veritabanına kaydedilirken hata: ${e?.message || "Bilinmeyen hata"}`)
+                    console.error("FRONTEND: addBimFile hatası:", e)
+                    toast.error(e.message || "Arşive kaydetme hatası! Model sadece bu oturum için açık kalacak.")
                   }
                 } else {
-                  toast.error("Yükleme tamamlandı ancak dosya bağlantısı alınamadı.")
+                  console.error("FRONTEND: UploadThing yanıtı hatalı veya boş:", res)
+                  setShowUploader(false)
+                  toast.dismiss("bim-upload")
+                  toast.error("UploadThing'den geçerli bir dosya bağlantısı alınamadı.")
                 }
               }}
               onUploadError={(error: Error) => {
