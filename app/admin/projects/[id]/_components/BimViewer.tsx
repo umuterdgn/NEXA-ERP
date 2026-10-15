@@ -3,6 +3,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * High-Performance Dual-Engine 3D BIM Viewer (React Three Fiber + Web-IFC Engine)
+ * Features: X-Ray (Röntgen) Mode, Multi-Discipline Layer Filtering, Snagging, AR
  */
 
 import React, { useEffect, useRef, useState, Suspense, Component, type ReactNode } from "react"
@@ -10,7 +11,194 @@ import { Canvas } from "@react-three/fiber"
 import { OrbitControls, useGLTF, Environment, Center, Bounds, Html, useProgress, Grid } from "@react-three/drei"
 import { IfcViewerAPI } from "web-ifc-viewer"
 import * as THREE from "three"
+import * as WebIFC from "web-ifc"
 import { UploadButton } from "@/lib/uploadthing"
+
+// --- CATEGORY TYPES & DEFINITIONS ---
+
+export type BimCategoryKey = "statik" | "mimari" | "elektrik" | "mekanik"
+
+export interface BimCategoryConfig {
+  key: BimCategoryKey
+  label: string
+  icon: string
+  subLabel: string
+  elementsDesc: string
+  color: string
+  textColor: string
+  activeBg: string
+  badgeBg: string
+  borderActive: string
+  glowColorHex: string
+  isStructuralOrArchitectural: boolean // true = drops opacity with X-Ray slider; false = stays 100% opaque
+  ifcTypes: number[]
+  nameKeywords: string[]
+}
+
+export const BIM_CATEGORIES: BimCategoryConfig[] = [
+  {
+    key: "statik",
+    label: "Statik",
+    icon: "🏗️",
+    subLabel: "Taşıyıcı Sistem",
+    elementsDesc: "Kolon, Kiriş, Döşeme (IfcColumn, IfcBeam, IfcSlab)",
+    color: "#3b82f6",
+    textColor: "text-blue-400",
+    activeBg: "bg-blue-600",
+    badgeBg: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+    borderActive: "border-blue-500/50",
+    glowColorHex: "#3b82f6",
+    isStructuralOrArchitectural: true,
+    ifcTypes: [
+      WebIFC.IFCCOLUMN,
+      WebIFC.IFCCOLUMNSTANDARDCASE,
+      WebIFC.IFCBEAM,
+      WebIFC.IFCBEAMSTANDARDCASE,
+      WebIFC.IFCSLAB,
+      WebIFC.IFCSLABELEMENTEDCASE,
+      WebIFC.IFCSLABSTANDARDCASE,
+      WebIFC.IFCFOOTING,
+      WebIFC.IFCMEMBER,
+      WebIFC.IFCMEMBERSTANDARDCASE,
+      WebIFC.IFCPLATE,
+      WebIFC.IFCPLATESTANDARDCASE,
+      WebIFC.IFCREINFORCINGBAR,
+    ].filter(Boolean),
+    nameKeywords: ["column", "kolon", "beam", "kiris", "kiriş", "slab", "doseme", "döşeme", "footing", "temel", "structure", "statik", "beton", "concrete", "rebar", "hasir", "hasır", "frame"],
+  },
+  {
+    key: "mimari",
+    label: "Mimari",
+    icon: "🧱",
+    subLabel: "Kabin & Bölücüler",
+    elementsDesc: "Duvar, Kapı, Pencere (IfcWall, IfcDoor, IfcWindow)",
+    color: "#f97316",
+    textColor: "text-orange-400",
+    activeBg: "bg-orange-500",
+    badgeBg: "bg-orange-500/15 text-orange-300 border-orange-500/30",
+    borderActive: "border-orange-500/50",
+    glowColorHex: "#f97316",
+    isStructuralOrArchitectural: true,
+    ifcTypes: [
+      WebIFC.IFCWALL,
+      WebIFC.IFCWALLSTANDARDCASE,
+      WebIFC.IFCWALLELEMENTEDCASE,
+      WebIFC.IFCDOOR,
+      WebIFC.IFCDOORSTANDARDCASE,
+      WebIFC.IFCWINDOW,
+      WebIFC.IFCWINDOWSTANDARDCASE,
+      WebIFC.IFCROOF,
+      WebIFC.IFCSTAIR,
+      WebIFC.IFCSTAIRFLIGHT,
+      WebIFC.IFCRAILING,
+      WebIFC.IFCCURTAINWALL,
+      WebIFC.IFCCOVERING,
+      WebIFC.IFCFURNISHINGELEMENT,
+      WebIFC.IFCSPACE,
+    ].filter(Boolean),
+    nameKeywords: ["wall", "duvar", "door", "kapi", "kapı", "window", "pencere", "roof", "cati", "çatı", "stair", "merdiven", "railing", "korkuluk", "facade", "cephe", "mimari", "arch", "partition", "bolme", "bölme", "floor", "zemin", "tavan"],
+  },
+  {
+    key: "elektrik",
+    label: "Elektrik",
+    icon: "⚡",
+    subLabel: "Kuvvetli & Zayıf Akım",
+    elementsDesc: "Kablolar, Tavalar (IfcCableSegment, IfcCableCarrierSegment)",
+    color: "#eab308",
+    textColor: "text-amber-400",
+    activeBg: "bg-amber-500",
+    badgeBg: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    borderActive: "border-amber-500/50",
+    glowColorHex: "#facc15",
+    isStructuralOrArchitectural: false,
+    ifcTypes: [
+      WebIFC.IFCCABLESEGMENT,
+      WebIFC.IFCCABLECARRIERSEGMENT,
+      WebIFC.IFCCABLECARRIERFITTING,
+      WebIFC.IFCCABLEFITTING,
+      WebIFC.IFCELECTRICDISTRIBUTIONBOARD,
+      WebIFC.IFCELECTRICFLOWSTORAGEDEVICE,
+      WebIFC.IFCLIGHTFIXTURE,
+      WebIFC.IFCJUNCTIONBOX,
+      WebIFC.IFCOUTLET,
+      WebIFC.IFCELECTRICAPPLIANCE,
+      WebIFC.IFCELECTRICMOTOR,
+      WebIFC.IFCELECTRICALELEMENT,
+    ].filter(Boolean),
+    nameKeywords: ["electric", "elektrik", "cable", "kablo", "tray", "tava", "conduit", "wire", "light", "aydinlatma", "aydınlatma", "panel", "pano", "switch", "priz", "junction", "armatur", "armatür", "ups", "trafo"],
+  },
+  {
+    key: "mekanik",
+    label: "Mekanik/Tesisat",
+    icon: "💧",
+    subLabel: "Sıhhi & Havalandırma",
+    elementsDesc: "Borular, Kanallar (IfcPipeSegment, IfcDuctSegment)",
+    color: "#06b6d4",
+    textColor: "text-cyan-400",
+    activeBg: "bg-cyan-500",
+    badgeBg: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
+    borderActive: "border-cyan-500/50",
+    glowColorHex: "#06b6d4",
+    isStructuralOrArchitectural: false,
+    ifcTypes: [
+      WebIFC.IFCPIPESEGMENT,
+      WebIFC.IFCPIPEFITTING,
+      WebIFC.IFCDUCTSEGMENT,
+      WebIFC.IFCDUCTFITTING,
+      WebIFC.IFCFLOWTERMINAL,
+      WebIFC.IFCVALVE,
+      WebIFC.IFCPUMP,
+      WebIFC.IFCBOILER,
+      WebIFC.IFCAIRTERMINAL,
+      WebIFC.IFCDUCTSILENCER,
+      WebIFC.IFCFLOWCONTROLLER,
+      WebIFC.IFCFLOWMETER,
+      WebIFC.IFCFLOWMOVINGDEVICE,
+      WebIFC.IFCFLOWSTORAGEDEVICE,
+      WebIFC.IFCFLOWTREATMENTDEVICE,
+      WebIFC.IFCSANITARYTERMINAL,
+      WebIFC.IFCWASTETERMINAL,
+    ].filter(Boolean),
+    nameKeywords: ["pipe", "boru", "duct", "kanal", "hvac", "mekanik", "plumbing", "tesisat", "valve", "vana", "pump", "pompa", "air", "havalandirma", "havalandırma", "chiller", "boiler", "klima", "sanitary", "gider", "kombi", "flange", "drain"],
+  },
+]
+
+// Helper function to identify category from Three.js mesh in GLTF mode
+function identifyCategory(mesh: any): BimCategoryKey {
+  const name = (mesh.name || "").toLowerCase()
+  const parentName = (mesh.parent?.name || "").toLowerCase()
+  const matName = (mesh.material?.name || "").toLowerCase()
+  const fullText = `${name} ${parentName} ${matName}`
+
+  for (const cat of BIM_CATEGORIES) {
+    if (cat.nameKeywords.some((kw) => fullText.includes(kw))) {
+      return cat.key
+    }
+  }
+
+  // Fallback heuristics: based on mesh position or geometry proportions
+  if (mesh.geometry) {
+    mesh.geometry.computeBoundingBox?.()
+    const bbox = mesh.geometry.boundingBox
+    if (bbox) {
+      const sizeX = Math.abs(bbox.max.x - bbox.min.x)
+      const sizeY = Math.abs(bbox.max.y - bbox.min.y)
+      const sizeZ = Math.abs(bbox.max.z - bbox.min.z)
+
+      // Slender vertical column/pipe
+      if (sizeY > sizeX * 2 && sizeY > sizeZ * 2) {
+        return "statik"
+      }
+      // Thin flat slab
+      if (sizeY < sizeX * 0.2 && sizeY < sizeZ * 0.2) {
+        return "statik"
+      }
+    }
+  }
+
+  // Default fallback to mimari
+  return "mimari"
+}
 
 interface BimViewerProps {
   url?: string | null
@@ -40,27 +228,79 @@ function CanvasLoader() {
   )
 }
 
-// R3F GLTF Model Primitive
-function GltfModel({ url, opacity = 1 }: { url: string; opacity?: number }) {
+// R3F GLTF Model Primitive with Category Filtering & X-Ray Shader Controls
+function GltfModel({
+  url,
+  layerVisibility,
+  xRayOpacity,
+  onElementCounts,
+}: {
+  url: string
+  layerVisibility: Record<BimCategoryKey, boolean>
+  xRayOpacity: number
+  onElementCounts?: (counts: Record<BimCategoryKey, number>) => void
+}) {
   const { scene } = useGLTF(url)
 
   useEffect(() => {
-    if (scene) {
-      scene.traverse((child: any) => {
-        if (child.isMesh && child.material) {
-          child.castShadow = true
-          child.receiveShadow = true
-          if (opacity < 1) {
-            child.material.transparent = true
-            child.material.opacity = opacity
-          } else {
-            child.material.transparent = false
-            child.material.opacity = 1
+    if (!scene) return
+
+    const counts: Record<BimCategoryKey, number> = { statik: 0, mimari: 0, elektrik: 0, mekanik: 0 }
+
+    scene.traverse((child: any) => {
+      if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+
+        const catKey = identifyCategory(child)
+        counts[catKey] = (counts[catKey] || 0) + 1
+
+        // 1. Layer Visibility Toggle
+        child.visible = layerVisibility[catKey] ?? true
+
+        // 2. Material Opacity & X-Ray Management
+        if (child.material) {
+          // Clone material once if shared to avoid side-effects across meshes
+          if (!child.userData.isClonedForBim) {
+            child.material = child.material.clone()
+            child.userData.isClonedForBim = true
+            child.userData.originalColor = child.material.color?.clone?.()
           }
+
+          const isStructuralOrArch = catKey === "statik" || catKey === "mimari"
+
+          if (isStructuralOrArch) {
+            // Drop opacity according to the X-Ray slider
+            const alpha = xRayOpacity / 100
+            child.material.transparent = alpha < 0.99
+            child.material.opacity = Math.max(0.04, alpha)
+            child.material.depthWrite = alpha > 0.4
+          } else {
+            // MEP (Elektrik & Mekanik): Always 100% opaque!
+            child.material.transparent = false
+            child.material.opacity = 1.0
+            child.material.depthWrite = true
+
+            // Glowing emissive effect when X-Ray is turned on so pipes shine through walls!
+            if (xRayOpacity < 70) {
+              const glowColor = catKey === "elektrik" ? new THREE.Color(0xfacc15) : new THREE.Color(0x06b6d4)
+              child.material.emissive = glowColor
+              child.material.emissiveIntensity = 0.4
+            } else {
+              child.material.emissive = new THREE.Color(0x000000)
+              child.material.emissiveIntensity = 0
+            }
+          }
+
+          child.material.needsUpdate = true
         }
-      })
+      }
+    })
+
+    if (onElementCounts) {
+      onElementCounts(counts)
     }
-  }, [scene, opacity])
+  }, [scene, layerVisibility, xRayOpacity, onElementCounts])
 
   useEffect(() => {
     return () => {
@@ -108,13 +348,30 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
   // Engine Mode: 'canvas' (@react-three/fiber) or 'ifc' (web-ifc-viewer)
   const [engineMode, setEngineMode] = useState<"canvas" | "ifc">(isIfcFile ? "ifc" : "canvas")
-  const [modelOpacity, setModelOpacity] = useState(1.0)
   const [autoRotate, setAutoRotate] = useState(false)
   const [activeModelUrl, setActiveModelUrl] = useState(effectiveUrl)
+
+  // --- X-RAY & LAYER FILTERING STATES ---
+  const [xRayOpacity, setXRayOpacity] = useState(100) // 0 to 100 range slider
+  const [layerVisibility, setLayerVisibility] = useState<Record<BimCategoryKey, boolean>>({
+    statik: true,
+    mimari: true,
+    elektrik: true,
+    mekanik: true,
+  })
+  const [categoryCounts, setCategoryCounts] = useState<Record<BimCategoryKey, number>>({
+    statik: 0,
+    mimari: 0,
+    elektrik: 0,
+    mekanik: 0,
+  })
+  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true)
 
   // IFC Viewer refs & states
   const ifcContainerRef = useRef<HTMLDivElement>(null)
   const ifcViewerRef = useRef<IfcViewerAPI | null>(null)
+  const loadedIfcModelRef = useRef<any>(null)
+  const ifcSubsetsRef = useRef<Record<string, any>>({})
   const [ifcLoading, setIfcLoading] = useState(false)
   const [ifcError, setIfcError] = useState<string | null>(null)
 
@@ -123,8 +380,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   const [showIssueForm, setShowIssueForm] = useState(false)
   const [selectedPinPosition, setSelectedPinPosition] = useState<THREE.Vector3 | null>(null)
   const [issueForm, setIssueForm] = useState({ title: "", description: "", imageUrl: "" })
-  const [pins, setPins] = useState<any[]>([])
-  const [selectedIssue, setSelectedIssue] = useState<any>(null)
+  const [, setPins] = useState<any[]>([])
 
   // Sync activeModelUrl when props change
   useEffect(() => {
@@ -155,7 +411,71 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
     loadIssues()
   }, [projectId])
 
-  // IFC Engine Initialization and Model Loading
+  // Update IFC Subsets / Meshes for Visibility and Opacity
+  const applyIfcSubsetsState = (
+    subsets: Record<string, any>,
+    visibility: Record<BimCategoryKey, boolean>,
+    opacityValue: number
+  ) => {
+    const scene = ifcViewerRef.current?.context?.getScene()
+
+    BIM_CATEGORIES.forEach((cat) => {
+      const subset = subsets[cat.key]
+      if (!subset) return
+
+      const isVisible = visibility[cat.key] ?? true
+      subset.visible = isVisible
+
+      if (subset.material) {
+        if (cat.isStructuralOrArchitectural) {
+          // Drop opacity for Statik & Mimari
+          const alpha = opacityValue / 100
+          subset.material.transparent = alpha < 0.99
+          subset.material.opacity = Math.max(0.04, alpha)
+          subset.material.depthWrite = alpha > 0.4
+          subset.material.needsUpdate = true
+        } else {
+          // MEP (Elektrik & Mekanik): Always 100% opaque!
+          subset.material.transparent = false
+          subset.material.opacity = 1.0
+          subset.material.depthWrite = true
+
+          // Emissive glow highlight when X-Ray is active
+          if (opacityValue < 70) {
+            subset.material.emissive = new THREE.Color(cat.color)
+            subset.material.emissiveIntensity = 0.5
+          } else {
+            subset.material.emissive = new THREE.Color(0x000000)
+            subset.material.emissiveIntensity = 0
+          }
+          subset.material.needsUpdate = true
+        }
+      }
+    })
+
+    // Other / remainder subset
+    const otherSubset = subsets["other"]
+    if (otherSubset && otherSubset.material) {
+      const alpha = opacityValue / 100
+      otherSubset.material.transparent = alpha < 0.99
+      otherSubset.material.opacity = Math.max(0.04, alpha)
+      otherSubset.material.needsUpdate = true
+    }
+
+    // Fallback: If no subsets exist, directly apply to composite model
+    if (Object.keys(subsets).length === 0 && scene) {
+      scene.traverse((child: any) => {
+        if (child.isMesh && child.material) {
+          const alpha = opacityValue / 100
+          child.material.transparent = alpha < 0.99
+          child.material.opacity = Math.max(0.05, alpha)
+          child.material.needsUpdate = true
+        }
+      })
+    }
+  }
+
+  // IFC Engine Initialization and Model Loading with Category Extraction
   useEffect(() => {
     if (engineMode !== "ifc" || !ifcContainerRef.current) return
 
@@ -171,7 +491,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
         viewer = new IfcViewerAPI({
           container: ifcContainerRef.current,
-          backgroundColor: new THREE.Color(0x0f172a), // slate-950
+          backgroundColor: new THREE.Color(0x0a0f1d), // ultra dark sleek slate
         })
         ifcViewerRef.current = viewer
 
@@ -193,9 +513,109 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
             loadedModel = await viewer.IFC.loadIfc(ifcFile, true)
           }
 
-          // KESİN FIT: Kamera modeli kadraja sığdırır
+          loadedIfcModelRef.current = loadedModel
+
+          // Fit camera to model
           if (loadedModel && viewer?.context?.ifcCamera?.cameraControls) {
             await viewer.context.ifcCamera.cameraControls.fitToBox(loadedModel, true)
+          }
+
+          // --- EXTRACT CATEGORIES & CREATE GEOMETRIC SUBSETS ---
+          if (loadedModel && !isDisposed) {
+            const modelID = loadedModel.modelID ?? 0
+            const scene = viewer.context.getScene()
+            const createdSubsets: Record<string, any> = {}
+            const counts: Record<BimCategoryKey, number> = { statik: 0, mimari: 0, elektrik: 0, mekanik: 0 }
+            const categorizedIds = new Set<number>()
+
+            for (const cat of BIM_CATEGORIES) {
+              const ids: number[] = []
+              for (const type of cat.ifcTypes) {
+                try {
+                  const items = await viewer.IFC.loader.ifcManager.getAllItemsOfType(modelID, type, false)
+                  if (items && Array.isArray(items)) {
+                    ids.push(...items)
+                  }
+                } catch {
+                  // Type not defined in schema
+                }
+              }
+
+              const uniqueIds = Array.from(new Set(ids))
+              counts[cat.key] = uniqueIds.length
+              uniqueIds.forEach((id) => categorizedIds.add(id))
+
+              if (uniqueIds.length > 0) {
+                try {
+                  // Dedicated high-quality material for each category
+                  const mat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(cat.color),
+                    roughness: cat.isStructuralOrArchitectural ? 0.6 : 0.25,
+                    metalness: cat.isStructuralOrArchitectural ? 0.1 : 0.6,
+                    side: THREE.DoubleSide,
+                  })
+
+                  const subset = viewer.IFC.loader.ifcManager.createSubset({
+                    modelID,
+                    scene,
+                    ids: uniqueIds,
+                    removePrevious: true,
+                    customID: cat.key,
+                    material: mat,
+                  })
+
+                  if (subset) {
+                    createdSubsets[cat.key] = subset
+                  }
+                } catch (subsetErr) {
+                  console.warn(`Failed to create subset for category ${cat.key}:`, subsetErr)
+                }
+              }
+            }
+
+            // If we successfully generated subsets for categories:
+            if (Object.keys(createdSubsets).length > 0) {
+              // Hide base composite mesh so only clean subsets are rendered
+              loadedModel.visible = false
+
+              // Handle remaining uncategorized items (e.g. site, spaces, fixtures)
+              try {
+                if (loadedModel.geometry?.attributes?.expressID) {
+                  const allIds = Array.from(
+                    new Set(Array.from(loadedModel.geometry.attributes.expressID.array as number[]))
+                  )
+                  const otherIds = allIds.filter((id) => !categorizedIds.has(id))
+                  if (otherIds.length > 0) {
+                    const otherMat = new THREE.MeshStandardMaterial({
+                      color: new THREE.Color(0x94a3b8),
+                      roughness: 0.5,
+                      metalness: 0.1,
+                      side: THREE.DoubleSide,
+                    })
+                    const otherSubset = viewer.IFC.loader.ifcManager.createSubset({
+                      modelID,
+                      scene,
+                      ids: otherIds,
+                      removePrevious: true,
+                      customID: "other",
+                      material: otherMat,
+                    })
+                    if (otherSubset) createdSubsets["other"] = otherSubset
+                  }
+                }
+              } catch (otherErr) {
+                console.warn("Uncategorized items subset handling:", otherErr)
+              }
+            } else {
+              // Fallback to displaying composite model
+              loadedModel.visible = true
+            }
+
+            ifcSubsetsRef.current = createdSubsets
+            setCategoryCounts(counts)
+
+            // Apply active layer visibility & X-ray opacity
+            applyIfcSubsetsState(createdSubsets, layerVisibility, xRayOpacity)
           }
         }
       } catch (err: any) {
@@ -214,6 +634,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
     return () => {
       isDisposed = true
+      ifcSubsetsRef.current = {}
       if (viewer) {
         try {
           viewer.dispose()
@@ -224,32 +645,49 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
     }
   }, [engineMode, activeModelUrl, fileName])
 
-  // Update IFC opacity
+  // Sync IFC Subsets whenever visibility or X-Ray opacity changes
   useEffect(() => {
-    if (engineMode === "ifc" && ifcViewerRef.current) {
-      try {
-        const scene = ifcViewerRef.current.context.getScene()
-        scene.traverse((child: any) => {
-          if (child.isMesh && child.material) {
-            child.material.transparent = modelOpacity < 1
-            child.material.opacity = modelOpacity
-          }
-        })
-      } catch (e) {
-        console.warn("IFC Opacity update:", e)
-      }
+    if (engineMode === "ifc") {
+      applyIfcSubsetsState(ifcSubsetsRef.current, layerVisibility, xRayOpacity)
     }
-  }, [engineMode, modelOpacity])
+  }, [engineMode, layerVisibility, xRayOpacity])
+
+  // Toggle single category visibility
+  const toggleCategory = (key: BimCategoryKey) => {
+    setLayerVisibility((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
+  }
+
+  // Quick Actions: All On / All Off / Only MEP (Tesisat)
+  const setAllLayers = (visible: boolean) => {
+    setLayerVisibility({
+      statik: visible,
+      mimari: visible,
+      elektrik: visible,
+      mekanik: visible,
+    })
+  }
+
+  const isolateMepLayers = () => {
+    setLayerVisibility({
+      statik: false,
+      mimari: false,
+      elektrik: true,
+      mekanik: true,
+    })
+    setXRayOpacity(100)
+  }
 
   return (
-    <div className="relative w-full h-full min-h-[600px] bg-slate-950 rounded-xl overflow-hidden select-none">
-      {/* Engine Switcher & Top Toolbar */}
+    <div className="relative w-full h-full min-h-[650px] bg-slate-950 rounded-2xl overflow-hidden select-none border border-slate-800 shadow-2xl">
+      {/* Top Left: Engine Switcher & Auto Rotate Toolbar */}
       <div className="absolute top-4 left-4 z-40 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/80 shadow-2xl">
         <button
           type="button"
           onClick={() => {
             setEngineMode("canvas")
-            // If currently on an IFC url that can't be rendered by GLTF, fallback to bina.glb
             if (activeModelUrl.toLowerCase().endsWith(".ifc") || activeModelUrl.toLowerCase().includes(".ifc?")) {
               setActiveModelUrl("/models/bina.glb")
             }
@@ -284,7 +722,6 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
         <div className="h-4 w-[1px] bg-slate-700 mx-1" />
 
-        {/* Auto Rotate Toggle */}
         <button
           type="button"
           onClick={() => setAutoRotate(!autoRotate)}
@@ -297,21 +734,268 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </button>
       </div>
 
+      {/* --- GLASSMORPHISM KATMANLAR & X-RAY KONTROL PANELİ (TOP RIGHT) --- */}
+      <div className="absolute top-4 right-4 z-40 flex flex-col items-end">
+        {!isLayerPanelOpen ? (
+          // Collapsed Floating Button
+          <button
+            type="button"
+            onClick={() => setIsLayerPanelOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-900/90 hover:bg-slate-850 backdrop-blur-xl border border-cyan-500/40 rounded-xl shadow-[0_8px_30px_rgba(6,182,212,0.25)] text-white text-xs font-semibold transition-all transform hover:scale-105"
+          >
+            <span className="text-base animate-pulse">🩻</span>
+            <span>Katmanlar & X-Ray</span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              %{xRayOpacity}
+            </span>
+            <div className="flex items-center gap-1 ml-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            </div>
+          </button>
+        ) : (
+          // Expanded Glassmorphism Control Panel
+          <div className="w-80 sm:w-88 bg-slate-900/85 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.65)] overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200">
+            {/* Panel Header */}
+            <div className="p-3.5 px-4 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-700/80 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-base shadow-inner">
+                  🩻
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white tracking-wide flex items-center gap-1.5">
+                    Katmanlar & X-Ray
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-medium">BIM Röntgen & Disiplin Kontrolü</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setIsLayerPanelOpen(false)}
+                  className="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-sm"
+                  title="Paneli Küçült"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-4 max-h-[calc(100vh-260px)] min-h-[300px] overflow-y-auto custom-scrollbar">
+              {/* --- ADIM 2: GLOBAL ŞEFFAFLIK (X-RAY MODU) SLIDER'I --- */}
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 shadow-inner">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-cyan-400 text-sm">🩻</span>
+                    <span className="text-xs font-semibold text-slate-200">Global Şeffaflık (X-Ray)</span>
+                  </div>
+                  <span
+                    className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border ${
+                      xRayOpacity < 30
+                        ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.4)]"
+                        : xRayOpacity < 80
+                        ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
+                        : "bg-slate-800 text-slate-300 border-slate-700"
+                    }`}
+                  >
+                    %{xRayOpacity}
+                  </span>
+                </div>
+
+                {/* Range Slider (0 to 100) */}
+                <div className="relative py-1">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={xRayOpacity}
+                    onChange={(e) => setXRayOpacity(parseInt(e.target.value, 10))}
+                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 hover:accent-cyan-300 transition-all"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+                    <span>%0 (Saydam)</span>
+                    <span className="text-cyan-400/80 font-medium">Röntgen</span>
+                    <span>%100 (Katı)</span>
+                  </div>
+                </div>
+
+                {/* Micro Description */}
+                <p className="text-[10.5px] text-slate-400 leading-relaxed mt-2 bg-slate-900/70 p-2 rounded-lg border border-slate-800">
+                  💡 <strong className="text-cyan-300 font-medium">X-Ray Mantığı:</strong> Duvarlar (Mimari) ve Statik
+                  şeffaflaşır; içindeki Mekanik borular ve Elektrik tavaları %100 opak parlayarak görünür hale gelir.
+                </p>
+
+                {/* Quick Presets */}
+                <div className="grid grid-cols-4 gap-1.5 mt-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setXRayOpacity(15)}
+                    className={`py-1 px-1.5 rounded text-[10px] font-semibold transition-all text-center border ${
+                      xRayOpacity === 15
+                        ? "bg-cyan-500/30 text-cyan-200 border-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.3)]"
+                        : "bg-slate-850 hover:bg-slate-800 text-slate-400 border-slate-700"
+                    }`}
+                  >
+                    💎 %15 Röntgen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setXRayOpacity(40)}
+                    className={`py-1 px-1.5 rounded text-[10px] font-semibold transition-all text-center border ${
+                      xRayOpacity === 40
+                        ? "bg-blue-500/30 text-blue-200 border-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.3)]"
+                        : "bg-slate-850 hover:bg-slate-800 text-slate-400 border-slate-700"
+                    }`}
+                  >
+                    🌫️ %40 Yarı
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setXRayOpacity(100)}
+                    className={`py-1 px-1.5 rounded text-[10px] font-semibold transition-all text-center border ${
+                      xRayOpacity === 100
+                        ? "bg-emerald-500/30 text-emerald-200 border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                        : "bg-slate-850 hover:bg-slate-800 text-slate-400 border-slate-700"
+                    }`}
+                  >
+                    🏢 %100 Katı
+                  </button>
+                  <button
+                    type="button"
+                    onClick={isolateMepLayers}
+                    className="py-1 px-1.5 rounded text-[10px] font-semibold transition-all text-center bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40"
+                    title="Statik ve Mimariyi gizle, sadece tesisatı göster"
+                  >
+                    ⚡ MEP Yalnız
+                  </button>
+                </div>
+              </div>
+
+              {/* --- ADIM 1: KATMAN (LAYER) FİLTRELEME CHECKBOX / TOGGLE BUTONLARI --- */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                    Disiplin Katmanları
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {Object.values(layerVisibility).filter(Boolean).length}/4 Açık
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {BIM_CATEGORIES.map((cat) => {
+                    const isVisible = layerVisibility[cat.key]
+                    const count = categoryCounts[cat.key]
+
+                    return (
+                      <div
+                        key={cat.key}
+                        className={`p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between ${
+                          isVisible
+                            ? `bg-slate-850/80 ${cat.borderActive} shadow-sm`
+                            : "bg-slate-900/40 border-slate-800/80 opacity-60"
+                        }`}
+                      >
+                        {/* Category Info */}
+                        <div className="flex items-start gap-2.5 min-w-0 pr-2">
+                          <span className="text-xl select-none mt-0.5">{cat.icon}</span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-xs font-bold ${
+                                  isVisible ? "text-white" : "text-slate-400"
+                                } truncate`}
+                              >
+                                {cat.label}
+                              </span>
+                              {count > 0 && (
+                                <span
+                                  className={`text-[9.5px] px-1.5 py-0.2 rounded font-mono font-semibold border ${cat.badgeBg}`}
+                                >
+                                  {count} eleman
+                                </span>
+                              )}
+                              {!cat.isStructuralOrArchitectural && (
+                                <span className="text-[9px] px-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/50 font-semibold">
+                                  MEP
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10.5px] text-slate-400 truncate mt-0.5">{cat.elementsDesc}</p>
+                          </div>
+                        </div>
+
+                        {/* Interactive Toggle Switch */}
+                        <button
+                          type="button"
+                          onClick={() => toggleCategory(cat.key)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            isVisible ? cat.activeBg : "bg-slate-700"
+                          }`}
+                          role="switch"
+                          aria-checked={isVisible}
+                          title={`${cat.label} Katmanını ${isVisible ? "Kapat" : "Aç"}`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                              isVisible ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Panel Quick Actions Footer */}
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAllLayers(true)}
+                  className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg text-[10.5px] font-semibold border border-slate-700/60 transition-colors"
+                >
+                  ✓ Tümünü Aç
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllLayers(false)}
+                  className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg text-[10.5px] font-semibold border border-slate-700/60 transition-colors"
+                >
+                  ✕ Tümünü Gizle
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Main 3D Viewport */}
       {engineMode === "canvas" ? (
-        <div className="w-full h-full min-h-[600px] cursor-grab active:cursor-grabbing bg-slate-950">
+        <div className="w-full h-full min-h-[650px] cursor-grab active:cursor-grabbing bg-slate-950">
           <ModelErrorBoundary
             fallback={(err, reset) => (
-              <div className="w-full h-full min-h-[600px] flex flex-col items-center justify-center p-6 text-center bg-slate-900/90 backdrop-blur-md">
+              <div className="w-full h-full min-h-[650px] flex flex-col items-center justify-center p-6 text-center bg-slate-900/90 backdrop-blur-md">
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                   </svg>
                 </div>
                 <h4 className="text-white font-semibold text-base mb-2">Model Formatı Uyarısı</h4>
                 <p className="text-slate-400 text-xs max-w-md mb-5 leading-relaxed">
-                  Seçili dosya GLTF/GLB olarak çözümlenemedi ({err.message.slice(0, 100)}).
-                  IFC dosyanızı IFC motorunda açabilir veya örnek 3D yapıyı inceleyebilirsiniz.
+                  Seçili dosya GLTF/GLB olarak çözümlenemedi ({err.message.slice(0, 100)}). IFC dosyanızı IFC motorunda
+                  açabilir veya örnek 3D yapıyı inceleyebilirsiniz.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <button
@@ -368,7 +1052,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                           ? "/models/bina.glb"
                           : activeModelUrl
                       }
-                      opacity={modelOpacity}
+                      layerVisibility={layerVisibility}
+                      xRayOpacity={xRayOpacity}
+                      onElementCounts={(counts) => setCategoryCounts(counts)}
                     />
                   </Center>
                 </Bounds>
@@ -387,15 +1073,15 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           </ModelErrorBoundary>
         </div>
       ) : (
-        <div className="relative w-full h-full min-h-[600px]">
+        <div className="relative w-full h-full min-h-[650px]">
           {/* Web-IFC Viewer Container */}
-          <div ref={ifcContainerRef} className="w-full h-full min-h-[600px] bg-slate-950" />
+          <div ref={ifcContainerRef} className="w-full h-full min-h-[650px] bg-slate-950" />
 
           {ifcLoading && (
             <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-30">
               <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-400 rounded-full animate-spin mb-3" />
               <p className="text-purple-300 font-semibold text-sm">IFC Modeli ve Geometri Çözümleniyor...</p>
-              <p className="text-slate-400 text-xs mt-1">Lütfen bekleyin</p>
+              <p className="text-slate-400 text-xs mt-1">Mimari, Statik ve MEP katmanları taranıyor</p>
             </div>
           )}
 
@@ -403,7 +1089,12 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
             <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-30">
               <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-3">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               </div>
               <h4 className="text-white font-semibold text-sm mb-1">IFC Çözümleme Hatası</h4>
@@ -423,62 +1114,46 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </div>
       )}
 
-      {/* Floating Bottom Toolbar */}
-      <div className="absolute bottom-4 right-4 z-40 flex flex-col items-end gap-2.5">
-        {/* Opacity Slider */}
-        <div className="bg-slate-900/95 backdrop-blur-md rounded-xl border border-slate-700/80 p-2.5 px-3.5 shadow-2xl w-48">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] text-slate-300 font-medium">Model Şeffaflığı</span>
-            <span className="text-[11px] text-cyan-400 font-mono font-bold">{Math.round(modelOpacity * 100)}%</span>
-          </div>
-          <input
-            type="range"
-            min="0.1"
-            max="1.0"
-            step="0.05"
-            value={modelOpacity}
-            onChange={(e) => setModelOpacity(parseFloat(e.target.value))}
-            className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-          />
-        </div>
+      {/* Floating Bottom Toolbar (Snagging & AR Buttons) */}
+      <div className="absolute bottom-4 right-4 z-40 flex items-center gap-2.5">
+        {/* Snagging Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsSnaggingMode(!isSnaggingMode)}
+          className={`px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 backdrop-blur-md ${
+            isSnaggingMode
+              ? "bg-red-600/90 text-white border-red-500/50 shadow-red-500/20"
+              : "bg-slate-900/90 text-slate-300 hover:text-white border-slate-700/80 hover:bg-slate-800"
+          }`}
+        >
+          <span>📍 {isSnaggingMode ? "Kusur Modu Açık" : "Kusur İşaretle"}</span>
+        </button>
 
-        <div className="flex items-center gap-2">
-          {/* Snagging Toggle */}
+        {/* AR Button */}
+        {projectId && (
           <button
             type="button"
-            onClick={() => setIsSnaggingMode(!isSnaggingMode)}
-            className={`px-3 py-2 rounded-lg text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 ${
-              isSnaggingMode
-                ? "bg-red-600/90 text-white border-red-500/50 shadow-red-500/20"
-                : "bg-slate-900/90 text-slate-300 hover:text-white border-slate-700 hover:bg-slate-800"
-            }`}
+            onClick={() => {
+              const targetUrl = effectiveUrl
+                ? `/ar/${projectId}?url=${encodeURIComponent(effectiveUrl)}`
+                : `/ar/${projectId}`
+              window.open(targetUrl, "_blank")
+            }}
+            className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-[0_0_20px_rgba(6,182,212,0.6)] border border-cyan-300/40 transition-all flex items-center gap-1.5 transform hover:scale-105 active:scale-95"
           >
-            <span>📍 {isSnaggingMode ? "Kusur Modu Açık" : "Kusur İşaretle"}</span>
+            <span className="w-2 h-2 rounded-full bg-cyan-300 animate-ping" />
+            <span>📱 AR Sahada Gör</span>
           </button>
-
-          {/* AR Button */}
-          {projectId && (
-            <button
-              type="button"
-              onClick={() => {
-                const targetUrl = effectiveUrl
-                  ? `/ar/${projectId}?url=${encodeURIComponent(effectiveUrl)}`
-                  : `/ar/${projectId}`
-                window.open(targetUrl, "_blank")
-              }}
-              className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-lg text-xs font-bold shadow-[0_0_15px_rgba(6,182,212,0.6)] border border-cyan-300/40 transition-all flex items-center gap-1.5 transform hover:scale-105 active:scale-95"
-            >
-              <span className="w-2 h-2 rounded-full bg-cyan-300 animate-ping" />
-              <span>📱 AR Sahada Gör</span>
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Floating Instructions Banner */}
-      <div className="absolute bottom-4 left-4 z-40 bg-slate-900/90 backdrop-blur-md rounded-lg border border-slate-700/80 px-3 py-1.5 shadow-xl hidden sm:flex items-center gap-2 text-xs text-slate-300">
+      <div className="absolute bottom-4 left-4 z-40 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700/80 px-3.5 py-2 shadow-xl hidden sm:flex items-center gap-2 text-xs text-slate-300">
         <span className="text-cyan-400">💡</span>
-        <span>Döndürmek için sol tıkla sürükleyin, yakınlaşmak için tekerleği kaydırın</span>
+        <span>
+          Döndürmek için <strong>sol tıkla sürükleyin</strong>, yakınlaşmak için <strong>tekerleği kaydırın</strong>.
+          X-Ray ile duvarın arkasındaki tesisatı keşfedin.
+        </span>
       </div>
 
       {/* Issue Form Modal for Snagging */}
@@ -507,7 +1182,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                   value={issueForm.title}
                   onChange={(e) => setIssueForm({ ...issueForm, title: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
-                  placeholder="Örn: 2. Kat Döşeme Çatlağı"
+                  placeholder="Örn: 2. Kat Döşeme Çatlağı / Mekanik Boru Çakışması"
                 />
               </div>
 
@@ -518,7 +1193,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                   value={issueForm.description}
                   onChange={(e) => setIssueForm({ ...issueForm, description: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500 resize-none"
-                  placeholder="Tespit edilen kusur veya eksiklik..."
+                  placeholder="Tespit edilen kusur veya çakışma detayı..."
                 />
               </div>
 
