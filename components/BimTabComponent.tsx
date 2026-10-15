@@ -303,65 +303,38 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             <UploadDropzone
               endpoint="bimModelUploader"
               onUploadBegin={(fileName) => {
-                setIsUploading(true)
-                console.log("Upload başladı, dosya:", fileName)
-                toast.loading(`"${fileName}" yükleniyor...`, { id: "bim-upload" })
+                console.log("🔥 UPLOAD BAŞLADI. Dosya:", fileName);
+                setIsUploading(true);
               }}
               onUploadProgress={(progress) => {
-                setUploadProgress(progress)
+                console.log("⏳ UPLOAD İLERLEME:", progress);
+                setUploadProgress(progress);
               }}
-              onClientUploadComplete={async (res) => {
-                setIsUploading(false)
-                const resolvedUrl =
-                  (res && res.length > 0 && res[0].url) ||
-                  (res && res.length > 0 && (res[0] as any).ufsUrl) ||
-                  (res && res.length > 0 && (res[0] as any).serverData?.url) ||
-                  (res && res[0]?.key ? `https://utfs.io/f/${res[0].key}` : null)
+              onClientUploadComplete={(res) => {
+                console.log("✅ UPLOAD TAMAMLANDI. Yanıt:", res);
+                setIsUploading(false);
 
-                const originalName =
-                  (res && res.length > 0 && res[0].name) ||
-                  (res && res.length > 0 && (res[0] as any).fileName) ||
-                  "Yeni-Model.ifc"
+                // En basit haliyle URL'yi almayı dene
+                if (res && res.length > 0) {
+                  const fileUrl = res[0].url || (res[0] as any).fileUrl || (res[0] as any).ufsUrl || (res[0] as any).serverData?.url;
+                  console.log("🔗 Elde edilen URL:", fileUrl);
 
-                if (res && res.length > 0 && resolvedUrl) {
-                  console.log("FRONTEND: UploadThing URL döndürdü:", resolvedUrl)
-                  // 1. ZORUNLU BYPASS: Beklemeden 3D Canvas'ı anında aç!
-                  setBimUrl(resolvedUrl)
-                  setShowUploader(false)
-                  toast.dismiss("bim-upload")
-                  toast.success("Dosya yüklendi! 3D motor başlatılıyor...")
-
-                  // 2. Arka planda veritabanına kaydetmeyi dene
-                  try {
-                    const newSavedFile = await addBimFile(project.id, resolvedUrl, originalName)
-                    if (newSavedFile) {
-                      // Arşivi state üzerinde manuel olarak güncelle
-                      setBimFiles((prev) => [
-                        newSavedFile as BimFileItem,
-                        ...prev.map((f) => ({ ...f, isActive: false })),
-                      ])
-                      toast.success("Model arşive kalıcı olarak kaydedildi.")
-                      router.refresh() // Vercel cache'ini zorla temizle
-                    }
-                  } catch (e: any) {
-                    console.error("FRONTEND: addBimFile hatası:", e)
-                    // KRİTİK BYPASS: Veritabanı çökse bile setBimUrl çalışmaya KESİN devam eder
-                    setBimUrl(resolvedUrl)
-                    setShowUploader(false)
-                    toast.error(e.message || "Arşive kaydetme hatası! Model sadece bu oturum için açık kalacak.")
+                  if (fileUrl) {
+                    toast.success("Dosya yüklendi: " + fileUrl);
+                    // State'i GÜNCELLE ve Uploader'ı KAPAT
+                    setBimUrl(fileUrl);
+                    setShowUploader(false);
+                  } else {
+                    toast.error("Dosya yüklendi ancak URL bulunamadı.");
                   }
                 } else {
-                  console.error("FRONTEND: UploadThing yanıtı hatalı veya boş:", res)
-                  setShowUploader(false)
-                  toast.dismiss("bim-upload")
-                  toast.error("UploadThing'den geçerli bir dosya bağlantısı alınamadı.")
+                  toast.error("Yükleme tamamlandı yanıtı boş.");
                 }
               }}
               onUploadError={(error: Error) => {
-                setIsUploading(false)
-                toast.dismiss("bim-upload")
-                console.error("UploadThing Hatası:", error)
-                toast.error(`Yükleme hatası: ${error.message}`)
+                console.error("❌ UPLOAD HATASI:", error);
+                setIsUploading(false);
+                toast.error(`Yükleme hatası: ${error.message}`);
               }}
             />
           </div>

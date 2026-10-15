@@ -16,12 +16,13 @@ export const ourFileRouter = {
     "application/octet-stream": { maxFileSize: "128MB", maxFileCount: 1 },
   })
     .middleware(async () => {
+      console.log("🔥 [SERVER:UploadThing] bimModelUploader middleware çalıştı.")
       return { userId: "admin" }
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log("Upload complete for userId:", metadata.userId)
+      console.log("✅ [SERVER:UploadThing] bimModelUploader onUploadComplete başladı. UserId:", metadata.userId, "File name:", file.name)
       const fileUrl = file.url || (file as any).ufsUrl || `https://utfs.io/f/${file.key}`
-      console.log("file url", fileUrl)
+      console.log("🔗 [SERVER:UploadThing] Dosya URL:", fileUrl, "Key:", file.key)
       return { uploadedBy: metadata.userId, url: fileUrl, key: file.key }
     }),
 
