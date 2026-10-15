@@ -12,12 +12,11 @@ import { toast } from "react-hot-toast"
 import { QRCodeSVG } from "qrcode.react"
 import { UploadDropzone } from "@/lib/uploadthing"
 import {
-  addBimFileToProject,
+  addBimFile,
   setActiveBimFile,
   deleteBimFile,
   getProjectBimFiles,
-  updateProjectBimModel,
-} from "@/app/actions/project"
+} from "@/app/admin/projects/[id]/actions"
 
 // Dynamically import BimViewer with SSR disabled
 const BimViewer = dynamic(
@@ -90,6 +89,11 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
     }
   }, [project.bimFiles, project.bimModelUrl, project.ifcModelUrl])
 
+  // Component yüklendiğinde veritabanından en güncel modelleri çek
+  useEffect(() => {
+    refreshBimFiles()
+  }, [project.id])
+
   // Helper to re-fetch BIM models from server
   const refreshBimFiles = async () => {
     try {
@@ -108,19 +112,21 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
   // Handle switching active model
   const handleSetActive = async (file: BimFileItem) => {
+    // 3D Canvas'ı anında aç ve yükleme ekranını gizle
+    setBimUrl(file.fileUrl)
+    setShowUploader(false)
     setIsSwitchingModel(file.id)
+
     try {
       const res = await setActiveBimFile(project.id, file.id)
       if (res.success && res.url) {
-        setBimUrl(res.url)
-        setShowUploader(false)
         setBimFiles((prev) =>
           prev.map((f) => ({
             ...f,
             isActive: f.id === file.id,
           }))
         )
-        toast.success(`"${file.fileName}" aktif model olarak açıldı!`)
+        toast.success(`"${file.fileName}" açıldı!`)
         router.refresh()
       } else {
         toast.error(res.error || "Model açılırken hata oluştu.")
@@ -312,8 +318,8 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
                 const resolvedUrl =
                   (res && res.length > 0 && res[0].url) ||
-                  (res && res.length > 0 && (res[0] as any).serverData?.url) ||
                   (res && res.length > 0 && (res[0] as any).ufsUrl) ||
+                  (res && res.length > 0 && (res[0] as any).serverData?.url) ||
                   (res && res[0]?.key ? `https://utfs.io/f/${res[0].key}` : null)
 
                 const originalName =
@@ -322,30 +328,28 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                   "Yeni-Model.ifc"
 
                 if (res && res.length > 0 && resolvedUrl) {
-                  // 1. Yeni modeli anında 3D Canvas'a yolla
+                  // 1. Yeni modeli anında 3D Canvas'a yolla ve uploader'ı gizle
                   setBimUrl(resolvedUrl)
+                  setShowUploader(false)
                   toast.success("Model başarıyla yüklendi! 3D Canvas açılıyor...")
 
                   try {
-                    // 2. Veritabanına (Arşive) modeli kaydeden Server Action'ı çağır
-                    const addRes = await addBimFileToProject(project.id, {
-                      fileName: originalName,
-                      fileUrl: resolvedUrl,
-                      fileType: originalName.split(".").pop()?.toLowerCase() || "ifc",
-                    })
+                    // 2. KESİN OLARAK BEKLE: addBimFile Server Action'ı ile veritabanına kaydet
+                    const newSavedFile = await addBimFile(project.id, resolvedUrl, originalName)
 
-                    if (addRes.success && addRes.bimFile) {
+                    if (newSavedFile) {
                       setBimFiles((prev) => [
-                        addRes.bimFile as BimFileItem,
+                        newSavedFile as BimFileItem,
                         ...prev.map((f) => ({ ...f, isActive: false })),
                       ])
-                      toast.success("Model kalıcı arşive kaydedildi!")
+                      toast.success("Model veritabanına ve arşive kaydedildi!")
                     }
 
-                    // 3. Hemen ardından router.refresh() yaparak modeller listesini güncelle
+                    // 3. Cache'i temizleyip sayfayı yenile
                     router.refresh()
-                  } catch (e) {
+                  } catch (e: any) {
                     console.error("Arşive kaydetme hatası:", e)
+                    toast.error(`Veritabanına kaydedilirken hata: ${e?.message || "Bilinmeyen hata"}`)
                   }
                 } else {
                   toast.error("Yükleme tamamlandı ancak dosya bağlantısı alınamadı.")
@@ -563,7 +567,11 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-700/60">
                     <button
                       type="button"
-                      onClick={() => handleSetActive(file)}
+                      onClick={() => {
+                        setBimUrl(file.fileUrl)
+                        setShowUploader(false)
+                        handleSetActive(file)
+                      }}
                       disabled={isCurrentlyActive || isSwitchingModel === file.id}
                       className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
                         isCurrentlyActive
@@ -582,7 +590,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                         </>
                       ) : (
                         <>
-                          <span>▶️ Aktif Model (Aç)</span>
+                          <span>👁️ Aç / Göster</span>
                         </>
                       )}
                     </button>

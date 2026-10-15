@@ -152,6 +152,19 @@ export default async function ProjectDetailPage({
     notFound()
   }
 
+  // Ensure BIM models are always populated and passed to the component
+  if (!project.bimFiles || (project.bimFiles as any[]).length === 0) {
+    try {
+      const directBimFiles = await prisma.bimFile.findMany({
+        where: { projectId: resolvedParams.id },
+        orderBy: { uploadedAt: "desc" },
+      })
+      project.bimFiles = directBimFiles
+    } catch (err) {
+      console.error("Direct bimFiles fetch error:", err)
+    }
+  }
+
   // Calculate project financial stats
   const totalIncome = (project.transactions ?? [])
     .filter((t: ProjectTransaction) => t.type === "GELIR")

@@ -27,6 +27,34 @@ export async function updateProjectBimModel(projectId: string, modelUrl: string)
   }
 }
 
+export async function addBimFile(projectId: string, url: string, name: string) {
+  try {
+    // Önce aynı projedeki diğer modelleri pasif yap
+    await prisma.bimFile.updateMany({ where: { projectId }, data: { isActive: false } })
+
+    const ext = name.split(".").pop()?.toLowerCase() || "ifc"
+
+    // Yeni modeli aktif olarak kaydet
+    const newFile = await prisma.bimFile.create({
+      data: { projectId, fileUrl: url, fileName: name, fileType: ext, isActive: true },
+    })
+
+    await prisma.project.update({
+      where: { id: projectId },
+      data: {
+        bimModelUrl: url,
+        ifcModelUrl: url,
+      },
+    }).catch(() => null)
+
+    revalidatePath(`/admin/projects/${projectId}`) // Cache'i anında temizle!
+    return newFile
+  } catch (error) {
+    console.error("addBimFile hatası:", error)
+    throw error
+  }
+}
+
 export async function addBimFileToProject(
   projectId: string,
   fileData: { fileName: string; fileUrl: string; fileType?: string | null }
