@@ -16,14 +16,14 @@ export const ourFileRouter = {
     "application/octet-stream": { maxFileSize: "128MB", maxFileCount: 1 },
   })
     .middleware(async () => {
-      console.log("🔥 [SERVER:UploadThing] bimModelUploader middleware çalıştı.")
+      // Gerekirse yetkilendirme kodları...
       return { userId: "admin" }
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log("✅ [SERVER:UploadThing] bimModelUploader onUploadComplete başladı. UserId:", metadata.userId, "File name:", file.name)
+      console.log("UploadThing Core: Upload complete for", metadata.userId)
+      console.log("UploadThing Core: File URL", file.url)
       const fileUrl = file.url || (file as any).ufsUrl || `https://utfs.io/f/${file.key}`
-      console.log("🔗 [SERVER:UploadThing] Dosya URL:", fileUrl, "Key:", file.key)
-      return { uploadedBy: metadata.userId, url: fileUrl, key: file.key }
+      return { uploadedBy: metadata.userId, url: fileUrl, name: file.name, key: file.key }
     }),
 
   // Drone Video Uploader - Video files, max 256MB
