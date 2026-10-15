@@ -7,9 +7,10 @@
  */
 
 import React, { useEffect, useRef, useState, Suspense, Component, type ReactNode } from "react"
-import { Canvas } from "@react-three/fiber"
+import { Canvas, useLoader } from "@react-three/fiber"
 import { OrbitControls, useGLTF, Environment, Center, Bounds, Html, useProgress, Grid } from "@react-three/drei"
 import { IfcViewerAPI } from "web-ifc-viewer"
+import { IFCLoader } from "web-ifc-three/IFCLoader"
 import * as THREE from "three"
 import * as WebIFC from "web-ifc"
 import { UploadButton } from "@/lib/uploadthing"
@@ -311,6 +312,93 @@ function GltfModel({
   return <primitive object={scene} />
 }
 
+// Helper to determine if a URL or filename represents an IFC model
+function isIfcUrlOrFile(url: string, name?: string): boolean {
+  const u = (url || "").toLowerCase()
+  const n = (name || "").toLowerCase()
+  if (u.endsWith(".ifc") || u.includes(".ifc?") || n.endsWith(".ifc") || n.includes(".ifc")) {
+    return true
+  }
+  if (
+    u.endsWith(".glb") ||
+    u.endsWith(".gltf") ||
+    u.includes(".glb?") ||
+    u.includes(".gltf?") ||
+    n.endsWith(".glb") ||
+    n.endsWith(".gltf")
+  ) {
+    return false
+  }
+  // Default to true for BIM viewer uploads unless explicitly GLB/GLTF
+  return true
+}
+
+// R3F IFC Model Loader with WebAssembly (WASM) Path configuration
+// BU BİLEŞEN VE WASM AYARI HAYATİDİR - 3D Canvas içinde IFC modelinin WebAssembly ile hatasız okunmasını sağlar
+function IfcCanvasModel({
+  url,
+  layerVisibility,
+  xRayOpacity,
+}: {
+  url: string
+  layerVisibility: Record<BimCategoryKey, boolean>
+  xRayOpacity: number
+}) {
+  const model = useLoader(IFCLoader, url, (loader: any) => {
+    // WASM Yol Ayarı: unpkg CDN üzerinden hatasız WebAssembly çekilir
+    if (loader.ifcManager?.setWasmPath) {
+      loader.ifcManager.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
+    }
+    if (loader.setWasmPath) {
+      loader.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
+    }
+  }) as any
+
+  useEffect(() => {
+    if (model) {
+      model.traverse((child: any) => {
+        if (child.isMesh && child.material) {
+          child.castShadow = true
+          child.receiveShadow = true
+
+          const catKey = identifyCategory(child)
+          child.visible = layerVisibility[catKey] ?? true
+
+          const alpha = xRayOpacity / 100
+          const isArchOrStructural = catKey === "statik" || catKey === "mimari"
+
+          const applyMat = (mat: any) => {
+            if (isArchOrStructural) {
+              mat.transparent = alpha < 0.99
+              mat.opacity = Math.max(0.04, alpha)
+              mat.depthWrite = alpha > 0.4
+            } else {
+              mat.transparent = false
+              mat.opacity = 1.0
+              mat.depthWrite = true
+              if (xRayOpacity < 70) {
+                mat.emissive = new THREE.Color(catKey === "elektrik" ? 0xfacc15 : 0x06b6d4)
+                mat.emissiveIntensity = 0.4
+              } else {
+                mat.emissiveIntensity = 0
+              }
+            }
+            mat.needsUpdate = true
+          }
+
+          if (Array.isArray(child.material)) {
+            child.material.forEach(applyMat)
+          } else {
+            applyMat(child.material)
+          }
+        }
+      })
+    }
+  }, [model, layerVisibility, xRayOpacity])
+
+  return <primitive object={model as any} />
+}
+
 // Error Boundary for R3F Canvas
 class ModelErrorBoundary extends Component<
   { fallback: (error: Error, reset: () => void) => ReactNode; children: ReactNode },
@@ -340,11 +428,8 @@ class ModelErrorBoundary extends Component<
 export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: BimViewerProps) {
   const effectiveUrl = (bimUrl || url || ifcUrl || "").trim()
 
-  // Determine if file is likely an IFC file
-  const isIfcFile =
-    effectiveUrl.toLowerCase().endsWith(".ifc") ||
-    effectiveUrl.toLowerCase().includes(".ifc?") ||
-    (fileName && fileName.toLowerCase().endsWith(".ifc"))
+  // Determine if file is an IFC file
+  const isIfcFile = isIfcUrlOrFile(effectiveUrl, fileName)
 
   // Engine Mode: 'canvas' (@react-three/fiber) or 'ifc' (web-ifc-viewer)
   const [engineMode, setEngineMode] = useState<"canvas" | "ifc">(isIfcFile ? "ifc" : "canvas")
@@ -382,17 +467,14 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   const [issueForm, setIssueForm] = useState({ title: "", description: "", imageUrl: "" })
   const [, setPins] = useState<any[]>([])
 
-  // Sync activeModelUrl when props change
+  // Sync activeModelUrl and auto-detect engine mode when props change
   useEffect(() => {
     if (effectiveUrl) {
       setActiveModelUrl(effectiveUrl)
-      if (effectiveUrl.toLowerCase().endsWith(".ifc") || effectiveUrl.toLowerCase().includes(".ifc?")) {
-        setEngineMode("ifc")
-      } else {
-        setEngineMode("canvas")
-      }
+      const isIfc = isIfcUrlOrFile(effectiveUrl, fileName)
+      setEngineMode(isIfc ? "ifc" : "canvas")
     }
-  }, [effectiveUrl])
+  }, [effectiveUrl, fileName])
 
   // Load existing BIM issues
   useEffect(() => {
@@ -497,7 +579,18 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
         viewer.axes.setAxes()
         viewer.grid.setGrid()
-        await viewer.IFC.setWasmPath("/")
+
+        // BU SATIR HAYATİDİR: Browser WebAssembly (WASM) dosyasını doğrudan ve hatasız indirir
+        try {
+          await viewer.IFC.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
+        } catch (wasmErr) {
+          console.warn("WASM 0.0.36 path error, trying fallback:", wasmErr)
+          try {
+            await viewer.IFC.setWasmPath("https://unpkg.com/web-ifc@0.0.77/")
+          } catch {
+            await viewer.IFC.setWasmPath("/")
+          }
+        }
 
         if (activeModelUrl) {
           let loadedModel: any = null
@@ -1046,16 +1139,20 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
               <Suspense fallback={<CanvasLoader />}>
                 <Bounds clip fit margin={1.2} observe>
                   <Center>
-                    <GltfModel
-                      url={
-                        activeModelUrl.toLowerCase().endsWith(".ifc") || activeModelUrl.toLowerCase().includes(".ifc?")
-                          ? "/models/bina.glb"
-                          : activeModelUrl
-                      }
-                      layerVisibility={layerVisibility}
-                      xRayOpacity={xRayOpacity}
-                      onElementCounts={(counts) => setCategoryCounts(counts)}
-                    />
+                    {isIfcUrlOrFile(activeModelUrl, fileName) ? (
+                      <IfcCanvasModel
+                        url={activeModelUrl}
+                        layerVisibility={layerVisibility}
+                        xRayOpacity={xRayOpacity}
+                      />
+                    ) : (
+                      <GltfModel
+                        url={activeModelUrl}
+                        layerVisibility={layerVisibility}
+                        xRayOpacity={xRayOpacity}
+                        onElementCounts={(counts) => setCategoryCounts(counts)}
+                      />
+                    )}
                   </Center>
                 </Bounds>
               </Suspense>

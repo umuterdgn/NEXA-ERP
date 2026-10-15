@@ -71,6 +71,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [showARModal, setShowARModal] = useState(false)
+  const [showUploader, setShowUploader] = useState(false)
   const [isSwitchingModel, setIsSwitchingModel] = useState<string | null>(null)
   const [isDeletingModel, setIsDeletingModel] = useState<string | null>(null)
 
@@ -112,6 +113,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
       const res = await setActiveBimFile(project.id, file.id)
       if (res.success && res.url) {
         setBimUrl(res.url)
+        setShowUploader(false)
         setBimFiles((prev) =>
           prev.map((f) => ({
             ...f,
@@ -209,6 +211,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             type="button"
             onClick={() => {
               setBimUrl("/models/bina.glb")
+              setShowUploader(false)
               toast.success("🏢 3D Dijital İkiz Modeli yüklendi!")
             }}
             className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-lg text-xs font-semibold border border-cyan-500/30 transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(6,182,212,0.15)] active:scale-95"
@@ -221,6 +224,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             type="button"
             onClick={() => {
               setBimUrl("/sample.ifc")
+              setShowUploader(false)
               toast.success("🏛️ Örnek IFC Modeli yüklendi!")
             }}
             className="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 rounded-lg text-xs font-semibold border border-amber-500/40 transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(245,158,11,0.15)] active:scale-95"
@@ -229,43 +233,144 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             <span>🏛️ Örnek IFC</span>
           </button>
 
+          {/* AR Button */}
           {bimUrl && (
-            <>
-              {/* Neon AR Button */}
-              <button
-                type="button"
-                onClick={handleOpenAR}
-                className="relative group overflow-hidden px-4 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-lg font-bold text-xs shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:shadow-[0_0_30px_rgba(6,182,212,0.8)] border border-cyan-300/40 transition-all flex items-center gap-2 transform hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
-                </span>
-                <svg className="w-4 h-4 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                <span>AR ile Sahada Gör</span>
-              </button>
-
-              {/* Upload Box Toggle Button */}
-              <button
-                type="button"
-                onClick={() => setBimUrl(null)}
-                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5"
-                title="Yeni bir model yüklemek için yükleme alanını aç"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>Yeni Model Yükle</span>
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={handleOpenAR}
+              className="relative group overflow-hidden px-4 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-lg font-bold text-xs shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:shadow-[0_0_30px_rgba(6,182,212,0.8)] border border-cyan-300/40 transition-all flex items-center gap-2 transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
+              </span>
+              <svg className="w-4 h-4 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>AR ile Sahada Gör</span>
+            </button>
           )}
+
+          {/* Upload Button: Directly sets showUploader to true */}
+          <button
+            type="button"
+            onClick={() => setShowUploader(true)}
+            className="px-3 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-lg text-xs font-semibold shadow-md transition-all flex items-center gap-1.5 active:scale-95"
+            title="Yeni bir IFC / GLTF model yükleyin"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span>+ Yeni Model Yükle</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Viewport: When bimUrl exists, UploadDropzone is COMPLETELY HIDDEN, only 3D Canvas renders */}
-      {bimUrl ? (
+      {/* Upload Dropzone: Displayed when showUploader is true */}
+      {showUploader && (
+        <div className="bg-slate-900/95 rounded-2xl border border-cyan-500/40 p-6 sm:p-8 shadow-2xl backdrop-blur-md relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-sm">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-base">3D BIM / IFC / GLTF Modeli Yükleyin</h4>
+                <p className="text-slate-400 text-xs">
+                  Yüklenen model kalıcı model arşivinize kaydedilecek ve 3D Canvas&apos;ta anında açılacaktır.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowUploader(false)}
+              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5 shadow-md"
+            >
+              <span>✕ İptal</span>
+            </button>
+          </div>
+
+          <div className="w-full">
+            <UploadDropzone
+              endpoint="bimModelUploader"
+              onUploadBegin={(fileName) => {
+                setIsUploading(true)
+                console.log("Upload başladı, dosya:", fileName)
+                toast.loading(`"${fileName}" yükleniyor...`, { id: "bim-upload" })
+              }}
+              onUploadProgress={(progress) => {
+                setUploadProgress(progress)
+              }}
+              onClientUploadComplete={async (res) => {
+                setIsUploading(false)
+                setShowUploader(false) // MUTLAKA yükleme kutusunu ekrandan kaldır!
+                toast.dismiss("bim-upload")
+                console.log("Upload Başarılı, ham yanıt:", res)
+
+                const resolvedUrl =
+                  (res && res.length > 0 && res[0].url) ||
+                  (res && res.length > 0 && (res[0] as any).serverData?.url) ||
+                  (res && res.length > 0 && (res[0] as any).ufsUrl) ||
+                  (res && res[0]?.key ? `https://utfs.io/f/${res[0].key}` : null)
+
+                const originalName =
+                  (res && res.length > 0 && res[0].name) ||
+                  (res && res.length > 0 && (res[0] as any).fileName) ||
+                  "Yeni-Model.ifc"
+
+                if (res && res.length > 0 && resolvedUrl) {
+                  // 1. Yeni modeli anında 3D Canvas'a yolla
+                  setBimUrl(resolvedUrl)
+                  toast.success("Model başarıyla yüklendi! 3D Canvas açılıyor...")
+
+                  try {
+                    // 2. Veritabanına (Arşive) modeli kaydeden Server Action'ı çağır
+                    const addRes = await addBimFileToProject(project.id, {
+                      fileName: originalName,
+                      fileUrl: resolvedUrl,
+                      fileType: originalName.split(".").pop()?.toLowerCase() || "ifc",
+                    })
+
+                    if (addRes.success && addRes.bimFile) {
+                      setBimFiles((prev) => [
+                        addRes.bimFile as BimFileItem,
+                        ...prev.map((f) => ({ ...f, isActive: false })),
+                      ])
+                      toast.success("Model kalıcı arşive kaydedildi!")
+                    }
+
+                    // 3. Hemen ardından router.refresh() yaparak modeller listesini güncelle
+                    router.refresh()
+                  } catch (e) {
+                    console.error("Arşive kaydetme hatası:", e)
+                  }
+                } else {
+                  toast.error("Yükleme tamamlandı ancak dosya bağlantısı alınamadı.")
+                }
+              }}
+              onUploadError={(error: Error) => {
+                setIsUploading(false)
+                toast.dismiss("bim-upload")
+                console.error("UploadThing Hatası:", error)
+                toast.error(`Yükleme hatası: ${error.message}`)
+              }}
+            />
+          </div>
+
+          {isUploading && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-cyan-400 text-sm font-medium animate-pulse">
+              <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <span>Yükleniyor (%{uploadProgress}), lütfen bekleyin...</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main 3D Viewport: Displayed when bimUrl exists */}
+      {!showUploader && bimUrl && (
         <div className="relative w-full h-[620px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
           {/* Active Model Indicator Header Tag */}
           <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
@@ -279,14 +384,14 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
             <button
               type="button"
-              onClick={() => setBimUrl(null)}
-              className="px-3 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center gap-1 shadow-lg backdrop-blur-md"
+              onClick={() => setShowUploader(true)}
+              className="px-3 py-1.5 bg-blue-600/90 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold border border-blue-400/40 transition-colors flex items-center gap-1 shadow-lg backdrop-blur-md active:scale-95"
             >
-              <span>✕ Kapat</span>
+              <span>+ Model Değiştir</span>
             </button>
           </div>
 
-          {/* 3D BIM Viewer Canvas Engine */}
+          {/* 3D BIM Viewer Engine */}
           <BimViewer
             bimUrl={bimUrl}
             url={bimUrl}
@@ -295,95 +400,50 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             fileName={activeBimFile?.fileName}
           />
         </div>
-      ) : (
-        /* Upload Area: Shown only when NO model is active / user wants to upload */
-        <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-8 shadow-2xl">
-          <div className="flex flex-col items-center justify-center max-w-xl mx-auto text-center">
-            <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4 shadow-lg shadow-cyan-500/10">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </div>
+      )}
 
-            <h4 className="text-white text-lg font-bold mb-1">
-              3D BIM / IFC / GLTF Modeli Yükleyin
-            </h4>
-            <p className="text-slate-400 text-xs mb-6 max-w-md leading-relaxed">
-              Projenin 3D modelini görüntülemek için <span className="text-cyan-400 font-semibold">.ifc</span>,{" "}
-              <span className="text-cyan-400 font-semibold">.gltf</span> veya{" "}
-              <span className="text-cyan-400 font-semibold">.glb</span> formatındaki dosyanızı yükleyin. Yüklenen dosyalar
-              kalıcı model arşivinize kaydedilecektir.
-            </p>
-
-            <div className="w-full">
-              <UploadDropzone
-                endpoint="bimModelUploader"
-                onUploadBegin={(fileName) => {
-                  setIsUploading(true)
-                  console.log("Upload başladı, dosya:", fileName)
-                  toast.loading(`"${fileName}" yükleniyor...`, { id: "bim-upload" })
-                }}
-                onUploadProgress={(progress) => {
-                  setUploadProgress(progress)
-                }}
-                onClientUploadComplete={async (res) => {
-                  setIsUploading(false)
-                  toast.dismiss("bim-upload")
-                  console.log("Upload Başarılı, ham yanıt:", res)
-
-                  const resolvedUrl =
-                    (res && res.length > 0 && res[0].url) ||
-                    (res && res.length > 0 && (res[0] as any).serverData?.url) ||
-                    (res && res.length > 0 && (res[0] as any).ufsUrl) ||
-                    (res && res[0]?.key ? `https://utfs.io/f/${res[0].key}` : null)
-
-                  const originalName =
-                    (res && res.length > 0 && res[0].name) ||
-                    (res && res.length > 0 && (res[0] as any).fileName) ||
-                    "Yeni-Model.ifc"
-
-                  if (res && res.length > 0 && resolvedUrl) {
-                    setBimUrl(resolvedUrl) // Upload kutusunu KESİN OLARAK GİZLER ve 3D Canvas'ı açar!
-                    toast.success("Model başarıyla yüklendi! 3D Canvas açılıyor...")
-
-                    try {
-                      // Kalıcı Model Arşivine Kaydet (Server Action)
-                      const addRes = await addBimFileToProject(project.id, {
-                        fileName: originalName,
-                        fileUrl: resolvedUrl,
-                        fileType: originalName.split(".").pop()?.toLowerCase() || "ifc",
-                      })
-
-                      if (addRes.success && addRes.bimFile) {
-                        setBimFiles((prev) => [
-                          addRes.bimFile as BimFileItem,
-                          ...prev.map((f) => ({ ...f, isActive: false })),
-                        ])
-                        toast.success("Model kalıcı arşive kaydedildi!")
-                      }
-                      router.refresh()
-                    } catch (e) {
-                      console.error("Arşive kaydetme hatası:", e)
-                    }
-                  } else {
-                    toast.error("Yükleme tamamlandı ancak dosya URL'si alınamadı.")
-                  }
-                }}
-                onUploadError={(error: Error) => {
-                  setIsUploading(false)
-                  toast.dismiss("bim-upload")
-                  console.error("UploadThing Hatası:", error)
-                  toast.error(`Yükleme hatası: ${error.message}`)
-                }}
-              />
-            </div>
-
-            {isUploading && (
-              <div className="mt-4 flex items-center justify-center gap-2 text-cyan-400 text-sm font-medium animate-pulse">
-                <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                <span>Yükleniyor (%{uploadProgress}), lütfen bekleyin...</span>
-              </div>
-            )}
+      {/* Empty State: Displayed when neither uploader nor bimUrl is open */}
+      {!showUploader && !bimUrl && (
+        <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-8 shadow-2xl text-center">
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4 mx-auto shadow-lg shadow-cyan-500/10">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <h4 className="text-white text-lg font-bold mb-1">Henüz Aktif Model Seçilmedi</h4>
+          <p className="text-slate-400 text-xs mb-6 max-w-md mx-auto leading-relaxed">
+            Aşağıdaki arşivden kayıtlı bir model açabilir, test modellerini inceleyebilir veya yeni bir IFC / GLTF model yükleyebilirsiniz.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowUploader(true)}
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2"
+            >
+              <span>+ İlk Modeli Yükle</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setBimUrl("/models/bina.glb")
+                setShowUploader(false)
+                toast.success("🏢 3D Dijital İkiz Modeli yüklendi!")
+              }}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5"
+            >
+              <span>🏢 3D Bina (GLB) Test Et</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setBimUrl("/sample.ifc")
+                setShowUploader(false)
+                toast.success("🏛️ Örnek IFC Modeli yüklendi!")
+              }}
+              className="px-4 py-2.5 bg-purple-900/40 hover:bg-purple-800/50 text-purple-200 rounded-xl text-xs font-semibold border border-purple-500/40 transition-colors flex items-center gap-1.5"
+            >
+              <span>🏛️ Örnek IFC Test Et</span>
+            </button>
           </div>
         </div>
       )}
@@ -439,10 +499,8 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             </p>
             <button
               type="button"
-              onClick={() => {
-                setBimUrl(null)
-              }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-md transition-colors"
+              onClick={() => setShowUploader(true)}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-lg text-xs font-semibold shadow-md transition-all active:scale-95"
             >
               + İlk Modeli Yükle
             </button>
