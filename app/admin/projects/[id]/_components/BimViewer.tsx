@@ -258,10 +258,28 @@ function GltfModel({
 
   const { scene } = useGLTF(url)
 
+  // 1. Element counts calculated once when scene loads
+  useEffect(() => {
+    if (!scene || !onElementCounts) return
+    const counts: Record<BimCategoryKey, number> = { statik: 0, mimari: 0, elektrik: 0, mekanik: 0 }
+    scene.traverse((child: any) => {
+      if (child.isMesh) {
+        const catKey = identifyCategory(child)
+        counts[catKey] = (counts[catKey] || 0) + 1
+      }
+    })
+    onElementCounts(counts)
+  }, [scene])
+
+  // 2. High-performance material opacity & layer visibility update (Zero redundant needsUpdate)
   useEffect(() => {
     if (!scene) return
 
-    const counts: Record<BimCategoryKey, number> = { statik: 0, mimari: 0, elektrik: 0, mekanik: 0 }
+    const alpha = xRayOpacity / 100
+    const newTransparent = alpha < 0.99
+    const newDepthWrite = alpha > 0.4
+    const clampedOpacity = Math.max(0.04, alpha)
+    const isXRayActive = xRayOpacity < 70
 
     scene.traverse((child: any) => {
       if (child.isMesh) {
@@ -269,10 +287,12 @@ function GltfModel({
         child.receiveShadow = true
 
         const catKey = identifyCategory(child)
-        counts[catKey] = (counts[catKey] || 0) + 1
 
         // 1. Layer Visibility Toggle
-        child.visible = layerVisibility[catKey] ?? true
+        const shouldBeVisible = layerVisibility[catKey] ?? true
+        if (child.visible !== shouldBeVisible) {
+          child.visible = shouldBeVisible
+        }
 
         // 2. Material Opacity & X-Ray Management
         if (child.material) {
@@ -287,18 +307,31 @@ function GltfModel({
 
           if (isStructuralOrArch) {
             // Drop opacity according to the X-Ray slider
-            const alpha = xRayOpacity / 100
-            child.material.transparent = alpha < 0.99
-            child.material.opacity = Math.max(0.04, alpha)
-            child.material.depthWrite = alpha > 0.4
+            if (child.material.transparent !== newTransparent) {
+              child.material.transparent = newTransparent
+              child.material.needsUpdate = true
+            }
+            if (child.material.opacity !== clampedOpacity) {
+              child.material.opacity = clampedOpacity
+            }
+            if (child.material.depthWrite !== newDepthWrite) {
+              child.material.depthWrite = newDepthWrite
+            }
           } else {
             // MEP (Elektrik & Mekanik): Always 100% opaque!
-            child.material.transparent = false
-            child.material.opacity = 1.0
-            child.material.depthWrite = true
+            if (child.material.transparent !== false) {
+              child.material.transparent = false
+              child.material.needsUpdate = true
+            }
+            if (child.material.opacity !== 1.0) {
+              child.material.opacity = 1.0
+            }
+            if (child.material.depthWrite !== true) {
+              child.material.depthWrite = true
+            }
 
             // Glowing emissive effect when X-Ray is turned on so pipes shine through walls!
-            if (xRayOpacity < 70) {
+            if (isXRayActive) {
               const glowColor = catKey === "elektrik" ? new THREE.Color(0xfacc15) : new THREE.Color(0x06b6d4)
               child.material.emissive = glowColor
               child.material.emissiveIntensity = 0.4
@@ -307,16 +340,10 @@ function GltfModel({
               child.material.emissiveIntensity = 0
             }
           }
-
-          child.material.needsUpdate = true
         }
       }
     })
-
-    if (onElementCounts) {
-      onElementCounts(counts)
-    }
-  }, [scene, layerVisibility, xRayOpacity, onElementCounts])
+  }, [scene, layerVisibility, xRayOpacity])
 
   useEffect(() => {
     return () => {
@@ -376,46 +403,67 @@ function IfcCanvasModel({
   }) as any
 
   useEffect(() => {
-    if (ifcModel) {
-      ifcModel.traverse((child: any) => {
-        if (child.isMesh && child.material) {
-          child.castShadow = true
-          child.receiveShadow = true
+    if (!ifcModel) return
 
-          const catKey = identifyCategory(child)
-          child.visible = layerVisibility[catKey] ?? true
+    const alpha = xRayOpacity / 100
+    const newTransparent = alpha < 0.99
+    const newDepthWrite = alpha > 0.4
+    const clampedOpacity = Math.max(0.04, alpha)
+    const isXRayActive = xRayOpacity < 70
 
-          const alpha = xRayOpacity / 100
-          const isArchOrStructural = catKey === "statik" || catKey === "mimari"
+    ifcModel.traverse((child: any) => {
+      if (child.isMesh && child.material) {
+        child.castShadow = true
+        child.receiveShadow = true
 
-          const applyMat = (mat: any) => {
-            if (isArchOrStructural) {
-              mat.transparent = alpha < 0.99
-              mat.opacity = Math.max(0.04, alpha)
-              mat.depthWrite = alpha > 0.4
-            } else {
-              mat.transparent = false
-              mat.opacity = 1.0
-              mat.depthWrite = true
-              if (xRayOpacity < 70) {
-                mat.emissive = new THREE.Color(catKey === "elektrik" ? 0xfacc15 : 0x06b6d4)
-                mat.emissiveIntensity = 0.4
-              } else {
-                mat.emissive = new THREE.Color(0x000000)
-                mat.emissiveIntensity = 0
-              }
+        const catKey = identifyCategory(child)
+        const shouldBeVisible = layerVisibility[catKey] ?? true
+        if (child.visible !== shouldBeVisible) {
+          child.visible = shouldBeVisible
+        }
+
+        const isArchOrStructural = catKey === "statik" || catKey === "mimari"
+
+        const applyMat = (mat: any) => {
+          if (isArchOrStructural) {
+            if (mat.transparent !== newTransparent) {
+              mat.transparent = newTransparent
+              mat.needsUpdate = true
             }
-            mat.needsUpdate = true
-          }
-
-          if (Array.isArray(child.material)) {
-            child.material.forEach(applyMat)
+            if (mat.opacity !== clampedOpacity) {
+              mat.opacity = clampedOpacity
+            }
+            if (mat.depthWrite !== newDepthWrite) {
+              mat.depthWrite = newDepthWrite
+            }
           } else {
-            applyMat(child.material)
+            if (mat.transparent !== false) {
+              mat.transparent = false
+              mat.needsUpdate = true
+            }
+            if (mat.opacity !== 1.0) {
+              mat.opacity = 1.0
+            }
+            if (mat.depthWrite !== true) {
+              mat.depthWrite = true
+            }
+            if (isXRayActive) {
+              mat.emissive = new THREE.Color(catKey === "elektrik" ? 0xfacc15 : 0x06b6d4)
+              mat.emissiveIntensity = 0.4
+            } else {
+              mat.emissive = new THREE.Color(0x000000)
+              mat.emissiveIntensity = 0
+            }
           }
         }
-      })
-    }
+
+        if (Array.isArray(child.material)) {
+          child.material.forEach(applyMat)
+        } else {
+          applyMat(child.material)
+        }
+      }
+    })
   }, [ifcModel, layerVisibility, xRayOpacity])
 
   return <primitive object={ifcModel as any} />
@@ -540,7 +588,8 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   }, [activeModelUrl])
 
   // --- X-RAY & LAYER FILTERING STATES ---
-  const [xRayOpacity, setXRayOpacity] = useState(100) // 0 to 100 range slider
+  const [uiOpacity, setUiOpacity] = useState(100) // Sadece Slider UI için (Hafif)
+  const [xRayOpacity, setXRayOpacity] = useState(100) // 3D Render için (Ağır)
   const [layerVisibility, setLayerVisibility] = useState<Record<BimCategoryKey, boolean>>({
     statik: true,
     mimari: true,
@@ -595,44 +644,62 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
     loadIssues()
   }, [projectId])
 
-  // Update IFC Subsets / Meshes for Visibility and Opacity
+  // Update IFC Subsets / Meshes for Visibility and Opacity (Zero redundant needsUpdate)
   const applyIfcSubsetsState = (
     subsets: Record<string, any>,
     visibility: Record<BimCategoryKey, boolean>,
     opacityValue: number
   ) => {
     const scene = ifcViewerRef.current?.context?.getScene()
+    const alpha = opacityValue / 100
+    const newTransparent = alpha < 0.99
+    const newDepthWrite = alpha > 0.4
+    const clampedOpacity = Math.max(0.04, alpha)
+    const isXRayActive = opacityValue < 70
 
     BIM_CATEGORIES.forEach((cat) => {
       const subset = subsets[cat.key]
       if (!subset) return
 
       const isVisible = visibility[cat.key] ?? true
-      subset.visible = isVisible
+      if (subset.visible !== isVisible) {
+        subset.visible = isVisible
+      }
 
       if (subset.material) {
         if (cat.isStructuralOrArchitectural) {
           // Drop opacity for Statik & Mimari
-          const alpha = opacityValue / 100
-          subset.material.transparent = alpha < 0.99
-          subset.material.opacity = Math.max(0.04, alpha)
-          subset.material.depthWrite = alpha > 0.4
-          subset.material.needsUpdate = true
+          if (subset.material.transparent !== newTransparent) {
+            subset.material.transparent = newTransparent
+            subset.material.needsUpdate = true
+          }
+          if (subset.material.opacity !== clampedOpacity) {
+            subset.material.opacity = clampedOpacity
+          }
+          if (subset.material.depthWrite !== newDepthWrite) {
+            subset.material.depthWrite = newDepthWrite
+          }
         } else {
           // MEP (Elektrik & Mekanik): Always 100% opaque!
-          subset.material.transparent = false
-          subset.material.opacity = 1.0
-          subset.material.depthWrite = true
+          if (subset.material.transparent !== false) {
+            subset.material.transparent = false
+            subset.material.needsUpdate = true
+          }
+          if (subset.material.opacity !== 1.0) {
+            subset.material.opacity = 1.0
+          }
+          if (subset.material.depthWrite !== true) {
+            subset.material.depthWrite = true
+          }
 
           // Emissive glow highlight when X-Ray is active
-          if (opacityValue < 70) {
+          if (isXRayActive) {
             subset.material.emissive = new THREE.Color(cat.color)
             subset.material.emissiveIntensity = 0.5
           } else {
             subset.material.emissive = new THREE.Color(0x000000)
             subset.material.emissiveIntensity = 0
           }
-          subset.material.needsUpdate = true
         }
       }
     })
@@ -640,20 +707,22 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
     // Other / remainder subset
     const otherSubset = subsets["other"]
     if (otherSubset && otherSubset.material) {
-      const alpha = opacityValue / 100
-      otherSubset.material.transparent = alpha < 0.99
-      otherSubset.material.opacity = Math.max(0.04, alpha)
-      otherSubset.material.needsUpdate = true
+      if (otherSubset.material.transparent !== newTransparent) {
+        otherSubset.material.transparent = newTransparent
+        otherSubset.material.needsUpdate = true
+      }
+      otherSubset.material.opacity = clampedOpacity
     }
 
     // Fallback: If no subsets exist, directly apply to composite model
     if (Object.keys(subsets).length === 0 && scene) {
       scene.traverse((child: any) => {
         if (child.isMesh && child.material) {
-          const alpha = opacityValue / 100
-          child.material.transparent = alpha < 0.99
+          if (child.material.transparent !== newTransparent) {
+            child.material.transparent = newTransparent
+            child.material.needsUpdate = true
+          }
           child.material.opacity = Math.max(0.05, alpha)
-          child.material.needsUpdate = true
         }
       })
     }
@@ -830,12 +899,18 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
     return () => {
       isDisposed = true
       ifcSubsetsRef.current = {}
-      if (viewer) {
+      const activeViewer = viewer || ifcViewerRef.current
+      if (activeViewer) {
         try {
-          viewer.dispose()
+          activeViewer.dispose()
         } catch (e) {
-          console.warn("IFC dispose:", e)
+          console.warn("IFC dispose error:", e)
         }
+        ifcViewerRef.current = null
+      }
+      loadedIfcModelRef.current = null
+      if (ifcContainerRef.current) {
+        ifcContainerRef.current.innerHTML = ""
       }
     }
   }, [engineMode, activeModelUrl, fileName])
@@ -872,6 +947,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
       elektrik: true,
       mekanik: true,
     })
+    setUiOpacity(100)
     setXRayOpacity(100)
   }
 
@@ -934,7 +1010,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
             <span className="text-base animate-pulse">🩻</span>
             <span>Katmanlar & X-Ray</span>
             <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-              %{xRayOpacity}
+              %{uiOpacity}
             </span>
             <div className="flex items-center gap-1 ml-1">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
@@ -983,14 +1059,14 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                   </div>
                   <span
                     className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border ${
-                      xRayOpacity < 30
+                      uiOpacity < 30
                         ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.4)]"
-                        : xRayOpacity < 80
+                        : uiOpacity < 80
                         ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
                         : "bg-slate-800 text-slate-300 border-slate-700"
                     }`}
                   >
-                    %{xRayOpacity}
+                    %{uiOpacity}
                   </span>
                 </div>
 
@@ -1001,8 +1077,10 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                     min="0"
                     max="100"
                     step="1"
-                    value={xRayOpacity}
-                    onChange={(e) => setXRayOpacity(parseInt(e.target.value, 10))}
+                    value={uiOpacity}
+                    onChange={(e) => setUiOpacity(parseInt(e.target.value, 10))} // Sadece UI değişir, sahne renderlanmaz
+                    onPointerUp={() => setXRayOpacity(uiOpacity)} // ZORUNLU: Fare/Parmağı çekince 3D model TEK SEFERDE güncellenir!
+                    onTouchEnd={() => setXRayOpacity(uiOpacity)}
                     className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 hover:accent-cyan-300 transition-all"
                   />
                   <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
@@ -1022,9 +1100,12 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                 <div className="grid grid-cols-4 gap-1.5 mt-2.5">
                   <button
                     type="button"
-                    onClick={() => setXRayOpacity(15)}
+                    onClick={() => {
+                      setUiOpacity(15)
+                      setXRayOpacity(15)
+                    }}
                     className={`py-1 px-1.5 rounded text-[10px] font-semibold transition-all text-center border ${
-                      xRayOpacity === 15
+                      uiOpacity === 15
                         ? "bg-cyan-500/30 text-cyan-200 border-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.3)]"
                         : "bg-slate-850 hover:bg-slate-800 text-slate-400 border-slate-700"
                     }`}
@@ -1033,9 +1114,12 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                   </button>
                   <button
                     type="button"
-                    onClick={() => setXRayOpacity(40)}
+                    onClick={() => {
+                      setUiOpacity(40)
+                      setXRayOpacity(40)
+                    }}
                     className={`py-1 px-1.5 rounded text-[10px] font-semibold transition-all text-center border ${
-                      xRayOpacity === 40
+                      uiOpacity === 40
                         ? "bg-blue-500/30 text-blue-200 border-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.3)]"
                         : "bg-slate-850 hover:bg-slate-800 text-slate-400 border-slate-700"
                     }`}
@@ -1044,9 +1128,12 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                   </button>
                   <button
                     type="button"
-                    onClick={() => setXRayOpacity(100)}
+                    onClick={() => {
+                      setUiOpacity(100)
+                      setXRayOpacity(100)
+                    }}
                     className={`py-1 px-1.5 rounded text-[10px] font-semibold transition-all text-center border ${
-                      xRayOpacity === 100
+                      uiOpacity === 100
                         ? "bg-emerald-500/30 text-emerald-200 border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
                         : "bg-slate-850 hover:bg-slate-800 text-slate-400 border-slate-700"
                     }`}
