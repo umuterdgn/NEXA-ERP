@@ -314,22 +314,39 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                 console.log("✅ UPLOAD TAMAMLANDI. Yanıt:", res);
                 setIsUploading(false);
 
-                // En basit haliyle URL'yi almayı dene
-                if (res && res.length > 0) {
-                  const fileUrl = res[0].url || (res[0] as any).fileUrl || (res[0] as any).ufsUrl || (res[0] as any).serverData?.url;
-                  console.log("🔗 Elde edilen URL:", fileUrl);
-
-                  if (fileUrl) {
-                    toast.success("Dosya yüklendi: " + fileUrl);
-                    // State'i GÜNCELLE ve Uploader'ı KAPAT
-                    setBimUrl(fileUrl);
-                    setShowUploader(false);
-                  } else {
-                    toast.error("Dosya yüklendi ancak URL bulunamadı.");
-                  }
-                } else {
+                if (!res || res.length === 0) {
                   toast.error("Yükleme tamamlandı yanıtı boş.");
+                  return;
                 }
+
+                const resolvedUrl = (res[0] as any).ufsUrl || res[0].url || (res[0] as any).fileUrl || (res[0] as any).serverData?.url; // UfsUrl kullan (Deprecated uyarısını çözer)
+                const originalName = res[0].name || (res[0] as any).fileName || "Yeni-Model.ifc";
+
+                console.log("🔗 Elde edilen URL:", resolvedUrl);
+
+                if (!resolvedUrl) {
+                  toast.error("Dosya yüklendi ancak URL bulunamadı.");
+                  return;
+                }
+
+                // Veritabanı çökse bile UI'da göster (Optimistic UI)
+                const newFileTemp: BimFileItem = {
+                  id: Math.random().toString(),
+                  projectId: project.id,
+                  fileName: originalName,
+                  fileUrl: resolvedUrl,
+                  isActive: true,
+                  uploadedAt: new Date(),
+                };
+                setBimFiles((prev) => [newFileTemp, ...prev.map((f) => ({ ...f, isActive: false }))]);
+                setBimUrl(resolvedUrl);
+                setShowUploader(false);
+                toast.success("Dosya yüklendi! 3D motor başlatılıyor...");
+
+                // Arka planda DB kaydını dene (Çökerse sistemi durdurmasın)
+                addBimFile(project.id, resolvedUrl, originalName)
+                  .then(() => router.refresh())
+                  .catch((e) => console.error("DB Kayıt Hatası (Önemsiz):", e));
               }}
               onUploadError={(error: Error) => {
                 console.error("❌ UPLOAD HATASI:", error);

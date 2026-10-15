@@ -505,6 +505,39 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   const [engineMode, setEngineMode] = useState<"canvas" | "ifc">("canvas")
   const [autoRotate, setAutoRotate] = useState(false)
   const [activeModelUrl, setActiveModelUrl] = useState(effectiveUrl)
+  const [safeUrl, setSafeUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!activeModelUrl) {
+      setSafeUrl(null)
+      return
+    }
+
+    let currentBlobUrl: string | null = null
+
+    // Sadece dış bağlantılarda (utfs.io vb) CORS aşımı için Blob kullan
+    if (activeModelUrl.startsWith("http")) {
+      fetch(activeModelUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob)
+          currentBlobUrl = blobUrl
+          setSafeUrl(blobUrl)
+        })
+        .catch((err) => {
+          console.error("CORS Blob Fetch Error:", err)
+          setSafeUrl(activeModelUrl) // Fallback
+        })
+    } else {
+      setSafeUrl(activeModelUrl)
+    }
+
+    return () => {
+      if (currentBlobUrl && currentBlobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(currentBlobUrl)
+      }
+    }
+  }, [activeModelUrl])
 
   // --- X-RAY & LAYER FILTERING STATES ---
   const [xRayOpacity, setXRayOpacity] = useState(100) // 0 to 100 range slider
@@ -1178,7 +1211,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
             )}
           >
             <Canvas
-              key={activeModelUrl}
+              key={safeUrl || activeModelUrl}
               camera={{ far: 20000, near: 0.1, fov: 45, position: [35, 30, 35] }}
               gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance", antialias: true }}
             >
@@ -1201,15 +1234,15 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
               <Suspense fallback={<CanvasLoader />}>
                 <Bounds clip fit margin={1.2} observe>
                   <Center>
-                    {!activeModelUrl || activeModelUrl.trim() === "" ? null : isIfcUrlOrFile(activeModelUrl, fileName) ? (
+                    {!safeUrl || safeUrl.trim() === "" ? null : isIfcUrlOrFile(activeModelUrl, fileName) ? (
                       <IfcCanvasModel
-                        url={activeModelUrl}
+                        url={safeUrl}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                       />
                     ) : (
                       <GltfModel
-                        url={activeModelUrl}
+                        url={safeUrl}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                         onElementCounts={(counts) => setCategoryCounts(counts)}
