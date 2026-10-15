@@ -553,6 +553,20 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   const [autoRotate, setAutoRotate] = useState(false)
   const [activeModelUrl, setActiveModelUrl] = useState(effectiveUrl)
   const [safeUrl, setSafeUrl] = useState<string | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Trigger resize event so Canvas and IFC viewer instantly adapt to fullscreen toggle
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event("resize"))
+      if (ifcViewerRef.current?.context?.resize) {
+        try {
+          ifcViewerRef.current.context.resize()
+        } catch {}
+      }
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [isFullscreen])
 
   useEffect(() => {
     if (!activeModelUrl) {
@@ -752,128 +766,136 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
         // BU SATIR HAYATİDİR: Browser WebAssembly (WASM) dosyasını doğrudan ve hatasız indirir
         try {
-          await viewer.IFC.setWasmPath("/wasm/") // LOCAL PATH KULLAN!
+          await viewer.IFC.setWasmPath("https://cdn.jsdelivr.net/npm/web-ifc@0.0.36/")
         } catch (wasmErr) {
-          console.warn("WASM local path error, trying fallback:", wasmErr)
+          console.warn("WASM path error:", wasmErr)
         }
 
         if (activeModelUrl) {
-          let loadedModel: any = null
           try {
-            // First try direct URL
-            loadedModel = await viewer.IFC.loadIfcUrl(activeModelUrl, true)
-          } catch (directErr) {
-            console.warn("Direct loadIfcUrl failed, trying blob fetch fallback:", directErr)
+            console.log("IFC İndiriliyor (Blob Fetch)... URL:", activeModelUrl)
+            setIfcLoading(true)
+
+            // 1. ZORUNLU İNDİRME (CORS Aşımı)
             const res = await fetch(activeModelUrl)
-            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            if (!res.ok) throw new Error("Dosya indirilemedi (HTTP " + res.status + ")")
+
             const blob = await res.blob()
+
+            // 2. Blob'u fiziksel File objesine çevir
             const ifcFile = new File([blob], fileName || "model.ifc", { type: "application/octet-stream" })
-            loadedModel = await viewer.IFC.loadIfc(ifcFile, true)
-          }
 
-          loadedIfcModelRef.current = loadedModel
+            console.log("IFC File oluşturuldu, Parse ediliyor...")
+            // 3. URL yerine doğrudan File okut!
+            const loadedModel = await viewer.IFC.loadIfc(ifcFile, true)
+            loadedIfcModelRef.current = loadedModel
 
-          // Fit camera to model
-          if (loadedModel && viewer?.context?.ifcCamera?.cameraControls) {
-            await viewer.context.ifcCamera.cameraControls.fitToBox(loadedModel, true)
-          }
-
-          // --- EXTRACT CATEGORIES & CREATE GEOMETRIC SUBSETS ---
-          if (loadedModel && !isDisposed) {
-            const modelID = loadedModel.modelID ?? 0
-            const scene = viewer.context.getScene()
-            const createdSubsets: Record<string, any> = {}
-            const counts: Record<BimCategoryKey, number> = { statik: 0, mimari: 0, elektrik: 0, mekanik: 0 }
-            const categorizedIds = new Set<number>()
-
-            for (const cat of BIM_CATEGORIES) {
-              const ids: number[] = []
-              for (const type of cat.ifcTypes) {
-                try {
-                  const items = await viewer.IFC.loader.ifcManager.getAllItemsOfType(modelID, type, false)
-                  if (items && Array.isArray(items)) {
-                    ids.push(...items)
-                  }
-                } catch {
-                  // Type not defined in schema
-                }
-              }
-
-              const uniqueIds = Array.from(new Set(ids))
-              counts[cat.key] = uniqueIds.length
-              uniqueIds.forEach((id) => categorizedIds.add(id))
-
-              if (uniqueIds.length > 0) {
-                try {
-                  // Dedicated high-quality material for each category
-                  const mat = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(cat.color),
-                    roughness: cat.isStructuralOrArchitectural ? 0.6 : 0.25,
-                    metalness: cat.isStructuralOrArchitectural ? 0.1 : 0.6,
-                    side: THREE.DoubleSide,
-                  })
-
-                  const subset = viewer.IFC.loader.ifcManager.createSubset({
-                    modelID,
-                    scene,
-                    ids: uniqueIds,
-                    removePrevious: true,
-                    customID: cat.key,
-                    material: mat,
-                  })
-
-                  if (subset) {
-                    createdSubsets[cat.key] = subset
-                  }
-                } catch (subsetErr) {
-                  console.warn(`Failed to create subset for category ${cat.key}:`, subsetErr)
-                }
-              }
+            if (loadedModel && viewer?.context?.ifcCamera?.cameraControls) {
+              await viewer.context.ifcCamera.cameraControls.fitToBox(loadedModel, true)
             }
 
-            // If we successfully generated subsets for categories:
-            if (Object.keys(createdSubsets).length > 0) {
-              // Hide base composite mesh so only clean subsets are rendered
-              loadedModel.visible = false
+            // --- EXTRACT CATEGORIES & CREATE GEOMETRIC SUBSETS ---
+            if (loadedModel && !isDisposed) {
+              const modelID = loadedModel.modelID ?? 0
+              const scene = viewer.context.getScene()
+              const createdSubsets: Record<string, any> = {}
+              const counts: Record<BimCategoryKey, number> = { statik: 0, mimari: 0, elektrik: 0, mekanik: 0 }
+              const categorizedIds = new Set<number>()
 
-              // Handle remaining uncategorized items (e.g. site, spaces, fixtures)
-              try {
-                if (loadedModel.geometry?.attributes?.expressID) {
-                  const allIds = Array.from(
-                    new Set(Array.from(loadedModel.geometry.attributes.expressID.array as number[]))
-                  )
-                  const otherIds = allIds.filter((id) => !categorizedIds.has(id))
-                  if (otherIds.length > 0) {
-                    const otherMat = new THREE.MeshStandardMaterial({
-                      color: new THREE.Color(0x94a3b8),
-                      roughness: 0.5,
-                      metalness: 0.1,
+              for (const cat of BIM_CATEGORIES) {
+                const ids: number[] = []
+                for (const type of cat.ifcTypes) {
+                  try {
+                    const items = await viewer.IFC.loader.ifcManager.getAllItemsOfType(modelID, type, false)
+                    if (items && Array.isArray(items)) {
+                      ids.push(...items)
+                    }
+                  } catch {
+                    // Type not defined in schema
+                  }
+                }
+
+                const uniqueIds = Array.from(new Set(ids))
+                counts[cat.key] = uniqueIds.length
+                uniqueIds.forEach((id) => categorizedIds.add(id))
+
+                if (uniqueIds.length > 0) {
+                  try {
+                    // Dedicated high-quality material for each category
+                    const mat = new THREE.MeshStandardMaterial({
+                      color: new THREE.Color(cat.color),
+                      roughness: cat.isStructuralOrArchitectural ? 0.6 : 0.25,
+                      metalness: cat.isStructuralOrArchitectural ? 0.1 : 0.6,
                       side: THREE.DoubleSide,
                     })
-                    const otherSubset = viewer.IFC.loader.ifcManager.createSubset({
+
+                    const subset = viewer.IFC.loader.ifcManager.createSubset({
                       modelID,
                       scene,
-                      ids: otherIds,
+                      ids: uniqueIds,
                       removePrevious: true,
-                      customID: "other",
-                      material: otherMat,
+                      customID: cat.key,
+                      material: mat,
                     })
-                    if (otherSubset) createdSubsets["other"] = otherSubset
+
+                    if (subset) {
+                      createdSubsets[cat.key] = subset
+                    }
+                  } catch (subsetErr) {
+                    console.warn(`Failed to create subset for category ${cat.key}:`, subsetErr)
                   }
                 }
-              } catch (otherErr) {
-                console.warn("Uncategorized items subset handling:", otherErr)
               }
-            } else {
-              // Fallback to displaying composite model
-              loadedModel.visible = true
+
+              // If we successfully generated subsets for categories:
+              if (Object.keys(createdSubsets).length > 0) {
+                // Hide base composite mesh so only clean subsets are rendered
+                loadedModel.visible = false
+
+                // Handle remaining uncategorized items (e.g. site, spaces, fixtures)
+                try {
+                  if (loadedModel.geometry?.attributes?.expressID) {
+                    const allIds = Array.from(
+                      new Set(Array.from(loadedModel.geometry.attributes.expressID.array as number[]))
+                    )
+                    const otherIds = allIds.filter((id) => !categorizedIds.has(id))
+                    if (otherIds.length > 0) {
+                      const otherMat = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(0x94a3b8),
+                        roughness: 0.5,
+                        metalness: 0.1,
+                        side: THREE.DoubleSide,
+                      })
+                      const otherSubset = viewer.IFC.loader.ifcManager.createSubset({
+                        modelID,
+                        scene,
+                        ids: otherIds,
+                        removePrevious: true,
+                        customID: "other",
+                        material: otherMat,
+                      })
+                      if (otherSubset) createdSubsets["other"] = otherSubset
+                    }
+                  }
+                } catch (otherErr) {
+                  console.warn("Uncategorized items subset handling:", otherErr)
+                }
+              } else {
+                // Fallback to displaying composite model
+                loadedModel.visible = true
+              }
+
+              ifcSubsetsRef.current = createdSubsets
+              setCategoryCounts(counts)
+
+              // Apply active layer visibility & X-ray opacity
+              applyIfcSubsetsState(createdSubsets, layerVisibility, xRayOpacity)
             }
-
-            ifcSubsetsRef.current = createdSubsets
-            setCategoryCounts(counts)
-
-            // Apply active layer visibility & X-ray opacity
-            applyIfcSubsetsState(createdSubsets, layerVisibility, xRayOpacity)
+          } catch (err: any) {
+            console.error("IFC Blob Fetch veya Parse Hatası:", err)
+            if (!isDisposed) {
+              setIfcError("IFC modeli indirilemedi veya okunamadı: " + err.message)
+            }
           }
         }
       } catch (err: any) {
@@ -947,7 +969,11 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
   return (
     <BimViewerErrorBoundary>
-    <div className="relative w-full h-full min-h-[650px] bg-slate-950 rounded-2xl overflow-hidden select-none border border-slate-800 shadow-2xl">
+    <div className={
+      isFullscreen 
+        ? "fixed inset-0 z-[100] bg-slate-950 w-screen h-screen flex flex-col" 
+        : "relative w-full h-full min-h-[650px] bg-slate-950 rounded-2xl overflow-hidden select-none border border-slate-800 shadow-2xl"
+    }>
       {/* Top Left: Engine Switcher & Auto Rotate Toolbar */}
       <div className="absolute top-4 left-4 z-40 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/80 shadow-2xl">
         <button
@@ -976,6 +1002,15 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           }`}
         >
           <span>🏛️ IFC Motoru</span>
+        </button>
+
+        <div className="h-4 w-[1px] bg-slate-700 mx-1" />
+        <button
+          type="button"
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors bg-slate-800 text-white hover:bg-slate-700 border border-slate-600"
+        >
+          {isFullscreen ? "↙️ Küçült" : "🔲 Tam Ekran"}
         </button>
 
         <div className="h-4 w-[1px] bg-slate-700 mx-1" />
@@ -1247,10 +1282,10 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
       {/* Main 3D Viewport */}
       {engineMode === "canvas" ? (
-        <div className="w-full h-full min-h-[650px] cursor-grab active:cursor-grabbing bg-slate-950">
+        <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} cursor-grab active:cursor-grabbing bg-slate-950`}>
           <ModelErrorBoundary
             fallback={(err, reset) => (
-              <div className="w-full h-full min-h-[650px] flex flex-col items-center justify-center p-6 text-center bg-slate-900/90 backdrop-blur-md">
+              <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} flex flex-col items-center justify-center p-6 text-center bg-slate-900/90 backdrop-blur-md`}>
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -1346,9 +1381,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           </ModelErrorBoundary>
         </div>
       ) : (
-        <div className="relative w-full h-full min-h-[650px]">
+        <div className={`relative w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"}`}>
           {/* Web-IFC Viewer Container */}
-          <div ref={ifcContainerRef} className="w-full h-full min-h-[650px] bg-slate-950" />
+          <div ref={ifcContainerRef} className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} bg-slate-950`} />
 
           {ifcLoading && (
             <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-30">
