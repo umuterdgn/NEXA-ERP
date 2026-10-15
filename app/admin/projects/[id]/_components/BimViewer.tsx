@@ -247,11 +247,13 @@ function GltfModel({
   layerVisibility,
   xRayOpacity,
   onElementCounts,
+  onClick,
 }: {
   url: string
   layerVisibility: Record<BimCategoryKey, boolean>
   xRayOpacity: number
   onElementCounts?: (counts: Record<BimCategoryKey, number>) => void
+  onClick?: (e: any) => void
 }) {
   // URL boşsa veya hatalıysa render'ı iptal et
   if (!url || url.trim() === "") return null
@@ -351,7 +353,7 @@ function GltfModel({
     }
   }, [url])
 
-  return <primitive object={scene} />
+  return <primitive object={scene} onClick={onClick} />
 }
 
 // Helper to determine if a URL or filename represents an IFC model
@@ -381,17 +383,19 @@ function IfcCanvasModel({
   url,
   layerVisibility,
   xRayOpacity,
+  onClick,
 }: {
   url: string
   layerVisibility: Record<BimCategoryKey, boolean>
   xRayOpacity: number
+  onClick?: (e: any) => void
 }) {
   // URL boşsa veya hatalıysa render'ı iptal et
   if (!url || url.trim() === "") return null
 
   // BU SATIR KRİTİKTİR, WASM OLMADAN TARAYICI IFC OKUYAMAZ VE SESSİZCE ÇÖKER:
   const ifcModel = useLoader(IFCLoader, url, (loader: any) => {
-    const wasmPath = "/wasm/" // LOCAL PATH KULLAN!
+    const wasmPath = "https://cdn.jsdelivr.net/npm/web-ifc@0.0.36/" // STABİL JSDELIVR CDN
     loader.setWasmPath(wasmPath)
     if (loader.ifcManager?.setWasmPath) {
       loader.ifcManager.setWasmPath(wasmPath)
@@ -465,7 +469,7 @@ function IfcCanvasModel({
     })
   }, [ifcModel, layerVisibility, xRayOpacity])
 
-  return <primitive object={ifcModel as any} />
+  return <primitive object={ifcModel as any} onClick={onClick} />
 }
 
 // Error Boundary for R3F Canvas
@@ -634,7 +638,17 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   const [showIssueForm, setShowIssueForm] = useState(false)
   const [selectedPinPosition, setSelectedPinPosition] = useState<THREE.Vector3 | null>(null)
   const [issueForm, setIssueForm] = useState({ title: "", description: "", imageUrl: "" })
-  const [, setPins] = useState<any[]>([])
+  const [pins, setPins] = useState<any[]>([])
+
+  // 3D Model tıklama (Raycaster) kusur işaretleme dinleyicisi
+  const handleModelClick = (e: any) => {
+    if (!isSnaggingMode) return
+    e.stopPropagation() // Arkadaki objelere tıklamayı engelle
+    const point = e.point // Tıklanan 3D koordinat
+    setSelectedPinPosition(point)
+    setShowIssueForm(true)
+    setIsSnaggingMode(false) // İşaretleme bitince modu kapat
+  }
 
   // Sync activeModelUrl and default to canvas engine when props change
   useEffect(() => {
@@ -778,20 +792,31 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         if (activeModelUrl) {
           try {
             console.log("IFC İndiriliyor (Blob Fetch)... URL:", activeModelUrl)
-            setIfcLoading(true)
 
-            // 1. ZORUNLU İNDİRME (CORS Aşımı)
-            const res = await fetch(activeModelUrl)
-            if (!res.ok) throw new Error("Dosya indirilemedi (HTTP " + res.status + ")")
+            // 12 saniye sonra yüklenmezse iptal et ve hata ver (Sonsuz yükleme kırıcısı)
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(
+                () => reject(new Error("IFC modeli yükleme süresi doldu (12s). 3D Canvas motoruna geçebilirsiniz.")),
+                12000
+              )
+            })
 
-            const blob = await res.blob()
+            const loadPromise = (async () => {
+              // 1. ZORUNLU İNDİRME (CORS Aşımı)
+              const res = await fetch(activeModelUrl)
+              if (!res.ok) throw new Error("Dosya indirilemedi (HTTP " + res.status + ")")
 
-            // 2. Blob'u fiziksel File objesine çevir
-            const ifcFile = new File([blob], fileName || "model.ifc", { type: "application/octet-stream" })
+              const blob = await res.blob()
 
-            console.log("IFC File oluşturuldu, Parse ediliyor...")
-            // 3. URL yerine doğrudan File okut!
-            const loadedModel = await viewer.IFC.loadIfc(ifcFile, true)
+              // 2. Blob'u fiziksel File objesine çevir
+              const ifcFile = new File([blob], fileName || "model.ifc", { type: "application/octet-stream" })
+
+              console.log("IFC File oluşturuldu, Parse ediliyor...")
+              // 3. URL yerine doğrudan File okut!
+              return await viewer.IFC.loadIfc(ifcFile, true)
+            })()
+
+            const loadedModel: any = await Promise.race([loadPromise, timeoutPromise])
             loadedIfcModelRef.current = loadedModel
 
             if (loadedModel && viewer?.context?.ifcCamera?.cameraControls) {
@@ -1286,7 +1311,13 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
       {/* Main 3D Viewport */}
       {engineMode === "canvas" ? (
-        <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} cursor-grab active:cursor-grabbing bg-slate-950`}>
+        <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} ${isSnaggingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} bg-slate-950`}>
+          {/* Snagging Active Banner Hint */}
+          {isSnaggingMode && (
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 bg-red-600/90 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-2xl backdrop-blur-md border border-red-400 flex items-center gap-2 animate-bounce pointer-events-none">
+              <span>📍</span> Model üzerinde kusur noktasını seçmek için tıklayın!
+            </div>
+          )}
           <ModelErrorBoundary
             fallback={(err, reset) => (
               <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} flex flex-col items-center justify-center p-6 text-center bg-slate-900/90 backdrop-blur-md`}>
@@ -1359,6 +1390,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                         url={safeUrl}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
+                        onClick={handleModelClick}
                       />
                     ) : (
                       <GltfModel
@@ -1366,9 +1398,29 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                         onElementCounts={(counts) => setCategoryCounts(counts)}
+                        onClick={handleModelClick}
                       />
                     )}
                   </Center>
+
+                  {/* Pin Markers on 3D Model */}
+                  {pins.map((pin) => (
+                    <mesh key={pin.id} position={[pin.positionX, pin.positionY, pin.positionZ]}>
+                      <sphereGeometry args={[0.3, 16, 16]} />
+                      <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.6} />
+                      <Html distanceFactor={15}>
+                        <div className="bg-red-600/90 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full shadow-lg border border-red-400/50 pointer-events-none whitespace-nowrap font-bold flex items-center gap-1">
+                          <span>📍</span> {pin.title}
+                        </div>
+                      </Html>
+                    </mesh>
+                  ))}
+                  {selectedPinPosition && (
+                    <mesh position={[selectedPinPosition.x, selectedPinPosition.y, selectedPinPosition.z]}>
+                      <sphereGeometry args={[0.35, 16, 16]} />
+                      <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.8} />
+                    </mesh>
+                  )}
                 </Bounds>
               </Suspense>
 
@@ -1446,8 +1498,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           <button
             type="button"
             onClick={() => {
-              const targetUrl = effectiveUrl
-                ? `/ar/${projectId}?url=${encodeURIComponent(effectiveUrl)}`
+              const currentModel = activeModelUrl || effectiveUrl || ""
+              const targetUrl = currentModel
+                ? `/ar/${projectId}?url=${encodeURIComponent(currentModel)}`
                 : `/ar/${projectId}`
               window.open(targetUrl, "_blank")
             }}

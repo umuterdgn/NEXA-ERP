@@ -177,7 +177,8 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   }
 
   const getARUrl = () => {
-    const query = bimUrl ? `?url=${encodeURIComponent(bimUrl)}` : ""
+    const rawUrl = bimUrl || project.bimFiles?.find((f) => f.isActive)?.fileUrl || project.bimModelUrl || project.ifcModelUrl || ""
+    const query = rawUrl ? `?url=${encodeURIComponent(rawUrl)}` : ""
     if (typeof window !== "undefined") {
       return `${window.location.origin}/ar/${project.id}${query}`
     }
@@ -240,7 +241,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           </button>
 
           {/* AR Button */}
-          {bimUrl && (
+          {(bimUrl || project.bimFiles?.length || project.bimModelUrl || project.ifcModelUrl) && (
             <button
               type="button"
               onClick={handleOpenAR}
@@ -596,6 +597,20 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                           <span>👁️ Aç / Göster</span>
                         </>
                       )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetArUrl = `/ar/${project.id}?url=${encodeURIComponent(file.fileUrl)}`
+                        window.open(targetArUrl, "_blank")
+                      }}
+                      className="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-colors border border-cyan-500/30"
+                      title="Bu Modeli AR'da Görüntüle"
+                    >
+                      <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
                     </button>
 
                     <a
