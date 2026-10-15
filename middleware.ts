@@ -31,7 +31,7 @@ export default NextAuth(authConfig).auth((req) => {
   const isVercelDomain = cleanHostname.endsWith(".vercel.app")
   const isCustomDomain = cleanHostname === "nexa-erp.com" || cleanHostname === "www.nexa-erp.com"
 
-  if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST) || isVercelDomain || isCustomDomain) {
+  if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST) || cleanHostname.startsWith("127.0.0.1") || isVercelDomain || isCustomDomain) {
     // Normal auth kontrolüne geç
   } else {
     const url = req.nextUrl.clone()
@@ -78,6 +78,6 @@ export default NextAuth(authConfig).auth((req) => {
 export const config = {
   matcher: [
     // Match all paths except static files, images, and public assets
-    "/((?!_next/static|_next/image|favicon.ico|public|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|eot)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|eot|ifc|wasm|glb|gltf)$).*)",
   ],
 }

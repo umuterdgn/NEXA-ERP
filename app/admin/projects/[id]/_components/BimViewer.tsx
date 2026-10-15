@@ -15,6 +15,18 @@ import * as THREE from "three"
 import * as WebIFC from "web-ifc"
 import { UploadButton } from "@/lib/uploadthing"
 
+// Ensure IFCLoader prototype has setWasmPath method directly for R3F useLoader callback
+if (typeof (IFCLoader as any).prototype?.setWasmPath !== "function") {
+  ;(IFCLoader as any).prototype.setWasmPath = function (path: string) {
+    if (this.ifcManager?.setWasmPath) {
+      this.ifcManager.setWasmPath(path)
+    }
+    if (this.ifcManager?.state?.api?.SetWasmPath) {
+      this.ifcManager.state.api.SetWasmPath(path)
+    }
+  }
+}
+
 // --- CATEGORY TYPES & DEFINITIONS ---
 
 export type BimCategoryKey = "statik" | "mimari" | "elektrik" | "mekanik"
@@ -344,19 +356,20 @@ function IfcCanvasModel({
   layerVisibility: Record<BimCategoryKey, boolean>
   xRayOpacity: number
 }) {
-  const model = useLoader(IFCLoader, url, (loader: any) => {
-    // WASM Yol Ayarı: unpkg CDN üzerinden hatasız WebAssembly çekilir
+  // BU SATIR KRİTİKTİR, WASM OLMADAN TARAYICI IFC OKUYAMAZ VE SESSİZCE ÇÖKER:
+  const ifcModel = useLoader(IFCLoader, url, (loader: any) => {
+    loader.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
     if (loader.ifcManager?.setWasmPath) {
       loader.ifcManager.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
     }
-    if (loader.setWasmPath) {
-      loader.setWasmPath("https://unpkg.com/web-ifc@0.0.36/")
+    if (loader.ifcManager?.state?.api?.SetWasmPath) {
+      loader.ifcManager.state.api.SetWasmPath("https://unpkg.com/web-ifc@0.0.36/")
     }
   }) as any
 
   useEffect(() => {
-    if (model) {
-      model.traverse((child: any) => {
+    if (ifcModel) {
+      ifcModel.traverse((child: any) => {
         if (child.isMesh && child.material) {
           child.castShadow = true
           child.receiveShadow = true
@@ -380,6 +393,7 @@ function IfcCanvasModel({
                 mat.emissive = new THREE.Color(catKey === "elektrik" ? 0xfacc15 : 0x06b6d4)
                 mat.emissiveIntensity = 0.4
               } else {
+                mat.emissive = new THREE.Color(0x000000)
                 mat.emissiveIntensity = 0
               }
             }
@@ -394,9 +408,9 @@ function IfcCanvasModel({
         }
       })
     }
-  }, [model, layerVisibility, xRayOpacity])
+  }, [ifcModel, layerVisibility, xRayOpacity])
 
-  return <primitive object={model as any} />
+  return <primitive object={ifcModel as any} />
 }
 
 // Error Boundary for R3F Canvas
@@ -431,8 +445,8 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   // Determine if file is an IFC file
   const isIfcFile = isIfcUrlOrFile(effectiveUrl, fileName)
 
-  // Engine Mode: 'canvas' (@react-three/fiber) or 'ifc' (web-ifc-viewer)
-  const [engineMode, setEngineMode] = useState<"canvas" | "ifc">(isIfcFile ? "ifc" : "canvas")
+  // Engine Mode: Default to 'canvas' (@react-three/fiber) for fast WebGL rendering of both IFC and GLTF
+  const [engineMode, setEngineMode] = useState<"canvas" | "ifc">("canvas")
   const [autoRotate, setAutoRotate] = useState(false)
   const [activeModelUrl, setActiveModelUrl] = useState(effectiveUrl)
 
@@ -467,12 +481,11 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   const [issueForm, setIssueForm] = useState({ title: "", description: "", imageUrl: "" })
   const [, setPins] = useState<any[]>([])
 
-  // Sync activeModelUrl and auto-detect engine mode when props change
+  // Sync activeModelUrl and default to canvas engine when props change
   useEffect(() => {
     if (effectiveUrl) {
       setActiveModelUrl(effectiveUrl)
-      const isIfc = isIfcUrlOrFile(effectiveUrl, fileName)
-      setEngineMode(isIfc ? "ifc" : "canvas")
+      setEngineMode("canvas")
     }
   }, [effectiveUrl, fileName])
 
@@ -781,9 +794,6 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           type="button"
           onClick={() => {
             setEngineMode("canvas")
-            if (activeModelUrl.toLowerCase().endsWith(".ifc") || activeModelUrl.toLowerCase().includes(".ifc?")) {
-              setActiveModelUrl("/models/bina.glb")
-            }
           }}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
             engineMode === "canvas"
@@ -798,11 +808,6 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           type="button"
           onClick={() => {
             setEngineMode("ifc")
-            if (effectiveUrl.toLowerCase().endsWith(".ifc") || effectiveUrl.toLowerCase().includes(".ifc?")) {
-              setActiveModelUrl(effectiveUrl)
-            } else {
-              setActiveModelUrl("/sample.ifc")
-            }
           }}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
             engineMode === "ifc"

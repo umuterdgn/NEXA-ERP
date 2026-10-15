@@ -5,7 +5,7 @@
  * Interactive 3D BIM Tab Component with Persistent Model Archive & AR Integration
  */
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
@@ -395,14 +395,24 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             </button>
           </div>
 
-          {/* 3D BIM Viewer Engine */}
-          <BimViewer
-            bimUrl={bimUrl}
-            url={bimUrl}
-            ifcUrl={bimUrl}
-            projectId={project.id}
-            fileName={activeBimFile?.fileName}
-          />
+          {/* 3D BIM Viewer Engine wrapped in Suspense */}
+          <Suspense
+            fallback={
+              <div className="w-full h-full min-h-[620px] bg-slate-950 rounded-2xl border border-slate-800 flex flex-col items-center justify-center shadow-2xl">
+                <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mb-3"></div>
+                <p className="text-cyan-400 text-sm font-semibold tracking-wide">3D BIM Modeli Çözümleniyor...</p>
+                <p className="text-slate-500 text-xs mt-1">WebAssembly IFC motoru ve 3D geometri yükleniyor</p>
+              </div>
+            }
+          >
+            <BimViewer
+              bimUrl={bimUrl}
+              url={bimUrl}
+              ifcUrl={bimUrl}
+              projectId={project.id}
+              fileName={activeBimFile?.fileName}
+            />
+          </Suspense>
         </div>
       )}
 

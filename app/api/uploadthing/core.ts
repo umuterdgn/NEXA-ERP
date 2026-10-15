@@ -20,9 +20,9 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Upload complete for userId:", metadata.userId)
-      console.log("file url", file.url)
-      // BU RETURN SATIRI EKSİKSE EKLENMELİDİR!
-      return { uploadedBy: metadata.userId, url: file.url, key: file.key }
+      const fileUrl = file.url || (file as any).ufsUrl || `https://utfs.io/f/${file.key}`
+      console.log("file url", fileUrl)
+      return { uploadedBy: metadata.userId, url: fileUrl, key: file.key }
     }),
 
   // Drone Video Uploader - Video files, max 256MB

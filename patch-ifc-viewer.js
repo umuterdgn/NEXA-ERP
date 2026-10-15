@@ -45,6 +45,7 @@ function patchFile(filePath) {
   
   // Replace mergeBufferGeometries with mergeGeometries
   content = content.replace(/mergeBufferGeometries/g, 'mergeGeometries');
+  content = content.replace(/from ['"]three\/examples\/jsm\/utils\/BufferGeometryUtils['"]/g, "from 'three/examples/jsm/utils/BufferGeometryUtils.js'");
   
   if (content !== originalContent) {
     fs.writeFileSync(filePath, content, 'utf8');
