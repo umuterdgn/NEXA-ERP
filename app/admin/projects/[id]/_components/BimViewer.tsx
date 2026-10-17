@@ -8,12 +8,13 @@
 
 import React, { useEffect, useRef, useState, Suspense, Component, type ReactNode } from "react"
 import { Canvas, useLoader } from "@react-three/fiber"
-import { OrbitControls, useGLTF, Environment, Center, Bounds, Html, useProgress, Grid } from "@react-three/drei"
+import { OrbitControls, useGLTF, Environment, Center, Bounds, Html, useProgress, Grid, Line } from "@react-three/drei"
 import { IfcViewerAPI } from "web-ifc-viewer"
 import { IFCLoader } from "web-ifc-three/IFCLoader"
 import * as THREE from "three"
 import * as WebIFC from "web-ifc"
 import { UploadButton } from "@/lib/uploadthing"
+import { toast } from "react-hot-toast"
 
 // Ensure IFCLoader prototype has setWasmPath method directly for R3F useLoader callback
 if (typeof (IFCLoader as any).prototype?.setWasmPath !== "function") {
@@ -248,12 +249,14 @@ function GltfModel({
   xRayOpacity,
   onElementCounts,
   onClick,
+  onPointerDown,
 }: {
   url: string
   layerVisibility: Record<BimCategoryKey, boolean>
   xRayOpacity: number
   onElementCounts?: (counts: Record<BimCategoryKey, number>) => void
   onClick?: (e: any) => void
+  onPointerDown?: (e: any) => void
 }) {
   // URL boşsa veya hatalıysa render'ı iptal et
   if (!url || url.trim() === "") return null
@@ -353,7 +356,7 @@ function GltfModel({
     }
   }, [url])
 
-  return <primitive object={scene} onClick={onClick} />
+  return <primitive object={scene} onClick={onClick} onPointerDown={onPointerDown} />
 }
 
 // Helper to determine if a URL or filename represents an IFC model
@@ -384,11 +387,13 @@ function IfcCanvasModel({
   layerVisibility,
   xRayOpacity,
   onClick,
+  onPointerDown,
 }: {
   url: string
   layerVisibility: Record<BimCategoryKey, boolean>
   xRayOpacity: number
   onClick?: (e: any) => void
+  onPointerDown?: (e: any) => void
 }) {
   // URL boşsa veya hatalıysa render'ı iptal et
   if (!url || url.trim() === "") return null
@@ -469,7 +474,7 @@ function IfcCanvasModel({
     })
   }, [ifcModel, layerVisibility, xRayOpacity])
 
-  return <primitive object={ifcModel as any} onClick={onClick} />
+  return <primitive object={ifcModel as any} onClick={onClick} onPointerDown={onPointerDown} />
 }
 
 // Error Boundary for R3F Canvas
@@ -633,21 +638,204 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   const [ifcLoading, setIfcLoading] = useState(false)
   const [ifcError, setIfcError] = useState<string | null>(null)
 
+  // Measurement (3D Lazer Metre) states
+  const [isMeasureMode, setIsMeasureMode] = useState(false)
+  const [measurePoints, setMeasurePoints] = useState<THREE.Vector3[]>([])
+  const [measuredDistance, setMeasuredDistance] = useState<number | null>(null)
+  const [selectedElementMetrics, setSelectedElementMetrics] = useState<{
+    name: string
+    category: string
+    width: string
+    height: string
+    depth: string
+    volume: string
+  } | null>(null)
+
   // Snagging (Kusur İşaretleme) states
   const [isSnaggingMode, setIsSnaggingMode] = useState(false)
   const [showIssueForm, setShowIssueForm] = useState(false)
   const [selectedPinPosition, setSelectedPinPosition] = useState<THREE.Vector3 | null>(null)
-  const [issueForm, setIssueForm] = useState({ title: "", description: "", imageUrl: "" })
+  const [issueForm, setIssueForm] = useState({
+    title: "",
+    description: "",
+    imageUrl: "",
+    subcontractorName: "Kaba Yapı & Betonarme Taşeronu",
+    severity: "CRITICAL",
+    blockPayment: true,
+    penaltyAmount: "",
+  })
   const [pins, setPins] = useState<any[]>([])
 
-  // 3D Model tıklama (Raycaster) kusur işaretleme dinleyicisi
+  const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null)
+  const highlightedMeshRef = useRef<{
+    mesh: THREE.Mesh
+    origEmissive: THREE.Color
+    origIntensity: number
+  } | null>(null)
+
+  const restorePreviousHighlight = () => {
+    if (highlightedMeshRef.current) {
+      const { mesh, origEmissive, origIntensity } = highlightedMeshRef.current
+      if (mesh && mesh.material) {
+        const applyRestore = (mat: any) => {
+          if (mat.emissive) mat.emissive.copy(origEmissive)
+          if (mat.emissiveIntensity !== undefined) mat.emissiveIntensity = origIntensity
+        }
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(applyRestore)
+        } else {
+          applyRestore(mesh.material)
+        }
+      }
+      highlightedMeshRef.current = null
+    }
+  }
+
+  // 3D Model tıklama (Raycaster) dinleyicisi - Kusur İşaretleme & Lazer Metre
   const handleModelClick = (e: any) => {
+    // Mobilde kamera döndürme (drag) ile tıklamayı (tap) ayırmak için mesafe kontrolü (< 5px)
+    if (pointerDownPosRef.current) {
+      const clientX = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+      const clientY = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+      const distance = Math.hypot(clientX - pointerDownPosRef.current.x, clientY - pointerDownPosRef.current.y)
+      if (distance >= 5) {
+        return // Kamera döndürülüyordu, seçimi tetikleme
+      }
+    }
+
+    // 1. ÖLÇÜM (MEASUREMENT) MODU
+    if (isMeasureMode) {
+      e.stopPropagation()
+      const point = e.point as THREE.Vector3
+
+      // Tıklanan objenin gerçek boyutlarını ve yaklaşık hacmini hesapla
+      if (e.object) {
+        try {
+          const bbox = new THREE.Box3().setFromObject(e.object)
+          const size = new THREE.Vector3()
+          bbox.getSize(size)
+          const width = size.x.toFixed(2)
+          const height = size.y.toFixed(2)
+          const depth = size.z.toFixed(2)
+          const volume = (size.x * size.y * size.z).toFixed(3)
+          const catKey = identifyCategory(e.object)
+          const categoryLabel =
+            catKey === "statik"
+              ? "Statik / Taşıyıcı"
+              : catKey === "mimari"
+              ? "Mimari"
+              : catKey === "elektrik"
+              ? "Elektrik"
+              : "Mekanik"
+
+          setSelectedElementMetrics({
+            name: e.object.name || "BIM Elemanı",
+            category: categoryLabel,
+            width: `${width} m`,
+            height: `${height} m`,
+            depth: `${depth} m`,
+            volume: `${volume} m³`,
+          })
+        } catch (err) {
+          console.warn("Could not calculate element bbox:", err)
+        }
+      }
+
+      // Nokta ekleme ve mesafe hesaplama
+      setMeasurePoints((prev) => {
+        if (prev.length === 0) {
+          setMeasuredDistance(null)
+          return [point]
+        } else if (prev.length === 1) {
+          const dist = prev[0].distanceTo(point)
+          setMeasuredDistance(dist)
+          return [prev[0], point]
+        } else {
+          // 3. tıklamada yeni ölçüm için noktaları sıfırla
+          setMeasuredDistance(null)
+          return [point]
+        }
+      })
+      return
+    }
+
+    // 2. KUSUR İŞARETLEME (SNAGGING) MODU
     if (!isSnaggingMode) return
-    e.stopPropagation() // Arkadaki objelere tıklamayı engelle
-    const point = e.point // Tıklanan 3D koordinat
+    e.stopPropagation()
+    const point = e.point
     setSelectedPinPosition(point)
+
+    // Tıklanan 3D elemanı algıla, parlak kırmızı (0xef4444 emissive glow) yap
+    const clickedMesh = (e.object?.isMesh ? e.object : null) as THREE.Mesh | null
+    if (clickedMesh && clickedMesh.material) {
+      restorePreviousHighlight()
+      if (!clickedMesh.userData?.isClonedForHighlight) {
+        if (Array.isArray(clickedMesh.material)) {
+          clickedMesh.material = clickedMesh.material.map((m) => m.clone())
+        } else {
+          clickedMesh.material = clickedMesh.material.clone()
+        }
+        clickedMesh.userData.isClonedForHighlight = true
+      }
+      const targetMat = (Array.isArray(clickedMesh.material) ? clickedMesh.material[0] : clickedMesh.material) as any
+      const origEmissive = targetMat.emissive ? targetMat.emissive.clone() : new THREE.Color(0x000000)
+      const origIntensity = targetMat.emissiveIntensity ?? 0
+      highlightedMeshRef.current = {
+        mesh: clickedMesh,
+        origEmissive,
+        origIntensity,
+      }
+
+      const applyHighlight = (m: any) => {
+        m.emissive = new THREE.Color(0xef4444)
+        m.emissiveIntensity = 0.9
+      }
+      if (Array.isArray(clickedMesh.material)) {
+        clickedMesh.material.forEach(applyHighlight)
+      } else {
+        applyHighlight(clickedMesh.material)
+      }
+    }
+
+    // Eleman kategorisi ve taşeron önerisi
+    const catKey = identifyCategory(e.object)
+    let categoryName = "Statik Eleman"
+    let subDesc = "Kolon/Döşeme Kusuru"
+    let defaultSubcontractor = "Kaba Yapı & Betonarme Taşeronu"
+    const name = (e.object?.name || "").toLowerCase()
+    if (catKey === "statik") {
+      categoryName = "Statik Eleman"
+      defaultSubcontractor = "Kaba Yapı & Betonarme Taşeronu"
+      if (name.includes("column") || name.includes("kolon")) subDesc = "Kolon Kusuru"
+      else if (name.includes("beam") || name.includes("kiriş") || name.includes("kiris")) subDesc = "Kiriş Kusuru"
+      else if (name.includes("slab") || name.includes("döşeme") || name.includes("doseme")) subDesc = "Döşeme Kusuru"
+      else subDesc = "Kolon/Döşeme Kusuru"
+    } else if (catKey === "mimari") {
+      categoryName = "Mimari Eleman"
+      subDesc = "Duvar/Yüzey Kusuru"
+      defaultSubcontractor = "İnce İşler & Duvar Taşeronu"
+    } else if (catKey === "elektrik") {
+      categoryName = "Elektrik Donatısı"
+      subDesc = "Kablo Kanalı/Pano Kusuru"
+      defaultSubcontractor = "Elektrik Taşeronu"
+    } else if (catKey === "mekanik") {
+      categoryName = "Mekanik Tesisat"
+      subDesc = "Boru/Kanal/Vana Kusuru"
+      defaultSubcontractor = "Mekanik Tesisat Taşeronu"
+    }
+
+    setIssueForm({
+      title: `[${categoryName}] - ${subDesc}`,
+      description: "",
+      imageUrl: "",
+      subcontractorName: defaultSubcontractor,
+      severity: "CRITICAL",
+      blockPayment: true,
+      penaltyAmount: "",
+    })
+
     setShowIssueForm(true)
-    setIsSnaggingMode(false) // İşaretleme bitince modu kapat
+    setIsSnaggingMode(false)
   }
 
   // Sync activeModelUrl and default to canvas engine when props change
@@ -1004,7 +1192,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         : "relative w-full h-full min-h-[650px] bg-slate-950 rounded-2xl overflow-hidden select-none border border-slate-800 shadow-2xl"
     }>
       {/* Top Left: Engine Switcher & Auto Rotate Toolbar */}
-      <div className="absolute top-4 left-4 z-40 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/80 shadow-2xl">
+      <div className="absolute top-3 left-3 right-3 sm:right-auto z-30 flex flex-wrap items-center justify-between sm:justify-start gap-1.5 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/80 shadow-2xl">
         <button
           type="button"
           onClick={() => {
@@ -1057,7 +1245,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
       </div>
 
       {/* --- GLASSMORPHISM KATMANLAR & X-RAY KONTROL PANELİ (TOP RIGHT) --- */}
-      <div className="absolute top-4 right-4 z-40 flex flex-col items-end">
+      <div className="absolute top-16 right-3 sm:top-4 sm:right-4 z-40 flex flex-col items-end">
         {!isLayerPanelOpen ? (
           // Collapsed Floating Button
           <button
@@ -1365,6 +1553,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
               key={safeUrl || activeModelUrl}
               camera={{ far: 20000, near: 0.1, fov: 45, position: [35, 30, 35] }}
               gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance", antialias: true }}
+              onPointerDown={(e) => {
+                pointerDownPosRef.current = { x: e.clientX, y: e.clientY }
+              }}
             >
               <ambientLight intensity={1.5} />
               <directionalLight position={[25, 35, 20]} intensity={2.5} castShadow />
@@ -1391,6 +1582,11 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                         onClick={handleModelClick}
+                        onPointerDown={(e: any) => {
+                          const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                          const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                          pointerDownPosRef.current = { x, y }
+                        }}
                       />
                     ) : (
                       <GltfModel
@@ -1399,18 +1595,94 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                         xRayOpacity={xRayOpacity}
                         onElementCounts={(counts) => setCategoryCounts(counts)}
                         onClick={handleModelClick}
+                        onPointerDown={(e: any) => {
+                          const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                          const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                          pointerDownPosRef.current = { x, y }
+                        }}
                       />
                     )}
                   </Center>
 
-                  {/* Pin Markers on 3D Model */}
+                  {/* 3D Lazer Metre (Interactive Measurement) Line & Html Distance Badge */}
+                  {measurePoints.length === 1 && (
+                    <group>
+                      <mesh position={[measurePoints[0].x, measurePoints[0].y, measurePoints[0].z]}>
+                        <sphereGeometry args={[0.25, 16, 16]} />
+                        <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={0.8} />
+                      </mesh>
+                      <Html position={[measurePoints[0].x, measurePoints[0].y + 0.4, measurePoints[0].z]} center distanceFactor={15}>
+                        <div className="bg-cyan-950/90 text-cyan-300 text-[10px] px-2 py-0.5 rounded-full border border-cyan-500/50 shadow-lg font-mono whitespace-nowrap">
+                          Nokta A (B noktasını seçin)
+                        </div>
+                      </Html>
+                    </group>
+                  )}
+
+                  {measurePoints.length >= 2 && (
+                    <group>
+                      {/* Point A Marker */}
+                      <mesh position={[measurePoints[0].x, measurePoints[0].y, measurePoints[0].z]}>
+                        <sphereGeometry args={[0.25, 16, 16]} />
+                        <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={0.9} />
+                      </mesh>
+
+                      {/* Point B Marker */}
+                      <mesh position={[measurePoints[1].x, measurePoints[1].y, measurePoints[1].z]}>
+                        <sphereGeometry args={[0.25, 16, 16]} />
+                        <meshStandardMaterial color="#facc15" emissive="#facc15" emissiveIntensity={0.9} />
+                      </mesh>
+
+                      {/* Neon Laser Line between Points */}
+                      <Line
+                        points={[
+                          [measurePoints[0].x, measurePoints[0].y, measurePoints[0].z],
+                          [measurePoints[1].x, measurePoints[1].y, measurePoints[1].z],
+                        ]}
+                        color="#06b6d4"
+                        lineWidth={3}
+                      />
+
+                      {/* Distance Label placed exactly at midpoint (lerp 0.5) */}
+                      <Html
+                        position={[
+                          (measurePoints[0].x + measurePoints[1].x) / 2,
+                          (measurePoints[0].y + measurePoints[1].y) / 2 + 0.35,
+                          (measurePoints[0].z + measurePoints[1].z) / 2,
+                        ]}
+                        center
+                        distanceFactor={15}
+                      >
+                        <div className="bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.7)] text-white text-xs font-bold whitespace-nowrap flex items-center gap-1.5 animate-in fade-in zoom-in-95 pointer-events-none">
+                          <span className="text-cyan-400">📏</span>
+                          <span>
+                            {(measurePoints[0].distanceTo(measurePoints[1])).toFixed(2)} m (
+                            {Math.round(measurePoints[0].distanceTo(measurePoints[1]) * 100)} cm)
+                          </span>
+                        </div>
+                      </Html>
+                    </group>
+                  )}
+
+                  {/* Pin Markers on 3D Model with Subcontractor & Payment Block Badge */}
                   {pins.map((pin) => (
                     <mesh key={pin.id} position={[pin.positionX, pin.positionY, pin.positionZ]}>
                       <sphereGeometry args={[0.3, 16, 16]} />
                       <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.6} />
                       <Html distanceFactor={15}>
-                        <div className="bg-red-600/90 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full shadow-lg border border-red-400/50 pointer-events-none whitespace-nowrap font-bold flex items-center gap-1">
-                          <span>📍</span> {pin.title}
+                        <div className="bg-slate-900/95 backdrop-blur-md text-white text-[10px] px-2.5 py-1 rounded-xl shadow-2xl border border-red-500/50 pointer-events-none whitespace-nowrap font-bold flex items-center gap-1.5">
+                          <span className="text-red-400 animate-pulse">📍</span>
+                          <span>{pin.title}</span>
+                          {pin.subcontractorName && (
+                            <span className="bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 font-medium border border-slate-700">
+                              👷 {pin.subcontractorName}
+                            </span>
+                          )}
+                          {pin.blockPayment && (
+                            <span className="bg-red-500/20 text-red-300 border border-red-500/40 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                              🔒 Hakediş Blokeli
+                            </span>
+                          )}
                         </div>
                       </Html>
                     </mesh>
@@ -1478,12 +1750,15 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </div>
       )}
 
-      {/* Floating Bottom Toolbar (Snagging & AR Buttons) */}
-      <div className="absolute bottom-4 right-4 z-40 flex items-center gap-2.5">
+      {/* Floating Bottom Toolbar (Snagging, Measurement & AR Buttons) */}
+      <div className="absolute bottom-4 left-4 right-20 sm:left-auto sm:right-20 z-30 flex items-center justify-center sm:justify-end gap-2">
         {/* Snagging Toggle */}
         <button
           type="button"
-          onClick={() => setIsSnaggingMode(!isSnaggingMode)}
+          onClick={() => {
+            setIsSnaggingMode(!isSnaggingMode)
+            setIsMeasureMode(false)
+          }}
           className={`px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 backdrop-blur-md ${
             isSnaggingMode
               ? "bg-red-600/90 text-white border-red-500/50 shadow-red-500/20"
@@ -1493,16 +1768,43 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           <span>📍 {isSnaggingMode ? "Kusur Modu Açık" : "Kusur İşaretle"}</span>
         </button>
 
+        {/* Measurement Toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            const nextMode = !isMeasureMode
+            setIsMeasureMode(nextMode)
+            setIsSnaggingMode(false)
+            if (nextMode) {
+              setMeasurePoints([])
+              setMeasuredDistance(null)
+              setSelectedElementMetrics(null)
+            }
+          }}
+          className={`px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 backdrop-blur-md ${
+            isMeasureMode
+              ? "bg-cyan-600/90 text-white border-cyan-400/60 shadow-[0_0_15px_rgba(6,182,212,0.5)]"
+              : "bg-slate-900/90 text-slate-300 hover:text-white border-slate-700/80 hover:bg-slate-800"
+          }`}
+        >
+          <span>📏 {isMeasureMode ? "Ölçüm Modu Açık" : "Ölçüm Yap"}</span>
+        </button>
+
         {/* AR Button */}
         {projectId && (
           <button
             type="button"
             onClick={() => {
-              const currentModel = activeModelUrl || effectiveUrl || ""
+              let currentModel = activeModelUrl || effectiveUrl || bimUrl || url || ifcUrl || ""
+              if (currentModel.startsWith("blob:")) {
+                currentModel = effectiveUrl && !effectiveUrl.startsWith("blob:")
+                  ? effectiveUrl
+                  : (bimUrl && !bimUrl.startsWith("blob:") ? bimUrl : "/models/bina.glb")
+              }
               const targetUrl = currentModel
                 ? `/ar/${projectId}?url=${encodeURIComponent(currentModel)}`
                 : `/ar/${projectId}`
-              window.open(targetUrl, "_blank")
+              window.location.href = targetUrl
             }}
             className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-[0_0_20px_rgba(6,182,212,0.6)] border border-cyan-300/40 transition-all flex items-center gap-1.5 transform hover:scale-105 active:scale-95"
           >
@@ -1512,8 +1814,82 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         )}
       </div>
 
+      {/* 2D Measurement & Element Quantity Metric Card (Left Bottom) */}
+      {isMeasureMode && (
+        <div className="absolute bottom-16 sm:bottom-4 left-3 sm:left-4 z-40 w-[calc(100%-24px)] sm:w-80 bg-slate-900/95 backdrop-blur-xl border border-cyan-500/40 rounded-2xl p-3.5 shadow-2xl shadow-cyan-950/60 space-y-2.5 animate-in slide-in-from-bottom duration-200">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold border border-cyan-500/30">
+                📏
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white leading-tight">3D Lazer Metre</h4>
+                <p className="text-[10px] text-cyan-300">
+                  {measurePoints.length === 0
+                    ? "1. Başlangıç (A) noktasını seçin"
+                    : measurePoints.length === 1
+                    ? "2. Bitiş (B) noktasını seçin"
+                    : "Mesafe hesaplandı"}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMeasurePoints([])
+                setMeasuredDistance(null)
+                setSelectedElementMetrics(null)
+              }}
+              className="text-[11px] px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition font-medium"
+            >
+              Ölçümü Sıfırla
+            </button>
+          </div>
+
+          {measuredDistance !== null && (
+            <div className="bg-cyan-950/70 border border-cyan-500/30 rounded-xl p-2.5 flex items-center justify-between shadow-inner">
+              <span className="text-xs text-slate-300 font-medium">Lazer Mesafe:</span>
+              <span className="text-sm font-extrabold text-cyan-300 font-mono">
+                {measuredDistance.toFixed(2)} m ({Math.round(measuredDistance * 100)} cm)
+              </span>
+            </div>
+          )}
+
+          {selectedElementMetrics && (
+            <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Seçilen Eleman:</span>
+                <span className="text-white font-semibold truncate max-w-[150px]">{selectedElementMetrics.name}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Disiplin:</span>
+                <span className="text-cyan-400 font-medium">{selectedElementMetrics.category}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 pt-1 border-t border-slate-800/80 text-center text-[10px]">
+                <div className="bg-slate-900/90 p-1 rounded-lg border border-slate-800">
+                  <span className="text-slate-400 block text-[9px]">En (X)</span>
+                  <span className="text-white font-mono font-bold">{selectedElementMetrics.width}</span>
+                </div>
+                <div className="bg-slate-900/90 p-1 rounded-lg border border-slate-800">
+                  <span className="text-slate-400 block text-[9px]">Boy (Y)</span>
+                  <span className="text-white font-mono font-bold">{selectedElementMetrics.height}</span>
+                </div>
+                <div className="bg-slate-900/90 p-1 rounded-lg border border-slate-800">
+                  <span className="text-slate-400 block text-[9px]">Derinlik (Z)</span>
+                  <span className="text-white font-mono font-bold">{selectedElementMetrics.depth}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px]">
+                <span className="text-slate-400">Yaklaşık Hacim:</span>
+                <span className="text-amber-400 font-mono font-bold">{selectedElementMetrics.volume}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Floating Instructions Banner */}
-      <div className="absolute bottom-4 left-4 z-40 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700/80 px-3.5 py-2 shadow-xl hidden sm:flex items-center gap-2 text-xs text-slate-300">
+      <div className={`absolute bottom-4 left-4 z-30 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700/80 px-3.5 py-2 shadow-xl ${isMeasureMode ? "hidden" : "hidden sm:flex"} items-center gap-2 text-xs text-slate-300`}>
         <span className="text-cyan-400">💡</span>
         <span>
           Döndürmek için <strong>sol tıkla sürükleyin</strong>, yakınlaşmak için <strong>tekerleği kaydırın</strong>.
@@ -1521,49 +1897,103 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </span>
       </div>
 
-      {/* Issue Form Modal for Snagging */}
+      {/* Issue Form Modal for Snagging with Subcontractor & Payment Block Integration */}
       {showIssueForm && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-white">📍 3D Model Üzerinde Kusur Bildirimi</h3>
+        <div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-5 sm:p-6 w-full max-w-md shadow-2xl space-y-4 my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📍</span>
+                <h3 className="text-sm sm:text-base font-bold text-white">3D Model Üzerinde Kusur Bildirimi</h3>
+              </div>
               <button
                 type="button"
                 onClick={() => {
+                  restorePreviousHighlight()
                   setShowIssueForm(false)
                   setSelectedPinPosition(null)
                 }}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Başlık</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Kusur Başlığı</label>
                 <input
                   type="text"
                   value={issueForm.title}
                   onChange={(e) => setIssueForm({ ...issueForm, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
-                  placeholder="Örn: 2. Kat Döşeme Çatlağı / Mekanik Boru Çakışması"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-500"
+                  placeholder="Örn: [Statik Eleman] - Kolon Kusuru"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Açıklama</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Açıklama</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={issueForm.description}
                   onChange={(e) => setIssueForm({ ...issueForm, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500 resize-none"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-500 resize-none"
                   placeholder="Tespit edilen kusur veya çakışma detayı..."
                 />
               </div>
 
+              {/* Sorumlu Taşeron Seçimi */}
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Fotoğraf Ekle</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Sorumlu Taşeron</label>
+                <select
+                  value={issueForm.subcontractorName}
+                  onChange={(e) => setIssueForm({ ...issueForm, subcontractorName: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="Kaba Yapı & Betonarme Taşeronu">Kaba Yapı & Betonarme Taşeronu</option>
+                  <option value="İnce İşler & Duvar Taşeronu">İnce İşler & Duvar Taşeronu</option>
+                  <option value="Mekanik Tesisat Taşeronu">Mekanik Tesisat Taşeronu</option>
+                  <option value="Elektrik Taşeronu">Elektrik Taşeronu</option>
+                  <option value="Çelik Konstrüksiyon & Çatı Taşeronu">Çelik Konstrüksiyon & Çatı Taşeronu</option>
+                  <option value="Yalıtım & Cephe Taşeronu">Yalıtım & Cephe Taşeronu</option>
+                  <option value="Diğer Saha Ekibi">Diğer Saha Ekibi</option>
+                </select>
+              </div>
+
+              {/* Hakediş Blokesi Toggle */}
+              <div className="bg-red-950/40 border border-red-500/30 rounded-xl p-3 flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="blockPayment"
+                  checked={issueForm.blockPayment}
+                  onChange={(e) => setIssueForm({ ...issueForm, blockPayment: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 rounded border-slate-700 text-red-600 focus:ring-red-500 accent-red-600 cursor-pointer"
+                />
+                <label htmlFor="blockPayment" className="text-xs text-red-200 cursor-pointer leading-tight">
+                  <span className="font-bold block">⚠️ Taşeron Hakedişini Bloke Et</span>
+                  <span className="text-[11px] text-red-300/80 block mt-0.5">Bu kusur giderilip onaylanana kadar ilgili taşeronun hakediş ödemesini durdur.</span>
+                </label>
+              </div>
+
+              {/* Kesinti / Ceza Bedeli */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Tahmini Kesinti / Ceza Tutarı (₺) <span className="text-slate-500 font-normal">(Opsiyonel)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-xs text-slate-400">₺</span>
+                  <input
+                    type="number"
+                    value={issueForm.penaltyAmount}
+                    onChange={(e) => setIssueForm({ ...issueForm, penaltyAmount: e.target.value })}
+                    className="w-full pl-7 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-cyan-500 font-mono"
+                    placeholder="Örn: 25000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Fotoğraf Ekle</label>
                 <UploadButton
                   endpoint="dailyReportImage"
                   onClientUploadComplete={(res) => {
@@ -1571,18 +2001,29 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                       setIssueForm({ ...issueForm, imageUrl: res[0].url })
                     }
                   }}
-                  onUploadError={(err) => alert(`Yükleme hatası: ${err.message}`)}
+                  onUploadError={(err) => {
+                    toast.error(`Yükleme hatası: ${err.message}`, {
+                      style: {
+                        background: "#0f172a",
+                        color: "#f8fafc",
+                        border: "1px solid rgba(239, 68, 68, 0.4)",
+                        borderRadius: "12px",
+                      },
+                      iconTheme: { primary: "#ef4444", secondary: "#0f172a" },
+                    })
+                  }}
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2.5 pt-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => {
+                    restorePreviousHighlight()
                     setShowIssueForm(false)
                     setSelectedPinPosition(null)
                   }}
-                  className="flex-1 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-700"
+                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition"
                 >
                   İptal
                 </button>
@@ -1590,33 +2031,76 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                   type="button"
                   onClick={async () => {
                     if (!selectedPinPosition || !projectId) return
-                    const res = await fetch("/api/bim-issues", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        projectId,
-                        title: issueForm.title,
-                        description: issueForm.description,
-                        imageUrl: issueForm.imageUrl,
-                        positionX: selectedPinPosition.x,
-                        positionY: selectedPinPosition.y,
-                        positionZ: selectedPinPosition.z,
-                        status: "OPEN",
-                      }),
-                    })
-                    if (res.ok) {
-                      const newIssue = await res.json()
-                      setPins((prev) => [...prev, newIssue])
-                      setShowIssueForm(false)
-                      setSelectedPinPosition(null)
-                      setIssueForm({ title: "", description: "", imageUrl: "" })
-                      alert("Kusur başarıyla kaydedildi!")
+                    try {
+                      const res = await fetch("/api/bim-issues", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          projectId,
+                          title: issueForm.title,
+                          description: issueForm.description,
+                          imageUrl: issueForm.imageUrl,
+                          positionX: selectedPinPosition.x,
+                          positionY: selectedPinPosition.y,
+                          positionZ: selectedPinPosition.z,
+                          status: "OPEN",
+                          subcontractorName: issueForm.subcontractorName,
+                          severity: issueForm.severity,
+                          blockPayment: issueForm.blockPayment,
+                          penaltyAmount: issueForm.penaltyAmount,
+                        }),
+                      })
+                      if (res.ok) {
+                        const newIssue = await res.json()
+                        setPins((prev) => [...prev, newIssue])
+                        setShowIssueForm(false)
+                        setSelectedPinPosition(null)
+                        setIssueForm({
+                          title: "",
+                          description: "",
+                          imageUrl: "",
+                          subcontractorName: "Kaba Yapı & Betonarme Taşeronu",
+                          severity: "CRITICAL",
+                          blockPayment: true,
+                          penaltyAmount: "",
+                        })
+                        toast.success("Kusur başarıyla 3D modele işlendi!", {
+                          style: {
+                            background: "#0f172a",
+                            color: "#f8fafc",
+                            border: "1px solid rgba(6, 182, 212, 0.4)",
+                            borderRadius: "12px",
+                            boxShadow: "0 10px 30px rgba(6, 182, 212, 0.2)",
+                          },
+                          iconTheme: { primary: "#06b6d4", secondary: "#0f172a" },
+                        })
+                      } else {
+                        toast.error("Kusur kaydedilirken bir hata oluştu.", {
+                          style: {
+                            background: "#0f172a",
+                            color: "#f8fafc",
+                            border: "1px solid rgba(239, 68, 68, 0.4)",
+                            borderRadius: "12px",
+                          },
+                          iconTheme: { primary: "#ef4444", secondary: "#0f172a" },
+                        })
+                      }
+                    } catch (err: any) {
+                      toast.error(`Kayıt hatası: ${err.message}`, {
+                        style: {
+                          background: "#0f172a",
+                          color: "#f8fafc",
+                          border: "1px solid rgba(239, 68, 68, 0.4)",
+                          borderRadius: "12px",
+                        },
+                        iconTheme: { primary: "#ef4444", secondary: "#0f172a" },
+                      })
                     }
                   }}
-                  disabled={!issueForm.title || !issueForm.description}
-                  className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-lg"
+                  disabled={!issueForm.title}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-lg transition"
                 >
-                  Kaydet
+                  Kusuru Kaydet
                 </button>
               </div>
             </div>

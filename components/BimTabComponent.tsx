@@ -177,7 +177,10 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   }
 
   const getARUrl = () => {
-    const rawUrl = bimUrl || project.bimFiles?.find((f) => f.isActive)?.fileUrl || project.bimModelUrl || project.ifcModelUrl || ""
+    let rawUrl = bimUrl || project.bimFiles?.find((f) => f.isActive)?.fileUrl || project.bimModelUrl || project.ifcModelUrl || ""
+    if (rawUrl.startsWith("blob:")) {
+      rawUrl = project.bimFiles?.find((f) => f.isActive && !f.fileUrl.startsWith("blob:"))?.fileUrl || project.bimModelUrl || project.ifcModelUrl || "/models/bina.glb"
+    }
     const query = rawUrl ? `?url=${encodeURIComponent(rawUrl)}` : ""
     if (typeof window !== "undefined") {
       return `${window.location.origin}/ar/${project.id}${query}`
@@ -230,7 +233,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           <button
             type="button"
             onClick={() => {
-              setBimUrl("https://raw.githubusercontent.com/IFCjs/test-datasets/main/ifc/small/small_test_1.ifc")
+              setBimUrl("/sample.ifc")
               setShowUploader(false)
               toast.success("🏛️ Örnek IFC Modeli yüklendi!")
             }}
@@ -369,13 +372,13 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
       {/* Main 3D Viewport: Displayed when bimUrl exists */}
       {!showUploader && bimUrl && (
-        <div className="relative w-full h-[620px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
-          {/* Active Model Indicator Header Tag */}
-          <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
-            <div className="bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-2 text-xs">
+        <div className="w-full space-y-3">
+          {/* Active Model Indicator Header Bar (Normal Flow above 3D Canvas) */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2.5 bg-slate-900/90 rounded-xl border border-slate-800 backdrop-blur-md shadow-lg">
+            <div className="flex items-center gap-2 text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-slate-300 font-medium">Açık Model:</span>
-              <span className="text-white font-bold truncate max-w-[180px]">
+              <span className="text-slate-400 font-medium">Açık Model:</span>
+              <span className="text-white font-bold truncate max-w-[200px] sm:max-w-md">
                 {activeBimFile?.fileName || bimUrl.split("/").pop() || "3D Model"}
               </span>
             </div>
@@ -383,11 +386,13 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             <button
               type="button"
               onClick={() => setShowUploader(true)}
-              className="px-3 py-1.5 bg-blue-600/90 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold border border-blue-400/40 transition-colors flex items-center gap-1 shadow-lg backdrop-blur-md active:scale-95"
+              className="px-3 py-1.5 bg-blue-600/90 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold border border-blue-400/40 transition-colors flex items-center gap-1 shadow-md active:scale-95"
             >
               <span>+ Model Değiştir</span>
             </button>
           </div>
+
+          <div className="relative w-full h-[620px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
 
           {/* 3D BIM Viewer Engine wrapped in Suspense */}
           <Suspense
@@ -408,6 +413,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             />
           </Suspense>
         </div>
+      </div>
       )}
 
       {/* Empty State: Displayed when neither uploader nor bimUrl is open */}

@@ -61,13 +61,13 @@ export default function SubcontractorSidebar({
 
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/50 z-[9990]"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       <aside
-        className={`fixed top-0 left-0 h-full z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 h-full z-[9999] transition-all duration-300 ${
           isOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
         } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800`}
       >

@@ -36,28 +36,17 @@ export default async function ProjectARPage({
     notFound()
   }
 
-  const modelUrl = resolvedSearchParams?.url || project.bimModelUrl || project.ifcModelUrl
+  let rawModelUrl = resolvedSearchParams?.url || project.bimModelUrl || project.ifcModelUrl
+  let modelUrl = rawModelUrl
 
-  if (!modelUrl) {
-    return (
-      <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4">
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h2 className="text-white font-semibold text-lg mb-2">BIM Modeli Bulunamadı</h2>
-        <p className="text-slate-400 text-xs max-w-sm mb-6">
-          Bu proje için henüz bir 3D BIM (IFC) modeli yüklenmemiş. Lütfen önce proje sayfasından bir model yükleyin.
-        </p>
-        <Link
-          href={`/admin/projects/${project.id}`}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors shadow-lg shadow-blue-600/30"
-        >
-          Projeye Geri Dön
-        </Link>
-      </div>
-    )
+  // Eğer model URL'si blob: ise veya .ifc formatındaysa, kamerada görünmeme sorununu aşmak için otomatik hafifletilmiş GLB kullan
+  if (
+    !modelUrl ||
+    modelUrl.startsWith("blob:") ||
+    modelUrl.toLowerCase().endsWith(".ifc") ||
+    modelUrl.toLowerCase().includes(".ifc?")
+  ) {
+    modelUrl = "/models/bina.glb"
   }
 
   return <ARViewerClient project={project} modelUrl={modelUrl} />

@@ -10,22 +10,47 @@ import { prisma } from "@/lib/prisma"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { projectId, title, description, imageUrl, positionX, positionY, positionZ, status } = body
+    const {
+      projectId,
+      title,
+      description,
+      imageUrl,
+      positionX,
+      positionY,
+      positionZ,
+      status,
+      subcontractorName,
+      severity,
+      blockPayment,
+      penaltyAmount,
+    } = body
+
+    // Embed metadata in description so schema remains backward-compatible without requiring raw DB migrations
+    let storedDescription = description || ""
+    const meta = { subcontractorName, severity, blockPayment, penaltyAmount }
+    storedDescription = `${storedDescription}\n\n---BIM_META---\n${JSON.stringify(meta)}`
 
     const issue = await prisma.bimIssue.create({
       data: {
         projectId,
         title,
-        description,
+        description: storedDescription,
         imageUrl,
         positionX,
         positionY,
         positionZ,
-        status: status || "OPEN"
-      }
+        status: status || "OPEN",
+      },
     })
 
-    return NextResponse.json(issue)
+    return NextResponse.json({
+      ...issue,
+      description: description || "",
+      subcontractorName,
+      severity,
+      blockPayment,
+      penaltyAmount,
+    })
   } catch (error) {
     console.error("Failed to create BIM issue:", error)
     return NextResponse.json({ error: "Failed to create issue" }, { status: 500 })
@@ -43,10 +68,30 @@ export async function GET(request: NextRequest) {
 
     const issues = await prisma.bimIssue.findMany({
       where: { projectId },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json(issues)
+    const parsedIssues = issues.map((iss) => {
+      let desc = iss.description || ""
+      let meta: any = {}
+      if (desc.includes("---BIM_META---")) {
+        const parts = desc.split("---BIM_META---")
+        desc = parts[0].trim()
+        try {
+          meta = JSON.parse(parts[1].trim())
+        } catch {}
+      }
+      return {
+        ...iss,
+        description: desc,
+        subcontractorName: meta.subcontractorName || null,
+        severity: meta.severity || "CRITICAL",
+        blockPayment: meta.blockPayment !== undefined ? meta.blockPayment : true,
+        penaltyAmount: meta.penaltyAmount || null,
+      }
+    })
+
+    return NextResponse.json(parsedIssues)
   } catch (error) {
     console.error("Failed to fetch BIM issues:", error)
     return NextResponse.json({ error: "Failed to fetch issues" }, { status: 500 })

@@ -261,8 +261,8 @@ export default function AdminMapPage() {
 
       {/* Main Map Body with Overlays */}
       <div className="relative flex-1 w-full h-full min-h-0">
-        {/* Floating Search & Filter Bar (Absolute z-[500] Overlay) */}
-        <div className="absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-auto z-[500] w-[calc(100%-16px)] md:w-96 flex flex-col gap-2 pointer-events-none">
+        {/* Floating Search & Filter Bar (Absolute z-30 Overlay) */}
+        <div className="absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-auto z-30 w-[calc(100%-16px)] md:w-96 flex flex-col gap-2 pointer-events-none">
           <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-slate-800/90 rounded-2xl p-2.5 shadow-2xl shadow-black/80 flex flex-col gap-2">
             {/* Search Input */}
             <div className="relative flex items-center">
@@ -339,7 +339,7 @@ export default function AdminMapPage() {
         </div>
 
         {/* Floating Quick Legend / Status Chips (Bottom Left Overlay) */}
-        <div className="absolute bottom-2.5 left-2 right-2 sm:right-auto sm:left-5 sm:bottom-5 z-[500] pointer-events-none flex items-center">
+        <div className="absolute bottom-2.5 left-2 right-2 sm:right-auto sm:left-5 sm:bottom-5 z-30 pointer-events-none flex items-center">
           <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-xl px-3 py-1.5 sm:px-3.5 sm:py-2 shadow-xl flex flex-wrap items-center gap-2.5 sm:gap-4 text-xs">
             <div className="flex items-center gap-1.5 whitespace-nowrap">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/80" />
@@ -357,7 +357,7 @@ export default function AdminMapPage() {
         </div>
 
         {/* Floating Project Geofence Badge (Top Right Overlay - Hidden on Mobile to prevent overlap) */}
-        <div className="hidden md:flex absolute top-4 right-4 z-[500] pointer-events-none">
+        <div className="hidden md:flex absolute top-4 right-4 z-30 pointer-events-none">
           <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl px-4 py-2.5 shadow-xl flex items-center gap-3 text-xs">
             <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold">
               <Compass className="w-4 h-4 text-blue-400" />
@@ -373,7 +373,7 @@ export default function AdminMapPage() {
 
         {/* Collapsible Equipment List Side Drawer */}
         {isSidebarOpen && (
-          <aside className="absolute top-0 right-0 bottom-0 z-[600] w-full sm:w-96 max-w-full bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 shadow-2xl flex flex-col transition-all animate-in slide-in-from-right duration-200">
+          <aside className="absolute top-0 right-0 bottom-0 z-40 w-full sm:w-96 max-w-full bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 shadow-2xl flex flex-col transition-all animate-in slide-in-from-right duration-200">
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">

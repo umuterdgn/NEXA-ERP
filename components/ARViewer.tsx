@@ -3,12 +3,13 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * AR (Augmented Reality) Field BIM Viewer
- * Real-world camera feed + 3D IFC model overlay with WebXR support
+ * Real-world camera feed + 3D BIM model overlay with WebGL R3F, Bounds, Center and Alpha transparency
  */
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import React, { useEffect, useRef, useState, useCallback, Suspense } from "react"
 import { useRouter } from "next/navigation"
-import { IfcViewerAPI } from "web-ifc-viewer"
+import { Canvas } from "@react-three/fiber"
+import { OrbitControls, useGLTF, Center, Bounds } from "@react-three/drei"
 import * as THREE from "three"
 import { toast } from "react-hot-toast"
 
@@ -23,12 +24,53 @@ interface ARViewerProps {
   modelUrl: string
 }
 
+// 3D Model Renderer with dynamic opacity, scale and elevation
+function AR3DModel({
+  url,
+  scale,
+  opacity,
+  elevation,
+  onLoaded,
+}: {
+  url: string
+  scale: number
+  opacity: number
+  elevation: number
+  onLoaded?: () => void
+}) {
+  const { scene } = useGLTF(url)
+
+  useEffect(() => {
+    if (!scene) return
+    scene.traverse((child: any) => {
+      if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+        if (child.material) {
+          if (!child.userData.isCloned) {
+            child.material = child.material.clone()
+            child.userData.isCloned = true
+          }
+          child.material.transparent = opacity < 0.99
+          child.material.opacity = opacity
+          child.material.depthWrite = true
+        }
+      }
+    })
+    onLoaded?.()
+  }, [scene, opacity, onLoaded])
+
+  return (
+    <group position={[0, elevation, 0]} scale={[scale, scale, scale]}>
+      <primitive object={scene} />
+    </group>
+  )
+}
+
 export default function ARViewer({ project, modelUrl }: ARViewerProps) {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const viewerRef = useRef<IfcViewerAPI | null>(null)
-  const modelRootRef = useRef<THREE.Object3D | null>(null)
 
   // Camera stream state
   const [cameraActive, setCameraActive] = useState(false)
@@ -38,19 +80,23 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
 
   // 3D & AR state
   const [loadingModel, setLoadingModel] = useState(true)
-  const [modelLoaded, setModelLoaded] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [scale, setScale] = useState(0.05) // Default desk scale
+  const [scale, setScale] = useState(1.0)
   const [opacity, setOpacity] = useState(0.85)
-  const [elevation, setElevation] = useState(0) // Height offset
-  const [isWebXRSupported, setIsWebXRSupported] = useState(false)
-  const [isWebXRActive, setIsWebXRActive] = useState(false)
+  const [elevation, setElevation] = useState(0)
   const [showControls, setShowControls] = useState(true)
-  const [isSnaggingMode, setIsSnaggingMode] = useState(false)
-  const [snagPins, setSnagPins] = useState<Array<{ x: number; y: number; z: number; title: string }>>([])
 
-  // Touch gesture interaction refs
-  const touchStartRef = useRef<{ x: number; y: number; dist: number } | null>(null)
+  // Determine effective model URL (falls back to /models/bina.glb if blob or ifc)
+  const effectiveModelUrl = React.useMemo(() => {
+    if (
+      !modelUrl ||
+      modelUrl.startsWith("blob:") ||
+      modelUrl.toLowerCase().endsWith(".ifc") ||
+      modelUrl.toLowerCase().includes(".ifc?")
+    ) {
+      return "/models/bina.glb"
+    }
+    return modelUrl
+  }, [modelUrl])
 
   // 1. Initialize Real-world Camera Stream
   const startCamera = useCallback(async (mode: "environment" | "user") => {
@@ -104,170 +150,6 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
     startCamera(nextMode)
   }
 
-  // 2. Initialize 3D IFC Viewer with Transparent WebGL Canvas
-  useEffect(() => {
-    if (!containerRef.current) return
-
-    containerRef.current.innerHTML = ""
-
-    const viewer = new IfcViewerAPI({
-      container: containerRef.current,
-    })
-
-    const renderer = viewer.context.getRenderer()
-    renderer.setClearColor(0x000000, 0) // Alpha = 0 (completely see-through to camera)
-    renderer.xr.enabled = true
-
-    // Check WebXR AR support
-    if ("xr" in navigator) {
-      ;(navigator as any).xr?.isSessionSupported("immersive-ar")?.then((supported: boolean) => {
-        setIsWebXRSupported(Boolean(supported))
-      }).catch(() => {})
-    }
-
-    // Add ambient and directional lighting for outdoor realism
-    const scene = viewer.context.getScene()
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2)
-    scene.add(ambientLight)
-
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1.5)
-    sunLight.position.set(10, 20, 15)
-    scene.add(sunLight)
-
-    viewerRef.current = viewer
-
-    // Load the IFC Model
-    const loadModel = async () => {
-      setLoadingModel(true)
-      setLoadError(null)
-      try {
-        await viewer.IFC.setWasmPath("/")
-        try {
-          await viewer.IFC.loadIfcUrl(modelUrl, true)
-        } catch (err) {
-          console.warn("Direct load failed in AR, fetching blob fallback:", err)
-          const res = await fetch(modelUrl)
-          if (!res.ok) throw new Error(`HTTP ${res.status} indirilemedi`)
-          const blob = await res.blob()
-          const file = new File([blob], "model.ifc", { type: "application/octet-stream" })
-          await viewer.IFC.loadIfc(file, true)
-        }
-
-        // Locate model root in scene
-        scene.traverse((child: any) => {
-          if (child.isMesh && !modelRootRef.current) {
-            modelRootRef.current = child.parent || child
-          }
-        })
-
-        setModelLoaded(true)
-      } catch (err: any) {
-        console.error("AR model load error:", err)
-        setLoadError(err?.message || "Model yüklenirken bir hata oluştu.")
-      } finally {
-        setLoadingModel(false)
-      }
-    }
-
-    void loadModel()
-
-    return () => {
-      try {
-        viewer.dispose()
-      } catch (e) {
-        console.warn("Viewer dispose error:", e)
-      }
-      viewerRef.current = null
-    }
-  }, [modelUrl])
-
-  // Update opacity dynamically
-  useEffect(() => {
-    if (!viewerRef.current) return
-    const scene = viewerRef.current.context.getScene()
-    scene.traverse((child: any) => {
-      if (child.isMesh) {
-        child.material.transparent = opacity < 1.0
-        child.material.opacity = opacity
-      }
-    })
-  }, [opacity])
-
-  // Update scale dynamically
-  useEffect(() => {
-    if (!viewerRef.current) return
-    const scene = viewerRef.current.context.getScene()
-    scene.traverse((child: any) => {
-      if (child.isMesh && child.scale) {
-        child.scale.set(scale, scale, scale)
-      }
-    })
-  }, [scale])
-
-  // Update elevation (height) dynamically
-  useEffect(() => {
-    if (!viewerRef.current) return
-    const scene = viewerRef.current.context.getScene()
-    scene.traverse((child: any) => {
-      if (child.isMesh && child.position) {
-        child.position.y = elevation
-      }
-    })
-  }, [elevation])
-
-  // Touch handlers for interactive manipulation (rotate, scale, pan)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        dist: 0,
-      }
-    } else if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX
-      const dy = e.touches[0].clientY - e.touches[1].clientY
-      touchStartRef.current = {
-        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-        y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
-        dist: Math.hypot(dx, dy),
-      }
-    }
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStartRef.current || !viewerRef.current) return
-
-    const scene = viewerRef.current.context.getScene()
-
-    if (e.touches.length === 1) {
-      // 1-finger drag: Rotate model around Y axis
-      const deltaX = e.touches[0].clientX - touchStartRef.current.x
-      scene.traverse((child: any) => {
-        if (child.isMesh) {
-          child.rotation.y += deltaX * 0.015
-        }
-      })
-      touchStartRef.current.x = e.touches[0].clientX
-      touchStartRef.current.y = e.touches[0].clientY
-    } else if (e.touches.length === 2) {
-      // 2-finger pinch: Scale
-      const dx = e.touches[0].clientX - e.touches[1].clientX
-      const dy = e.touches[0].clientY - e.touches[1].clientY
-      const dist = Math.hypot(dx, dy)
-      const distDelta = dist - touchStartRef.current.dist
-
-      if (Math.abs(distDelta) > 2) {
-        const factor = distDelta > 0 ? 1.04 : 0.96
-        setScale((prev) => Math.max(0.005, Math.min(prev * factor, 15)))
-        touchStartRef.current.dist = dist
-      }
-    }
-  }
-
-  const handleTouchEnd = () => {
-    touchStartRef.current = null
-  }
-
   // Snap photo (combines camera video + 3D WebGL canvas)
   const takeSnapshot = () => {
     if (!videoRef.current || !containerRef.current) return
@@ -306,56 +188,26 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
     a.download = `ar-sahada-${project.id}-${Date.now()}.png`
     a.click()
 
-    toast.success("📸 AR Saha fotoğrafı kaydedildi!")
-  }
-
-  // WebXR Native AR launch
-  const launchNativeWebXR = async () => {
-    if (!viewerRef.current) return
-    try {
-      const renderer = viewerRef.current.context.getRenderer()
-      if (!renderer.xr) throw new Error("WebXR desteklenmiyor")
-      
-      const session = await (navigator as any).xr.requestSession("immersive-ar", {
-        requiredFeatures: ["hit-test"],
-        optionalFeatures: ["dom-overlay"],
-        domOverlay: { root: document.body },
-      })
-      await renderer.xr.setSession(session)
-      setIsWebXRActive(true)
-      toast.success("Native WebXR AR Oturumu Başlatıldı!")
-      
-      session.addEventListener("end", () => {
-        setIsWebXRActive(false)
-      })
-    } catch (err: any) {
-      console.warn("Native WebXR error:", err)
-      toast.error("WebXR başlatılamadı. Kamera tabanlı AR modu devrede.")
-    }
+    toast.success("📸 AR Saha fotoğrafı kaydedildi!", {
+      style: {
+        background: "#0f172a",
+        color: "#f8fafc",
+        border: "1px solid rgba(6, 182, 212, 0.4)",
+        borderRadius: "12px",
+      },
+      iconTheme: { primary: "#06b6d4", secondary: "#0f172a" },
+    })
   }
 
   // Reset Model to center
   const resetModelPlacement = () => {
-    if (!viewerRef.current) return
-    const scene = viewerRef.current.context.getScene()
-    scene.traverse((child: any) => {
-      if (child.isMesh) {
-        child.position.set(0, 0, 0)
-        child.rotation.set(0, 0, 0)
-      }
-    })
-    setScale(0.05)
+    setScale(1.0)
     setElevation(0)
-    toast.success("Model konumu sıfırlandı.")
+    toast.success("Model konumu ve ölçeği sıfırlandı.")
   }
 
   return (
-    <div
-      className="fixed inset-0 w-full h-full bg-black overflow-hidden select-none touch-none z-50 flex flex-col"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="fixed inset-0 w-full h-full bg-black overflow-hidden select-none touch-none z-50 flex flex-col">
       {/* 1. Real-World Camera Stream */}
       <video
         ref={videoRef}
@@ -386,14 +238,50 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
         </div>
       )}
 
-      {/* 2. Transparent 3D WebGL Canvas Layer */}
+      {/* 2. Transparent 3D WebGL Canvas Layer (React Three Fiber) */}
       <div
         ref={containerRef}
-        className="absolute inset-0 w-full h-full z-10 pointer-events-none"
-      />
+        className="absolute inset-0 w-full h-full z-10 pointer-events-auto"
+      >
+        <Canvas
+          camera={{ position: [0, 8, 22], fov: 45 }}
+          gl={{
+            alpha: true,
+            antialias: true,
+            preserveDrawingBuffer: true,
+            powerPreference: "high-performance",
+          }}
+        >
+          <ambientLight intensity={1.6} />
+          <directionalLight position={[15, 30, 20]} intensity={2.2} castShadow />
+          <pointLight position={[-15, 15, -15]} intensity={1.2} />
+
+          <Suspense fallback={null}>
+            <Bounds fit observe margin={1.2}>
+              <Center>
+                <AR3DModel
+                  url={effectiveModelUrl}
+                  scale={scale}
+                  opacity={opacity}
+                  elevation={elevation}
+                  onLoaded={() => setLoadingModel(false)}
+                />
+              </Center>
+            </Bounds>
+          </Suspense>
+
+          <OrbitControls
+            enableDamping
+            dampingFactor={0.05}
+            enablePan={true}
+            enableZoom={true}
+            makeDefault
+          />
+        </Canvas>
+      </div>
 
       {/* 3. Top Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-transparent flex items-center justify-between">
+      <div className="absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-transparent flex items-center justify-between pointer-events-auto">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/admin/projects/${project.id}`)}
@@ -450,31 +338,24 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
         </div>
       </div>
 
-      {/* Model Loading / Error State */}
+      {/* Model Loading State */}
       {loadingModel && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
           <div className="w-14 h-14 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mb-4 shadow-[0_0_20px_rgba(6,182,212,0.5)]" />
           <h4 className="text-white font-semibold text-base mb-1">3D BIM Modeli Sahaya Yerleştiriliyor</h4>
-          <p className="text-cyan-300 text-xs">IFC geometrisi oluşturuluyor, lütfen bekleyin...</p>
-        </div>
-      )}
-
-      {loadError && (
-        <div className="absolute top-20 left-4 right-4 z-40 bg-red-950/90 border border-red-700 text-red-200 p-4 rounded-xl backdrop-blur-md text-center text-xs">
-          <p className="font-semibold mb-1">Model Yüklenemedi</p>
-          <p>{loadError}</p>
+          <p className="text-cyan-300 text-xs">WebGL sahnesi hazırlanıyor, lütfen bekleyin...</p>
         </div>
       )}
 
       {/* 4. Bottom Floating AR Controls Dock */}
       {showControls && (
-        <div className="absolute bottom-6 left-3 right-3 z-30 max-w-xl mx-auto flex flex-col gap-3">
+        <div className="absolute bottom-6 left-3 right-3 z-30 max-w-xl mx-auto flex flex-col gap-3 pointer-events-auto">
           {/* Gesture guide toast */}
           <div className="bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[11px] text-slate-300 px-3.5 py-1.5 rounded-full flex items-center justify-between mx-auto shadow-xl">
             <span className="flex items-center gap-1.5">
               <span>👆 <b>Döndür</b></span>
               <span className="text-slate-600">•</span>
-              <span>✌️ <b>Ölçekle / Yakınlaş</b></span>
+              <span>✌️ <b>Yakınlaş</b></span>
             </span>
             <span className="ml-3 font-mono text-cyan-400 font-bold">Ölçek: {(scale * 100).toFixed(0)}%</span>
           </div>
@@ -483,9 +364,9 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
           <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-2xl shadow-2xl space-y-3">
             <div className="flex items-center justify-between gap-1.5">
               <button
-                onClick={() => setScale(0.01)}
+                onClick={() => setScale(0.3)}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all ${
-                  scale <= 0.02
+                  scale < 0.5
                     ? "bg-cyan-500 text-slate-950 font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
@@ -494,9 +375,9 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
               </button>
 
               <button
-                onClick={() => setScale(0.05)}
+                onClick={() => setScale(0.7)}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all ${
-                  scale > 0.02 && scale <= 0.15
+                  scale >= 0.5 && scale < 0.9
                     ? "bg-cyan-500 text-slate-950 font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
@@ -507,7 +388,7 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
               <button
                 onClick={() => setScale(1.0)}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all ${
-                  scale >= 0.8
+                  scale >= 0.9
                     ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.7)]"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
@@ -563,27 +444,16 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
 
             {/* Main Action Bar */}
             <div className="flex items-center gap-2 pt-1">
-              {/* Photo Snapshot Button */}
               <button
                 onClick={takeSnapshot}
-                className="flex-1 py-2.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-semibold text-xs transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-semibold text-xs transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span>Fotoğraf Çek</span>
+                <span>AR Saha Fotoğrafı Çek</span>
               </button>
-
-              {/* Native WebXR if available */}
-              {isWebXRSupported && (
-                <button
-                  onClick={launchNativeWebXR}
-                  className="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-semibold text-xs transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center justify-center gap-1.5"
-                >
-                  <span>🚀 WebXR AR</span>
-                </button>
-              )}
             </div>
           </div>
         </div>
