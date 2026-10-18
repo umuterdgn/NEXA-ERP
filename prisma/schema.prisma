@@ -3482,3 +3482,38 @@ model DailyLogistics {
   @@index([projectId])
   @@index([date])
 }
+
+// ============================================================================
+// METEOROLOJİK İSG RİSK TAHMİNİ & COMPUTER VISION KAMERA TESPİTLERİ
+// ============================================================================
+
+model WeatherForecast {
+  id               String   @id @default(cuid())
+  projectId        String
+  forecastDate     DateTime
+  windSpeed        Float    // km/h
+  rainProb         Float    // %
+  temperature      Float
+  riskLevel        String   // "LOW", "MODERATE", "HIGH", "CRITICAL"
+  aiRecommendation String   // Örn: "Rüzgar 55km/h - Kule Vinç İptal"
+  historicalAvg    Float?   // Son 3 yılın aynı gün/hafta ortalaması (Kıyas için)
+  createdAt        DateTime @default(now())
+
+  @@index([projectId, forecastDate])
+  @@index([riskLevel])
+}
+
+model CameraViolation {
+  id         String   @id @default(cuid())
+  projectId  String
+  cameraId   String   // Örn: "VINC_KAMERA_1"
+  violation  String   // "NO_HELMET", "UNAUTHORIZED_ZONE"
+  confidence Float    // AI Güven skoru (Örn: 0.95)
+  imageUrl   String?  // Kanıt fotoğrafının URL'si
+  timestamp  DateTime @default(now())
+  status     String   @default("OPEN")
+
+  @@index([projectId])
+  @@index([status])
+  @@index([timestamp])
+}
