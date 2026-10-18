@@ -36,6 +36,7 @@ export interface MockDroneStage {
   captureDate: string
   progressPct: number
   modelUrl: string
+  videoUrl?: string
   aiAnalysis: {
     summary: string
     detected: string[]
@@ -50,6 +51,7 @@ export const mockDroneData: MockDroneStage[] = [
     stageName: "Zemin Kazısı ve Hafriyat",
     captureDate: "12 Eki 2026",
     progressPct: 15,
+    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4", // Test amaçlı drone video
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb", // Test amaçlı CDN GLB
     aiAnalysis: {
       summary: "Hafriyatın %85'i tamamlandı.",
@@ -63,6 +65,7 @@ export const mockDroneData: MockDroneStage[] = [
     stageName: "Temel Donatı",
     captureDate: "28 Eki 2026",
     progressPct: 28,
+    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/FlightHelmet/glTF-Binary/FlightHelmet.glb",
     aiAnalysis: {
       summary: "Temel demir bağlama işlemi tamamlandı.",
@@ -92,14 +95,14 @@ function DroneMesh({ url, annotations }: { url: string; annotations: MockDroneRi
       {annotations?.map((ann, i) => (
         <Html key={i} position={[ann.x, ann.y, ann.z]} center distanceFactor={15}>
           <div
-            className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border cursor-pointer hover:scale-110 transition-transform flex items-center gap-1.5 whitespace-nowrap select-none ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-2xl backdrop-blur-md border cursor-pointer hover:scale-115 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap select-none animate-in zoom-in-50 fade-in duration-700 ${
               ann.type === "danger"
-                ? "bg-red-500/80 border-red-400"
-                : "bg-amber-500/80 border-amber-400"
+                ? "bg-red-500/90 border-red-300 ring-4 ring-red-500/30"
+                : "bg-amber-500/90 border-amber-300 ring-4 ring-amber-500/30"
             }`}
           >
-            <span>{ann.type === "danger" ? "🚨" : "⚠️"}</span>
-            <span>{ann.label}</span>
+            <span className="text-sm animate-pulse">{ann.type === "danger" ? "🚨" : "⚠️"}</span>
+            <span className="tracking-wide">{ann.label}</span>
           </div>
         </Html>
       ))}
@@ -137,14 +140,14 @@ function FallbackProceduralMesh({ annotations }: { annotations: MockDroneRisk[] 
       {annotations?.map((ann, i) => (
         <Html key={i} position={[ann.x, ann.y, ann.z]} center distanceFactor={15}>
           <div
-            className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border cursor-pointer hover:scale-110 transition-transform flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-2xl backdrop-blur-md border cursor-pointer hover:scale-115 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap select-none animate-in zoom-in-50 fade-in duration-700 ${
               ann.type === "danger"
-                ? "bg-red-500/80 border-red-400"
-                : "bg-amber-500/80 border-amber-400"
+                ? "bg-red-500/90 border-red-300 ring-4 ring-red-500/30"
+                : "bg-amber-500/90 border-amber-300 ring-4 ring-amber-500/30"
             }`}
           >
-            <span>{ann.type === "danger" ? "🚨" : "⚠️"}</span>
-            <span>{ann.label}</span>
+            <span className="text-sm animate-pulse">{ann.type === "danger" ? "🚨" : "⚠️"}</span>
+            <span className="tracking-wide">{ann.label}</span>
           </div>
         </Html>
       ))}
@@ -204,23 +207,47 @@ export default function DroneDigitalTwin({
   projectName = "Şantiye 4D İkizi"
 }: DroneDigitalTwinProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [is3DMode, setIs3DMode] = useState(false)
   const [activeStageIndex, setActiveStageIndex] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isPlaying4D, setIsPlaying4D] = useState(false)
 
-  // Adım 2: activeStageIndex kullanarak seçili aşamanın verisi
+  // activeStageIndex kullanarak seçili aşamanın verisi
   const currentData = mockDroneData[activeStageIndex] || mockDroneData[0]
 
-  // Otomatik 4D Zaman Akışı (Play / Pause simülasyonu)
+  // Video dondurma / devam ettirme kontrolü
   useEffect(() => {
-    if (!isPlaying4D) return
+    if (videoRef.current) {
+      if (is3DMode) {
+        videoRef.current.pause()
+      } else {
+        videoRef.current.play().catch(() => {})
+      }
+    }
+  }, [is3DMode])
+
+  // Aşama değiştiğinde video durumu
+  useEffect(() => {
+    if (videoRef.current) {
+      if (is3DMode) {
+        videoRef.current.pause()
+      } else {
+        videoRef.current.play().catch(() => {})
+      }
+    }
+  }, [activeStageIndex])
+
+  // Otomatik 4D Zaman Akışı (Play / Pause simülasyonu - sadece 3D modunda)
+  useEffect(() => {
+    if (!isPlaying4D || !is3DMode) return
 
     const interval = setInterval(() => {
       setActiveStageIndex((prev) => (prev + 1) % mockDroneData.length)
     }, 4500)
 
     return () => clearInterval(interval)
-  }, [isPlaying4D])
+  }, [isPlaying4D, is3DMode])
 
   // Tam ekran geçişi
   const toggleFullscreen = () => {
@@ -235,65 +262,96 @@ export default function DroneDigitalTwin({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-[650px] md:h-[720px] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col ${
+      className={`relative w-full h-[650px] md:h-[720px] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col ${
         isFullscreen ? "h-screen rounded-none" : ""
       }`}
     >
-      {/* Sol Üst Başlık & Kontroller */}
-      <div className="absolute top-4 left-4 z-40 flex items-center gap-2.5">
-        <div className="flex items-center gap-2.5 px-4 py-2 bg-slate-900/80 backdrop-blur-xl border border-slate-700/70 rounded-xl shadow-lg">
-          <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-xs md:text-sm font-bold text-white tracking-wide">
-            4D Fotogrametri & Dijital İkiz
-          </span>
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-            Aşama {activeStageIndex + 1}/{mockDroneData.length}
-          </span>
-        </div>
+      {/* KATMAN 1: Drone Uçuş Videosu (Canlı Akış / Donan Kare) */}
+      <div
+        className={`absolute inset-0 z-10 transition-opacity duration-1000 overflow-hidden ${
+          is3DMode
+            ? "opacity-30 filter brightness-50 contrast-125 scale-102 pointer-events-none"
+            : "opacity-100 filter brightness-95 scale-100 pointer-events-auto"
+        }`}
+      >
+        <video
+          ref={videoRef}
+          key={currentData.videoUrl || currentData.id}
+          src={currentData.videoUrl || "https://www.w3schools.com/html/mov_bbb.mp4"}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+        />
+        {/* Sinematik vinyet & Gradyan Karartma */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/70 pointer-events-none" />
 
-        <button
-          onClick={() => setIsPlaying4D(!isPlaying4D)}
-          className={`px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-xl border shadow-lg transition-all flex items-center gap-1.5 ${
-            isPlaying4D
-              ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
-              : "bg-slate-900/80 text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-white"
-          }`}
-          title={isPlaying4D ? "Simülasyonu Duraklat" : "4D Zaman Akışını Oynat"}
-        >
-          {isPlaying4D ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-          <span className="hidden sm:inline">{isPlaying4D ? "Duraklat" : "4D Oynat"}</span>
-        </button>
-
-        <button
-          onClick={toggleFullscreen}
-          className="p-2 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl border border-slate-700/70 backdrop-blur-xl shadow-lg transition-all"
-          title={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran Yap"}
-        >
-          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </button>
+        {/* Canlı Drone HUD Telemetri Bilgisi */}
+        {!is3DMode && (
+          <div className="absolute top-20 left-6 z-20 pointer-events-none flex flex-col gap-1 text-[11px] font-mono text-cyan-400/90 bg-slate-950/50 p-3 rounded-xl border border-cyan-500/30 backdrop-blur-md shadow-xl animate-in fade-in duration-500">
+            <div className="flex items-center gap-2 font-bold text-white">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+              <span>DRONE CANLI YAYIN • 4K 60FPS</span>
+            </div>
+            <div className="text-slate-300">İrtifa: 48.5m • Hız: 16.2 km/h • Rüzgar: 12 km/h</div>
+            <div className="text-slate-400">GPS: 41.0082° N, 28.9784° E • Uydu: 18</div>
+          </div>
+        )}
       </div>
 
-      {/* 3D WebGL Canvas Görünümü */}
-      <div className="w-full h-full relative cursor-grab active:cursor-grabbing">
+      {/* KATMAN 3: Video Oynarken Ortada Görünen Dondur & 3D Analiz Başlat Butonu */}
+      {!is3DMode && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto flex flex-col items-center gap-3.5 animate-in fade-in zoom-in-95 duration-500 max-w-md text-center">
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/85 backdrop-blur-md border border-cyan-500/40 text-cyan-300 text-xs font-semibold shadow-2xl">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+              <span className="tracking-wide">Canlı Drone Uçuş Kaydı</span>
+              <span className="text-slate-500">•</span>
+              <span className="text-white font-mono">{currentData.captureDate}</span>
+            </div>
+
+            <button
+              onClick={() => setIs3DMode(true)}
+              className="group relative px-6 py-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-sm md:text-base rounded-2xl shadow-2xl shadow-cyan-500/40 border border-cyan-400/50 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 cursor-pointer overflow-hidden"
+            >
+              <span className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              <span className="text-xl">⏸️</span>
+              <span className="tracking-wide">Videoyu Dondur & 3D AI Analizini Başlat</span>
+              <Sparkles className="w-5 h-5 text-cyan-200 animate-pulse" />
+            </button>
+
+            <p className="text-xs text-slate-200 font-medium px-4 py-1.5 rounded-xl bg-slate-950/70 backdrop-blur-md border border-slate-800/80 shadow-lg">
+              Kareyi dondurup 3D fotogrametri modeline ve AI saha risk analizine geçiş yapar
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* KATMAN 2: 3D WebGL Canvas Görünümü (Transparent Arka Plan) */}
+      <div
+        className={`absolute inset-0 z-20 cursor-grab active:cursor-grabbing transition-opacity duration-1000 ${
+          is3DMode
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
+      >
         <Canvas
           camera={{ position: [3, 2.5, 3.5], fov: 45 }}
           shadows
           gl={{ antialias: true, alpha: true }}
         >
-          {/* Nexa ERP Koyu Tema Arka Planı (Slate-900) */}
-          <color attach="background" args={["#0f172a"]} />
-
           {/* Model Etrafında Derinlik Sağlayan Izgara */}
-          <gridHelper args={[50, 50, "#1e293b", "#334155"]} position={[0, -2, 0]} />
+          <gridHelper args={[50, 50, "#06b6d4", "#1e293b"]} position={[0, -2, 0]} />
 
-          <ambientLight intensity={0.8} />
+          <ambientLight intensity={1.1} />
           <directionalLight
             position={[10, 15, 10]}
-            intensity={1.5}
+            intensity={1.8}
             castShadow
             shadow-mapSize={[2048, 2048]}
           />
-          <directionalLight position={[-10, 8, -10]} intensity={0.5} />
+          <directionalLight position={[-10, 8, -10]} intensity={0.7} />
 
           <ContactShadows
             position={[0, -0.01, 0]}
@@ -337,7 +395,7 @@ export default function DroneDigitalTwin({
         </Canvas>
 
         {/* 3D Navigasyon İpucu */}
-        <div className="absolute bottom-24 left-6 z-20 hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-900/60 backdrop-blur-md rounded-lg border border-slate-800 text-[11px] text-slate-400 pointer-events-none">
+        <div className="absolute bottom-24 left-6 z-20 hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-900/70 backdrop-blur-md rounded-lg border border-slate-700/60 text-[11px] text-slate-300 pointer-events-none shadow-lg">
           <span>🖱️ Sol Tık: Döndür</span>
           <span>•</span>
           <span>Sağ Tık: Kaydır</span>
@@ -346,11 +404,73 @@ export default function DroneDigitalTwin({
         </div>
       </div>
 
+      {/* Sol Üst Başlık & Kontroller (z-40) */}
+      <div className="absolute top-4 left-4 z-40 flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-2.5 px-4 py-2 bg-slate-900/80 backdrop-blur-xl border border-slate-700/70 rounded-xl shadow-lg">
+          <div className={`w-2.5 h-2.5 rounded-full ${is3DMode ? "bg-cyan-400" : "bg-emerald-400"} animate-pulse`} />
+          <span className="text-xs md:text-sm font-bold text-white tracking-wide">
+            {is3DMode ? "4D Fotogrametri & Dijital İkiz" : "2D Canlı Drone Uçuşu"}
+          </span>
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            Aşama {activeStageIndex + 1}/{mockDroneData.length}
+          </span>
+        </div>
+
+        {/* 3D Modundayken: ▶️ 2D Drone Uçuşuna Dön butonu */}
+        {is3DMode ? (
+          <button
+            onClick={() => setIs3DMode(false)}
+            className="px-3.5 py-2 bg-gradient-to-r from-emerald-600/90 to-teal-600/90 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold border border-emerald-400/40 shadow-lg shadow-emerald-500/20 backdrop-blur-xl flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95 animate-in fade-in duration-300"
+            title="3D Modu Kapatıp Drone Videosunu Oynatmaya Devam Et"
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>▶️ 2D Drone Uçuşuna Dön</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => setIs3DMode(true)}
+            className="px-3.5 py-2 bg-gradient-to-r from-cyan-600/90 to-blue-600/90 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold border border-cyan-400/40 shadow-lg shadow-cyan-500/20 backdrop-blur-xl flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95 animate-in fade-in duration-300"
+            title="Videoyu Dondurup 3D Fotogrametri Moduna Geç"
+          >
+            <Pause className="w-3.5 h-3.5" />
+            <span>⏸️ 3D AI İkizini Aç</span>
+          </button>
+        )}
+
+        {is3DMode && (
+          <button
+            onClick={() => setIsPlaying4D(!isPlaying4D)}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-xl border shadow-lg transition-all flex items-center gap-1.5 ${
+              isPlaying4D
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
+                : "bg-slate-900/80 text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-white"
+            }`}
+            title={isPlaying4D ? "Simülasyonu Duraklat" : "4D Zaman Akışını Oynat"}
+          >
+            {isPlaying4D ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{isPlaying4D ? "Duraklat" : "4D Oynat"}</span>
+          </button>
+        )}
+
+        <button
+          onClick={toggleFullscreen}
+          className="p-2 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl border border-slate-700/70 backdrop-blur-xl shadow-lg transition-all"
+          title={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran Yap"}
+        >
+          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </button>
+      </div>
+
       {/* ===================================================================== */}
-      {/* Adım 2: AI Saha Analizi Paneli (Sağ Panel UI Tasarımı)                */}
-      {/* absolute top-20 right-4 w-80 md:w-88 z-40 Glassmorphism               */}
+      {/* Adım 2 & 3: AI Saha Analizi Paneli (Sağ Panel - Slide-In Animasyonlu) */}
       {/* ===================================================================== */}
-      <div className="absolute top-20 right-4 w-80 md:w-88 z-40 max-h-[calc(100%-160px)] overflow-y-auto backdrop-blur-xl bg-slate-900/80 border border-slate-700/60 rounded-2xl p-6 shadow-2xl text-white transition-all animate-in fade-in slide-in-from-right-4 duration-300">
+      <div
+        className={`absolute top-20 right-4 w-80 md:w-88 z-40 max-h-[calc(100%-160px)] overflow-y-auto backdrop-blur-xl bg-slate-900/85 border border-slate-700/60 rounded-2xl p-6 shadow-2xl text-white transition-all duration-700 ease-out ${
+          is3DMode
+            ? "translate-x-0 opacity-100 pointer-events-auto"
+            : "translate-x-[120%] opacity-0 pointer-events-none"
+        }`}
+      >
         {/* Başlık: 🤖 AI Saha Analizi ve Yanında Tarih */}
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
