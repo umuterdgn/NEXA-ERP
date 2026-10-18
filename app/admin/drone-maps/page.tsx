@@ -7,7 +7,13 @@
 
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { Plane, MapPin, Calendar, TrendingUp, Bot, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { Plane, MapPin, Calendar, TrendingUp, Bot, ChevronLeft, ChevronRight, Loader2, Box, Layers } from "lucide-react"
+
+// 4D Drone Fotogrametri & Dijital İkiz
+const DroneDigitalTwin = dynamic(
+  () => import('@/app/admin/projects/[id]/_components/DroneDigitalTwin'),
+  { ssr: false }
+)
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapContainer = dynamic(
@@ -35,6 +41,7 @@ interface DroneImage {
 
 export default function DroneMapsPage() {
   const [selectedProject, setSelectedProject] = useState("")
+  const [viewMode, setViewMode] = useState<"3d" | "2d">("3d")
   const [selectedMonth, setSelectedMonth] = useState(3)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
@@ -50,6 +57,9 @@ export default function DroneMapsPage() {
       if (response.ok) {
         const data = await response.json()
         setProjects(data)
+        if (data.length > 0 && !selectedProject) {
+          setSelectedProject(data[0].id)
+        }
       }
     } catch (error) {
       console.error('Failed to fetch projects:', error)
@@ -150,136 +160,178 @@ export default function DroneMapsPage() {
 
       {selectedProject && (
         <>
-          {/* Map Container */}
-          <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-blue-400" />
-                Drone Harita Görünümü
-              </h3>
-              <div className="flex items-center gap-2 text-slate-400 text-sm">
-                <Calendar className="w-4 h-4" />
-                <span>{currentImage?.label}</span>
-              </div>
-            </div>
-            
-            <div className="relative h-[500px] rounded-lg overflow-hidden">
-              <MapContainer
-                center={[36.5875, 35.9250]}
-                zoom={15}
-                style={{ height: "100%", width: "100%" }}
-                className="z-0"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                
-                {currentImage && (
-                  <ImageOverlay
-                    url={currentImage.imageUrl}
-                    bounds={currentImage.bounds}
-                    opacity={isTransitioning ? 0.3 : 0.7}
-                    className={`transition-opacity duration-500 ${isTransitioning ? 'opacity-30' : 'opacity-70'}`}
-                  />
-                )}
-              </MapContainer>
-
-              {/* AI Analysis Card */}
-              <div className="absolute top-4 right-4 w-80 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700 p-4 shadow-xl">
-                <div className="flex items-center gap-2 mb-3">
-                  <Bot className="w-5 h-5 text-blue-400" />
-                  <h4 className="text-white font-semibold">Yapay Zeka Analizi</h4>
-                </div>
-                <p className="text-slate-300 text-sm mb-4">{aiAnalysis.summary}</p>
-                
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-slate-400 text-sm">Genel İlerleme</span>
-                    <span className="text-white font-semibold">{aiAnalysis.progress}%</span>
-                  </div>
-                  <div className="w-full bg-slate-700 rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-blue-600 to-green-500 h-2 rounded-full transition-all"
-                      style={{ width: `${aiAnalysis.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-slate-400 text-xs mb-1">Tamamlanan Görevler</p>
-                    <div className="space-y-1">
-                      {aiAnalysis.completedTasks.map((task, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-green-500 rounded-full" />
-                          <span className="text-green-400">{task}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-slate-400 text-xs mb-1">Yaklaşan Görevler</p>
-                    <div className="space-y-1">
-                      {aiAnalysis.upcomingTasks.map((task, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                          <span className="text-orange-400">{task}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Görünüm Modu Seçici */}
+          <div className="flex items-center gap-3 mb-6">
+            <button
+              onClick={() => setViewMode("3d")}
+              className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 border ${
+                viewMode === "3d"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-400 shadow-lg shadow-blue-500/25"
+                  : "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              <Box className="w-4 h-4 text-cyan-300" />
+              <span>3D Fotogrametri & 4D Dijital İkiz (Önerilen)</span>
+            </button>
+            <button
+              onClick={() => setViewMode("2d")}
+              className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 border ${
+                viewMode === "2d"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-400 shadow-lg shadow-blue-500/25"
+                  : "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              <MapPin className="w-4 h-4 text-blue-400" />
+              <span>2D Ortofoto Harita</span>
+            </button>
           </div>
 
-          {/* Timeline Slider */}
-          <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
-              Gelişim Takvimi
-            </h3>
-            
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => handleMonthChange(selectedMonth - 1)}
-                disabled={selectedMonth === 1}
-                className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-5 h-5 text-white" />
-              </button>
-              
-              <div className="flex-1 flex gap-3">
-                {droneImages.map((image) => (
-                  <button
-                    key={image.id}
-                    onClick={() => handleMonthChange(image.month)}
-                    className={`flex-1 p-4 rounded-xl border transition-all ${
-                      selectedMonth === image.month
-                        ? "bg-blue-600 border-blue-500 text-white"
-                        : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-                    }`}
+          {/* 3D Dijital İkiz Görünümü */}
+          {viewMode === "3d" ? (
+            <div className="mb-6">
+              <DroneDigitalTwin
+                projectId={selectedProject}
+                projectName={
+                  projects.find((p) => p.id === selectedProject)?.name ||
+                  projects.find((p) => p.id === selectedProject)?.title ||
+                  "Seçili Proje"
+                }
+              />
+            </div>
+          ) : (
+            <>
+              {/* 2D Map Container */}
+              <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-blue-400" />
+                    Drone Harita Görünümü
+                  </h3>
+                  <div className="flex items-center gap-2 text-slate-400 text-sm">
+                    <Calendar className="w-4 h-4" />
+                    <span>{currentImage?.label}</span>
+                  </div>
+                </div>
+                
+                <div className="relative h-[500px] rounded-lg overflow-hidden">
+                  <MapContainer
+                    center={[36.5875, 35.9250]}
+                    zoom={15}
+                    style={{ height: "100%", width: "100%" }}
+                    className="z-0"
                   >
-                    <div className="text-center">
-                      <p className="font-medium text-sm mb-1">{image.label}</p>
-                      <p className="text-xs opacity-75">
-                        {image.month === 3 ? "Güncel" : `${image.month}. Ay`}
-                      </p>
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    
+                    {currentImage && (
+                      <ImageOverlay
+                        url={currentImage.imageUrl}
+                        bounds={currentImage.bounds}
+                        opacity={isTransitioning ? 0.3 : 0.7}
+                        className={`transition-opacity duration-500 ${isTransitioning ? 'opacity-30' : 'opacity-70'}`}
+                      />
+                    )}
+                  </MapContainer>
+
+                  {/* AI Analysis Card */}
+                  <div className="absolute top-4 right-4 w-80 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700 p-4 shadow-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Bot className="w-5 h-5 text-blue-400" />
+                      <h4 className="text-white font-semibold">Yapay Zeka Analizi</h4>
                     </div>
-                  </button>
-                ))}
+                    <p className="text-slate-300 text-sm mb-4">{aiAnalysis.summary}</p>
+                    
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-slate-400 text-sm">Genel İlerleme</span>
+                        <span className="text-white font-semibold">{aiAnalysis.progress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-700 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-blue-600 to-green-500 h-2 rounded-full transition-all"
+                          style={{ width: `${aiAnalysis.progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-slate-400 text-xs mb-1">Tamamlanan Görevler</p>
+                        <div className="space-y-1">
+                          {aiAnalysis.completedTasks.map((task, index) => (
+                            <div key={index} className="flex items-center gap-2 text-sm">
+                              <div className="w-2 h-2 bg-green-500 rounded-full" />
+                              <span className="text-green-400">{task}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-xs mb-1">Yaklaşan Görevler</p>
+                        <div className="space-y-1">
+                          {aiAnalysis.upcomingTasks.map((task, index) => (
+                            <div key={index} className="flex items-center gap-2 text-sm">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                              <span className="text-orange-400">{task}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <button
-                onClick={() => handleMonthChange(selectedMonth + 1)}
-                disabled={selectedMonth === 3}
-                className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="w-5 h-5 text-white" />
-              </button>
-            </div>
-          </div>
+
+              {/* Timeline Slider */}
+              <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-400" />
+                  Gelişim Takvimi
+                </h3>
+                
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => handleMonthChange(selectedMonth - 1)}
+                    disabled={selectedMonth === 1}
+                    className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-white" />
+                  </button>
+                  
+                  <div className="flex-1 flex gap-3">
+                    {droneImages.map((image) => (
+                      <button
+                        key={image.id}
+                        onClick={() => handleMonthChange(image.month)}
+                        className={`flex-1 p-4 rounded-xl border transition-all ${
+                          selectedMonth === image.month
+                            ? "bg-blue-600 border-blue-500 text-white"
+                            : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        <div className="text-center">
+                          <p className="font-medium text-sm mb-1">{image.label}</p>
+                          <p className="text-xs opacity-75">
+                            {image.month === 3 ? "Güncel" : `${image.month}. Ay`}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button
+                    onClick={() => handleMonthChange(selectedMonth + 1)}
+                    disabled={selectedMonth === 3}
+                    className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
 

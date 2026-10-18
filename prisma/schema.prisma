@@ -3412,3 +3412,20 @@ model BackgroundJob {
   @@index([jobType])
   @@index([projectId])
 }
+
+// ============================================================================
+// DRONE CAPTURE (4D Dijital İkiz & Fotogrametri)
+// ============================================================================
+
+model DroneCapture {
+  id          String   @id @default(cuid())
+  projectId   String
+  stageName   String   // Örn: "Zemin", "Karkas", "Kaba İnşaat"
+  modelUrl    String   // 3D Modelin (GLB/GLTF) URL'si
+  captureDate DateTime
+  progressPct Int      // Örn: 25
+  aiAnalysis  Json?    // Array of annotations: [{ x, y, z, label, type }]
+  createdAt   DateTime @default(now())
+  
+  @@index([projectId, captureDate])
+}
