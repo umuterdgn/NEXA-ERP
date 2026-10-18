@@ -268,6 +268,10 @@ model Project {
   boqItems    BoQItem[]
   progressPayments ProgressPayment[]
   financialTransactions FinancialTransaction[]
+  auditLogs   AuditLog[]
+  approvalRequests ApprovalRequest[]
+  bimElementMaps BimElementMap[]
+  backgroundJobs BackgroundJob[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -2586,11 +2590,17 @@ model AIAnalysis {
 
 model AuditLog {
   id             String        @id @default(cuid())
-  action         String        // STATUS_CHANGE, DELETE, UPDATE, CREATE, APPROVE, RECEIVE
-  entityId       String        // İlgili kayıt ID'si
-  entityType     String        // DEFICIENCY, INSPECTION, PROJECT, PERSONEL, PROGRESS_PAYMENT, STOCK, PURCHASE_ORDER, BIM_ISSUE, WORK_PACKAGE, vb.
+  projectId      String?
+  project        Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   userId         String?
   user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName       String?
+  action         String        // Örn: "BIM_UPLOAD", "DEFECT_CREATED", "PAYMENT_APPROVED", "BOQ_LINKED", "STATUS_CHANGE", etc.
+  entityType     String        // Örn: "BimFile", "BimIssue", "WorkPackage", "ProgressPayment", etc.
+  entityId       String?
+  summary        String?       @db.Text // Zaman Makinesi (Timeline) ekranında görünecek Türkçe özet
+  oldValues      Json?
+  newValues      Json?
   reason         String?       @db.Text // İşlem nedeni/açıklama
   ipAddress      String?       // IP adresi
   metadata       String?       @db.Text // Ek JSON verileri
@@ -2604,6 +2614,7 @@ model AuditLog {
 
   createdAt      DateTime      @default(now())
 
+  @@index([projectId, createdAt])
   @@index([entityId])
   @@index([entityType])
   @@index([userId])
@@ -3148,43 +3159,52 @@ model Organization {
 }
 
 model WorkPackage {
-  id              String             @id @default(cuid())
-  code            String?            // Örn: "WP-101", "POZ-04.001"
-  name            String             // İş Paketi / İmalat Kalemi Adı
-  description     String?            @db.Text
-  unit            String?            // m3, m2, mt, ton, adet
-  plannedQuantity Float?             @default(0)
-  unitPrice       Float?             @default(0)
-  totalBudget     Float?             @default(0)
-  status          String             @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, ON_HOLD
-  startDate       DateTime?
-  endDate         DateTime?
+  id                String             @id @default(cuid())
+  code              String?            // Örn: "WP-101", "POZ-04.001"
+  pozNo             String?            // Örn: "15.150.1005"
+  name              String             // İş Paketi / İmalat Kalemi Adı
+  categoryKey       String?            @default("statik") // "statik" | "mimari" | "elektrik" | "mekanik"
+  description       String?            @db.Text
+  unit              String?            @default("m3") // "m3" | "m2" | "mt" | "adet"
+  unitPrice         Float              @default(0)
+  plannedQuantity   Float              @default(0)
+  completedQuantity Float              @default(0)
+  totalBudget       Float?             @default(0)
+  status            String             @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, ON_HOLD
+  subcontractorName String?
+  startDate         DateTime?
+  endDate           DateTime?
 
-  projectId       String
-  project         Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId         String
+  project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  organizationId  String?
-  organization    Organization?      @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId    String?
+  organization      Organization?      @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   // Gantt görevleri
-  tasks           ProjectTask[]      @relation("WorkPackageTasks")
-  siteTasks       Task[]             @relation("WorkPackageSiteTasks")
+  tasks             ProjectTask[]      @relation("WorkPackageTasks")
+  siteTasks         Task[]             @relation("WorkPackageSiteTasks")
 
   // 3D BIM kusur / ölçüm kayıtları
-  bimIssues       BimIssue[]
+  bimIssues         BimIssue[]
 
   // Hakediş satırları ve metraj pozları
-  progressPayments ProgressPayment[]
-  boqItems        BoQItem[]
-  stockMovements  StockMovement[]
+  progressPayments  ProgressPayment[]
+  boqItems          BoQItem[]
+  stockMovements    StockMovement[]
 
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  // 3D BIM Eleman Eşleştirmesi (5D BIM)
+  elements          BimElementMap[]
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([projectId])
   @@index([organizationId])
   @@index([status])
   @@index([code])
+  @@index([pozNo])
+  @@index([categoryKey])
 }
 
 model BoQItem {
@@ -3335,4 +3355,60 @@ model ApprovalWorkflow {
   @@index([documentRevisionId])
   @@index([purchaseOrderId])
   @@index([progressPaymentId])
+}
+
+model ApprovalRequest {
+  id           String    @id @default(cuid())
+  projectId    String
+  project      Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title        String
+  requestType  String   // "HAKEDIS", "REVIZYON", "SATINALMA", "KUSUR_KAPATMA"
+  entityId     String
+  requestedBy  String
+  status       String    @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  amount       Float?
+  notes        String?   @db.Text
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([status])
+  @@index([requestType])
+  @@index([createdAt])
+}
+
+model BimElementMap {
+  id            String       @id @default(cuid())
+  projectId     String
+  project       Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workPackageId String
+  workPackage   WorkPackage  @relation(fields: [workPackageId], references: [id], onDelete: Cascade)
+  elementKey    String       // IFC expressID veya GLTF mesh.name
+  categoryKey   String       // "statik" | "mimari" | "elektrik" | "mekanik"
+  quantity      Float        @default(0) // 3D geometriden hesaplanan m3/m2 hacim
+  status        String       @default("PLANNED") // "PLANNED", "IN_PROGRESS", "COMPLETED", "DEFECTIVE"
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([projectId, elementKey])
+  @@index([workPackageId])
+  @@index([projectId])
+}
+
+model BackgroundJob {
+  id          String    @id @default(cuid())
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  jobType     String    // "BIM_METRAJ_INDEX", "DEFECT_RISK_SYNC", "AI_COLLECTION_CHECK"
+  payload     Json
+  status      String    @default("PENDING") // "PENDING", "PROCESSING", "COMPLETED", "FAILED"
+  result      Json?
+  error       String?   @db.Text
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([jobType])
+  @@index([projectId])
 }

@@ -43,6 +43,63 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // 1. ApprovalRequest: Çözüm Onayı Talebi aç
+    try {
+      await prisma.approvalRequest.create({
+        data: {
+          projectId,
+          title: `Kusur Çözüm Onayı: ${title}`,
+          requestType: "KUSUR_KAPATMA",
+          entityId: issue.id,
+          requestedBy: subcontractorName || "Saha Ekibi",
+          status: "PENDING",
+          amount: penaltyAmount ? parseFloat(penaltyAmount) : null,
+          notes: `Kusur bildirimi: ${description || title}. Şiddet: ${severity || "CRITICAL"}. Hakediş Blokesi: ${blockPayment ? "Aktif" : "Pasif"}`
+        }
+      })
+    } catch (apprErr) {
+      console.warn("ApprovalRequest oluşturulamadı:", apprErr)
+    }
+
+    // 2. Merkezi Denetim İzi (AuditLog) kaydı oluştur
+    try {
+      const { recordAuditLog } = await import("@/lib/enterprise-core")
+      await recordAuditLog({
+        projectId,
+        action: "DEFECT_CREATED",
+        entityType: "BimIssue",
+        entityId: issue.id,
+        summary: `3D Model üzerinde yeni kusur bildirildi: [${title}] (${subcontractorName || "Taşeron"}) - Ceza: ${penaltyAmount ? `${penaltyAmount} TL` : "Yok"}.`,
+        newValues: {
+          title,
+          severity,
+          subcontractorName,
+          blockPayment,
+          penaltyAmount,
+        }
+      })
+    } catch (auditErr) {
+      console.warn("AuditLog kaydedilemedi:", auditErr)
+    }
+
+    // 3. Arka Plan Kuyruğuna (BackgroundJob) DEFECT_RISK_SYNC işi ekle
+    try {
+      const { enqueueJob } = await import("@/lib/enterprise-core")
+      await enqueueJob({
+        jobType: "DEFECT_RISK_SYNC",
+        projectId,
+        payload: {
+          issueId: issue.id,
+          title,
+          severity,
+          subcontractorName,
+          blockPayment,
+        }
+      })
+    } catch (queueErr) {
+      console.warn("BackgroundJob eklenemedi:", queueErr)
+    }
+
     return NextResponse.json({
       ...issue,
       description: description || "",

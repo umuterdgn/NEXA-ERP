@@ -45,6 +45,7 @@ export default async function ProjectDetailPage({
     deficiencies?: Array<Record<string, unknown>>
     documents?: Array<Record<string, unknown>>
     audits?: Array<Record<string, unknown>>
+    auditLogs?: Array<Record<string, unknown>>
     _count?: {
       inspections?: number
       deficiencies?: number
@@ -130,6 +131,12 @@ export default async function ProjectDetailPage({
           orderBy: {
             createdAt: 'desc'
           }
+        },
+        auditLogs: {
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 50
         },
         _count: {
           select: {
@@ -328,6 +335,7 @@ export default async function ProjectDetailPage({
         deficiencies={project.deficiencies}
         documents={project.documents}
         audits={project.audits}
+        auditLogs={project.auditLogs}
       />
 
       {/* Main Content Grid */}

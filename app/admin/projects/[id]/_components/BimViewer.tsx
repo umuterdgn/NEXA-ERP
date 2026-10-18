@@ -247,6 +247,7 @@ function GltfModel({
   url,
   layerVisibility,
   xRayOpacity,
+  completedElements,
   onElementCounts,
   onClick,
   onPointerDown,
@@ -254,6 +255,7 @@ function GltfModel({
   url: string
   layerVisibility: Record<BimCategoryKey, boolean>
   xRayOpacity: number
+  completedElements?: Record<string, boolean>
   onElementCounts?: (counts: Record<BimCategoryKey, number>) => void
   onClick?: (e: any) => void
   onPointerDown?: (e: any) => void
@@ -345,10 +347,19 @@ function GltfModel({
               child.material.emissiveIntensity = 0
             }
           }
+
+          // 3. Highlight completed 5D BIM elements in emerald green (0x10b981)
+          if (completedElements && (completedElements[child.name] || completedElements[child.id])) {
+            child.material.emissive = new THREE.Color(0x10b981)
+            child.material.emissiveIntensity = 0.95
+            if (child.material.color) {
+              child.material.color.setHex(0x10b981)
+            }
+          }
         }
       }
     })
-  }, [scene, layerVisibility, xRayOpacity])
+  }, [scene, layerVisibility, xRayOpacity, completedElements])
 
   useEffect(() => {
     return () => {
@@ -651,6 +662,22 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
     volume: string
   } | null>(null)
 
+  // 5D BIM Poz & Metraj (BoQ) states
+  const [isBoqMode, setIsBoqMode] = useState(false)
+  const [workPackages, setWorkPackages] = useState<any[]>([])
+  const [selectedWorkPackageId, setSelectedWorkPackageId] = useState<string>("")
+  const [selectedBoqElement, setSelectedBoqElement] = useState<{
+    elementKey: string
+    meshName: string
+    categoryKey: BimCategoryKey
+    categoryLabel: string
+    volume: number
+    area: number
+    meshRef?: THREE.Mesh | null
+  } | null>(null)
+  const [isSavingBoq, setIsSavingBoq] = useState(false)
+  const [completedElements, setCompletedElements] = useState<Record<string, boolean>>({})
+
   // Snagging (Kusur İşaretleme) states
   const [isSnaggingMode, setIsSnaggingMode] = useState(false)
   const [showIssueForm, setShowIssueForm] = useState(false)
@@ -701,6 +728,80 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
       if (distance >= 5) {
         return // Kamera döndürülüyordu, seçimi tetikleme
       }
+    }
+
+    // 0. POZ & METRAJ (5D BIM) MODU
+    if (isBoqMode) {
+      e.stopPropagation()
+      const clickedMesh = (e.object?.isMesh ? e.object : null) as THREE.Mesh | null
+      const meshName = e.object?.name || "BIM-Eleman-1"
+      const catKey = identifyCategory(e.object)
+      const categoryLabel =
+        catKey === "statik"
+          ? "Statik / Taşıyıcı"
+          : catKey === "mimari"
+          ? "Mimari"
+          : catKey === "elektrik"
+          ? "Elektrik"
+          : "Mekanik"
+
+      let volume = 1.0
+      let area = 1.0
+      try {
+        const bbox = new THREE.Box3().setFromObject(e.object)
+        const size = new THREE.Vector3()
+        bbox.getSize(size)
+        volume = parseFloat(Math.max(0.01, size.x * size.y * size.z).toFixed(2))
+        area = parseFloat(Math.max(0.01, 2 * (size.x * size.y + size.x * size.z + size.y * size.z)).toFixed(2))
+      } catch (err) {
+        console.warn("Could not calculate 3D volume/area:", err)
+      }
+
+      if (clickedMesh && clickedMesh.material) {
+        restorePreviousHighlight()
+        if (!clickedMesh.userData?.isClonedForHighlight) {
+          if (Array.isArray(clickedMesh.material)) {
+            clickedMesh.material = clickedMesh.material.map((m) => m.clone())
+          } else {
+            clickedMesh.material = clickedMesh.material.clone()
+          }
+          clickedMesh.userData.isClonedForHighlight = true
+        }
+        const targetMat = (Array.isArray(clickedMesh.material) ? clickedMesh.material[0] : clickedMesh.material) as any
+        const origEmissive = targetMat.emissive ? targetMat.emissive.clone() : new THREE.Color(0x000000)
+        const origIntensity = targetMat.emissiveIntensity ?? 0
+        highlightedMeshRef.current = {
+          mesh: clickedMesh,
+          origEmissive,
+          origIntensity,
+        }
+
+        const applyHighlight = (m: any) => {
+          m.emissive = new THREE.Color(0x06b6d4)
+          m.emissiveIntensity = 0.8
+        }
+        if (Array.isArray(clickedMesh.material)) {
+          clickedMesh.material.forEach(applyHighlight)
+        } else {
+          applyHighlight(clickedMesh.material)
+        }
+      }
+
+      const matchedWp = workPackages.find((wp) => wp.categoryKey === catKey) || workPackages[0]
+      if (matchedWp) {
+        setSelectedWorkPackageId(matchedWp.id)
+      }
+
+      setSelectedBoqElement({
+        elementKey: meshName,
+        meshName,
+        categoryKey: catKey,
+        categoryLabel,
+        volume,
+        area,
+        meshRef: clickedMesh,
+      })
+      return
     }
 
     // 1. ÖLÇÜM (MEASUREMENT) MODU
@@ -845,6 +946,124 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
       setEngineMode("canvas")
     }
   }, [effectiveUrl, fileName])
+
+  // Load existing BIM issues, work packages, and element maps
+  const loadWorkPackagesAndMaps = async () => {
+    if (!projectId) return
+    try {
+      const [wpRes, mapRes] = await Promise.all([
+        fetch(`/api/work-packages?projectId=${projectId}`),
+        fetch(`/api/bim-elements/map?projectId=${projectId}`),
+      ])
+      if (wpRes.ok) {
+        const wpData = await wpRes.json()
+        setWorkPackages(wpData)
+        if (wpData.length > 0 && !selectedWorkPackageId) {
+          setSelectedWorkPackageId(wpData[0].id)
+        }
+      }
+      if (mapRes.ok) {
+        const mapData = await mapRes.json()
+        const completedMap: Record<string, boolean> = {}
+        mapData.forEach((item: any) => {
+          if (item.status === "COMPLETED") {
+            completedMap[item.elementKey] = true
+          }
+        })
+        setCompletedElements(completedMap)
+      }
+    } catch (err) {
+      console.error("Failed to load work packages or element maps:", err)
+    }
+  }
+
+  const handleUpdateElementStatus = async (status: string) => {
+    if (!selectedBoqElement || !projectId) {
+      toast.error("Lütfen bir eleman seçin.")
+      return
+    }
+
+    const currentWp = workPackages.find((wp) => wp.id === selectedWorkPackageId) || workPackages[0]
+    if (!currentWp) {
+      toast.error("Lütfen bağlı bir iş paketi (Poz) seçin.")
+      return
+    }
+
+    const quantity = currentWp.unit === "m2" ? selectedBoqElement.area : selectedBoqElement.volume
+
+    setIsSavingBoq(true)
+    try {
+      const res = await fetch("/api/bim-elements/map", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          workPackageId: currentWp.id,
+          elementKey: selectedBoqElement.elementKey,
+          categoryKey: selectedBoqElement.categoryKey,
+          quantity,
+          status,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "İşlem başarısız")
+
+      // COMPLETED durumunda 3D modelde o elemanı zümrüt yeşili (0x10b981) renkle vurgula
+      if (status === "COMPLETED" && selectedBoqElement.meshRef) {
+        const mesh = selectedBoqElement.meshRef
+        const applyEmerald = (m: any) => {
+          if (m.emissive) {
+            m.emissive = new THREE.Color(0x10b981)
+            m.emissiveIntensity = 0.95
+          }
+          if (m.color) {
+            m.color.setHex(0x10b981)
+          }
+        }
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(applyEmerald)
+        } else {
+          applyEmerald(mesh.material)
+        }
+        if (highlightedMeshRef.current?.mesh === mesh) {
+          highlightedMeshRef.current = null
+        }
+        setCompletedElements((prev) => ({ ...prev, [selectedBoqElement.elementKey]: true }))
+        toast.success(`✅ ${selectedBoqElement.meshName} imalatı tamamlandı ve metraj (${quantity} ${currentWp.unit || "m³"}) hakedişe eklendi!`, {
+          duration: 4000,
+        })
+      } else if (status === "DEFECTIVE") {
+        if (selectedBoqElement.meshRef) {
+          const mesh = selectedBoqElement.meshRef
+          const applyRed = (m: any) => {
+            if (m.emissive) {
+              m.emissive = new THREE.Color(0xef4444)
+              m.emissiveIntensity = 0.9
+            }
+          }
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach(applyRed)
+          } else {
+            applyRed(mesh.material)
+          }
+        }
+        toast.error(`⚠️ ${selectedBoqElement.meshName} kusurlu olarak işaretlendi ve bloke edildi!`)
+      } else {
+        toast.success(`İmalat durumu güncellendi: ${status}`)
+      }
+
+      loadWorkPackagesAndMaps()
+    } catch (err: any) {
+      toast.error(err?.message || "Kayıt sırasında hata oluştu")
+    } finally {
+      setIsSavingBoq(false)
+    }
+  }
+
+  useEffect(() => {
+    loadWorkPackagesAndMaps()
+  }, [projectId])
 
   // Load existing BIM issues
   useEffect(() => {
@@ -1593,6 +1812,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                         url={safeUrl}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
+                        completedElements={completedElements}
                         onElementCounts={(counts) => setCategoryCounts(counts)}
                         onClick={handleModelClick}
                         onPointerDown={(e: any) => {
@@ -1750,14 +1970,38 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </div>
       )}
 
-      {/* Floating Bottom Toolbar (Snagging, Measurement & AR Buttons) */}
-      <div className="absolute bottom-4 left-4 right-20 sm:left-auto sm:right-20 z-30 flex items-center justify-center sm:justify-end gap-2">
+      {/* Floating Bottom Toolbar (BoQ 5D, Snagging, Measurement & AR Buttons) */}
+      <div className="absolute bottom-4 left-4 right-20 sm:left-auto sm:right-20 z-30 flex items-center justify-center sm:justify-end gap-2 flex-wrap">
+        {/* 5D BoQ Toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            const nextMode = !isBoqMode
+            setIsBoqMode(nextMode)
+            setIsMeasureMode(false)
+            setIsSnaggingMode(false)
+            if (!nextMode) {
+              setSelectedBoqElement(null)
+              restorePreviousHighlight()
+            }
+          }}
+          className={`px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 backdrop-blur-md ${
+            isBoqMode
+              ? "bg-emerald-600/90 text-white border-emerald-400/60 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+              : "bg-slate-900/90 text-slate-300 hover:text-white border-slate-700/80 hover:bg-slate-800"
+          }`}
+        >
+          <span>📦 {isBoqMode ? "5D Poz Modu Açık" : "Poz & Metraj (5D)"}</span>
+        </button>
+
         {/* Snagging Toggle */}
         <button
           type="button"
           onClick={() => {
             setIsSnaggingMode(!isSnaggingMode)
             setIsMeasureMode(false)
+            setIsBoqMode(false)
+            setSelectedBoqElement(null)
           }}
           className={`px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 backdrop-blur-md ${
             isSnaggingMode
@@ -1889,13 +2133,140 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
       )}
 
       {/* Floating Instructions Banner */}
-      <div className={`absolute bottom-4 left-4 z-30 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700/80 px-3.5 py-2 shadow-xl ${isMeasureMode ? "hidden" : "hidden sm:flex"} items-center gap-2 text-xs text-slate-300`}>
+      <div className={`absolute bottom-4 left-4 z-30 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700/80 px-3.5 py-2 shadow-xl ${isMeasureMode || isBoqMode ? "hidden" : "hidden sm:flex"} items-center gap-2 text-xs text-slate-300`}>
         <span className="text-cyan-400">💡</span>
         <span>
           Döndürmek için <strong>sol tıkla sürükleyin</strong>, yakınlaşmak için <strong>tekerleği kaydırın</strong>.
           X-Ray ile duvarın arkasındaki tesisatı keşfedin.
         </span>
       </div>
+
+      {/* 5D BIM Poz & İmalat Kartı (Bottom Left Panel) */}
+      {isBoqMode && selectedBoqElement && (
+        <div className="absolute bottom-16 sm:bottom-4 left-3 sm:left-4 z-40 w-[calc(100%-24px)] sm:w-96 bg-slate-900/95 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-4 shadow-[0_12px_45px_rgba(0,0,0,0.75)] space-y-3.5 animate-in slide-in-from-bottom duration-200">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold border border-emerald-500/30">
+                📦
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white leading-tight">5D BIM Poz & İmalat Kartı</h4>
+                <p className="text-[10px] text-emerald-400 font-medium">Metraj & Hakediş Entegrasyonu</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBoqElement(null)
+                restorePreviousHighlight()
+              }}
+              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition text-xs"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Seçili Eleman Bilgisi */}
+          <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-2.5 space-y-1.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 font-medium">Seçili Eleman:</span>
+              <span className="font-mono font-bold text-slate-200 truncate max-w-[200px]" title={selectedBoqElement.meshName}>
+                {selectedBoqElement.meshName}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 font-medium">Disiplin / Kategori:</span>
+              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                {selectedBoqElement.categoryLabel}
+              </span>
+            </div>
+            <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
+              <span className="text-slate-400 font-medium">Hesaplanan Metraj:</span>
+              <span className="text-cyan-400 font-mono font-bold">
+                {selectedBoqElement.volume} m³ / {selectedBoqElement.area} m²
+              </span>
+            </div>
+          </div>
+
+          {/* Bağlı İş Paketi (Poz Seçimi) */}
+          <div className="space-y-1">
+            <label className="block text-[11px] font-semibold text-slate-300">
+              Bağlı İş Paketi (Poz Seçimi)
+            </label>
+            <select
+              value={selectedWorkPackageId}
+              onChange={(e) => setSelectedWorkPackageId(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+            >
+              {workPackages.map((wp) => (
+                <option key={wp.id} value={wp.id}>
+                  [{wp.pozNo || "POZ"}] {wp.name} ({wp.unitPrice?.toLocaleString("tr-TR")} ₺/{wp.unit})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tahmini Maliyet Hesaplaması */}
+          {(() => {
+            const currentWp = workPackages.find((w) => w.id === selectedWorkPackageId) || workPackages[0]
+            const qty = currentWp?.unit === "m2" ? selectedBoqElement.area : selectedBoqElement.volume
+            const unitPrice = currentWp?.unitPrice || 0
+            const estimatedCost = qty * unitPrice
+            return (
+              <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-2.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] text-emerald-300 font-medium block">Tahmini Maliyet (Hakediş Bedeli)</span>
+                  <span className="text-[10px] text-slate-400">
+                    {qty} {currentWp?.unit || "m³"} × {unitPrice.toLocaleString("tr-TR")} ₺
+                  </span>
+                </div>
+                <span className="text-sm font-mono font-bold text-emerald-400">
+                  {estimatedCost.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                </span>
+              </div>
+            )
+          })()}
+
+          {/* İmalat Durumu Butonları */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">İmalat Durumu Güncelle</span>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                disabled={isSavingBoq}
+                onClick={() => handleUpdateElementStatus("PLANNED")}
+                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium border border-slate-700 transition"
+              >
+                ⏳ Planlandı
+              </button>
+              <button
+                type="button"
+                disabled={isSavingBoq}
+                onClick={() => handleUpdateElementStatus("IN_PROGRESS")}
+                className="px-2.5 py-1.5 bg-amber-600/30 hover:bg-amber-600/40 text-amber-300 border border-amber-500/40 rounded-lg text-[11px] font-medium transition"
+              >
+                🚧 Devam Ediyor
+              </button>
+              <button
+                type="button"
+                disabled={isSavingBoq}
+                onClick={() => handleUpdateElementStatus("COMPLETED")}
+                className="col-span-2 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-900/40 border border-emerald-400/40 transition flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                {isSavingBoq ? "Hakedişe Ekleniyor..." : "✅ Tamamlandı (Hakedişe Ekle)"}
+              </button>
+              <button
+                type="button"
+                disabled={isSavingBoq}
+                onClick={() => handleUpdateElementStatus("DEFECTIVE")}
+                className="col-span-2 px-2.5 py-1.5 bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-500/30 rounded-lg text-[11px] font-medium transition text-center"
+              >
+                ⚠️ Kusurlu (Bloke Et)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Issue Form Modal for Snagging with Subcontractor & Payment Block Integration */}
       {showIssueForm && (

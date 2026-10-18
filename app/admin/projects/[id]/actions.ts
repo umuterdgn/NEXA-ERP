@@ -39,6 +39,33 @@ export async function addBimFile(projectId: string, url: string, name: string) {
     }).catch((err) => {
       console.error("Proje model URL güncellenirken uyarı:", err);
     });
+
+    // Merkezi Denetim İzi (AuditLog) kaydı oluştur
+    try {
+      const { recordAuditLog } = await import("@/lib/enterprise-core");
+      await recordAuditLog({
+        projectId,
+        action: "BIM_UPLOAD",
+        entityType: "BimFile",
+        entityId: newFile.id,
+        summary: `Yeni 3D BIM modeli (${name}) başarıyla yüklendi ve projenin ana modeli olarak belirlendi.`,
+        newValues: { fileName: name, fileUrl: url, fileType: ext },
+      });
+    } catch (auditErr) {
+      console.warn("BIM Upload AuditLog kaydedilemedi:", auditErr);
+    }
+
+    // Arka Plan Kuyruğuna (BackgroundJob) BIM_METRAJ_INDEX işi bırak
+    try {
+      const { enqueueJob } = await import("@/lib/enterprise-core");
+      await enqueueJob({
+        jobType: "BIM_METRAJ_INDEX",
+        projectId,
+        payload: { bimFileId: newFile.id, fileName: name, fileUrl: url },
+      });
+    } catch (jobErr) {
+      console.warn("BIM Upload BackgroundJob eklenemedi:", jobErr);
+    }
     
     revalidatePath(`/admin/projects/${projectId}`); // Cache'i anında temizle!
     console.log("SERVER ACTION: addBimFile BAŞARILI.");
@@ -77,6 +104,33 @@ export async function setActiveBimFile(projectId: string, bimFileId: string) {
         ifcModelUrl: targetFile.fileUrl,
       },
     });
+
+    // Merkezi Denetim İzi (AuditLog) kaydı oluştur
+    try {
+      const { recordAuditLog } = await import("@/lib/enterprise-core");
+      await recordAuditLog({
+        projectId,
+        action: "BIM_ACTIVE",
+        entityType: "BimFile",
+        entityId: bimFileId,
+        summary: `Aktif 3D BIM modeli değiştirildi: [${targetFile.fileName}].`,
+        newValues: { fileName: targetFile.fileName, fileUrl: targetFile.fileUrl },
+      });
+    } catch (auditErr) {
+      console.warn("BIM Active AuditLog kaydedilemedi:", auditErr);
+    }
+
+    // Arka Plan Kuyruğuna (BackgroundJob) BIM_METRAJ_INDEX işi bırak
+    try {
+      const { enqueueJob } = await import("@/lib/enterprise-core");
+      await enqueueJob({
+        jobType: "BIM_METRAJ_INDEX",
+        projectId,
+        payload: { bimFileId: targetFile.id, fileName: targetFile.fileName, fileUrl: targetFile.fileUrl },
+      });
+    } catch (jobErr) {
+      console.warn("BIM Active BackgroundJob eklenemedi:", jobErr);
+    }
 
     revalidatePath(`/admin/projects/${projectId}`);
     return { success: true, url: targetFile.fileUrl, bimFile: targetFile };
