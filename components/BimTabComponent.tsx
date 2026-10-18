@@ -316,39 +316,40 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
               }}
               onClientUploadComplete={(res) => {
                 setIsUploading(false);
-
+                
                 if (!res || res.length === 0) {
                   toast.error("Yükleme tamamlandı ancak sunucudan yanıt alınamadı.");
                   return;
                 }
 
                 // 1. URL'yi güvenli şekilde al (ufsUrl öncelikli)
-                const resolvedUrl = (res[0] as any).serverData?.url || (res[0] as any).ufsUrl || res[0].url || (res[0] as any).fileUrl;
-                const originalName = res[0].name || (res[0] as any).serverData?.name || (res[0] as any).fileName || "Yeni-Model.ifc";
+                const resolvedUrl = (res[0] as any).serverData?.url || (res[0] as any).ufsUrl || res[0].url;
+                const originalName = res[0].name || (res[0] as any).serverData?.name || "Yeni-Model.ifc";
 
                 if (resolvedUrl) {
                   console.log("FRONTEND: URL başarıyla alındı:", resolvedUrl);
-
+                  
                   // 2. OPTIMISTIC UI: Beklemeden KUTUYU KAPAT ve MODELİ AÇ!
                   setBimUrl(resolvedUrl);
                   setShowUploader(false);
-
-                  const tempFile: BimFileItem = {
-                    id: Math.random().toString(36).substr(2, 9),
+                  
+                  const tempFile = {
+                    id: Math.random().toString(36).substring(2, 11),
                     projectId: project.id,
                     fileName: originalName,
                     fileUrl: resolvedUrl,
                     isActive: true,
-                    uploadedAt: new Date(),
+                    uploadedAt: new Date()
                   };
-
-                  setBimFiles((prev) => [tempFile, ...prev.map((f) => ({ ...f, isActive: false }))]);
+                  
+                  setBimFiles(prev => [tempFile, ...prev.map(f => ({ ...f, isActive: false }))]);
                   toast.success("Model yüklendi! 3D ortam hazırlanıyor...");
 
                   // 3. Arka planda DB'ye kaydet (Hata verirse UI'ı bozmasın)
                   addBimFile(project.id, resolvedUrl, originalName)
                     .then(() => router.refresh())
-                    .catch((err) => console.error("DB Kayıt Hatası (Önemsiz):", err));
+                    .catch(err => console.error("DB Kayıt Hatası (Önemsiz):", err));
+                    
                 } else {
                   toast.error("Dosya yüklendi fakat geçerli bir URL döndürülemedi.");
                 }
