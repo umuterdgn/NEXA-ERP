@@ -10,6 +10,7 @@ import Link from "next/link"
 import ProjectDetailClient from "@/components/ProjectDetailClient"
 import ProjectDetailTabs from "@/components/ProjectDetailTabs"
 import ProjectTimeline from "@/components/ProjectTimeline"
+import LiveSiteDashboard from "@/app/admin/projects/[id]/_components/LiveSiteDashboard"
 
 export const dynamic = 'force-dynamic'
 
@@ -327,6 +328,14 @@ export default async function ProjectDetailPage({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Canlı Şantiye Özeti (Live Dashboard) & İSG Radarı */}
+      <div className="mb-6">
+        <LiveSiteDashboard
+          projectId={resolvedParams.id}
+          projectName={project.name || project.title || undefined}
+        />
       </div>
 
       {/* Timeline */}

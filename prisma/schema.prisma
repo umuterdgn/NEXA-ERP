@@ -3429,3 +3429,56 @@ model DroneCapture {
   
   @@index([projectId, captureDate])
 }
+
+// ============================================================================
+// IOT, İSG VE LOJİSTİK (BLE Akıllı Zimmet & Canlı Şantiye Takibi)
+// ============================================================================
+
+model BleDevice {
+  id           String    @id @default(cuid())
+  macAddress   String    @unique
+  deviceType   String    // "BARET", "YELEK", "AYAKKABI", "YAKA_KARTI"
+  assignedTo   String?   // Personel ID
+  batteryLevel Int       @default(100)
+  lastSeenAt   DateTime?
+  projectId    String
+
+  @@index([projectId])
+  @@index([assignedTo])
+}
+
+model RiskZone {
+  id          String   @id @default(cuid())
+  projectId   String
+  zoneName    String   // Örn: "A Blok İskele (Yüksekte Çalışma)", "Kule Vinç Altı"
+  dangerLevel String   // "HIGH", "CRITICAL"
+  requiredPpe String[] // Örn: ["BARET", "EMNIYET_KEMERI"]
+
+  @@index([projectId])
+}
+
+model IsgViolation {
+  id         String   @id @default(cuid())
+  projectId  String
+  workerName String
+  violation  String   // Örn: "Baret takılmadı", "Yetkisiz iskele girişi"
+  zoneName   String?
+  timestamp  DateTime @default(now())
+  status     String   @default("OPEN") // "OPEN", "RESOLVED"
+
+  @@index([projectId])
+  @@index([status])
+  @@index([timestamp])
+}
+
+model DailyLogistics {
+  id        String   @id @default(cuid())
+  projectId String
+  date      DateTime @default(now())
+  material  String   // "Demir (Ton)", "Çimento (Torba)", "Hazır Beton (m3)"
+  incoming  Float    @default(0)
+  consumed  Float    @default(0)
+
+  @@index([projectId])
+  @@index([date])
+}

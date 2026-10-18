@@ -29,6 +29,8 @@ const GanttChart = dynamic(() => import('@/app/admin/projects/[id]/_components/G
 const ProjectDocuments = dynamic(() => import('@/app/admin/projects/[id]/_components/ProjectDocuments'), { ssr: false })
 // 4D Drone Fotogrametri & Dijital İkiz
 const DroneDigitalTwin = dynamic(() => import('@/app/admin/projects/[id]/_components/DroneDigitalTwin'), { ssr: false })
+// Canlı Şantiye Özeti & İSG Radarı
+const LiveSiteDashboard = dynamic(() => import('@/app/admin/projects/[id]/_components/LiveSiteDashboard'), { ssr: false })
 
 interface Project {
   id: string
@@ -106,6 +108,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   })
 
   const tabs = [
+    { id: "canli-saha", label: "📡 Şantiye Özeti (Canlı)" },
     { id: "kunya", label: "Proje Künyesi" },
     { id: "arsiv", label: "Arşiv ve Evraklar" },
     { id: "gunluk", label: "Şantiye Günlüğü" },
@@ -626,6 +629,12 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "canli-saha" && (
+          <div className="space-y-6">
+            <LiveSiteDashboard projectId={project.id} projectName={project.name || project.title || undefined} />
           </div>
         )}
 
