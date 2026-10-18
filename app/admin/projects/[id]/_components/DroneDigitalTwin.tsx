@@ -280,6 +280,12 @@ export default function DroneDigitalTwin({
           shadows
           gl={{ antialias: true, alpha: true }}
         >
+          {/* Nexa ERP Koyu Tema Arka Planı (Slate-900) */}
+          <color attach="background" args={["#0f172a"]} />
+
+          {/* Model Etrafında Derinlik Sağlayan Izgara */}
+          <gridHelper args={[50, 50, "#1e293b", "#334155"]} position={[0, -2, 0]} />
+
           <ambientLight intensity={0.8} />
           <directionalLight
             position={[10, 15, 10]}
@@ -288,19 +294,6 @@ export default function DroneDigitalTwin({
             shadow-mapSize={[2048, 2048]}
           />
           <directionalLight position={[-10, 8, -10]} intensity={0.5} />
-
-          {/* Izgara Taban */}
-          <Grid
-            infiniteGrid
-            cellSize={0.8}
-            cellThickness={0.5}
-            cellColor="#334155"
-            sectionSize={4}
-            sectionThickness={1.2}
-            sectionColor="#475569"
-            fadeDistance={25}
-            fadeStrength={1.5}
-          />
 
           <ContactShadows
             position={[0, -0.01, 0]}
@@ -355,11 +348,11 @@ export default function DroneDigitalTwin({
 
       {/* ===================================================================== */}
       {/* Adım 2: AI Saha Analizi Paneli (Sağ Panel UI Tasarımı)                */}
-      {/* absolute top-20 right-4 w-80 z-40 Glassmorphism                       */}
+      {/* absolute top-20 right-4 w-80 md:w-88 z-40 Glassmorphism               */}
       {/* ===================================================================== */}
-      <div className="absolute top-20 right-4 w-80 z-40 max-h-[calc(100%-160px)] overflow-y-auto backdrop-blur-xl bg-slate-900/80 border border-slate-700/60 rounded-2xl p-5 shadow-2xl text-white transition-all animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="absolute top-20 right-4 w-80 md:w-88 z-40 max-h-[calc(100%-160px)] overflow-y-auto backdrop-blur-xl bg-slate-900/80 border border-slate-700/60 rounded-2xl p-6 shadow-2xl text-white transition-all animate-in fade-in slide-in-from-right-4 duration-300">
         {/* Başlık: 🤖 AI Saha Analizi ve Yanında Tarih */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <span>🤖</span>
             <span>AI Saha Analizi</span>
@@ -384,7 +377,7 @@ export default function DroneDigitalTwin({
         </div>
 
         {/* Özet: Açıklama metni */}
-        <div className="mt-4 p-3 bg-slate-800/60 border border-slate-700/50 rounded-xl">
+        <div className="mt-4 p-3.5 bg-slate-800/60 border border-slate-700/50 rounded-xl">
           <p className="text-xs text-slate-300 leading-relaxed">
             {currentData.aiAnalysis.summary}
           </p>
@@ -428,7 +421,7 @@ export default function DroneDigitalTwin({
 
         {/* Güvenlik Riskleri & Pinler Listesi */}
         {currentData.aiAnalysis.risks && currentData.aiAnalysis.risks.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-slate-800">
+          <div className="mt-4 pt-3.5 border-t border-slate-800">
             <h4 className="text-[11px] font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
               Saha Güvenlik Riskleri ({currentData.aiAnalysis.risks.length})
@@ -454,10 +447,10 @@ export default function DroneDigitalTwin({
 
       {/* ===================================================================== */}
       {/* Adım 3: 4D Zaman Çizelgesi (Timeline) Alt Bar Tasarımı                 */}
-      {/* absolute bottom-4 left-1/2 -translate-x-1/2 z-40                      */}
+      {/* absolute bottom-5 left-1/2 -translate-x-1/2 z-40                      */}
       {/* Seçili: parlak bg-cyan-500 text-white, Diğerleri: koyu gri bg-slate-800 */}
       {/* ===================================================================== */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 backdrop-blur-xl bg-slate-900/85 border border-slate-700/70 rounded-2xl p-2.5 shadow-2xl flex items-center gap-3 max-w-[95%] overflow-x-auto">
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 backdrop-blur-xl bg-slate-900/80 border border-slate-700/60 rounded-2xl p-3 shadow-2xl flex items-center gap-4 max-w-[95%] overflow-x-auto">
         <div className="flex items-center gap-2 pl-2 pr-1 text-slate-400 text-xs font-semibold">
           <Calendar className="w-4 h-4 text-cyan-400" />
           <span className="hidden sm:inline">4D Çizelge:</span>
@@ -475,7 +468,7 @@ export default function DroneDigitalTwin({
                 setActiveStageIndex(index)
                 setIsPlaying4D(false)
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all border flex items-center gap-2.5 whitespace-nowrap cursor-pointer ${
+              className={`px-5 py-2.5 rounded-xl text-xs font-semibold transition-all border flex items-center gap-3 whitespace-nowrap cursor-pointer shadow-md ${
                 isSelected
                   ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 border-cyan-400 scale-105"
                   : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white"
@@ -484,7 +477,7 @@ export default function DroneDigitalTwin({
               <span className="font-bold text-sm tracking-wide">{buttonDateLabel}</span>
               <span className="opacity-90 hidden sm:inline">• {stage.stageName}</span>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                   isSelected ? "bg-white/20 text-white" : "bg-slate-700/80 text-slate-400"
                 }`}
               >
