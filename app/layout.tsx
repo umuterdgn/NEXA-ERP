@@ -1,5 +1,5 @@
 /**
- * 2026 NXA Software. All rights reserved.
+ * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * This code is the property of NXA Software.
  */
@@ -12,6 +12,7 @@ import OfflineStatus from "@/components/OfflineStatus";
 import OfflineSyncManager from "@/components/OfflineSyncManager";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import AILegislationAssistant from "@/components/AILegislationAssistant";
+import JsonLd from "@/components/JsonLd";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,14 +20,30 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.nxerp.com.tr"),
-  title: "Nexa ERP | Şantiye & Denetim Asistanı",
-  description: "Yeni nesil şantiye ve personel yönetim ERP sistemi.",
+  metadataBase: new URL("https://www.nxerp.com.tr"),
+  title: {
+    default: "Nexa ERP | Yeni Nesil İnşaat & Şantiye Yönetim Yazılımı",
+    template: "%s | Nexa ERP",
+  },
+  description: "3D BIM, IoT İSG takibi, otomatik hakediş blokesi ve Offline-First PWA altyapısıyla inşaat projelerinizi tek merkezden yönetin. Kurumsal SaaS çözümü.",
+  keywords: [
+    "İnşaat ERP",
+    "Şantiye Yönetim Yazılımı",
+    "5D BIM Yazılımı",
+    "İSG Takip Sistemi",
+    "Taşeron Hakediş Programı",
+    "Offline Şantiye Uygulaması",
+    "İnşaat Dijital İkiz",
+    "Şantiye IoT",
+    "Nexa ERP"
+  ],
+  authors: [{ name: "Nexa Technologies" }],
+  creator: "Nexa",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Şantiye",
+    title: "Nexa ERP",
   },
   icons: {
     icon: [
@@ -36,6 +53,38 @@ export const metadata: Metadata = {
     apple: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
+  },
+  openGraph: {
+    type: "website",
+    locale: "tr_TR",
+    url: "https://www.nxerp.com.tr",
+    title: "Nexa ERP | Şantiyenizin 4D Dijital İkizi",
+    description: "İnşaat sektöründe devrim. 3D BIM, BLE Akıllı Baret takibi ve otomatik hakediş motoru ile projelerinizi güvenceye alın.",
+    siteName: "Nexa ERP",
+    images: [
+      {
+        url: "/icon-512.png",
+        width: 1200,
+        height: 630,
+        alt: "Nexa ERP Şantiye Yönetim Platformu",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nexa ERP | İnşaat & Şantiye Yönetim Yazılımı",
+    description: "3D BIM ve IoT destekli yeni nesil şantiye yönetimi.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
@@ -55,6 +104,7 @@ export default function RootLayout({
   return (
     <html lang="tr" className={`${inter.variable} antialiased`} suppressHydrationWarning>
       <body className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white" suppressHydrationWarning>
+        <JsonLd />
         <ThemeProvider>
           <OfflineStatus />
           <OfflineSyncManager />

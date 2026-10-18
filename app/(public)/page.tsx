@@ -33,35 +33,5 @@ export const metadata: Metadata = {
 }
 
 export default function Home() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Nexa ERP",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web, iOS, Android (PWA)",
-    "description": "4D Dijital İkiz, 5D BIM, Offline-First saha defteri ve otonom hakediş motoru sunan B2B inşaat işletim sistemi.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "TRY",
-      "name": "Ücretsiz Demo"
-    },
-    "featureList": [
-      "5D BIM Web-IFC 3D Model Entegrasyonu",
-      "Offline-First PWA Şantiye Senkronizasyonu",
-      "Kusur Düzeltilmeden Bloke Olan Otonom Hakediş",
-      "BLE IoT Akıllı Baret ve İSG Takip Radarı",
-      "Excel BoQ Toplu Poz ve Keşif Yükleme"
-    ]
-  }
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <LandingPageClient />
-    </>
-  )
+  return <LandingPageClient />
 }
