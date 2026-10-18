@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     // Personeli kontrol et
     const personel = await prisma.personel.findUnique({
       where: { id: personnelId },
-      select: { id: true, name: true, currentSite: true }
+      select: { id: true, name: true, currentSite: true, userId: true }
     })
 
     if (!personel) {
@@ -91,6 +91,7 @@ export async function POST(request: Request) {
         macAddress: normalizedMac,
         deviceType: deviceType.toUpperCase(),
         assignedTo: personnelId,
+        userId: personel.userId || null,
         projectId: targetProjectId,
         batteryLevel: 100,
         lastSeenAt: new Date()
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
       update: {
         deviceType: deviceType.toUpperCase(),
         assignedTo: personnelId,
+        userId: personel.userId || null,
         projectId: targetProjectId,
         lastSeenAt: new Date()
       }

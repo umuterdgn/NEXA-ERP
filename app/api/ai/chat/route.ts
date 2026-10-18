@@ -59,13 +59,11 @@ export async function POST(request: NextRequest) {
         },
         orderBy: { period: "desc" }
       }),
-      prisma.subcontractor.findMany({
+      prisma.company.findMany({
+        where: { type: "SUBCONTRACTOR" },
         include: {
           contracts: {
             select: { id: true, title: true, totalAmount: true, status: true, startDate: true, endDate: true }
-          },
-          deductions: {
-            select: { id: true, amount: true, reason: true, notes: true }
           }
         }
       }),
@@ -110,7 +108,7 @@ export async function POST(request: NextRequest) {
       const subContracts = sub.contracts || []
       const delayed = subContracts.filter(c => new Date(c.endDate) < now && c.status === "ACTIVE")
       const totalContract = subContracts.reduce((sum, c) => sum + (c.totalAmount || 0), 0)
-      const totalDeductions = (sub.deductions || []).reduce((sum, d) => sum + (d.amount || 0), 0)
+      const totalDeductions = ((sub as any).deductions || []).reduce((sum: number, d: any) => sum + (d.amount || 0), 0)
 
       let riskScore = 15 // base score
       if (delayed.length > 0) riskScore += delayed.length * 30
