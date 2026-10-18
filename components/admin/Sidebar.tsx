@@ -5,7 +5,7 @@
  * This code is the property of NXA Software.
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
@@ -130,6 +130,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
   { href: "/admin/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ" },
   { href: "/admin/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ" },
+  { href: "/admin/projects", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ" },
   
   // YAPI DENETİM & KONTROL
   { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
@@ -187,13 +188,52 @@ export default function AdminSidebar({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const pathname = usePathname()
   const { isInstallable, promptInstall } = usePwaInstall()
   const { data: session } = useSession()
 
+  useEffect(() => {
+    // 1. URL'den aktif proje ID'sini al
+    const match = pathname?.match(/\/admin\/projects\/([^\/]+)/)
+    if (match && match[1] && match[1] !== "new") {
+      setActiveProjectId(match[1])
+      try {
+        localStorage.setItem("nexa_active_project_id", match[1])
+      } catch {}
+    } else {
+      // 2. LocalStorage'dan al
+      try {
+        const saved = localStorage.getItem("nexa_active_project_id")
+        if (saved) {
+          setActiveProjectId(saved)
+          return
+        }
+      } catch {}
+      // 3. API'den ilk projeyi çek
+      fetch("/api/admin/projects?limit=1")
+        .then((res) => res.json())
+        .then((data) => {
+          const list = Array.isArray(data) ? data : data?.projects
+          if (list && list.length > 0 && list[0]?.id) {
+            setActiveProjectId(list[0].id)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [pathname])
+
+  const boqHref = activeProjectId ? `/admin/projects/${activeProjectId}/boq` : "/admin/projects"
+
   const userRole = session?.user?.role
   const isSubcontractor = (userRole as string) === "SUBCONTRACTOR"
-  const effectiveMenuItems = isSubcontractor ? subcontractorMenuItems : menuItems
+  const rawMenuItems = isSubcontractor ? subcontractorMenuItems : menuItems
+  const effectiveMenuItems = rawMenuItems.map((item) => {
+    if (item.label === "Keşif & Metraj (BoQ)") {
+      return { ...item, href: boqHref }
+    }
+    return item
+  })
 
   // Group items by category
   const groupedMenuItems = effectiveMenuItems.reduce((acc, item) => {
@@ -320,7 +360,7 @@ export default function AdminSidebar({
                   {/* Menu Items */}
                   <div className="space-y-1">
                     {items.map((item) => {
-                      const isActive = pathname === item.href
+                      const isActive = pathname === item.href || (item.label === "Keşif & Metraj (BoQ)" && pathname?.includes("/boq"))
                       const Icon = item.icon
                       return (
                         <Link

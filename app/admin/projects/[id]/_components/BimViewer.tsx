@@ -639,7 +639,14 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
     elektrik: 0,
     mekanik: 0,
   })
-  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true)
+  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false)
+
+  // Open layer panel automatically on desktop displays (>= 1024px), keep collapsed on mobile
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+      setIsLayerPanelOpen(true)
+    }
+  }, [])
 
   // IFC Viewer refs & states
   const ifcContainerRef = useRef<HTMLDivElement>(null)
@@ -1485,20 +1492,20 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
             </div>
           </button>
         ) : (
-          // Expanded Glassmorphism Control Panel
-          <div className="w-80 sm:w-88 bg-slate-900/85 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.65)] overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200">
+          // Expanded Glassmorphism Control Panel (Compact & Responsive)
+          <div className="w-[calc(100vw-24px)] max-w-xs sm:w-72 bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.65)] overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200 max-h-[calc(100vh-140px)] flex flex-col">
             {/* Panel Header */}
-            <div className="p-3.5 px-4 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-700/80 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-base shadow-inner">
+            <div className="p-3 px-3.5 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-700/80 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-sm shadow-inner">
                   🩻
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-white tracking-wide flex items-center gap-1.5">
                     Katmanlar & X-Ray
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   </h3>
-                  <p className="text-[10px] text-slate-400 font-medium">BIM Röntgen & Disiplin Kontrolü</p>
+                  <p className="text-[9.5px] text-slate-400 font-medium">BIM Röntgen & Disiplin</p>
                 </div>
               </div>
 
@@ -1506,7 +1513,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                 <button
                   type="button"
                   onClick={() => setIsLayerPanelOpen(false)}
-                  className="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-sm"
+                  className="w-6 h-6 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-xs"
                   title="Paneli Küçült"
                 >
                   ✕
@@ -1514,7 +1521,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
               </div>
             </div>
 
-            <div className="p-4 space-y-4 max-h-[calc(100vh-260px)] min-h-[300px] overflow-y-auto custom-scrollbar">
+            <div className="p-3 space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto custom-scrollbar">
               {/* --- ADIM 2: GLOBAL ŞEFFAFLIK (X-RAY MODU) SLIDER'I --- */}
               <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 shadow-inner">
                 <div className="flex items-center justify-between mb-2">
@@ -2060,7 +2067,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
       {/* 2D Measurement & Element Quantity Metric Card (Left Bottom) */}
       {isMeasureMode && (
-        <div className="absolute bottom-16 sm:bottom-4 left-3 sm:left-4 z-40 w-[calc(100%-24px)] sm:w-80 bg-slate-900/95 backdrop-blur-xl border border-cyan-500/40 rounded-2xl p-3.5 shadow-2xl shadow-cyan-950/60 space-y-2.5 animate-in slide-in-from-bottom duration-200">
+        <div className="absolute bottom-20 sm:bottom-6 left-4 sm:left-6 lg:left-8 z-40 w-[calc(100%-32px)] sm:w-72 max-w-xs bg-slate-900/95 backdrop-blur-xl border border-cyan-500/40 rounded-2xl p-3.5 shadow-2xl shadow-cyan-950/60 space-y-2.5 animate-in slide-in-from-bottom duration-200">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold border border-cyan-500/30">
@@ -2133,7 +2140,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
       )}
 
       {/* Floating Instructions Banner */}
-      <div className={`absolute bottom-4 left-4 z-30 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700/80 px-3.5 py-2 shadow-xl ${isMeasureMode || isBoqMode ? "hidden" : "hidden sm:flex"} items-center gap-2 text-xs text-slate-300`}>
+      <div className={`absolute bottom-6 left-4 sm:left-6 lg:left-8 z-30 bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-700/80 px-3.5 py-2 shadow-xl ${isMeasureMode || isBoqMode ? "hidden" : "hidden sm:flex"} items-center gap-2 text-xs text-slate-300`}>
         <span className="text-cyan-400">💡</span>
         <span>
           Döndürmek için <strong>sol tıkla sürükleyin</strong>, yakınlaşmak için <strong>tekerleği kaydırın</strong>.
@@ -2143,7 +2150,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
 
       {/* 5D BIM Poz & İmalat Kartı (Bottom Left Panel) */}
       {isBoqMode && selectedBoqElement && (
-        <div className="absolute bottom-16 sm:bottom-4 left-3 sm:left-4 z-40 w-[calc(100%-24px)] sm:w-96 bg-slate-900/95 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-4 shadow-[0_12px_45px_rgba(0,0,0,0.75)] space-y-3.5 animate-in slide-in-from-bottom duration-200">
+        <div className="absolute bottom-20 sm:bottom-6 left-4 sm:left-6 lg:left-8 z-40 w-[calc(100%-32px)] sm:w-80 max-w-sm bg-slate-900/95 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-4 shadow-[0_12px_45px_rgba(0,0,0,0.75)] space-y-3.5 animate-in slide-in-from-bottom duration-200">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold border border-emerald-500/30">
