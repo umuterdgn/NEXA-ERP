@@ -109,6 +109,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
 
   const tabs = [
     { id: "canli-saha", label: "📡 Şantiye Özeti (Canlı)" },
+    { id: "boq", label: "📊 Keşif & Metraj (BoQ)" },
     { id: "kunya", label: "Proje Künyesi" },
     { id: "arsiv", label: "Arşiv ve Evraklar" },
     { id: "gunluk", label: "Şantiye Günlüğü" },
@@ -635,6 +636,39 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
         {activeTab === "canli-saha" && (
           <div className="space-y-6">
             <LiveSiteDashboard projectId={project.id} projectName={project.name || project.title || undefined} />
+          </div>
+        )}
+
+        {activeTab === "boq" && (
+          <div className="bg-slate-900/60 backdrop-blur-md rounded-2xl p-6 border border-slate-800 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span>📊 Proje Keşif & Metraj (BoQ)</span>
+                  <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                    Excel Bulk Upload Aktif
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  İş paketlerini (BoQ), poz numaralarını, birim fiyatları ve planlanan metrajları Excel ile toplu içe aktarın ve yönetin.
+                </p>
+              </div>
+              <button
+                onClick={() => router.push(`/admin/projects/${project.id}/boq`)}
+                className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer"
+              >
+                <span>📁 Excel'den Poz Yükle & Yönet</span>
+              </button>
+            </div>
+            <div className="p-4 bg-slate-800/40 rounded-xl border border-slate-800 flex items-center justify-between text-xs text-slate-300">
+              <span>Keşif & Metraj yönetim sayfasına geçerek Excel dosyalarınızı yükleyebilir veya örnek şablonu indirebilirsiniz.</span>
+              <button
+                onClick={() => router.push(`/admin/projects/${project.id}/boq`)}
+                className="text-emerald-400 hover:underline font-semibold"
+              >
+                Sayfayı Aç →
+              </button>
+            </div>
           </div>
         )}
 

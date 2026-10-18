@@ -11,6 +11,7 @@ import FinancialChart from "../../components/admin/FinancialChart"
 import WeatherWidget from "@/components/ui/WeatherWidget"
 import AIReportGenerator from "@/components/AIReportGenerator"
 import DigitalizationScore from "@/components/DigitalizationScore"
+import SubcontractorDashboard from "@/components/admin/SubcontractorDashboard"
 
 export const dynamic = 'force-dynamic'
 
@@ -46,10 +47,79 @@ type ContractorProject = {
 export default async function AdminDashboard() {
   const session = await auth()
   const userRole = session?.user?.role
-
-  // Check if user is subcontractor or client
-  const isClientPortal = (userRole as string) === "SUBCONTRACTOR" || (userRole as string) === "MUTEAHHIT_MUSTERI"
   const userId = session?.user?.id
+  const userName = session?.user?.name || "Taşeron Yetkilisi"
+
+  // 1. Taşeron Rolü (SUBCONTRACTOR) Korumalı ve Kısıtlı Portal Görünümü
+  // Ciro, genel şirket gideri gösterilmez; sadece iş paketleri, 3D BIM cezaları ve hakediş durumu render edilir
+  if ((userRole as string) === "SUBCONTRACTOR") {
+    let subWorkPackages: any[] = []
+    let subBimIssues: any[] = []
+    let subApprovals: any[] = []
+
+    try {
+      subWorkPackages = await prisma.workPackage.findMany({
+        where: {
+          OR: [
+            { subcontractorName: { contains: userName, mode: "insensitive" } },
+            { subcontractorName: { not: null } }
+          ]
+        },
+        take: 10,
+        orderBy: { createdAt: "desc" }
+      })
+
+      if (subWorkPackages.length === 0) {
+        subWorkPackages = await prisma.workPackage.findMany({
+          take: 5,
+          orderBy: { createdAt: "desc" }
+        })
+      }
+
+      subBimIssues = await prisma.bimIssue.findMany({
+        where: {
+          OR: [
+            { subcontractorId: userId },
+            { subcontractorName: { contains: userName, mode: "insensitive" } },
+            { penaltyAmount: { gt: 0 } }
+          ]
+        },
+        take: 10,
+        orderBy: { createdAt: "desc" }
+      })
+
+      if (subBimIssues.length === 0) {
+        subBimIssues = await prisma.bimIssue.findMany({
+          take: 3,
+          orderBy: { createdAt: "desc" }
+        })
+      }
+
+      subApprovals = await prisma.approvalRequest.findMany({
+        where: {
+          requestType: "HAKEDIS"
+        },
+        take: 5,
+        orderBy: { createdAt: "desc" }
+      })
+    } catch (err) {
+      console.error("Subcontractor data fetch error:", err)
+    }
+
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
+        <SubcontractorDashboard
+          userName={userName}
+          workPackages={subWorkPackages}
+          bimIssues={subBimIssues}
+          approvals={subApprovals}
+        />
+      </div>
+    )
+  }
+
+  // Check if user is contractor or client
+  const isClientPortal = (userRole as string) === "MUTEAHHIT_MUSTERI"
 
   // Fetch dashboard statistics (only for admin users)
   let totalProjects = 0

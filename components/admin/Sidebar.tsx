@@ -8,7 +8,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import NotificationBell from "@/components/NotificationBell"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { 
@@ -85,6 +85,14 @@ interface MenuItem {
   icon: any
   category: string
 }
+
+// Taşeron Kısıtlı Menü Listesi (Finans, Kasa, Sözleşmeler, Satınalma tamamen gizlenir)
+const subcontractorMenuItems: MenuItem[] = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, category: "TAŞERON PORTALI" },
+  { href: "/admin/map", label: "Şantiye Haritası", icon: Map, category: "TAŞERON PORTALI" },
+  { href: "/admin/bim", label: "3D Modeller (Kusurlar)", icon: Box, category: "TAŞERON PORTALI" },
+  { href: "/admin/subcontractor-inspections", label: "İş Kanıtı / Hakediş", icon: ShieldCheck, category: "TAŞERON PORTALI" },
+]
 
 const menuItems: MenuItem[] = [
   // ANA MENÜ
@@ -181,9 +189,14 @@ export default function AdminSidebar({
   const [searchQuery, setSearchQuery] = useState("")
   const pathname = usePathname()
   const { isInstallable, promptInstall } = usePwaInstall()
+  const { data: session } = useSession()
+
+  const userRole = session?.user?.role
+  const isSubcontractor = (userRole as string) === "SUBCONTRACTOR"
+  const effectiveMenuItems = isSubcontractor ? subcontractorMenuItems : menuItems
 
   // Group items by category
-  const groupedMenuItems = menuItems.reduce((acc, item) => {
+  const groupedMenuItems = effectiveMenuItems.reduce((acc, item) => {
     const category = item.category
     if (!acc[category]) {
       acc[category] = []
@@ -193,7 +206,7 @@ export default function AdminSidebar({
   }, {} as Record<string, MenuItem[]>)
 
   // Filter items based on search
-  const filteredMenuItems = menuItems.filter(item => {
+  const filteredMenuItems = effectiveMenuItems.filter(item => {
     if (!searchQuery.trim()) return true
     const query = searchQuery.toLowerCase()
     return item.label.toLowerCase().includes(query) || 
@@ -227,7 +240,9 @@ export default function AdminSidebar({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="font-semibold text-white">Nexa ERP</h1>
+          <h1 className="font-semibold text-white">
+            {isSubcontractor ? "Taşeron Portalı" : "Nexa ERP"}
+          </h1>
           <div className="w-11" aria-hidden="true" />
         </div>
       </div>
@@ -252,8 +267,12 @@ export default function AdminSidebar({
             <div className={`mb-4 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
               {!isCollapsed && (
                 <div>
-                  <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">Nexa ERP</h1>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Şantiye & Denetim Asistanı</p>
+                  <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">
+                    {isSubcontractor ? "Taşeron Portalı" : "Nexa ERP"}
+                  </h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {isSubcontractor ? "Korumalı Saha Paneli" : "Şantiye & Denetim Asistanı"}
+                  </p>
                 </div>
               )}
               <div className="flex items-center gap-3">

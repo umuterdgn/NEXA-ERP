@@ -10,7 +10,9 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import { HardHat } from "lucide-react"
 import ConfirmModal from "@/components/ConfirmModal"
+import BleDeviceAssignModal from "@/components/admin/BleDeviceAssignModal"
 
 type PersonnelRecord = {
   id: string
@@ -46,6 +48,8 @@ export default function AdminPersonelPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
+  const [isBleModalOpen, setIsBleModalOpen] = useState(false)
+  const [selectedPersonForBle, setSelectedPersonForBle] = useState<string | undefined>()
 
   const fetchPersonnel = async () => {
     try {
@@ -133,12 +137,24 @@ export default function AdminPersonelPage() {
     <div className="lg:mt-0 mt-16">
       <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-white">Personel Yönetimi</h1>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors whitespace-nowrap"
-        >
-          Yeni Personel Ekle
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setSelectedPersonForBle(undefined)
+              setIsBleModalOpen(true)
+            }}
+            className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:from-cyan-500 hover:to-blue-500 transition-all text-sm font-semibold flex items-center gap-2 border border-cyan-400/30 cursor-pointer shadow-lg shadow-cyan-600/20"
+          >
+            <HardHat className="w-4 h-4 text-cyan-200" />
+            <span>Cihaz/Donanım Zimmetle</span>
+          </button>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors whitespace-nowrap text-sm font-semibold cursor-pointer"
+          >
+            Yeni Personel Ekle
+          </button>
+        </div>
       </div>
 
       {isAdding ? (
@@ -213,6 +229,15 @@ export default function AdminPersonelPage() {
         confirmText="Sil"
         cancelText="İptal"
         type="danger"
+      />
+
+      {/* IoT Cihaz & Baret Zimmetleme Modalı */}
+      <BleDeviceAssignModal
+        isOpen={isBleModalOpen}
+        onClose={() => setIsBleModalOpen(false)}
+        personnelList={personnel}
+        initialPersonnelId={selectedPersonForBle}
+        onAssigned={fetchPersonnel}
       />
     </div>
   )

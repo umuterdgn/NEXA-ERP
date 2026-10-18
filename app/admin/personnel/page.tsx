@@ -6,12 +6,15 @@
  */
 
 import { useState, useEffect } from "react"
-import { Users, MapPin, Briefcase, Phone, Mail, CheckCircle, AlertCircle, Clock, Wallet, ArrowRight, Loader2 } from "lucide-react"
+import { Users, MapPin, Briefcase, Phone, Mail, CheckCircle, AlertCircle, Clock, Wallet, ArrowRight, Loader2, HardHat, Cpu } from "lucide-react"
 import Link from "next/link"
+import BleDeviceAssignModal from "@/components/admin/BleDeviceAssignModal"
 
 export default function PersonnelPage() {
   const [personnelData, setPersonnelData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isBleModalOpen, setIsBleModalOpen] = useState(false)
+  const [selectedPersonForBle, setSelectedPersonForBle] = useState<string | undefined>()
 
   useEffect(() => {
     fetchPersonnel()
@@ -59,12 +62,26 @@ export default function PersonnelPage() {
 
   return (
     <div className="lg:mt-0 mt-16">
-      <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
-          <Users className="w-8 h-8 text-blue-400" />
-          Personel Listesi
-        </h1>
-        <p className="text-slate-400 mt-1">Personel yönetimi ve takibi</p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
+            <Users className="w-8 h-8 text-blue-400" />
+            Personel Listesi
+          </h1>
+          <p className="text-slate-400 mt-1">Personel yönetimi, İSG donanımları ve telemetri takibi</p>
+        </div>
+
+        {/* Cihaz/Donanım Zimmetle Butonu */}
+        <button
+          onClick={() => {
+            setSelectedPersonForBle(undefined)
+            setIsBleModalOpen(true)
+          }}
+          className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer border border-cyan-400/30"
+        >
+          <HardHat className="w-4 h-4 text-cyan-200" />
+          <span>Cihaz/Donanım Zimmetle</span>
+        </button>
       </div>
 
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
@@ -125,20 +142,41 @@ export default function PersonnelPage() {
                   </span>
                 </td>
                 <td className="p-4">
-                  <Link
-                    href={`/admin/personnel/${person.id}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg transition-colors text-sm font-medium"
-                  >
-                    <Wallet className="w-4 h-4" />
-                    Ödeme / Detay
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedPersonForBle(person.id)
+                        setIsBleModalOpen(true)
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                      title="IoT Cihaz Zimmetle"
+                    >
+                      <HardHat className="w-3.5 h-3.5 text-cyan-400" />
+                      Zimmetle
+                    </button>
+                    <Link
+                      href={`/admin/personnel/${person.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors text-xs font-medium border border-slate-700"
+                    >
+                      <Wallet className="w-3.5 h-3.5 text-slate-400" />
+                      Detay
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* IoT Cihaz & Baret Zimmetleme Modalı */}
+      <BleDeviceAssignModal
+        isOpen={isBleModalOpen}
+        onClose={() => setIsBleModalOpen(false)}
+        personnelList={personnelData}
+        initialPersonnelId={selectedPersonForBle}
+        onAssigned={fetchPersonnel}
+      />
     </div>
   )
 }
