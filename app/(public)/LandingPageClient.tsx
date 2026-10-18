@@ -66,6 +66,15 @@ import {
   BarChart,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  Sparkles,
+  HelpCircle,
+  Layers,
+  Lock,
+  WifiOff,
+  LogIn,
   Download,
   ArrowRight,
   Star,
@@ -385,6 +394,7 @@ export default function LandingPageClient() {
   const [selectedModule, setSelectedModule] = useState<string>("/admin")
   const [selectedCategory, setSelectedCategory] = useState<"all" | "construction" | "inspection">("all")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
 
   const currentPreview = modulePreviews[selectedModule] || modulePreviews["/admin"]
 
@@ -998,134 +1008,248 @@ export default function LandingPageClient() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-slate-800">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-cyan-600/10" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      {/* --- HERO SECTION --- */}
+      <section className="relative overflow-hidden pt-12 pb-20 lg:pt-16 lg:pb-28 border-b border-slate-800/80">
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-slate-950 to-slate-950 pointer-events-none" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-cyan-500/15 via-blue-600/15 to-indigo-600/10 blur-[130px] rounded-full pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800c_1px,transparent_1px),linear-gradient(to_bottom,#8080800c_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center"
+            transition={{ duration: 0.7 }}
+            className="text-center max-w-4xl mx-auto"
           >
+            {/* Top SaaS Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-4 py-2 mb-8"
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="inline-flex items-center gap-2 bg-slate-900/90 border border-cyan-500/30 rounded-full px-4 py-1.5 mb-8 shadow-inner"
             >
-              <Zap className="w-4 h-4 text-blue-400" />
-              <span className="text-blue-300 text-sm font-medium">Yapay Zeka Destekli Şantiye Yönetimi</span>
-            </motion.div>
-            
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400">
-                Şantiyenizi Geleceğe Taşıyın
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-cyan-300 text-xs font-semibold tracking-wide">
+                Yeni Nesil B2B İnşaat ve Şantiye İşletim Sistemi
               </span>
+            </motion.div>
+
+            {/* Main H1 Title (GEO & SEO Optimized) */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15] mb-6">
+              Şantiyenizin{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400">
+                4D Dijital İkizi.
+              </span>
+              <br />
+              Maliyetlerinizi Bugün Kontrol Altına Alın.
             </h1>
-            <p className="text-xl md:text-2xl text-slate-300 mb-4 max-w-3xl mx-auto">
-              İnşaat ve Yapı Denetim firmaları için tüm operasyonlarınızı tek platformda yönetin
+
+            {/* Subtitle */}
+            <p className="text-lg sm:text-xl text-slate-300 font-normal leading-relaxed mb-10 max-w-3xl mx-auto">
+              Nexa ERP; <strong className="text-white font-semibold">3D BIM</strong>, <strong className="text-white font-semibold">IoT İSG takibi</strong> ve <strong className="text-white font-semibold">otomatik hakediş motoruyla</strong> inşaat projelerinizi tek ekrandan yönetmenizi sağlayan yeni nesil kurumsal platformdur.
             </p>
-            <p className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto">
-              Müteahhitler için personel, finans ve taşeron yönetimi. Yapı denetim firmaları için YİBF, numune ve denetim kayıtları.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
+              <Link
+                href="/iletisim"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 shadow-xl shadow-cyan-500/25 border border-cyan-400/40 transition-all transform hover:scale-105 active:scale-95"
+              >
+                <Sparkles className="w-4 h-4 text-cyan-200" />
+                <span>Ücretsiz Demo Talebi</span>
+                <ArrowRight className="w-4 h-4 text-cyan-200" />
+              </Link>
+
+              <a
+                href="#interactive-demo"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-sm font-semibold text-slate-200 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 transition-all shadow-md"
+              >
+                <Layers className="w-4 h-4 text-cyan-400" />
+                <span>İnteraktif Modülleri İncele</span>
+              </a>
+
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-blue-500 hover:to-cyan-500 transition-all duration-300 shadow-lg hover:shadow-blue-500/25"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-sm font-semibold text-slate-400 hover:text-white transition-colors"
               >
-                Ücretsiz Demo Başlat
-                <ArrowRight className="w-5 h-5" />
+                <span>Sisteme Giriş</span>
+                <ArrowRight className="w-4 h-4" />
               </Link>
-              <div className="flex items-center gap-6 text-slate-400 text-sm">
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-400" />
-                  <span>20+ Modül</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-purple-400" />
-                  <span>AI Destekli</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-5 h-5 text-green-400" />
-                  <span>Mobil Uyumlu</span>
-                </div>
-              </div>
             </div>
 
-            {/* Feature Cards for Construction vs Inspection */}
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="bg-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30 hover:border-blue-400/50 transition-all"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center">
-                    <Building className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-semibold text-white">Müteahhit Yönetimi</h3>
-                    <p className="text-slate-400 text-sm">İnşaat firmaları için</p>
-                  </div>
+            {/* Key Value Prop Badges */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-left">
+              <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800/90 rounded-2xl p-4 shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-2.5">
+                  <Box className="w-4 h-4" />
                 </div>
-                <ul className="text-left text-slate-300 text-sm space-y-2">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-blue-400" />
-                    <span>Personel Takibi & Puantaj</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-blue-400" />
-                    <span>Taşeron & Hakediş Yönetimi</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-blue-400" />
-                    <span>Ambar & Finans Takibi</span>
-                  </li>
-                </ul>
-              </motion.div>
+                <h4 className="text-xs font-bold text-white">5D BIM & Web-IFC</h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">Ağır masaüstü programı olmadan tarayıcıda 3D metraj</p>
+              </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="bg-purple-600/10 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30 hover:border-purple-400/50 transition-all"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
-                    <ShieldCheckIcon className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-semibold text-white">Yapı Denetim Yönetimi</h3>
-                    <p className="text-slate-400 text-sm">Denetim firmaları için</p>
-                  </div>
+              <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800/90 rounded-2xl p-4 shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center mb-2.5">
+                  <WifiOff className="w-4 h-4" />
                 </div>
-                <ul className="text-left text-slate-300 text-sm space-y-2">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>YİBF & Numune Takibi</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>Demir & Kalıp Kontrol</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>Rota Optimizasyonu & AI</span>
-                  </li>
-                </ul>
-              </motion.div>
+                <h4 className="text-xs font-bold text-white">Offline-First PWA</h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">Bodrum katlarda internetsiz kesintisiz çalışma</p>
+              </div>
+
+              <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800/90 rounded-2xl p-4 shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2.5">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <h4 className="text-xs font-bold text-white">Otonom Hakediş Blokesi</h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">Kusurlu imalat giderilmeden ödeme çıkışını durdurur</p>
+              </div>
+
+              <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800/90 rounded-2xl p-4 shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center mb-2.5">
+                  <HardHat className="w-4 h-4" />
+                </div>
+                <h4 className="text-xs font-bold text-white">BLE IoT İSG Radarı</h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">Kamera riski olmadan akıllı baret ve donanım zimmeti</p>
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
+      {/* --- KIYASLAMA TABLOSU (GELENEKSEL VS NEXA ERP) --- */}
+      <section className="py-20 px-4 bg-slate-950/70 border-b border-slate-800/80 relative">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-3xl mx-auto mb-16"
+          >
+            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-3.5 py-1 mb-4">
+              <span className="text-blue-400 text-xs font-semibold uppercase tracking-wider">
+                Yazılım Kıyaslaması
+              </span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
+              Geleneksel Şantiye Yönetimi vs.{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+                Nexa ERP
+              </span>
+            </h2>
+            <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+              İnşaat projelerindeki %30'a varan maliyet kaçaklarını, gecikmeleri ve kâğıt üzerindeki usulsüzlükleri otonom kurumsal mimarimizle ortadan kaldırıyoruz.
+            </p>
+          </motion.div>
+
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+              {/* Sol Kolon: Geleneksel */}
+              <div className="p-6 sm:p-8 space-y-6 bg-red-950/5">
+                <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                  <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center font-bold text-lg border border-red-500/20">
+                    ✕
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Geleneksel Şantiyecilik</h3>
+                    <p className="text-xs text-red-300 font-medium">Manuel, gecikmeli ve hataya açık</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    {
+                      title: "Excel'de Manuel Metraj",
+                      desc: "Karmaşık Excel formülleri, versiyon çakışmaları ve günlerce süren keşif-metraj hesaplama hataları."
+                    },
+                    {
+                      title: "WhatsApp'tan Fotoğraf Atma",
+                      desc: "Gruplarda kaybolan fotoğraflar, silinen dosyalar ve kime ait olduğu kanıtlanamayan kusur bildirimleri."
+                    },
+                    {
+                      title: "Kâğıt Üzerinde Zimmet & İmzalar",
+                      desc: "Şantiye ortamında ıslanan, kaybolan formlar ve sahte imzalarla hukuken geçersiz kalan KKD zimmetleri."
+                    },
+                    {
+                      title: "Gözden Kaçan Kusurlar & Hatalı Ödemeler",
+                      desc: "Taşeronun sahada düzeltmediği hatalı imalatlar gözden kaçar ve hak edilmeyen paralar hesaba yatar."
+                    },
+                    {
+                      title: "İnternet Kesintisinde Veri Kaybı",
+                      desc: "Tünellerde veya bodrum katlarda bağlantı koptuğu anda mobil uygulamalar kilitlenir ve veri kaydedilemez."
+                    }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-red-500/10">
+                      <div className="w-5 h-5 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                        ✕
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-200">{item.title}</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sağ Kolon: Nexa ERP */}
+              <div className="p-6 sm:p-8 space-y-6 bg-gradient-to-b from-cyan-950/20 to-slate-900/40">
+                <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-lg border border-emerald-500/20">
+                    ✓
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <span>Nexa ERP Platformu</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                        Otonom
+                      </span>
+                    </h3>
+                    <p className="text-xs text-emerald-300 font-medium">BIM tabanlı, anlık ve kanıtlı yönetim</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    {
+                      title: "5D BIM ile Otomatik Maliyet & Keşif",
+                      desc: "Web-IFC motoru 3D modelden hacim/alanı anında çıkarır. Excel BoQ yüklemesi ile binlerce poz saniyeler içinde bağlanır."
+                    },
+                    {
+                      title: "Offline-First Mobil Şantiye Günlüğü",
+                      desc: "Tüm saha raporları ve dijital pafta çizimleri cihazda saklanır. Zaman damgalı, GPS koordinatlı iş kanıtı sunulur."
+                    },
+                    {
+                      title: "BLE IoT ile Akıllı Donanım Zimmeti",
+                      desc: "Baret ve yelekler BLE sensörlerle işçiye atanır. Tehlikeli bölgeye baretini takmadan giren işçiye anında alarm çalar."
+                    },
+                    {
+                      title: "Kusur Düzeltilmeden Bloke Olan Hakediş",
+                      desc: "3D BIM üzerindeki Snagging kusuru taşeron tarafından giderilip onaylanmadıkça sistem hakediş ödemesini bloke eder."
+                    },
+                    {
+                      title: "Dexie.js ile Sıfır İnternet Kesintisi",
+                      desc: "IndexedDB teknolojisiyle bodrum katlarda hiçbir işlem aksamaz; internete bağlanıldığı anda sunucuyla senkronize olur."
+                    }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/80 border border-cyan-500/20 shadow-sm">
+                      <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                        ✓
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-cyan-300">{item.title}</h4>
+                        <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Interactive Demo Section */}
-      <section className="py-12 px-4">
+      <section className="py-16 px-4" id="interactive-demo">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1351,95 +1475,141 @@ export default function LandingPageClient() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto">
+      {/* --- ÖNE ÇIKAN S.S.S. (MİNİ FAQ) --- */}
+      <section className="py-20 px-4 bg-slate-950 border-t border-slate-850">
+        <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-14"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Neden Nexa ERP?
+            <div className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full px-3.5 py-1 mb-4">
+              <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-cyan-300 text-xs font-semibold uppercase tracking-wider">
+                Merak Edilenler
+              </span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
+              Öne Çıkan Sıkça Sorulan Sorular
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              İnşaat ve yapı denetim süreçlerinizi dijitalleştirin, verimliliğinizi artırın
+            <p className="text-slate-400 text-sm sm:text-base">
+              Nexa ERP'nin kurumsal 4D/5D BIM, Offline-First ve otonom hakediş mimarisi hakkında en çok sorulanlar.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          {/* Accordion List */}
+          <div className="space-y-4 mb-10">
             {[
               {
-                icon: Bot,
-                title: "Yapay Zeka Destekli",
-                description: "AI ile rota optimizasyonu, risk analizi ve akıllı öneriler"
+                q: "Nexa ERP'yi mevcut BIM (Revit/Navisworks) yazılımlarımızla nasıl entegre edebiliriz?",
+                a: "Nexa ERP, entegre Web-IFC ve WASM motorları sayesinde ağır masaüstü yazılımlarına ihtiyaç duymadan .ifc, .gltf ve .glb formatındaki 3D modelleri doğrudan tarayıcınızda açar. Şantiye şefiniz tabletinden anında 3D revizyonları görebilir ve kusur (snagging) işaretleyebilir."
               },
               {
-                icon: Smartphone,
-                title: "Mobil Uyumlu",
-                description: "iOS ve Android uygulamaları ile sahada her zaman erişilebilir"
+                q: "Şantiyelerde internet erişimi kesildiğinde sistem çalışmaya devam eder mi?",
+                a: "Evet. Nexa ERP, Dexie.js tabanlı 'Offline-First' (Çevrimdışı) senkronizasyon mimarisiyle çalışır. İnternetin çekmediği bodrum katlarda yazdığınız raporlar ve çizdiğiniz paftalar cihazınızda saklanır, bağlantı sağlandığında sunucuya otomatik yüklenir."
               },
               {
-                icon: Shield,
-                title: "Güvenli ve Ölçeklenebilir",
-                description: "Bulut tabanlı altyapı ile verileriniz her zaman güvende"
+                q: "Taşeron hakedişlerini ve ödemelerini nasıl kontrol altında tutuyorsunuz?",
+                a: "Sistemimiz 3D model üzerindeki kusurları doğrudan hakediş modülüne bağlar. Kusurlu bir imalat düzeltilmeden o taşerona ait ödeme sistem tarafından otomatik bloke edilir."
               }
-            ].map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-800 hover:border-blue-500/50 transition-all duration-300"
-              >
-                <div className="w-14 h-14 bg-blue-600/20 rounded-xl flex items-center justify-center mb-6">
-                  <feature.icon className="w-7 h-7 text-blue-400" />
+            ].map((faq, index) => {
+              const isOpen = openFaqIndex === index
+              return (
+                <div
+                  key={index}
+                  className="bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden transition-all duration-200"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 text-white hover:text-cyan-300 transition-colors cursor-pointer"
+                  >
+                    <span className="text-sm sm:text-base font-bold flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-xs font-bold border border-cyan-500/20 shrink-0">
+                        0{index + 1}
+                      </span>
+                      {faq.q}
+                    </span>
+                    <span className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
+                      {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="px-5 pb-5 pt-1 text-slate-300 text-xs sm:text-sm leading-relaxed border-t border-slate-800/60"
+                    >
+                      <p>{faq.a}</p>
+                    </motion.div>
+                  )}
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
-                <p className="text-slate-400">{feature.description}</p>
-              </motion.div>
-            ))}
+              )
+            })}
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/faq"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-sm font-bold text-cyan-300 bg-slate-900 hover:bg-slate-850 border border-cyan-500/30 hover:border-cyan-400/50 shadow-lg shadow-cyan-950/30 transition-all group"
+            >
+              <span>Tüm Sıkça Sorulan Soruları İnceleyin (Kapsamlı S.S.S.)</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 border-t border-slate-800">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* --- B2B ENTERPRISE CTA SECTION --- */}
+      <section className="py-20 px-4 border-t border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 via-blue-600/10 to-indigo-600/10 pointer-events-none" />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="space-y-6"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Hemen Başlayın
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 rounded-full px-4 py-1.5 shadow-sm">
+              <Sparkles className="w-4 h-4 text-cyan-300" />
+              <span className="text-cyan-200 text-xs font-bold uppercase tracking-wider">
+                Kurumsal Şantiye Dönüşümü
+              </span>
+            </div>
+
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+              Şantiyenizin 4D Dijital İkizini Bugün Başlatın
             </h2>
-            <p className="text-slate-400 mb-8 max-w-2xl mx-auto">
-              14 günlük ücretsiz deneme ile Nexa ERP'nin gücünü keşfedin. Kredi kartı gerekmez.
+
+            <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+              Maliyet kaçaklarını engelleyin, İSG cezalarını sıfırlayın ve taşeron hakedişlerini 3D modellerle güvence altına alın.
             </p>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-blue-500 hover:to-purple-500 transition-all duration-300 shadow-lg hover:shadow-blue-500/25 text-lg"
-            >
-              Ücretsiz Demo Başlat
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Link
+                href="/iletisim"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white px-8 py-4 rounded-xl font-bold shadow-xl shadow-cyan-500/25 border border-cyan-400/40 text-sm transition-all transform hover:scale-105 active:scale-95"
+              >
+                <span>Ücretsiz Demo Talebi Oluştur</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/login"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-900/90 hover:bg-slate-800 text-slate-200 px-7 py-4 rounded-xl font-semibold border border-slate-700 text-sm transition-all"
+              >
+                <span>Yönetim Paneli Girişi</span>
+                <LogIn className="w-4 h-4 text-slate-400" />
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-8 px-4 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="text-slate-400 text-sm">
-            © 2026 Nexa ERP. Tüm hakları saklıdır.
-          </p>
-        </div>
-      </footer>
     </div>
   )
 }

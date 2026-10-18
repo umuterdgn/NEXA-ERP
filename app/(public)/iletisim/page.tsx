@@ -52,30 +52,30 @@ export default function IletisimPage() {
   return (
     <main className="min-h-screen bg-slate-950">
       {/* Header */}
-      <section className="relative py-32 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 via-slate-900 to-blue-900/20" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+      <section className="relative py-28 px-4 overflow-hidden border-b border-slate-900">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-slate-900 to-blue-900/20 pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative max-w-7xl mx-auto text-center"
+          className="relative max-w-7xl mx-auto text-center z-10"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-600 to-blue-600 rounded-2xl mb-8 shadow-lg shadow-green-500/25"
+            className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl mb-6 shadow-lg shadow-cyan-500/25 border border-cyan-400/30"
           >
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </motion.div>
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
-            İletişim
+          <h1 className="text-4xl md:text-6xl font-black text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400">
+            Kurumsal İletişim & Demo Talebi
           </h1>
-          <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto">
-            Bizimle iletişime geçin, projeleriniz hakkında konuşalım
+          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
+            Şantiyeniz için 4D/5D BIM çözümlerimizi, BLE IoT İSG radarlarını ve otonom hakediş motorunu canlı deneyimleyin.
           </p>
         </motion.div>
       </section>
@@ -261,12 +261,14 @@ export default function IletisimPage() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     >
                       <option value="">Konu Seçin</option>
-                      <option value="genel">Genel Bilgi</option>
-                      <option value="proje">Proje Teklifi</option>
-                      <option value="is-birligi">İş Birliği</option>
+                      <option value="demo">✨ Canlı Demo Talebi</option>
+                      <option value="proje">Proje & Şantiye Entegrasyonu</option>
+                      <option value="genel">Genel Bilgi ve Fiyatlandırma</option>
+                      <option value="is-birligi">İş Birliği & Partnerlik</option>
+                      <option value="destek">Teknik Destek</option>
                       <option value="diger">Diğer</option>
                     </select>
                   </div>
@@ -310,9 +312,9 @@ export default function IletisimPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white py-4 rounded-xl font-semibold hover:from-green-500 hover:to-blue-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25 hover:shadow-green-500/40"
+                    className="w-full bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white py-4 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-cyan-500/25 hover:shadow-cyan-500/40 cursor-pointer"
                   >
-                    {isSubmitting ? "Gönderiliyor..." : "Mesaj Gönder"}
+                    {isSubmitting ? "Gönderiliyor..." : "Demo Talebini ve Mesajı Gönder"}
                   </button>
                 </form>
               </div>
