@@ -23,7 +23,6 @@ import {
   Wind,
   Thermometer,
   CloudLightning,
-  Camera,
   Eye,
   Sliders,
   Sparkles,
@@ -61,17 +60,6 @@ export interface WeatherForecastItem {
   aiRecommendation: string
   historicalAvg?: number | null
   label?: string
-}
-
-export interface CameraViolationItem {
-  id: string
-  projectId: string
-  cameraId: string
-  violation: string
-  confidence: number
-  imageUrl?: string | null
-  timestamp: string | Date
-  status: "OPEN" | "RESOLVED" | string
 }
 
 interface LiveSiteDashboardProps {
@@ -185,34 +173,9 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
     }
   ])
 
-  // Adım 1 & Adım 3: Computer Vision Kamera Tespitleri Akışı
-  const [cameraViolations, setCameraViolations] = useState<CameraViolationItem[]>([
-    {
-      id: "cam-1",
-      projectId,
-      cameraId: "VINC_KAMERA_1",
-      violation: "NO_HELMET",
-      confidence: 0.94,
-      imageUrl: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&fit=crop",
-      timestamp: new Date(Date.now() - 1000 * 60 * 4).toISOString(),
-      status: "OPEN"
-    },
-    {
-      id: "cam-2",
-      projectId,
-      cameraId: "ISKELE_KAMERA_2",
-      violation: "UNAUTHORIZED_ZONE",
-      confidence: 0.91,
-      imageUrl: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=500&fit=crop",
-      timestamp: new Date(Date.now() - 1000 * 60 * 16).toISOString(),
-      status: "OPEN"
-    }
-  ])
-
   const [dailyProgress, setDailyProgress] = useState(2.4)
   const [isLoading, setIsLoading] = useState(false)
   const [isSimulatingBle, setIsSimulatingBle] = useState(false)
-  const [isSimulatingCam, setIsSimulatingCam] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
   // Canlı verileri ve hava durumu / kamera tespitlerini API'den çek
@@ -227,15 +190,6 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
         if (data.activePersonnelCount) setActivePersonnel(data.activePersonnelCount)
         if (Array.isArray(data.violations) && data.violations.length > 0) setViolations(data.violations)
         if (Array.isArray(data.logistics) && data.logistics.length > 0) setLogistics(data.logistics)
-      }
-
-      // 2. Kamera tespitleri
-      const camRes = await fetch(`/api/iot/camera-webhook?projectId=${projectId}`)
-      if (camRes.ok) {
-        const camData = await camRes.json()
-        if (Array.isArray(camData) && camData.length > 0) {
-          setCameraViolations(camData)
-        }
       }
 
       setLastUpdated(new Date())
@@ -272,24 +226,6 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
     }
   }
 
-  // Kamera tespitini çözüldü yap
-  const handleResolveCameraViolation = async (violationId: string) => {
-    try {
-      await fetch("/api/iot/camera-webhook", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ violationId, status: "RESOLVED" })
-      })
-      setCameraViolations((prev) =>
-        prev.map((c) => (c.id === violationId ? { ...c, status: "RESOLVED" } : c))
-      )
-      toast.success("Kamera tespiti doğrulandı ve kapatıldı")
-    } catch {
-      setCameraViolations((prev) =>
-        prev.map((c) => (c.id === violationId ? { ...c, status: "RESOLVED" } : c))
-      )
-    }
-  }
 
   // BLE Simülasyonu
   const handleSimulateBlePing = async () => {
@@ -324,39 +260,6 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
     }
   }
 
-  // Adım 4: Harici Python YOLOv8 Kamera Webhook Testi
-  const handleSimulateCameraDetection = async () => {
-    setIsSimulatingCam(true)
-    try {
-      const payload = {
-        projectId,
-        cameraId: "VINC_KAMERA_1",
-        violationType: "NO_HELMET",
-        confidence: 0.94,
-        imageBlobUrl: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&fit=crop"
-      }
-
-      const res = await fetch("/api/iot/camera-webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-
-      if (res.ok) {
-        toast.error("📷 YOLOv8 AI: [VINC_KAMERA_1] Baret Yok tespiti yapıldı! (%94)", {
-          duration: 5000,
-          icon: "⚠️"
-        })
-        await fetchLiveStats()
-      } else {
-        toast.error("Kamera simülasyonu başarısız")
-      }
-    } catch {
-      toast.error("Kamera simülasyon hatası")
-    } finally {
-      setIsSimulatingCam(false)
-    }
-  }
 
   // Meteorolojik Riskleri Eşitle & Bildir
   const handleSyncWeather = async () => {
@@ -377,8 +280,7 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
   }
 
   const openViolations = violations.filter((v) => v.status === "OPEN")
-  const openCameraViolations = cameraViolations.filter((c) => c.status === "OPEN")
-  const hasCriticalAlert = openViolations.length > 0 || openCameraViolations.length > 0
+  const hasCriticalAlert = openViolations.length > 0
 
   return (
     <div className="w-full bg-slate-900/60 backdrop-blur-xl border border-slate-800/60 rounded-3xl p-6 md:p-8 shadow-2xl space-y-8">
@@ -399,22 +301,13 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              BLE Akıllı Donanım, Meteorolojik İSG Risk Tahmini & Computer Vision (YOLOv8)
+              BLE Akıllı Donanım, İSG Canlı Radar & 4 Haftalık Meteorolojik Risk Tahmini
             </p>
           </div>
         </div>
 
         {/* Aksiyon ve Simülasyon Butonları */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={handleSimulateCameraDetection}
-            disabled={isSimulatingCam}
-            className="px-3.5 py-2 bg-purple-600/80 hover:bg-purple-600 text-white rounded-xl text-xs font-semibold backdrop-blur-md border border-purple-500/40 shadow-lg shadow-purple-500/10 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-            title="YOLOv8 AI Kamera Tespit Simülasyonu Gönder"
-          >
-            <Camera className="w-3.5 h-3.5 text-purple-200" />
-            <span>{isSimulatingCam ? "İşleniyor..." : "📷 AI Kamera Testi"}</span>
-          </button>
 
           <button
             onClick={handleSimulateBlePing}
@@ -446,8 +339,8 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
         </div>
       </div>
 
-      {/* Grid: 4 Ana Komuta Kartı (Nefes alan geniş ferah yapı) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+      {/* Grid: 4 Ana Komuta Kartı (Dengeli ve Boşluksuz 4'lü Grid) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
         {/* =================================================================== */}
         {/* Kart 1: 👥 Anlık Aktif Personel                                     */}
         {/* =================================================================== */}
@@ -643,117 +536,6 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
         </div>
       </div>
 
-      {/* ===================================================================== */}
-      {/* Orta Bölüm: 📷 AI Kamera Tespitleri (YOLOv8 CV Feed)                  */}
-      {/* ===================================================================== */}
-      <div className="w-full bg-slate-900/50 backdrop-blur-md border border-slate-800/50 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800/60">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20">
-              <Camera className="w-4.5 h-4.5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <span>📷 AI Kamera Tespitleri</span>
-                <span className="text-[11px] font-semibold bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-md border border-purple-500/30">
-                  YOLOv8 CV
-                </span>
-              </h3>
-              <p className="text-xs text-slate-400">Şantiye güvenlik kameralarından canlı nesne & KKD doğrulaması</p>
-            </div>
-          </div>
-
-          <span className="flex items-center gap-1.5 text-xs font-bold text-red-400 bg-red-950/40 border border-red-500/40 px-3 py-1 rounded-full animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-            {openCameraViolations.length} Aktif Uyarı
-          </span>
-        </div>
-
-        {/* Kamera Tespit Akışı (Feed) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {openCameraViolations.map((cam) => {
-            const confPercent = Math.round(cam.confidence * 100)
-            const violationTitle =
-              cam.violation === "NO_HELMET"
-                ? "Baret Yok"
-                : cam.violation === "UNAUTHORIZED_ZONE"
-                ? "Yetkisiz Bölge Girişi"
-                : cam.violation
-
-            return (
-              <div
-                key={cam.id}
-                className="p-4 rounded-xl bg-red-950/20 border border-red-500/40 flex items-center justify-between gap-4 text-xs hover:border-red-400/60 transition-all shadow-sm"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  {cam.imageUrl ? (
-                    <img
-                      src={cam.imageUrl}
-                      alt="Kanıt Fotoğrafı"
-                      className="w-14 h-14 object-cover rounded-xl border border-red-500/40 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-red-900/40 flex items-center justify-center shrink-0 border border-red-500/40">
-                      <Camera className="w-6 h-6 text-red-300" />
-                    </div>
-                  )}
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded text-[10px] font-mono border border-slate-700">
-                        {cam.cameraId}
-                      </span>
-                      <span className="font-bold text-sm text-red-300 truncate">
-                        {violationTitle}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="text-xs text-emerald-400 font-semibold">
-                        %{confPercent} Doğruluk
-                      </span>
-                      <span className="text-xs text-slate-500">•</span>
-                      <span className="text-xs text-slate-400">
-                        {new Date(cam.timestamp).toLocaleTimeString("tr-TR", {
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleResolveCameraViolation(cam.id)}
-                  className="px-3 py-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-lg text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
-                  title="İhlali onayla ve kapat"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  Kapat
-                </button>
-              </div>
-            )
-          })}
-
-          {openCameraViolations.length === 0 && (
-            <div className="col-span-full text-center py-8 text-slate-400 text-sm flex flex-col items-center justify-center gap-2 bg-slate-900/30 rounded-xl border border-slate-800/40">
-              <CheckCircle2 className="w-7 h-7 text-emerald-400" />
-              <span>Kameralarda aktif kural ihlali tespit edilmedi. Tüm sahalar güvenli.</span>
-            </div>
-          )}
-        </div>
-
-        {/* Alt Webhook & Simülasyon Bilgisi */}
-        <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-          <span>Webhook Entegrasyonu: <code className="text-purple-300 font-mono">/api/iot/camera-webhook</code></span>
-          <button
-            onClick={handleSimulateCameraDetection}
-            className="text-purple-400 hover:text-purple-300 font-semibold cursor-pointer underline"
-          >
-            + Yeni Tespit Simüle Et
-          </button>
-        </div>
-      </div>
 
       {/* ===================================================================== */}
       {/* Alt Bölüm: 4 Haftalık Meteorolojik İSG Risk Analizi (Tüm Genişlik)     */}
