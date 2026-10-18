@@ -57,7 +57,7 @@ export const mockDroneData: MockDroneStage[] = [
       summary: "Hafriyatın %85'i tamamlandı.",
       detected: ["2 Adet Ekskavatör", "4 Adet Kamyon"],
       completed: ["Kuzey cephe kazısı"],
-      risks: [{ x: 1, y: 1, z: 1, label: "Açık Kazı (Bariyer Eksik)", type: "danger" }]
+      risks: [{ x: 0.5, y: 1.2, z: 0.5, label: "Açık Kazı (Bariyer Eksik)", type: "danger" }]
     }
   },
   {
@@ -71,7 +71,7 @@ export const mockDroneData: MockDroneStage[] = [
       summary: "Temel demir bağlama işlemi tamamlandı.",
       detected: ["15 Adet Personel", "Mobil Vinç"],
       completed: ["Bohçalama Yalıtımı"],
-      risks: [{ x: 0, y: 1.5, z: 0.5, label: "Vinç Yükü Altında Çalışma", type: "danger" }]
+      risks: [{ x: 0.3, y: 1.1, z: 0.4, label: "Vinç Yükü Altında Çalışma", type: "danger" }]
     }
   }
 ]
@@ -91,18 +91,35 @@ function DroneMesh({ url, annotations }: { url: string; annotations: MockDroneRi
         <primitive object={scene} />
       </Center>
 
-      {/* 3D Alanda Pinler (HTML Badges) */}
+      {/* 3D Alanda Pinler (İnce Çizgili & Nokta Pointer Annotation) */}
       {annotations?.map((ann, i) => (
-        <Html key={i} position={[ann.x, ann.y, ann.z]} center distanceFactor={15}>
-          <div
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-2xl backdrop-blur-md border cursor-pointer hover:scale-115 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap select-none animate-in zoom-in-50 fade-in duration-700 ${
-              ann.type === "danger"
-                ? "bg-red-500/90 border-red-300 ring-4 ring-red-500/30"
-                : "bg-amber-500/90 border-amber-300 ring-4 ring-amber-500/30"
-            }`}
-          >
-            <span className="text-sm animate-pulse">{ann.type === "danger" ? "🚨" : "⚠️"}</span>
-            <span className="tracking-wide">{ann.label}</span>
+        <Html
+          key={i}
+          position={[ann.x, ann.y, ann.z]}
+          center
+          distanceFactor={10} // Uzaklaştıkça küçülmesini sağlar (8-12 arası)
+          occlude // Modelin arkasında kalınca yazıyı gizler (Daha gerçekçi)
+        >
+          {/* Nokta ve çizgi (Pointer) tarzı şık UI */}
+          <div className="group relative flex flex-col items-center pointer-events-auto cursor-pointer">
+            {/* Bilgi Kutusu (Tooltip) */}
+            <div
+              className={`px-2 py-1 mb-1 rounded-md text-[10px] font-bold text-white shadow-lg backdrop-blur-md border whitespace-nowrap transition-all duration-300 opacity-90 group-hover:opacity-100 group-hover:scale-110 ${
+                ann.type === "danger"
+                  ? "bg-red-600/80 border-red-400"
+                  : "bg-amber-500/80 border-amber-400"
+              }`}
+            >
+              {ann.type === "danger" ? "🚨" : "⚠️"} {ann.label}
+            </div>
+
+            {/* Yere inen ince çizgi ve nokta (Pin) */}
+            <div className="w-[1px] h-6 bg-white/50" />
+            <div
+              className={`w-3 h-3 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] ${
+                ann.type === "danger" ? "bg-red-500 animate-ping" : "bg-amber-500"
+              }`}
+            />
           </div>
         </Html>
       ))}
@@ -136,18 +153,31 @@ function FallbackProceduralMesh({ annotations }: { annotations: MockDroneRisk[] 
         ))
       )}
 
-      {/* AI Pinleri */}
+      {/* AI Pinleri (İnce Çizgili & Nokta Pointer Annotation) */}
       {annotations?.map((ann, i) => (
-        <Html key={i} position={[ann.x, ann.y, ann.z]} center distanceFactor={15}>
-          <div
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-2xl backdrop-blur-md border cursor-pointer hover:scale-115 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap select-none animate-in zoom-in-50 fade-in duration-700 ${
-              ann.type === "danger"
-                ? "bg-red-500/90 border-red-300 ring-4 ring-red-500/30"
-                : "bg-amber-500/90 border-amber-300 ring-4 ring-amber-500/30"
-            }`}
-          >
-            <span className="text-sm animate-pulse">{ann.type === "danger" ? "🚨" : "⚠️"}</span>
-            <span className="tracking-wide">{ann.label}</span>
+        <Html
+          key={i}
+          position={[ann.x, ann.y, ann.z]}
+          center
+          distanceFactor={10}
+          occlude
+        >
+          <div className="group relative flex flex-col items-center pointer-events-auto cursor-pointer">
+            <div
+              className={`px-2 py-1 mb-1 rounded-md text-[10px] font-bold text-white shadow-lg backdrop-blur-md border whitespace-nowrap transition-all duration-300 opacity-90 group-hover:opacity-100 group-hover:scale-110 ${
+                ann.type === "danger"
+                  ? "bg-red-600/80 border-red-400"
+                  : "bg-amber-500/80 border-amber-400"
+              }`}
+            >
+              {ann.type === "danger" ? "🚨" : "⚠️"} {ann.label}
+            </div>
+            <div className="w-[1px] h-6 bg-white/50" />
+            <div
+              className={`w-3 h-3 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] ${
+                ann.type === "danger" ? "bg-red-500 animate-ping" : "bg-amber-500"
+              }`}
+            />
           </div>
         </Html>
       ))}
