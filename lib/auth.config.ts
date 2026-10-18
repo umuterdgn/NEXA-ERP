@@ -19,6 +19,7 @@ const PUBLIC_PATHS = [
 ]
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "fallback-secret-key-change-in-production",
   providers: [], // Providers will be added in auth.ts (not in edge-compatible config)
   callbacks: {

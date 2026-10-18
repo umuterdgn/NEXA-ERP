@@ -19,6 +19,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.nxerp.com.tr"),
   title: "Nexa ERP | Şantiye & Denetim Asistanı",
   description: "Yeni nesil şantiye ve personel yönetim ERP sistemi.",
   manifest: "/manifest.json",

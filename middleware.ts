@@ -16,27 +16,46 @@ const ROUTE_PROTECTION = {
   "/inspection": ["INSPECTOR", "AUDITOR"]
 }
 
-// Multi-tenant domain configuration
-const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "app.nxa.com.tr"
+// Multi-tenant & custom domain configuration
+const MAIN_DOMAIN = (process.env.NEXT_PUBLIC_MAIN_DOMAIN || "app.nxa.com.tr").toLowerCase()
 const LOCALHOST = "localhost"
+
+const ALLOWED_DOMAINS = [
+  "nxerp.com.tr",
+  "www.nxerp.com.tr",
+  "nexa-erp.com",
+  "www.nexa-erp.com",
+  MAIN_DOMAIN
+]
+
+// Add configured env domains if present
+if (process.env.NEXT_PUBLIC_APP_URL) {
+  try {
+    ALLOWED_DOMAINS.push(new URL(process.env.NEXT_PUBLIC_APP_URL).hostname.toLowerCase())
+  } catch {}
+}
+if (process.env.NEXTAUTH_URL) {
+  try {
+    ALLOWED_DOMAINS.push(new URL(process.env.NEXTAUTH_URL).hostname.toLowerCase())
+  } catch {}
+}
 
 export default NextAuth(authConfig).auth((req) => {
   const { pathname } = req.nextUrl
   const session = req.auth
 
-  // --- 1. MULTI-TENANT DOMAIN (SaaS) YÖNLENDİRMESİ ---
-  
-  const hostname = req.headers.get("host") || ""
-  const cleanHostname = hostname.replace(/^https?:\/\//, "")
+  // --- 1. DOMAIN & HOSTNAME KONTROLÜ ---
+  const hostHeader = req.headers.get("x-forwarded-host") || req.headers.get("host") || req.nextUrl.hostname || ""
+  const cleanHostname = hostHeader.replace(/^https?:\/\//, "").split(":")[0].toLowerCase().trim()
   const isVercelDomain = cleanHostname.endsWith(".vercel.app")
-  const isCustomDomain = cleanHostname === "nexa-erp.com" || cleanHostname === "www.nexa-erp.com"
+  const isLocal = cleanHostname.startsWith(LOCALHOST) || cleanHostname.startsWith("127.0.0.1") || cleanHostname === ""
+  const isAllowedHost = isLocal || isVercelDomain || ALLOWED_DOMAINS.includes(cleanHostname)
 
-  if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST) || cleanHostname.startsWith("127.0.0.1") || isVercelDomain || isCustomDomain) {
-    // Normal auth kontrolüne geç
-  } else {
-    const url = req.nextUrl.clone()
-    url.pathname = `/${cleanHostname}${url.pathname}`
-    return NextResponse.rewrite(url)
+  // nxerp.com.tr, www.nxerp.com.tr, Vercel ve Localhost gibi tüm yasal hostlar normal akışa devam eder.
+  // Not: Uygulamada dinamik `/[cleanHostname]` rota dizini bulunmadığından rewrite yapılmamalı, 404 önlenmelidir.
+  if (!isAllowedHost) {
+    // Bilinmeyen veya yapılandırılmamış hostlar için varsayılan olarak normal erişime izin ver
+    // veya istenirse ana domaine yönlendir
   }
 
   // --- 2. RBAC KONTROLLERİ ---
@@ -47,10 +66,14 @@ export default NextAuth(authConfig).auth((req) => {
   // SUBCONTRACTOR kontrolü
   if (userRole === "SUBCONTRACTOR") {
     if (pathname.startsWith("/admin") || pathname.startsWith("/personnel")) {
-      return NextResponse.redirect(new URL("/subcontractor", req.url))
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/subcontractor"
+      return NextResponse.redirect(redirectUrl)
     }
     if (!pathname.startsWith("/subcontractor") && !isOnLoginPage) {
-      return NextResponse.redirect(new URL("/subcontractor", req.url))
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/subcontractor"
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
@@ -59,16 +82,29 @@ export default NextAuth(authConfig).auth((req) => {
   if (protectedRoute) {
     const allowedRoles = ROUTE_PROTECTION[protectedRoute as keyof typeof ROUTE_PROTECTION]
     if (!userRole || !allowedRoles.includes(userRole)) {
-      return NextResponse.redirect(new URL("/unauthorized", req.url))
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/unauthorized"
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
   // Login page redirect
   if (isOnLoginPage && session) {
-    if (userRole === "SUPER_ADMIN") return NextResponse.redirect(new URL("/admin", req.url))
-    if (userRole === "SUBCONTRACTOR") return NextResponse.redirect(new URL("/subcontractor", req.url))
-    if (userRole === "STAFF" || userRole === "WORKER") return NextResponse.redirect(new URL("/personnel", req.url))
-    return NextResponse.redirect(new URL("/admin", req.url))
+    const redirectUrl = req.nextUrl.clone()
+    if (userRole === "SUPER_ADMIN") {
+      redirectUrl.pathname = "/admin"
+      return NextResponse.redirect(redirectUrl)
+    }
+    if (userRole === "SUBCONTRACTOR") {
+      redirectUrl.pathname = "/subcontractor"
+      return NextResponse.redirect(redirectUrl)
+    }
+    if (userRole === "STAFF" || userRole === "WORKER") {
+      redirectUrl.pathname = "/personnel"
+      return NextResponse.redirect(redirectUrl)
+    }
+    redirectUrl.pathname = "/admin"
+    return NextResponse.redirect(redirectUrl)
   }
 
   return NextResponse.next()
