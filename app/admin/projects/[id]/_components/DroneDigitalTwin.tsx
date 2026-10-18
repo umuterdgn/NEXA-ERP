@@ -48,32 +48,27 @@ export const mockDroneData: MockDroneStage[] = [
   {
     id: "stage-1",
     stageName: "Zemin Kazısı ve Hafriyat",
-    captureDate: "12 Ekim 2026",
+    captureDate: "12 Eki 2026",
     progressPct: 15,
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb", // Test amaçlı güvenilir CDN GLB
+    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb", // Test amaçlı CDN GLB
     aiAnalysis: {
-      summary: "Zemin kotu -4.50m seviyesine ulaştı. Hafriyatın %85'i tamamlandı.",
-      detected: ["2 Adet Ekskavatör", "4 Adet Kamyon", "Belirsiz Su Birikintisi"],
-      completed: ["Kuzey cephe kazısı", "Şantiye yolu stabilizasyonu"],
-      risks: [
-        { x: 1, y: 1, z: 1, label: "Açık Kazı (Bariyer Eksik)", type: "danger" },
-        { x: -1, y: -0.5, z: -1, label: "Çamur/Kaygan Zemin", type: "warning" }
-      ]
+      summary: "Hafriyatın %85'i tamamlandı.",
+      detected: ["2 Adet Ekskavatör", "4 Adet Kamyon"],
+      completed: ["Kuzey cephe kazısı"],
+      risks: [{ x: 1, y: 1, z: 1, label: "Açık Kazı (Bariyer Eksik)", type: "danger" }]
     }
   },
   {
     id: "stage-2",
-    stageName: "Temel Donatı ve Yalıtım",
-    captureDate: "28 Ekim 2026",
+    stageName: "Temel Donatı",
+    captureDate: "28 Eki 2026",
     progressPct: 28,
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/FlightHelmet/glTF-Binary/FlightHelmet.glb", // Aşama değiştiğini görmek için farklı test modeli
+    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/FlightHelmet/glTF-Binary/FlightHelmet.glb",
     aiAnalysis: {
-      summary: "A ve B blok temel demir bağlama işlemi tamamlandı. Beton dökümü beklentisi.",
-      detected: ["15 Adet Personel", "Mobil Vinç", "12 Ton İnşaat Demiri"],
-      completed: ["Bohçalama Yalıtımı", "Temel topraklama ağı"],
-      risks: [
-        { x: 0, y: 1.5, z: 0.5, label: "Vinç Yükü Altında Çalışma", type: "danger" }
-      ]
+      summary: "Temel demir bağlama işlemi tamamlandı.",
+      detected: ["15 Adet Personel", "Mobil Vinç"],
+      completed: ["Bohçalama Yalıtımı"],
+      risks: [{ x: 0, y: 1.5, z: 0.5, label: "Vinç Yükü Altında Çalışma", type: "danger" }]
     }
   }
 ]
@@ -331,6 +326,7 @@ export default function DroneDigitalTwin({
               fallback={<FallbackProceduralMesh annotations={currentData.aiAnalysis.risks} />}
             >
               <DroneMesh
+                key={currentData.id}
                 url={currentData.modelUrl}
                 annotations={currentData.aiAnalysis.risks}
               />
@@ -461,31 +457,32 @@ export default function DroneDigitalTwin({
       {/* absolute bottom-4 left-1/2 -translate-x-1/2 z-40                      */}
       {/* Seçili: parlak bg-cyan-500 text-white, Diğerleri: koyu gri bg-slate-800 */}
       {/* ===================================================================== */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 backdrop-blur-xl bg-slate-900/80 border border-slate-700/60 rounded-2xl p-2.5 shadow-2xl flex items-center gap-3 max-w-[95%] overflow-x-auto">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 backdrop-blur-xl bg-slate-900/85 border border-slate-700/70 rounded-2xl p-2.5 shadow-2xl flex items-center gap-3 max-w-[95%] overflow-x-auto">
+        <div className="flex items-center gap-2 pl-2 pr-1 text-slate-400 text-xs font-semibold">
+          <Calendar className="w-4 h-4 text-cyan-400" />
+          <span className="hidden sm:inline">4D Çizelge:</span>
+        </div>
         {mockDroneData.map((stage, index) => {
           const isSelected = index === activeStageIndex
+          // "12 Eki" veya "28 Eki" buton etiketi
+          const buttonDateLabel = stage.captureDate.replace(" 2026", "")
 
           return (
             <button
               key={stage.id}
+              id={`timeline-btn-${stage.id}`}
               onClick={() => {
                 setActiveStageIndex(index)
                 setIsPlaying4D(false)
               }}
               className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all border flex items-center gap-2.5 whitespace-nowrap cursor-pointer ${
                 isSelected
-                  ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 border-cyan-400 scale-102"
-                  : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                  ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 border-cyan-400 scale-105"
+                  : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white"
               }`}
             >
-              <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  isSelected ? "bg-white text-cyan-600" : "bg-slate-700 text-slate-300"
-                }`}
-              >
-                {index + 1}
-              </div>
-              <span>{stage.stageName}</span>
+              <span className="font-bold text-sm tracking-wide">{buttonDateLabel}</span>
+              <span className="opacity-90 hidden sm:inline">• {stage.stageName}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
                   isSelected ? "bg-white/20 text-white" : "bg-slate-700/80 text-slate-400"
