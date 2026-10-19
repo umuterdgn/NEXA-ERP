@@ -162,7 +162,10 @@ export async function approveProgressPaymentTransaction(
 
     const grossAmount = payment.totalPrice ?? ((payment.quantity || 0) * (payment.unitPrice || 0))
     const penaltyToDeduct = input.deductPenalties !== false ? totalPenalties : 0
-    const netAmount = Math.max(0, grossAmount - penaltyToDeduct)
+    const retentionRate = payment.retentionRate ?? 0.05
+    const retentionAmount = Math.round(grossAmount * retentionRate * 100) / 100
+    const advanceDeduction = payment.advanceDeduction ?? 0
+    const netAmount = Math.max(0, Math.round((grossAmount - (penaltyToDeduct + retentionAmount + advanceDeduction)) * 100) / 100)
 
     // 3. Hakediş durumunu ve kesinti bilgilerini güncelle
     const updatedPayment = await tx.progressPayment.update({
@@ -170,6 +173,10 @@ export async function approveProgressPaymentTransaction(
       data: {
         status: "ONAYLANDI",
         penaltyDeduction: totalPenalties,
+        retentionRate,
+        retentionAmount,
+        advanceDeduction,
+        netPayableAmount: netAmount,
         netAmount: netAmount,
       },
     })

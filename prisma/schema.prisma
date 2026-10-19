@@ -52,6 +52,8 @@ model User {
   approvalWorkflows        ApprovalWorkflow[]
   documentRevisions        DocumentRevision[]
   coreSamplesTaken         CoreSample[]
+  leaveRequests            LeaveRequest[]
+  advanceRequests          AdvanceRequest[]
 
   @@index([companyId])
   @@index([organizationId])
@@ -575,6 +577,7 @@ model Company {
   dailyProgress          DailyProgress[]
   subcontractorContracts SubcontractorContract[]
   workerDocuments        WorkerDocument[]
+  eInvoices              EInvoice[]
 
   @@index([type])
   @@index([organizationId])
@@ -1527,20 +1530,25 @@ enum Department {
 // ============================================================================
 
 model LeaveRequest {
-  id         String      @id @default(cuid())
-  personelId String
-  personel   Personel    @relation(fields: [personelId], references: [id], onDelete: Cascade)
-  type       LeaveType   @default(ANNUAL)
-  startDate  DateTime
-  endDate    DateTime
-  days       Int // İzin gün sayısı
-  reason     String?     @db.Text
-  status     LeaveStatus @default(PENDING)
-  reviewedBy String? // Onaylayan kişi ID
-  reviewedAt DateTime?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id          String      @id @default(cuid())
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personelId  String?
+  personel    Personel?   @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  leaveType   String?     // "YILLIK", "MAZERET", "RAPORLU", "UCRETSIZ"
+  type        LeaveType?  @default(ANNUAL)
+  startDate   DateTime
+  endDate     DateTime
+  totalDays   Int?        // Sadece iş günleri (Hafta sonları ve resmi tatiller hariç hesaplanmalı)
+  days        Int?        // İzin gün sayısı
+  reason      String?     @db.Text
+  status      String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedBy  String?     // Onaylayan kişi ID
+  reviewedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
+  @@index([userId])
   @@index([personelId])
   @@index([status])
   @@index([startDate])
@@ -2332,6 +2340,10 @@ model ProgressPayment {
   date             DateTime @default(now())
   penaltyDeduction Float?   @default(0) // Ceza / Kusur kesintileri
   netAmount        Float?   @default(0) // Net ödenecek tutar
+  retentionRate    Float?   @default(0.05) // %5 Teminat (Geçici Kabul) Kesintisi Oranı
+  retentionAmount  Float?   // Kesilen Teminat Tutarı
+  advanceDeduction Float?   // Varsa Taşerona verilen avansın mahsubu
+  netPayableAmount Float?   // Ödenecek Net Tutar (Toplam - Kusur Cezaları - Teminat - Avans)
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -2365,6 +2377,47 @@ model ProgressPayment {
   @@index([subcontractorId])
   @@index([workPackageId])
   @@index([boqItemId])
+}
+
+// ============================================================================
+// İK/Finans: Maaş Avans Talepleri ve Bordro Mahsubu
+// ============================================================================
+
+model AdvanceRequest {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  amount      Float    // Talep edilen avans tutarı
+  deductMonth String   // Hangi ayın bordrosundan kesileceği (Örn: "2026-11")
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  reason      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================================
+// Finans: E-Fatura UBL-TR Gelen/Giden Kutusu Taslağı
+// ============================================================================
+
+model EInvoice {
+  id          String   @id @default(cuid())
+  invoiceNo   String   @unique // Fatura Numarası (Örn: GIB2026000000123)
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId   String
+  direction   String   // "INCOMING" (Gelen/Alış), "OUTGOING" (Giden/Satış)
+  totalAmount Float    // KDV Dahil Toplam
+  taxAmount   Float    // KDV Tutarı
+  issueDate   DateTime
+  status      String   @default("DRAFT") // DRAFT, SENT, RECEIVED, REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([companyId])
+  @@index([direction])
+  @@index([status])
 }
 
 // ============================================================================
