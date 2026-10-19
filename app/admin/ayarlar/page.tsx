@@ -7,6 +7,8 @@
 
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Bot } from "lucide-react"
 import toast from "react-hot-toast"
 import ConfirmModal from "@/components/ConfirmModal"
 
@@ -237,6 +239,13 @@ export default function AdminSettingsPage() {
         >
           Meslek Yönetimi
         </button>
+        <Link
+          href="/admin/settings/integrations"
+          className="px-4 py-2 rounded-lg transition-colors bg-cyan-950/60 text-cyan-300 border border-cyan-800/80 hover:bg-cyan-900/60 flex items-center gap-1.5"
+        >
+          <Bot className="w-4 h-4 text-cyan-400" />
+          <span>Bakanlık (YİBF) Entegrasyonu</span>
+        </Link>
       </div>
 
       <div className="space-y-8">

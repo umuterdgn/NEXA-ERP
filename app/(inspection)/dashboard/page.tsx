@@ -11,13 +11,17 @@ import Link from "next/link";
 import { Building, ClipboardCheck, AlertTriangle, FileText, TrendingUp, Users, CheckCircle, Clock, Zap, Lightbulb, Bot, FlaskConical, Map } from "lucide-react";
 import { toast } from "react-hot-toast";
 
+import TwoFactorModal from "@/components/rpa/TwoFactorModal";
+
 export default function InspectionDashboard() {
   const [syncingYibf, setSyncingYibf] = useState(false);
+  const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
+  const [activeRpaSessionId, setActiveRpaSessionId] = useState("");
 
   const handleSyncYibf = async () => {
     setSyncingYibf(true);
     try {
-      const res = await fetch("/api/yibf/sync", {
+      const res = await fetch("/api/yibf/rpa-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -25,14 +29,19 @@ export default function InspectionDashboard() {
 
       if (res.ok) {
         const data = await res.json();
-        toast.success(data.message || "Bakanlık e-YİBF sistemiyle senkronize edildi!", {
-          icon: "🏛️",
-        });
+        if (data.requiresTwoFactor || data.status === "AWAITING_2FA") {
+          setActiveRpaSessionId(data.sessionId);
+          setTwoFactorModalOpen(true);
+        } else {
+          toast.success(data.message || "Bakanlık e-YİBF sistemiyle senkronize edildi!", {
+            icon: "🏛️",
+          });
+        }
       } else {
-        toast.error("YİBF senkronizasyonu başarısız");
+        toast.error("YİBF senkronizasyonu başlatılamadı.");
       }
     } catch (err) {
-      toast.error("Bakanlık botuna ulaşılamadı");
+      toast.error("Bakanlık botuna ulaşılamadı.");
     } finally {
       setSyncingYibf(false);
     }
@@ -338,6 +347,16 @@ export default function InspectionDashboard() {
           </button>
         </div>
       </div>
+
+      {/* E-Devlet 2FA Onay Modali (Adım 4) */}
+      <TwoFactorModal
+        isOpen={twoFactorModalOpen}
+        onClose={() => setTwoFactorModalOpen(false)}
+        sessionId={activeRpaSessionId}
+        onSuccess={() => {
+          toast.success("Veriler Başarıyla Çekildi!", { icon: "✅" });
+        }}
+      />
     </div>
   );
 }

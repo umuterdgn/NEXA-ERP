@@ -179,6 +179,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/notifications", label: "Bildirimler", icon: Bell, category: "SİSTEM & AYARLAR" },
   { href: "/admin/announcements", label: "Duyuru Yönetimi", icon: Megaphone, category: "SİSTEM & AYARLAR" },
   { href: "/admin/ayarlar", label: "Ayarlar", icon: Settings, category: "SİSTEM & AYARLAR" },
+  { href: "/admin/settings/integrations", label: "Bakanlık (YİBF) Entegrasyonu", icon: Bot, category: "SİSTEM & AYARLAR" },
 ]
 
 export default function AdminSidebar({

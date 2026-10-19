@@ -10,6 +10,8 @@ import React, { useState } from "react";
 import { Building, MapPin, User, Ruler, CheckCircle, AlertTriangle, Clock, ArrowLeft, Plus, FileText, Camera, Hash, Calendar, FolderOpen, Bot, ExternalLink, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
+import TwoFactorModal from "@/components/rpa/TwoFactorModal";
 
 export default function YibfDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -32,26 +34,37 @@ export default function YibfDetailPage({ params }: { params: Promise<{ id: strin
 
   const [yibfData, setYibfData] = useState(initialYibfData);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
+  const [activeRpaSessionId, setActiveRpaSessionId] = useState("");
 
   const handleSyncYibf = async () => {
     setIsSyncing(true);
     try {
-      const res = await fetch("/api/yibf/sync", {
+      const res = await fetch("/api/yibf/rpa-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ yibfNo: yibfData.yibfNo }),
       });
       if (res.ok) {
         const result = await res.json();
-        setYibfData((prev) => ({
-          ...prev,
-          totalArea: result.data?.totalArea || prev.totalArea,
-          status: result.data?.yibfStatus || prev.status,
-          lastYibfSync: new Date().toLocaleTimeString("tr-TR"),
-        }));
+        if (result.requiresTwoFactor || result.status === "AWAITING_2FA") {
+          setActiveRpaSessionId(result.sessionId);
+          setTwoFactorModalOpen(true);
+        } else {
+          setYibfData((prev) => ({
+            ...prev,
+            totalArea: result.data?.totalArea || prev.totalArea,
+            status: result.data?.yibfStatus || prev.status,
+            lastYibfSync: new Date().toLocaleTimeString("tr-TR"),
+          }));
+          toast.success("Veriler Başarıyla Çekildi!", { icon: "✅" });
+        }
+      } else {
+        toast.error("YİBF senkronizasyonu başlatılamadı.");
       }
     } catch (err) {
       console.error("YİBF sync error:", err);
+      toast.error("Bağlantı hatası oluştu.");
     } finally {
       setIsSyncing(false);
     }
@@ -576,6 +589,24 @@ export default function YibfDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       )}
+
+      {/* E-Devlet 2FA Onay Modali (Adım 4) */}
+      <TwoFactorModal
+        isOpen={twoFactorModalOpen}
+        onClose={() => setTwoFactorModalOpen(false)}
+        sessionId={activeRpaSessionId}
+        onSuccess={(scrapedData) => {
+          if (scrapedData) {
+            setYibfData((prev) => ({
+              ...prev,
+              totalArea: scrapedData.totalArea || prev.totalArea,
+              status: scrapedData.yibfStatus || prev.status,
+              lastYibfSync: new Date().toLocaleTimeString("tr-TR"),
+            }));
+          }
+          toast.success("Veriler Başarıyla Çekildi!", { icon: "✅" });
+        }}
+      />
     </div>
   );
 }

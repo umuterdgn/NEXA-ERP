@@ -40,6 +40,7 @@ import {
   Bot
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import TwoFactorModal from "@/components/rpa/TwoFactorModal";
 
 interface CoreSampleItem {
   id: string;
@@ -84,6 +85,8 @@ export default function CoreSamplesPage() {
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncingYibf, setSyncingYibf] = useState(false);
+  const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
+  const [activeRpaSessionId, setActiveRpaSessionId] = useState("");
 
   // Filters & Search
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -290,11 +293,11 @@ export default function CoreSamplesPage() {
     }
   };
 
-  // YİBF Senkronize Et butonu (Adım 2)
+  // YİBF Senkronize Et butonu (E-Devlet RPA ve 2FA Entegrasyonu)
   const handleSyncYibf = async () => {
     setSyncingYibf(true);
     try {
-      const res = await fetch("/api/yibf/sync", {
+      const res = await fetch("/api/yibf/rpa-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -302,14 +305,19 @@ export default function CoreSamplesPage() {
 
       if (res.ok) {
         const data = await res.json();
-        toast.success(data.message || "Bakanlık e-YİBF sistemiyle senkronize edildi!", {
-          icon: "🏛️",
-          duration: 4500,
-        });
-        fetchSamples();
-        fetchProjects();
+        if (data.requiresTwoFactor || data.status === "AWAITING_2FA") {
+          setActiveRpaSessionId(data.sessionId);
+          setTwoFactorModalOpen(true);
+        } else {
+          toast.success(data.message || "Bakanlık e-YİBF sistemiyle senkronize edildi!", {
+            icon: "🏛️",
+            duration: 4500,
+          });
+          fetchSamples();
+          fetchProjects();
+        }
       } else {
-        toast.error("YİBF senkronizasyonu başarısız");
+        toast.error("YİBF senkronizasyonu başlatılamadı");
       }
     } catch (err) {
       toast.error("Bakanlık botuna ulaşılamadı");
@@ -1078,6 +1086,18 @@ export default function CoreSamplesPage() {
           </div>
         </div>
       )}
+
+      {/* E-Devlet 2FA Onay Modali (Adım 4) */}
+      <TwoFactorModal
+        isOpen={twoFactorModalOpen}
+        onClose={() => setTwoFactorModalOpen(false)}
+        sessionId={activeRpaSessionId}
+        onSuccess={() => {
+          toast.success("Veriler Başarıyla Çekildi!", { icon: "✅" });
+          fetchSamples();
+          fetchProjects();
+        }}
+      />
     </div>
   );
 }
