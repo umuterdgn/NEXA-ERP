@@ -286,6 +286,7 @@ model Project {
   approvalRequests         ApprovalRequest[]
   bimElementMaps           BimElementMap[]
   backgroundJobs           BackgroundJob[]
+  dailyAiReports           DailyAiReport[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -578,6 +579,7 @@ model Company {
   subcontractorContracts SubcontractorContract[]
   workerDocuments        WorkerDocument[]
   eInvoices              EInvoice[]
+  subcontractorScore     SubcontractorScore?
 
   @@index([type])
   @@index([organizationId])
@@ -3686,5 +3688,34 @@ model BlogPost {
   @@index([isPublished])
   @@index([language])
   @@index([createdAt])
+}
+
+// ============================================================================
+// AI VE MAKİNE ÖĞRENMESİ (ML) MODELLERİ
+// ============================================================================
+
+model SubcontractorScore {
+  id           String   @id @default(cuid())
+  companyId    String   @unique
+  company      Company  @relation(fields: [companyId], references: [id])
+  speedScore   Float    // Hız puanı (1-10)
+  qualityScore Float    // Kusur (BIM) puanı (1-10)
+  isgRiskLevel String   // "LOW", "MEDIUM", "HIGH"
+  lastUpdated  DateTime @default(now())
+
+  @@index([companyId])
+  @@index([isgRiskLevel])
+}
+
+model DailyAiReport {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  summaryText String   @db.Text // LLM'in yazdığı patron özeti
+  riskTags    String[] // Örn: ["BÜTÇE RİSKİ", "HAVA MUHALEFETİ"]
+  date        DateTime @default(now())
+
+  @@index([projectId])
+  @@index([date])
 }
 

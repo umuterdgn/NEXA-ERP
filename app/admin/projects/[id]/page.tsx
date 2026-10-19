@@ -11,6 +11,7 @@ import ProjectDetailClient from "@/components/ProjectDetailClient"
 import ProjectDetailTabs from "@/components/ProjectDetailTabs"
 import ProjectTimeline from "@/components/ProjectTimeline"
 import LiveSiteDashboard from "@/app/admin/projects/[id]/_components/LiveSiteDashboard"
+import AiExecutiveSummaryCard from "@/app/admin/projects/[id]/_components/AiExecutiveSummaryCard"
 
 export const dynamic = 'force-dynamic'
 
@@ -329,6 +330,12 @@ export default async function ProjectDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Otonom AI Patron Raporu & Taşeron Puanlama Kartı */}
+      <AiExecutiveSummaryCard
+        projectId={resolvedParams.id}
+        projectName={project.name || project.title || undefined}
+      />
 
       {/* Canlı Şantiye Özeti (Live Dashboard) & İSG Radarı */}
       <div className="mb-6">
