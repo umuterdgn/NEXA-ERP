@@ -106,6 +106,98 @@ async function main() {
 <h2>Proaktif Güvenlik ve Dijital KKD Zimmetleme</h2>
 <p>Her personele teslim edilen baret, yelek ve ayakkabı gibi Kişisel Koruyucu Donanımlar (KKD) dijital olarak zimmetlenir. Periyodik muayene süresi dolan veya arızalanan ekipmanlar sistem tarafından otomatik olarak sahaya çıkış kısıtlamasına tabi tutulur.</p>`,
     },
+    {
+      title: "Hava Muhalefeti Kaynaklı Şantiye Gecikmeleri AI Algoritmalarıyla Nasıl Öngörüldü?",
+      slug: "hava-muhalefeti-kaynakli-santiye-gecikmeleri-ai-algoritmalariyla-nasil-ongoruldu",
+      category: "AI & Meteorolojik Risk",
+      targetAudience: "Şantiye Şefleri, Kule Vinç Operasyon Müdürleri, Proje Direktörleri",
+      language: "tr",
+      author: "Nexa ERP Meteoroloji & AI Kurulu",
+      imageUrl: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80",
+      isPublished: true,
+      content: `<h2>Şantiyelerde Görünmeyen Maliyet: Meteorolojik Belirsizlikler</h2>
+<p>Büyük ölçekli yüksek katlı ve altyapı projelerinde hava muhalefeti, iş programı gecikmelerinin en önde gelen (%32) nedenidir. Kule vinç operasyonlarının ani rüzgar hamleleriyle durması veya taze dökülen betonun beklenmedik sağanak yağış ve don olayıyla mukavemetini kaybetmesi, müteahhit firmalara hem ağır sözleşme cezaları hem de milyonlarca liralık telafi masrafları yüklemektedir.</p>
+
+<h2>Nexa ERP AI Destekli Hava Durumu Algoritması Nasıl Çalışır?</h2>
+<p>Nexa ERP, sahadaki IoT hava istasyonları, meteorolojik uydu radarları ve son 3 yılın yerel iklim baselineları ile beslenen makine öğrenimi modelini devreye alır:</p>
+<ul>
+  <li><strong>Kule Vinç Rüzgar Eşiği Analitiği:</strong> Rüzgar hızı anlık veya hamle olarak 50 km/s (kritik devrilme eşiği) sınırına yaklaştığında, sistem kule vinç operatörünün ve İSG şefinin mobil cihazına 90 dakika önceden tahliye ve durdurma alarmı gönderir.</li>
+  <li><strong>Yağış ve Beton Döküm Simülasyonu:</strong> Yağış ihtimali %80'in üzerine çıktığında veya gece sıcaklığı 0°C altına inme riski taşıdığında, açık alan döşeme beton dökümü için sistem otonom erteleme uyarısı üretir ve beton santraline giden irsaliye rezervasyonunu askıya alır.</li>
+  <li><strong>4D Takvim Entegrasyonu:</strong> Hava kaynaklı duruşlar anında 4D BIM zaman çizelgesine işlenerek kritik yol (Critical Path) üzerindeki iş paketleri otomatik dengelenir.</li>
+</ul>
+
+<h2>Saha Sonuçları: 38 Gün Gecikme Engellendi, 3.2 Milyon TL Tasarruf</h2>
+<p>İstanbul Finans Merkezi bölgesindeki 48 katlı karma kule projesinde 14 ay boyunca test edilen Nexa AI Hava Durumu sistemi, 7 adet ani rüzgar fırtınasını ve 11 kritik yağış hadisesini 24 saat önceden öngörmüştür. Gereksiz kule vinç bekleme süreleri %41 azaltılmış, yağış nedeniyle bozulacak 1.400 m³ taze beton dökümü proaktif olarak kurtarılmıştır.</p>`,
+    },
+    {
+      title: "How Weather-Induced Construction Delays Were Predicted with AI Algorithms",
+      slug: "how-weather-induced-construction-delays-were-predicted-with-ai-algorithms",
+      category: "AI & Weather Risk",
+      targetAudience: "Site Superintendents, Tower Crane Fleet Managers, Project Directors",
+      language: "en",
+      author: "Nexa ERP Meteorological AI Team",
+      imageUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb1861564?auto=format&fit=crop&w=1200&q=80",
+      isPublished: true,
+      content: `<h2>The Hidden Drain on Megaprojects: Meteorological Volatility</h2>
+<p>Unanticipated weather events account for over 32% of construction project timeline slippages worldwide. Sudden high-altitude wind gusts stalling tower cranes, or heavy downpours compromising freshly poured slab concrete, routinely trigger catastrophic delay penalties and material waste amounting to millions of dollars.</p>
+
+<h2>Autonomous Meteorological AI & Predictive Site Telemetry</h2>
+<p>Nexa ERP integrates real-time hyper-local satellite feeds, on-site IoT sensors, and a multi-year historical climate baseline to deliver actionable forecasting intelligence:</p>
+<ul>
+  <li><strong>Tower Crane Critical Wind Threshold (>50 km/h):</strong> When sustained or gust wind speeds approach the 50 km/h safety boundary, Nexa's AI issues automated push notifications to crane operators and safety supervisors 90 minutes prior, orchestrating a safe shutdown.</li>
+  <li><strong>Precipitation & Concrete Pour Optimization:</strong> With rain probabilities exceeding 80% or projected freeze cycles (< 0°C), the engine advises site engineers to postpone large-scale pours, dynamically freezing batching plant dispatches.</li>
+  <li><strong>4D BIM Critical Path Rebalancing:</strong> Weather downtime is programmatically synced with the 4D BIM schedule, recalibrating subcontractor work sequences to eliminate idle workforce overhead.</li>
+</ul>
+
+<h2>Measured Impact: 38 Critical Path Days Saved, $420,000 In Risk Mitigated</h2>
+<p>Deployed across a 48-story high-rise tower development over 14 months, the Nexa AI Weather engine successfully predicted 7 severe wind events and 11 heavy precipitation windows. Crane standby hours dropped by 41%, and 1,400 m³ of structural concrete was saved from cold-joint and rain washout failures.</p>`,
+    },
+    {
+      title: "Laboratuvar Karot Testleri ve Numune Takibinde Karekodlu Dönüşüm",
+      slug: "laboratuvar-karot-testleri-ve-numune-takibinde-karekodlu-donusum",
+      category: "Yapı Denetim & Kalite",
+      targetAudience: "Yapı Denetim Firmaları, Laboratuvar Yöneticileri, Kalite Kontrol Mühendisleri",
+      language: "tr",
+      author: "Nexa ERP Malzeme ve Laboratuvar Komitesi",
+      imageUrl: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80",
+      isPublished: true,
+      content: `<h2>Geleneksel Beton Numune Alma Süreçlerindeki Güvenlik Açıkları</h2>
+<p>Şantiyelerde transmikserlerden alınan taze beton silindir numuneleri veya sertleşmiş betondan delinen karotlar, akredite test laboratuvarlarına gidene kadar şeffaflıktan uzak bir süreçten geçmektedir. Kağıt etiketlerin yırtılması, numunelerin karışması veya kür havuzundaki sıcaklık/nem takibinin aksaması, yapısal deprem güvenliğinin temelini oluşturan basınç dayanım testlerini tartışmalı hale getirmektedir.</p>
+
+<h2>Kriptografik Karekod ve Dijital Zincir Protokolü</h2>
+<p>Nexa ERP Numune & Karot Takip Modülü, numune alım anından kırım testine kadar kırılmaz bir dijital izleme zinciri kurar:</p>
+<ul>
+  <li><strong>Saha Alımında QR Mühürleme:</strong> Şantiye denetçisi silindir numuneyi kalıba aldığı anda hava sıcaklığını, çökme (slump) değerini ve mikser plakasını sisteme işler. Suya dayanıklı kriptografik QR etiket numunenin üzerine mühürlenir ve GPS koordinatıyla eşleşir.</li>
+  <li><strong>7 ve 28 Günlük Kırım Eğrisi:</strong> Numune laboratuvara ulaştığında QR kod taranır. 7 günlük erken dayanım ve 28 günlük nihai basınç kırım sonuçları (MPa), Nexa Akıllı OCR motoru tarafından test cihazı çıktısından taranarak YİBF sistemine otomatik yüklenir.</li>
+  <li><strong>Otonom Hakediş Blokesi:</strong> Şartnameye (C25/30/35) uymayan veya dayanım sapması gösteren numuneler için ilgili aksın taşeron hakedişine derhal bloke koyulur ve yapı denetçisine NCR (Uygunsuzluk Raporu) taslağı açılır.</li>
+</ul>
+
+<h2>1.800 Dökümde Sıfır Hata ve %100 Yasal Uyumluluk</h2>
+<p>Ege bölgesindeki 12 toplu konut şantiyesinde uygulanan karekodlu takip sistemi sayesinde numune kayıpları tamamen sıfırlanmış, laboratuvar rapor onay süreleri 6 günden 15 dakikaya indirilmiş ve deprem yönetmeliği standartlarına %100 uyumluluk sağlanmıştır.</p>`,
+    },
+    {
+      title: "QR-Coded Transformation in Laboratory Core Sample and Specimen Testing",
+      slug: "qr-coded-transformation-in-laboratory-core-sample-and-specimen-testing",
+      category: "Building Inspection & Quality",
+      targetAudience: "Building Inspection Agencies, Accredited Lab Directors, QA/QC Directors",
+      language: "en",
+      author: "Nexa ERP Materials & Inspection Committee",
+      imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80",
+      isPublished: true,
+      content: `<h2>Vulnerabilities in Traditional Concrete Specimen Chain of Custody</h2>
+<p>From transit mixer discharge to laboratory compression presses, concrete cylinders and drilled core specimens undergo critical handoffs fraught with compliance vulnerabilities. Deteriorated paper tags, misplaced curing batches, and manual transcription of pressure gauge readings undermine the structural verification essential for seismic resilience.</p>
+
+<h2>Cryptographic QR Tagging & Automated Lab Ingestion</h2>
+<p>The Nexa ERP Specimen & Core Tracking module introduces an immutable digital verification pipeline:</p>
+<ul>
+  <li><strong>Point-of-Pour QR Sealing:</strong> When site inspectors capture field samples, slump test metrics, ambient temperatures, and ready-mix batch tickets are recorded. Waterproof cryptographic QR tags are affixed directly to specimen surfaces, paired with precise GPS timestamps.</li>
+  <li><strong>7-Day and 28-Day Compressive Break Analytics:</strong> Upon laboratory arrival, QR codes are instantly scanned. Compression results (MPa / psi) are captured from testing machine consoles via Nexa's AI OCR engine and mapped into regulatory compliance databases.</li>
+  <li><strong>Automated Subcontractor Payment Holds:</strong> If 28-day break curves fail to satisfy structural engineering design thresholds (C25/30/35), the system automatically locks the corresponding work package's BoQ payment installment and flags an NCR.</li>
+</ul>
+
+<h2>Proven Integrity: Zero Lost Specimens Across 1,800 Structural Pours</h2>
+<p>Implemented across 12 high-density residential towers, the QR tracking pipeline achieved 100% specimen trace rate, reduced test turnaround validation from 6 days to 15 minutes, and established total structural compliance transparency for regulatory audits.</p>`,
+    },
   ]
 
   for (const post of posts) {

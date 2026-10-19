@@ -25,7 +25,7 @@ import {
 
 export interface FaqItem {
   id: string
-  category: 'bim' | 'offline' | 'finance' | 'isg' | 'general' | 'inspection'
+  category: 'bim' | 'offline' | 'finance' | 'isg' | 'general' | 'inspection' | 'weather_drone'
   categoryLabel: string
   lang?: 'tr' | 'en'
   q: string
@@ -34,6 +34,60 @@ export interface FaqItem {
 }
 
 const FAQ_LIST: FaqItem[] = [
+  {
+    id: 'weather-1',
+    category: 'weather_drone',
+    categoryLabel: 'AI Hava Durumu & Risk',
+    lang: 'tr',
+    q: "AI Hava Durumu entegrasyonu şantiyemi nasıl korur?",
+    a: "Rüzgar hızı, fırtına ve yağış verilerini meteorolojik istasyonlar ve geçmiş yılların iklim baselineları ile kıyaslayan AI motorumuz; rüzgar 50 km/s sınırını aştığında kule vinç operasyonlarını otomatik olarak durdurmanızı önerir, aşırı yağış ve don riskinde ise beton döküm takvimini proaktif biçimde revize ederek şantiye güvenliğini ve bütçesini korur.",
+    keywords: ["hava durumu", "kule vinç", "rüzgar", "yağış", "beton dökümü", "meteoroloji", "ai", "risk"]
+  },
+  {
+    id: 'weather-1-en',
+    category: 'weather_drone',
+    categoryLabel: 'AI Weather & Risk',
+    lang: 'en',
+    q: "How does AI Weather Forecasting protect my construction site?",
+    a: "By comparing real-time wind speed, storm forecasts, and precipitation probability against multi-year historical meteorological baselines, our AI engine automatically triggers crane shutdown alerts when wind exceeds 50 km/h, and proactively reschedules concrete pours during heavy rain or freezing conditions to safeguard operations and budgets.",
+    keywords: ["weather forecast", "tower crane", "wind speed", "precipitation", "concrete pour", "meteorological risk"]
+  },
+  {
+    id: 'drone-ai-1',
+    category: 'weather_drone',
+    categoryLabel: 'Drone & Hava Gözlem',
+    lang: 'tr',
+    q: "Drone ve Hava Gözlem analizleriniz neleri tespit eder?",
+    a: "Periyodik drone uçuşlarından elde edilen yüksek çözünürlüklü fotogrametri verileriyle AI motorumuz şantiyedeki aktif iş makinelerini (ekskavatör, kamyon, mikser) sayar, hafriyat kazı/dolgu yüzdesini ve metreküp hacmini hesaplar, saha durumunu 4D dijital ikizle ve BIM modeliyle eşleştirir.",
+    keywords: ["drone", "fotogrametri", "hafriyat", "iş makinesi", "ekskavatör", "hacim hesabı", "4d ikiz", "bilgisayarlı görü"]
+  },
+  {
+    id: 'drone-ai-1-en',
+    category: 'weather_drone',
+    categoryLabel: 'Drone & Aerial AI',
+    lang: 'en',
+    q: "What does your Drone Aerial Observation AI analyze?",
+    a: "Using photogrammetry and high-resolution orthophotos captured from periodic drone flights, our AI computer vision models autonomously count active heavy machinery (excavators, dump trucks, mixers), calculate excavation/fill volumes in cubic meters, and align actual site conditions against the 4D BIM digital twin.",
+    keywords: ["drone", "photogrammetry", "earthwork volume", "machinery count", "excavation", "4d digital twin", "computer vision"]
+  },
+  {
+    id: 'ocr-docs-1',
+    category: 'inspection',
+    categoryLabel: 'Yapı Denetim & AI',
+    lang: 'tr',
+    q: "Akıllı Evrak Denetimi (OCR) hangi ruhsat ve teknik belgeleri otomatik okur?",
+    a: "Nexa ERP AI OCR motoru; yapı ruhsatları, zemin etüdü raporları, beton basınç dayanım kırılma tutanakları ve statik proje eklerini saniyeler içinde tarar. Islak imza ve mühür kontrolü yaparak verileri YİBF standartlarında şantiye dijital arşivine işler.",
+    keywords: ["akıllı evrak", "ocr", "ruhsat", "zemin etüdü", "ıslak imza", "yibf", "tutanak"]
+  },
+  {
+    id: 'ocr-docs-1-en',
+    category: 'inspection',
+    categoryLabel: 'Building Inspection & AI',
+    lang: 'en',
+    q: "Which construction documents can Smart OCR automatically parse?",
+    a: "The Nexa ERP AI OCR engine scans building permits, geotechnical soil investigation reports, laboratory compressive strength test certificates, and structural engineering annexes in seconds. It verifies wet signatures, official seals, and indexes data into the digital project archive in compliance with regulatory standards.",
+    keywords: ["smart documents", "ocr", "building permit", "soil report", "wet signature", "inspection archive"]
+  },
   {
     id: 'inspection-1',
     category: 'inspection',
@@ -170,6 +224,7 @@ export default function FaqClient() {
 
   const categories = [
     { id: 'all', label: 'Tümü' },
+    { id: 'weather_drone', label: '🌤️ Hava & Drone' },
     { id: 'inspection', label: '🔬 Yapı Denetim & AI' },
     { id: 'bim', label: '3D & 5D BIM' },
     { id: 'offline', label: 'Saha & Offline' },

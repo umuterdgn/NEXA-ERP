@@ -23,21 +23,23 @@ export default function JsonLd() {
           "description": "B2B SaaS - Kurumsal Demo ve Teklif Usulü"
         },
         "featureList": [
-          "Yapı Denetim Firmaları için Dinamik Formlar, Numune & Karot Takibi ve Demir/Kalıp Kontrol Otomasyonu",
-          "Yapay Zeka Destekli OCR (Optik Karakter Tanıma) ile Akıllı Evrak ve Ruhsat Denetimi",
-          "AI Görsel Analiz ile Şantiyeden Çekilen Beton ve Donatı Fotoğraflarındaki Kusurların Tespiti",
-          "İSG Dashboard: BLE Akıllı Baret Zimmeti, Ramak Kala Bildirimi ve Geofencing Risk Planlaması",
+          "AI Destekli Hava Durumu Algoritması ile Kule Vinç ve Beton Döküm Risk Optimizasyonu (Rüzgar >50km/s ve Yağış Tahminleri)",
+          "4D Drone Fotogrametri, Zamansal Şantiye İkizi, Hafriyat Hacmi Tespiti ve AI ile İş Makinesi Sayımı",
+          "Karekod Entegreli Numune ve Karot Laboratuvar Takip Sistemi (7 ve 28 Günlük Basınç Dayanım Kırım Analitiği)",
+          "Akıllı Evrak Denetimi (OCR): Yapay Zeka ile Zemin Etüdü, Statik Ruhsat, Islak İmza ve Laboratuvar Test Doğrulaması",
+          "Bilgisayarlı Görü (Computer Vision) ile Şantiyede Donatı, Paspayı, Çatlak ve Segregasyon Kusur Tespiti",
+          "Yapı Denetim Firmaları için YİBF Entegreli Dinamik Formlar, Numune & Karot Takibi ve Demir/Kalıp Kontrol Otomasyonu",
+          "İSG Dashboard: BLE Akıllı Baret Zimmeti, Canlı Radar, Ramak Kala Bildirimi ve Geofencing Risk Planlaması",
           "Uçtan Uca Finans: AI Tahsilat & Risk Asistanı, Taşeron Hakediş Yönetimi ve Ambar Karekod Lojistiği",
           "Puantaj, Vardiya Planlaması ve Yüz Tanıma/GPS Tabanlı Personel Takibi",
-          "Web-IFC ve WASM destekli 3D BIM & AR (Artırılmış Gerçeklik) entegrasyonu",
-          "Raycasting ile 3D model üzerinde kusur (snagging) tespiti ve koordinatlı pinleme",
-          "Excel'den binlerce satırlık İhale, Keşif ve Metraj (BoQ) verisinin anında içe aktarımı (Bulk Upload)",
-          "Taşeron hakedişlerinde 3D kusurlara (BimIssue) dayalı otomatik ödeme blokesi",
-          "4D Drone Fotogrametri ile zamansal dijital şantiye ikizi ve AI destekli görsel analiz",
-          "Geçmiş yılların verisiyle kıyaslama yapan Yapay Zeka (AI) destekli Meteorolojik Risk ve Kule Vinç uyarı sistemi",
-          "Dexie.js destekli Offline-First (İnternetsiz) saha çalışma mimarisi ve PWA",
-          "Role-Based (Çoklu Kiracı/Multi-Tenant) Taşeron, Proje Müdürü ve İSG Uzmanı portalları",
-          "RAG mimarili Yapay Zeka Şantiye Mevzuatı ve İSG Asistanı"
+          "Web-IFC ve WASM Destekli 3D BIM & AR (Artırılmış Gerçeklik) Entegrasyonu",
+          "Raycasting ile 3D Model Üzerinde Kusur (Snagging) Tespiti ve Koordinatlı Pinleme",
+          "Excel'den Binlerce Satırlık İhale, Keşif ve Metraj (BoQ) Verisinin Anında İçe Aktarımı (Bulk Upload)",
+          "Taşeron Hakedişlerinde 3D Kusurlara (BimIssue) Dayalı Otomatik Ödeme Blokesi",
+          "Dexie.js Destekli Offline-First (İnternetsiz) Saha Çalışma Mimarisi ve PWA",
+          "Role-Based (Çoklu Kiracı/Multi-Tenant) Taşeron, Proje Müdürü ve İSG Uzmanı Portalları",
+          "RAG Mimarili Yapay Zeka Şantiye Mevzuatı ve İSG Asistanı",
+          "Mobil Uyumlu Canlı Şantiye Yönetimi ve Çok Dilli (TR/EN) Uluslararası Operasyon Desteği"
         ]
       },
       {
@@ -75,6 +77,54 @@ export default function JsonLd() {
         "mainEntity": [
           {
             "@type": "Question",
+            "name": "AI Hava Durumu entegrasyonu şantiyemi nasıl korur?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Rüzgar hızı, fırtına ve yağış verilerini meteorolojik istasyonlar ve geçmiş yılların iklim baselineları ile kıyaslayan AI motorumuz; rüzgar 50 km/s sınırını aştığında kule vinç operasyonlarını otomatik olarak durdurmanızı önerir, aşırı yağış ve don riskinde ise beton döküm takvimini proaktif biçimde revize ederek şantiye güvenliğini ve bütçesini korur."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does AI Weather Forecasting protect my construction site?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "By comparing real-time wind speed, storm forecasts, and precipitation probability against multi-year historical meteorological baselines, our AI engine automatically triggers crane shutdown alerts when wind exceeds 50 km/h, and proactively reschedules concrete pours during heavy rain or freezing conditions to safeguard operations and budgets."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Drone ve Hava Gözlem analizleriniz neleri tespit eder?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Uçuşlardan elde edilen yüksek çözünürlüklü fotogrametri verileriyle AI motorumuz şantiyedeki aktif iş makinelerini (ekskavatör, kamyon, mikser) sayar, hafriyat kazı/dolgu yüzdesini ve metreküp hacmini hesaplar, saha durumunu 4D dijital ikizle ve BIM modeliyle eşleştirir."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does your Drone Aerial Observation AI analyze?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Using photogrammetry and high-resolution orthophotos captured from periodic drone flights, our AI computer vision models autonomously count active heavy machinery (excavators, dump trucks, mixers), calculate excavation/fill volumes in cubic meters, and align actual site conditions against the 4D BIM digital twin."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Akıllı Evrak Denetimi (OCR) hangi ruhsat ve teknik belgeleri otomatik okur?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nexa ERP AI OCR motoru; yapı ruhsatları, zemin etüdü raporları, beton basınç dayanım kırılma tutanakları ve statik proje eklerini saniyeler içinde tarar. Islak imza ve mühür kontrolü yaparak verileri YİBF standartlarında şantiye dijital arşivine işler."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which construction documents can Smart OCR automatically parse?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The Nexa ERP AI OCR engine scans building permits, geotechnical soil investigation reports, laboratory compressive strength test certificates, and structural engineering annexes in seconds. It verifies wet signatures, official seals, and indexes data into the digital project archive in compliance with regulatory standards."
+            }
+          },
+          {
+            "@type": "Question",
             "name": "Yapı denetim süreçlerinde demir ve kalıp kontrollerini nasıl hızlandırıyorsunuz?",
             "acceptedAnswer": {
               "@type": "Answer",
@@ -94,7 +144,7 @@ export default function JsonLd() {
             "name": "Karot ve numune takibi sistemde nasıl yapılıyor?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Laboratuvara giden her numune (karot) karekod ile sistemde eşleşir. Test sonuçları OCR (Akıllı Evrak) modülü tarafından otomatik okunarak ilgili projenin 'Hasar Tespit & Rapor' dijital arşivine işlenir."
+              "text": "Laboratuvara giden her beton karot numunesi karekod ile sistemde eşleşir. 7 ve 28 günlük basınç dayanımı kırım test sonuçları OCR modülü tarafından otomatik okunarak ilgili projenin dijital arşivine ve YİBF formuna işlenir."
             }
           },
           {
@@ -102,7 +152,7 @@ export default function JsonLd() {
             "name": "How is core sample and specimen tracking handled in the system?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Each concrete core sample sent to the laboratory is paired with a QR code in the system. Test results are automatically parsed by the OCR (Smart Document) engine and recorded into the project's 'Damage Assessment & Inspection' digital archive."
+              "text": "Each concrete core sample sent to the laboratory is paired with a cryptographic QR code in the system. 7-day and 28-day compressive break test results are automatically parsed by the OCR engine and recorded into the project's digital archive and compliance audit trail."
             }
           },
           {
