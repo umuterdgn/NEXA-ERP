@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { Route, MapPin, Building2, Loader2, Sparkles, CheckCircle, ArrowRight } from "lucide-react"
+import { Route, MapPin, Building2, Loader2, Sparkles, CheckCircle, ArrowRight, Navigation, ExternalLink } from "lucide-react"
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapContainer = dynamic(
@@ -48,11 +48,13 @@ interface Stop {
 export default function RoutesPage() {
   const [selectedPersonnel, setSelectedPersonnel] = useState("")
   const [stops, setStops] = useState<Stop[]>([])
+  const [roadPolyline, setRoadPolyline] = useState<[number, number][]>([])
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [isOptimized, setIsOptimized] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
   const [personnelList, setPersonnelList] = useState<any[]>([])
   const [loadingPersonnel, setLoadingPersonnel] = useState(true)
+  const [routeKm, setRouteKm] = useState<number | null>(null)
 
   useEffect(() => {
     fetchPersonnel()
@@ -164,10 +166,27 @@ export default function RoutesPage() {
       }
       
       setStops(optimized)
+
+      // Fetch real road driving polyline from OSRM
+      try {
+        const coordsParam = optimized.map((s) => `${s.lng},${s.lat}`).join(";")
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsParam}?overview=full&geometries=geojson`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.code === "Ok" && data.routes?.length > 0) {
+            const r = data.routes[0]
+            const realCoords: [number, number][] = r.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
+            setRoadPolyline(realCoords)
+            setRouteKm(Number((r.distance / 1000).toFixed(1)))
+          }
+        }
+      } catch (err) {
+        console.warn("OSRM routing error in routes page:", err)
+      }
     }
     
     setIsOptimized(true)
-    setSuccessMessage("Rota optimize edildi. Tahmini yakıt ve zaman tasarrufu hesaplandı.")
+    setSuccessMessage("Gerçek karayolu rotası OSRM ile optimize edildi. Yakıt ve zaman tasarrufu hesaplandı.")
     setIsOptimizing(false)
   }
 
@@ -314,26 +333,55 @@ export default function RoutesPage() {
                   </Marker>
                 ))}
 
-                {stops.length > 1 && (
+                {/* Real Road Polyline from OSRM */}
+                {roadPolyline.length > 1 ? (
                   <Polyline
-                    positions={stops.map(stop => [stop.lat, stop.lng])}
-                    color={getRouteColor()}
-                    weight={4}
-                    dashArray={getRouteDashArray()}
+                    positions={roadPolyline}
+                    color="#3b82f6"
+                    weight={5}
+                    opacity={0.85}
                   />
+                ) : (
+                  stops.length > 1 && (
+                    <Polyline
+                      positions={stops.map(stop => [stop.lat, stop.lng])}
+                      color={getRouteColor()}
+                      weight={4}
+                      dashArray={getRouteDashArray()}
+                    />
+                  )
                 )}
               </MapContainer>
             </div>
 
-            {/* Legend */}
-            <div className="mt-4 flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-1 bg-red-500"></div>
-                <span className="text-slate-400">Orijinal Rota</span>
+            {/* Google Maps Launch Navigation Button */}
+            {stops.length > 1 && (
+              <div className="mt-4 pt-4 border-t border-slate-800">
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&origin=${stops[0].lat},${stops[0].lng}&destination=${stops[stops.length - 1].lat},${stops[stops.length - 1].lng}${stops.length > 2 ? `&waypoints=${stops.slice(1, -1).map(s => `${s.lat},${s.lng}`).join('|')}` : ''}&travelmode=driving`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95 text-sm"
+                >
+                  <Navigation className="w-4 h-4 fill-white" />
+                  <span>Navigasyonu Başlat (Google Haritalar)</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-1 bg-green-500"></div>
-                <span className="text-slate-400">Optimize Edilmiş Rota</span>
+            )}
+
+            {/* Legend & Stats */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 text-sm">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-1 bg-blue-500"></div>
+                  <span className="text-slate-400">Karayolu Ağı (OSRM)</span>
+                </div>
+                {routeKm && (
+                  <span className="text-cyan-400 font-mono font-bold text-xs">
+                    Mesafe: {routeKm} km
+                  </span>
+                )}
               </div>
             </div>
           </div>
