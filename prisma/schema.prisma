@@ -3292,6 +3292,15 @@ model WorkPackage {
   startDate         DateTime?
   endDate           DateTime?
 
+  // BoQ 2.0 İnovatif Alanlar (Delta, AI Fire, 6D Karbon)
+  theoreticalQuantity Float?   // BIM'den gelen saf teorik miktar
+  aiWasteMargin     Float?     // AI tarafından öngörülen fire yüzdesi (Örn: 0.04 -> %4)
+  actualOrderQty    Float?     // Fire dahil gerçek sipariş edilmesi gereken miktar
+  carbonEmission    Float?     // Birim başına CO2 Karbon Ayak İzi (kg)
+  totalCarbon       Float?     // Toplam CO2 salınımı
+  version           Int        @default(1) // Revizyon takibi için (Delta BoQ)
+  previousQuantity  Float?     // Mimari değişim öncesi miktar (Etki hesabı için)
+
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -3333,6 +3342,15 @@ model BoQItem {
   contractQuantity  Float  @default(0)
   completedQuantity Float  @default(0)
   totalAmount       Float  @default(0)
+
+  // BoQ 2.0 İnovatif Alanlar
+  theoreticalQuantity Float?   // BIM'den gelen saf teorik miktar
+  aiWasteMargin     Float?     // AI tarafından öngörülen fire yüzdesi (Örn: 0.04 -> %4)
+  actualOrderQty    Float?     // Fire dahil gerçek sipariş edilmesi gereken miktar
+  carbonEmission    Float?     // Birim başına CO2 Karbon Ayak İzi (kg)
+  totalCarbon       Float?     // Toplam CO2 salınımı
+  version           Int        @default(1) // Revizyon takibi için (Delta BoQ)
+  previousQuantity  Float?     // Mimari değişim öncesi miktar (Etki hesabı için)
 
   workPackageId String?
   workPackage   WorkPackage? @relation(fields: [workPackageId], references: [id], onDelete: SetNull)
