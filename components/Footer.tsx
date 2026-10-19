@@ -129,15 +129,19 @@ export default function Footer() {
             <ul className="space-y-3 text-xs text-slate-400">
               <li className="flex items-start gap-2.5">
                 <Mail className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                <span>info@nexa-erp.com</span>
+                <a href="mailto:nxglobalinfo@gmail.com" className="hover:text-cyan-300 transition-colors">
+                  nxglobalinfo@gmail.com
+                </a>
               </li>
               <li className="flex items-start gap-2.5">
                 <Phone className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                <span>+90 505 147 77 29</span>
+                <a href="tel:+905051477729" className="hover:text-cyan-300 transition-colors">
+                  0505 147 77 29
+                </a>
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                <span>İskenderun / Hatay, Türkiye</span>
+                <span>İskenderun Teknik Üniversitesi (İSTE Kampüs / Teknopark), Hatay</span>
               </li>
             </ul>
           </div>

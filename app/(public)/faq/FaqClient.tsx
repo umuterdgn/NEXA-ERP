@@ -25,8 +25,9 @@ import {
 
 export interface FaqItem {
   id: string
-  category: 'bim' | 'offline' | 'finance' | 'isg' | 'general'
+  category: 'bim' | 'offline' | 'finance' | 'isg' | 'general' | 'inspection'
   categoryLabel: string
+  lang?: 'tr' | 'en'
   q: string
   a: string
   keywords: string[]
@@ -34,9 +35,46 @@ export interface FaqItem {
 
 const FAQ_LIST: FaqItem[] = [
   {
+    id: 'inspection-1',
+    category: 'inspection',
+    categoryLabel: 'Yapı Denetim & AI',
+    lang: 'tr',
+    q: "Yapı denetim süreçlerinde demir ve kalıp kontrollerini nasıl hızlandırıyorsunuz?",
+    a: "Sahadaki denetçi, mobil cihazı üzerinden 'Demir & Kalıp Kontrol' dinamik formlarını doldurur, pafta üzerindeki sorunlu bölgeyi işaretler ve AI Görsel Analiz aracıyla paspayı veya donatı hatalarını anında merkeze raporlar.",
+    keywords: ["yapı denetim", "demir kontrol", "kalıp kontrol", "ai görsel analiz", "paspayı", "donatı"]
+  },
+  {
+    id: 'inspection-1-en',
+    category: 'inspection',
+    categoryLabel: 'Building Inspection & AI',
+    lang: 'en',
+    q: "How do you accelerate reinforcement steel and formwork inspections in building control processes?",
+    a: "The field inspector fills out dynamic 'Rebar & Formwork Inspection' forms on their mobile device, marks defect areas on the drawing sheets, and instantly reports cover thickness or reinforcement errors to the head office using the AI Visual Analysis tool.",
+    keywords: ["building inspection", "rebar", "formwork", "ai visual analysis", "defect detection"]
+  },
+  {
+    id: 'inspection-2',
+    category: 'inspection',
+    categoryLabel: 'Yapı Denetim & AI',
+    lang: 'tr',
+    q: "Karot ve numune takibi sistemde nasıl yapılıyor?",
+    a: "Laboratuvara giden her numune (karot) karekod ile sistemde eşleşir. Test sonuçları OCR (Akıllı Evrak) modülü tarafından otomatik okunarak ilgili projenin 'Hasar Tespit & Rapor' dijital arşivine işlenir.",
+    keywords: ["karot", "numune", "karekod", "ocr", "akıllı evrak", "laboratuvar", "hasar tespit"]
+  },
+  {
+    id: 'inspection-2-en',
+    category: 'inspection',
+    categoryLabel: 'Building Inspection & AI',
+    lang: 'en',
+    q: "How is core sample and specimen tracking handled in the system?",
+    a: "Each concrete core sample sent to the laboratory is paired with a QR code in the system. Test results are automatically parsed by the OCR (Smart Document) engine and recorded into the project's 'Damage Assessment & Inspection' digital archive.",
+    keywords: ["core sample", "specimen tracking", "qr code", "ocr", "laboratory", "smart document"]
+  },
+  {
     id: 'bim-1',
     category: 'bim',
     categoryLabel: '3D & 5D BIM',
+    lang: 'tr',
     q: "Nexa ERP'yi mevcut BIM (Revit/Navisworks) yazılımlarımızla nasıl entegre edebiliriz?",
     a: "Nexa ERP, entegre Web-IFC ve WASM motorları sayesinde ağır masaüstü yazılımlarına ihtiyaç duymadan .ifc, .gltf ve .glb formatındaki 3D modelleri doğrudan tarayıcınızda açar. Şantiye şefiniz tabletinden anında 3D revizyonları görebilir ve kusur (snagging) işaretleyebilir.",
     keywords: ["bim", "revit", "navisworks", "ifc", "3d", "wasm", "snagging"]
@@ -102,12 +140,12 @@ const FAQ_LIST: FaqItem[] = [
 export default function FaqClient() {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [langFilter, setLangFilter] = useState<'all' | 'tr' | 'en'>('all')
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({
-    'bim-1': true,
-    'offline-1': true,
-    'finance-1': false,
-    'finance-2': false,
-    'isg-1': false
+    'inspection-1': true,
+    'inspection-1-en': true,
+    'bim-1': false,
+    'offline-1': false,
   })
 
   const toggleItem = (id: string) => {
@@ -117,6 +155,9 @@ export default function FaqClient() {
   const filteredFaqs = FAQ_LIST.filter(item => {
     const matchesCategory = activeCategory === 'all' || item.category === activeCategory
     if (!matchesCategory) return false
+
+    const matchesLang = langFilter === 'all' || item.lang === langFilter || !item.lang
+    if (!matchesLang) return false
 
     if (!searchQuery.trim()) return true
     const q = searchQuery.toLowerCase()
@@ -129,6 +170,7 @@ export default function FaqClient() {
 
   const categories = [
     { id: 'all', label: 'Tümü' },
+    { id: 'inspection', label: '🔬 Yapı Denetim & AI' },
     { id: 'bim', label: '3D & 5D BIM' },
     { id: 'offline', label: 'Saha & Offline' },
     { id: 'finance', label: 'Finans & Hakediş' },
@@ -178,6 +220,46 @@ export default function FaqClient() {
         })}
       </div>
 
+      {/* Language Filter */}
+      <div className="flex items-center justify-between gap-3 mb-8 pb-4 border-b border-slate-800/80">
+        <div className="text-xs text-slate-400 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Dil Seçimi / Language:</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLangFilter('all')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+              langFilter === 'all'
+                ? 'bg-slate-700 text-white border border-slate-500'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            🌐 Tümü
+          </button>
+          <button
+            onClick={() => setLangFilter('tr')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+              langFilter === 'tr'
+                ? 'bg-red-950 text-red-200 border border-red-700'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            🇹🇷 Türkçe
+          </button>
+          <button
+            onClick={() => setLangFilter('en')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+              langFilter === 'en'
+                ? 'bg-blue-950 text-blue-200 border border-blue-700'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            🇬🇧 English
+          </button>
+        </div>
+      </div>
+
       {/* FAQ Accordion Items */}
       {filteredFaqs.length === 0 ? (
         <div className="text-center py-16 bg-slate-900/50 rounded-2xl border border-slate-800 space-y-3">
@@ -211,9 +293,20 @@ export default function FaqClient() {
                   className="w-full p-5 text-left flex items-start justify-between gap-4 text-white hover:text-cyan-300 transition-colors cursor-pointer"
                 >
                   <div className="space-y-1">
-                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-cyan-400 border border-slate-700">
-                      {faq.categoryLabel}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-cyan-400 border border-slate-700">
+                        {faq.categoryLabel}
+                      </span>
+                      {faq.lang && (
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase ${
+                          faq.lang === 'en'
+                            ? 'bg-blue-950/80 text-blue-300 border-blue-800'
+                            : 'bg-red-950/80 text-red-300 border-red-800'
+                        }`}>
+                          {faq.lang === 'en' ? '🇬🇧 EN' : '🇹🇷 TR'}
+                        </span>
+                      )}
+                    </div>
                     <h3 className="text-sm sm:text-base font-bold text-slate-100 pr-2 leading-snug">
                       {faq.q}
                     </h3>

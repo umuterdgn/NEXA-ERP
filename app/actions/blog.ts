@@ -18,6 +18,7 @@ export interface BlogPostInput {
   content: string
   imageUrl?: string | null
   author?: string
+  language?: string
   isPublished?: boolean
 }
 
@@ -45,6 +46,7 @@ export async function addBlogPost(data: BlogPostInput) {
         content: data.content,
         imageUrl: data.imageUrl || null,
         author: data.author || "Nexa ERP",
+        language: data.language || "tr",
         isPublished: data.isPublished ?? false,
       },
     })
@@ -112,9 +114,14 @@ export async function deleteBlogPost(id: string) {
   }
 }
 
-export async function getBlogPosts() {
+export async function getBlogPosts(language?: string) {
   try {
+    const where: any = {}
+    if (language && language !== "all") {
+      where.language = language
+    }
     return await prisma.blogPost.findMany({
+      where,
       orderBy: { createdAt: "desc" },
     })
   } catch (error) {
@@ -123,10 +130,14 @@ export async function getBlogPosts() {
   }
 }
 
-export async function getPublishedBlogPosts() {
+export async function getPublishedBlogPosts(language?: string) {
   try {
+    const where: any = { isPublished: true }
+    if (language && language !== "all") {
+      where.language = language
+    }
     return await prisma.blogPost.findMany({
-      where: { isPublished: true },
+      where,
       orderBy: { createdAt: "desc" },
     })
   } catch (error) {

@@ -55,6 +55,7 @@ interface BlogPostItem {
   content: string
   imageUrl: string | null
   author: string
+  language?: string
   isPublished: boolean
   createdAt: Date | string
   updatedAt: Date | string
@@ -66,6 +67,7 @@ export default function ContentManagementPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("ALL")
   const [statusFilter, setStatusFilter] = useState("ALL")
+  const [languageFilter, setLanguageFilter] = useState("ALL")
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -82,6 +84,7 @@ export default function ContentManagementPage() {
     content: "",
     imageUrl: "",
     author: "Nexa ERP",
+    language: "tr",
     isPublished: false,
   })
 
@@ -111,6 +114,7 @@ export default function ContentManagementPage() {
       content: "",
       imageUrl: "",
       author: "Nexa ERP",
+      language: "tr",
       isPublished: true,
     })
     setActiveEditorTab("edit")
@@ -127,6 +131,7 @@ export default function ContentManagementPage() {
       content: post.content,
       imageUrl: post.imageUrl || "",
       author: post.author,
+      language: post.language || "tr",
       isPublished: post.isPublished,
     })
     setActiveEditorTab("edit")
@@ -232,6 +237,7 @@ export default function ContentManagementPage() {
     if (categoryFilter !== "ALL" && post.category !== categoryFilter) return false
     if (statusFilter === "PUBLISHED" && !post.isPublished) return false
     if (statusFilter === "DRAFT" && post.isPublished) return false
+    if (languageFilter !== "ALL" && (post.language || "tr") !== languageFilter) return false
 
     if (!searchQuery.trim()) return true
     const q = searchQuery.toLowerCase()
@@ -358,6 +364,16 @@ export default function ContentManagementPage() {
             <option value="DRAFT">Sadece Taslak</option>
           </select>
 
+          <select
+            value={languageFilter}
+            onChange={(e) => setLanguageFilter(e.target.value)}
+            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+          >
+            <option value="ALL">🌐 Tüm Diller</option>
+            <option value="tr">🇹🇷 Türkçe (TR)</option>
+            <option value="en">🇬🇧 English (EN)</option>
+          </select>
+
           <button
             onClick={loadPosts}
             className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
@@ -392,6 +408,7 @@ export default function ContentManagementPage() {
                   <th className="py-3.5 px-4">Başlık & URL Slug</th>
                   <th className="py-3.5 px-4">Kategori</th>
                   <th className="py-3.5 px-4">Hedef Kitle</th>
+                  <th className="py-3.5 px-4 text-center">Dil</th>
                   <th className="py-3.5 px-4">Yazar</th>
                   <th className="py-3.5 px-4 text-center">Durum</th>
                   <th className="py-3.5 px-4 text-right">İşlemler</th>
@@ -434,6 +451,17 @@ export default function ContentManagementPage() {
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className="px-2.5 py-1 rounded-md text-[10.5px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30">
                         {post.targetAudience}
+                      </span>
+                    </td>
+
+                    {/* Dil */}
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase ${
+                        post.language === "en"
+                          ? "bg-blue-950/80 text-blue-300 border-blue-800"
+                          : "bg-red-950/80 text-red-300 border-red-800"
+                      }`}>
+                        {post.language === "en" ? "EN 🇬🇧" : "TR 🇹🇷"}
                       </span>
                     </td>
 
@@ -581,8 +609,8 @@ export default function ContentManagementPage() {
                   </div>
                 </div>
 
-                {/* Kategori ve Hedef Kitle */}
-                <div className="grid sm:grid-cols-2 gap-4">
+                {/* Kategori, Hedef Kitle ve Dil */}
+                <div className="grid sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                       Kategori *
@@ -593,6 +621,7 @@ export default function ContentManagementPage() {
                       className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
                     >
                       <option value="Case Study">Başarı Hikayesi / Case Study</option>
+                      <option value="Yapı Denetim & AI">Yapı Denetim & AI</option>
                       <option value="Haberler">Haberler & Duyurular</option>
                       <option value="BIM & Teknoloji">BIM & 4D/5D Teknoloji</option>
                       <option value="İSG & Saha">İSG & Saha Yönetimi</option>
@@ -611,7 +640,22 @@ export default function ContentManagementPage() {
                       value={formState.targetAudience}
                       onChange={(e) => setFormState(prev => ({ ...prev, targetAudience: e.target.value }))}
                       className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
-                    />
+                    >
+                    </input>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Yayın Dili (Language) *
+                    </label>
+                    <select
+                      value={formState.language || "tr"}
+                      onChange={(e) => setFormState(prev => ({ ...prev, language: e.target.value }))}
+                      className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="tr">🇹🇷 Türkçe (tr)</option>
+                      <option value="en">🇬🇧 English (en)</option>
+                    </select>
                   </div>
                 </div>
 

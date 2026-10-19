@@ -32,6 +32,7 @@ interface BlogPostItem {
   content: string
   imageUrl: string | null
   author: string
+  language?: string
   createdAt: string | Date
   updatedAt: string | Date
 }
@@ -43,6 +44,7 @@ interface BlogListClientProps {
 export default function BlogListClient({ initialPosts }: BlogListClientProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("Tümü")
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("ALL")
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -62,9 +64,12 @@ export default function BlogListClient({ initialPosts }: BlogListClientProps) {
       const matchesCategory =
         selectedCategory === "Tümü" || post.category === selectedCategory
 
-      return matchesSearch && matchesCategory
+      const matchesLanguage =
+        selectedLanguage === "ALL" || (post.language || "tr") === selectedLanguage
+
+      return matchesSearch && matchesCategory && matchesLanguage
     })
-  }, [initialPosts, searchTerm, selectedCategory])
+  }, [initialPosts, searchTerm, selectedCategory, selectedLanguage])
 
   // Helper to extract clean preview text from HTML
   const getExcerpt = (html: string, length = 140) => {
@@ -142,6 +147,41 @@ export default function BlogListClient({ initialPosts }: BlogListClientProps) {
               </button>
             ))}
           </div>
+
+          {/* Language Selector Pills */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <span className="text-xs text-slate-400 mr-1">Dil / Language:</span>
+            <button
+              onClick={() => setSelectedLanguage("ALL")}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                selectedLanguage === "ALL"
+                  ? "bg-slate-700 text-white border border-slate-500 shadow-sm"
+                  : "bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800"
+              }`}
+            >
+              🌐 Tümü (All)
+            </button>
+            <button
+              onClick={() => setSelectedLanguage("tr")}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                selectedLanguage === "tr"
+                  ? "bg-red-950 text-red-200 border border-red-700 shadow-sm"
+                  : "bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800"
+              }`}
+            >
+              🇹🇷 Türkçe
+            </button>
+            <button
+              onClick={() => setSelectedLanguage("en")}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                selectedLanguage === "en"
+                  ? "bg-blue-950 text-blue-200 border border-blue-700 shadow-sm"
+                  : "bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800"
+              }`}
+            >
+              🇬🇧 English
+            </button>
+          </div>
         </div>
       </section>
 
@@ -174,6 +214,7 @@ export default function BlogListClient({ initialPosts }: BlogListClientProps) {
               onClick={() => {
                 setSearchTerm("")
                 setSelectedCategory("Tümü")
+                setSelectedLanguage("ALL")
               }}
               className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition-all"
             >
@@ -210,10 +251,17 @@ export default function BlogListClient({ initialPosts }: BlogListClientProps) {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                     
-                    {/* Category Badge */}
-                    <div className="absolute top-3 left-3">
+                    {/* Category & Language Badges */}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/90 text-slate-950 backdrop-blur-md shadow-md">
                         {post.category}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md border uppercase ${
+                        post.language === "en"
+                          ? "bg-blue-950/90 text-blue-200 border-blue-700 shadow-sm"
+                          : "bg-red-950/90 text-red-200 border-red-700 shadow-sm"
+                      }`}>
+                        {post.language === "en" ? "EN 🇬🇧" : "TR 🇹🇷"}
                       </span>
                     </div>
 

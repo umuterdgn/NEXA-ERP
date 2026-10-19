@@ -111,11 +111,12 @@ export default async function SingleBlogPostPage({ params }: PageProps) {
     .filter((p) => p.id !== post.id)
     .slice(0, 3)
 
-  // Otomatik JSON-LD Article Schema (GEO'nun Kalbi - Adım 4)
+  // Otomatik JSON-LD Article Schema (GEO'nun Kalbi - Adım 4 & Çok Dilli Destek)
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
     "headline": post.title,
+    "inLanguage": post.language === "en" ? "en-US" : "tr-TR",
     "image": post.imageUrl ? [post.imageUrl] : [],
     "datePublished": post.createdAt.toISOString(),
     "dateModified": post.updatedAt.toISOString(),
@@ -178,10 +179,17 @@ export default async function SingleBlogPostPage({ params }: PageProps) {
               <span className="text-cyan-400 font-medium truncate max-w-[260px]">{post.category}</span>
             </nav>
 
-            {/* Badges: Category & Target Persona */}
+            {/* Badges: Category, Language & Target Persona */}
             <div className="flex flex-wrap items-center gap-2.5 mb-6">
               <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                 {post.category}
+              </span>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-bold border uppercase ${
+                post.language === "en"
+                  ? "bg-blue-950/80 text-blue-300 border-blue-700"
+                  : "bg-red-950/80 text-red-300 border-red-700"
+              }`}>
+                {post.language === "en" ? "🇬🇧 EN" : "🇹🇷 TR"}
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800">
                 <Target className="w-3.5 h-3.5 text-cyan-400" />

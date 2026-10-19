@@ -29,6 +29,38 @@ export default function FaqPage() {
     "mainEntity": [
       {
         "@type": "Question",
+        "name": "Yapı denetim süreçlerinde demir ve kalıp kontrollerini nasıl hızlandırıyorsunuz?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sahadaki denetçi, mobil cihazı üzerinden 'Demir & Kalıp Kontrol' dinamik formlarını doldurur, pafta üzerindeki sorunlu bölgeyi işaretler ve AI Görsel Analiz aracıyla paspayı veya donatı hatalarını anında merkeze raporlar."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do you accelerate reinforcement steel and formwork inspections in building control processes?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The field inspector fills out dynamic 'Rebar & Formwork Inspection' forms on their mobile device, marks defect areas on the drawing sheets, and instantly reports cover thickness or reinforcement errors to the head office using the AI Visual Analysis tool."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Karot ve numune takibi sistemde nasıl yapılıyor?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Laboratuvara giden her numune (karot) karekod ile sistemde eşleşir. Test sonuçları OCR (Akıllı Evrak) modülü tarafından otomatik okunarak ilgili projenin 'Hasar Tespit & Rapor' dijital arşivine işlenir."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is core sample and specimen tracking handled in the system?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Each concrete core sample sent to the laboratory is paired with a QR code in the system. Test results are automatically parsed by the OCR (Smart Document) engine and recorded into the project's 'Damage Assessment & Inspection' digital archive."
+        }
+      },
+      {
+        "@type": "Question",
         "name": "Nexa ERP'yi mevcut BIM (Revit/Navisworks) yazılımlarımızla nasıl entegre edebiliriz?",
         "acceptedAnswer": {
           "@type": "Answer",

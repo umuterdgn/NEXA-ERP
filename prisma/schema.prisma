@@ -3538,12 +3538,14 @@ model BlogPost {
   content        String   // Zengin metin (HTML veya Markdown olarak saklanacak)
   imageUrl       String?  // Kapak fotoğrafı (UploadThing URL)
   author         String   @default("Nexa ERP")
+  language       String   @default("tr") // "tr" veya "en"
   isPublished    Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([category])
   @@index([isPublished])
+  @@index([language])
   @@index([createdAt])
 }
 

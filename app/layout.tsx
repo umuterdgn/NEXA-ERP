@@ -86,6 +86,14 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  alternates: {
+    canonical: "https://www.nxerp.com.tr",
+    languages: {
+      "tr": "https://www.nxerp.com.tr",
+      "en": "https://www.nxerp.com.tr/en",
+      "x-default": "https://www.nxerp.com.tr",
+    },
+  },
   other: {
     "apple-mobile-web-app-capable": "yes",
     "theme-color": "#0f172a",
@@ -103,6 +111,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" className={`${inter.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Google International SEO / Multilingual GEO Hreflang Tags */}
+        <link rel="alternate" hrefLang="tr" href="https://www.nxerp.com.tr" />
+        <link rel="alternate" hrefLang="en" href="https://www.nxerp.com.tr/en" />
+        <link rel="alternate" hrefLang="x-default" href="https://www.nxerp.com.tr" />
+      </head>
       <body className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white" suppressHydrationWarning>
         <JsonLd />
         <ThemeProvider>
