@@ -104,6 +104,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/blog" className="hover:text-white transition-colors">
+                  Başarı Hikayeleri & Blog
+                </Link>
+              </li>
+              <li>
                 <Link href="/faq" className="hover:text-white transition-colors">
                   Sıkça Sorulan Sorular (S.S.S.)
                 </Link>

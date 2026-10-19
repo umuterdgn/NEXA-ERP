@@ -3528,3 +3528,22 @@ model CameraViolation {
   @@index([status])
   @@index([timestamp])
 }
+
+model BlogPost {
+  id             String   @id @default(cuid())
+  title          String   // Başlık (H1)
+  slug           String   @unique // URL dostu başlık (Örn: finansal-kacaklarin-onlenmesi)
+  category       String   // Örn: "Case Study", "Haberler"
+  targetAudience String   // Persona (Örn: "Patronlar, CFO'lar")
+  content        String   // Zengin metin (HTML veya Markdown olarak saklanacak)
+  imageUrl       String?  // Kapak fotoğrafı (UploadThing URL)
+  author         String   @default("Nexa ERP")
+  isPublished    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([createdAt])
+}
+

@@ -49,6 +49,18 @@ export const ourFileRouter = {
       return { url: file.url }
     }),
 
+  // Blog / CMS Image Uploader - Cover images, max 8MB
+  blogImageUploader: f({
+    image: { maxFileSize: "8MB", maxFileCount: 1 },
+  })
+    .middleware(() => {
+      return { user: "admin" }
+    })
+    .onUploadComplete(({ file }) => {
+      const safeUrl = (file as any).ufsUrl || (file as any).url
+      return { url: safeUrl }
+    }),
+
   // Project Document Uploader - PDF, DWG, DOCX, etc., max 64MB
   projectDocumentUploader: f({
     "application/pdf": { maxFileSize: "64MB", maxFileCount: 1 },

@@ -34,6 +34,7 @@ export default function Navbar() {
     { href: '/', label: 'Ana Sayfa' },
     { href: '/about', label: 'Hakkımızda' },
     { href: '/features', label: 'Özellikler' },
+    { href: '/blog', label: 'Başarı Hikayeleri' },
     { href: '/faq', label: 'S.S.S.' },
     { href: '/iletisim', label: 'İletişim' },
   ]
