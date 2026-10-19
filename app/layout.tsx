@@ -13,6 +13,8 @@ import OfflineSyncManager from "@/components/OfflineSyncManager";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import AILegislationAssistant from "@/components/AILegislationAssistant";
 import JsonLd from "@/components/JsonLd";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -126,6 +128,8 @@ export default function RootLayout({
           {children}
           <Toaster position="bottom-right" />
         </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
