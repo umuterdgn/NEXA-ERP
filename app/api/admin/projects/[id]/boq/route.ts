@@ -9,6 +9,7 @@ function computeBoq2Metrics(item: {
   unit?: string | null
   plannedQuantity: number
   unitPrice: number
+  // Dinamik Fiyatlandırma & Enflasyon Simülatörü
   theoreticalQuantity?: number | null
   aiWasteMargin?: number | null
   actualOrderQty?: number | null
@@ -16,6 +17,10 @@ function computeBoq2Metrics(item: {
   totalCarbon?: number | null
   version?: number | null
   previousQuantity?: number | null
+  baseCurrency?: string | null
+  exchangeRateAtBid?: number | null
+  currentUnitPrice?: number | null
+  inflationImpact?: number | null
 }) {
   const nameLower = (item.name || "").toLowerCase()
   const cat = (item.categoryKey || "").toLowerCase()
@@ -80,6 +85,12 @@ function computeBoq2Metrics(item: {
   const previousQuantity =
     item.previousQuantity ?? (qty > 0 ? Math.round(qty * prevQtyFactor * 100) / 100 : 0)
 
+  // Enflasyon & Kur Simülatörü Metrikleri
+  const baseCurrency = item.baseCurrency || "TRY"
+  const exchangeRateAtBid = item.exchangeRateAtBid ?? (baseCurrency === "USD" ? 31.5 : baseCurrency === "EUR" ? 34.2 : 1.0)
+  const currentUnitPrice = item.currentUnitPrice ?? (item.unitPrice > 0 ? Math.round(item.unitPrice * 1.215 * 100) / 100 : 0)
+  const inflationImpact = item.inflationImpact ?? Math.round(Math.max(0, currentUnitPrice - item.unitPrice) * qty * 100) / 100
+
   return {
     theoreticalQuantity,
     aiWasteMargin,
@@ -87,7 +98,11 @@ function computeBoq2Metrics(item: {
     carbonEmission,
     totalCarbon,
     version,
-    previousQuantity
+    previousQuantity,
+    baseCurrency,
+    exchangeRateAtBid,
+    currentUnitPrice,
+    inflationImpact
   }
 }
 
@@ -125,7 +140,11 @@ export async function GET(
         carbonEmission: wp.carbonEmission,
         totalCarbon: wp.totalCarbon,
         version: wp.version,
-        previousQuantity: wp.previousQuantity
+        previousQuantity: wp.previousQuantity,
+        baseCurrency: wp.baseCurrency,
+        exchangeRateAtBid: wp.exchangeRateAtBid,
+        currentUnitPrice: wp.currentUnitPrice,
+        inflationImpact: wp.inflationImpact
       })
 
       return {

@@ -3301,6 +3301,12 @@ model WorkPackage {
   version           Int        @default(1) // Revizyon takibi için (Delta BoQ)
   previousQuantity  Float?     // Mimari değişim öncesi miktar (Etki hesabı için)
 
+  // Dinamik Fiyatlandırma & Enflasyon Simülatörü
+  baseCurrency      String?  @default("TRY") // Orijinal para birimi
+  exchangeRateAtBid Float?   // İhale tarihindeki kur
+  currentUnitPrice  Float?   // Güncel API'den çekilen birim fiyat
+  inflationImpact   Float?   // Enflasyon/Kur kaynaklı maliyet artışı
+
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -3351,6 +3357,12 @@ model BoQItem {
   totalCarbon       Float?     // Toplam CO2 salınımı
   version           Int        @default(1) // Revizyon takibi için (Delta BoQ)
   previousQuantity  Float?     // Mimari değişim öncesi miktar (Etki hesabı için)
+
+  // Dinamik Fiyatlandırma & Enflasyon Simülatörü
+  baseCurrency      String?  @default("TRY") // Orijinal para birimi
+  exchangeRateAtBid Float?   // İhale tarihindeki kur
+  currentUnitPrice  Float?   // Güncel API'den çekilen birim fiyat
+  inflationImpact   Float?   // Enflasyon/Kur kaynaklı maliyet artışı
 
   workPackageId String?
   workPackage   WorkPackage? @relation(fields: [workPackageId], references: [id], onDelete: SetNull)
