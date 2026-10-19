@@ -292,18 +292,22 @@ model Project {
 // ============================================================================
 
 model SiteZone {
-  id        String   @id @default(cuid())
-  projectId String
-  title     String // Örn: "A Blok Oturumu", "Demir Büküm Alanı"
-  category  String // RISK, BUILDING, REST_AREA, STORAGE
-  latitude  Float
-  longitude Float
-  radius    Float    @default(20) // Alanın büyüklüğü
-  createdAt DateTime @default(now())
+  id                 String   @id @default(cuid())
+  projectId          String
+  title              String // Örn: "A Blok Oturumu", "Demir Büküm Alanı"
+  category           String? // RISK, BUILDING, REST_AREA, STORAGE (Legacy)
+  zoneType           String   @default("MAIN_SITE") // MAIN_SITE, DANGER_ZONE, REST_AREA
+  latitude           Float?
+  longitude          Float?
+  radius             Float?   @default(20) // Opsiyonel legacy alan büyüklüğü
+  polygonCoordinates Json? // [{lat: number, lng: number}, ...] köşe koordinatları dizisi
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@index([zoneType])
   @@index([category])
 }
 

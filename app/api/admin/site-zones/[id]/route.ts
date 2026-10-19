@@ -14,7 +14,7 @@ export async function PUT(
   try {
     const resolvedParams = await params
     const body = await request.json()
-    const { title, category, latitude, longitude, radius } = body
+    const { title, category, zoneType, latitude, longitude, radius, polygonCoordinates } = body
 
     // Validate category if provided
     if (category) {
@@ -32,9 +32,11 @@ export async function PUT(
       data: {
         ...(title !== undefined && { title }),
         ...(category !== undefined && { category }),
+        ...(zoneType !== undefined && { zoneType }),
         ...(latitude !== undefined && { latitude }),
         ...(longitude !== undefined && { longitude }),
-        ...(radius !== undefined && { radius })
+        ...(radius !== undefined && { radius }),
+        ...(polygonCoordinates !== undefined && { polygonCoordinates })
       }
     })
 

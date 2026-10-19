@@ -2,13 +2,14 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * BLE Equipment Map Component (Client-Side Leaflet with Dark Matter Layer)
+ * BLE Equipment & Personnel Tracking Map with Polygon Geofencing & Turf.js Engine
  */
 
-import React, { useEffect, useMemo } from "react"
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet"
+import React, { useEffect, useMemo, useState } from "react"
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon as LeafletPolygon, CircleMarker, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
+import * as turf from "@turf/turf"
 
 export interface BleEquipment {
   id: string
@@ -38,14 +39,59 @@ export interface BleEquipment {
   } | null
 }
 
+export interface BleSiteZone {
+  id: string
+  title: string
+  zoneType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA"
+  polygonCoordinates?: { lat: number; lng: number }[]
+  supervisor?: string
+}
+
+export interface LiveBleWorker {
+  id: string
+  name: string
+  department: string
+  position: string
+  latitude: number
+  longitude: number
+  pulse: number // bpm
+  battery: number // %
+  hasHelmet: boolean
+  inDanger: boolean
+  currentZoneName: string
+  currentZoneType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | null
+}
+
 interface BleEquipmentMapProps {
   center: [number, number]
   zoom?: number
   equipments: BleEquipment[]
+  siteZones?: BleSiteZone[]
   highlightedId?: string | null
   searchQuery?: string
   onSelectEquipment?: (equipment: BleEquipment) => void
   selectedProjectName?: string
+}
+
+const ZONE_COLORS = {
+  MAIN_SITE: {
+    stroke: '#2563eb',
+    fill: '#3b82f6',
+    opacity: 0.25,
+    title: 'Ana Şantiye Sınırı'
+  },
+  DANGER_ZONE: {
+    stroke: '#dc2626',
+    fill: '#ef4444',
+    opacity: 0.35,
+    title: 'Kritik Risk Alanı (Vinç/İskele)'
+  },
+  REST_AREA: {
+    stroke: '#059669',
+    fill: '#10b981',
+    opacity: 0.25,
+    title: 'Dinlenme / Toplanma Alanı'
+  }
 }
 
 // Map Controller for smooth flyTo animations
@@ -109,7 +155,6 @@ function createBlePinIcon(
   const isLost = status.toUpperCase() === "KAYIP" || status.toUpperCase() === "LOST"
 
   if (isHighlighted || isSearched) {
-    // Neon Cyan / Electric Blue glowing pin for searched/highlighted equipment
     return L.divIcon({
       className: "custom-ble-pin",
       iconSize: [44, 44],
@@ -131,7 +176,6 @@ function createBlePinIcon(
   }
 
   if (isLost) {
-    // Red / Amber glowing warning marker for LOST equipment
     return L.divIcon({
       className: "custom-ble-pin",
       iconSize: [36, 36],
@@ -150,7 +194,6 @@ function createBlePinIcon(
     })
   }
 
-  // Emerald green badge for ACTIVE equipment
   return L.divIcon({
     className: "custom-ble-pin",
     iconSize: [36, 36],
@@ -189,10 +232,50 @@ function createProjectHubIcon(projectName: string) {
   })
 }
 
+// Worker DivIcon (Realistic Hardhat BLE Badge)
+function createWorkerBleIcon(inDanger: boolean, hasHelmet: boolean, name: string) {
+  const bg = inDanger ? "#dc2626" : hasHelmet ? "#0284c7" : "#ea580c"
+  const ring = inDanger ? "#f87171" : hasHelmet ? "#38bdf8" : "#fb923c"
+
+  return L.divIcon({
+    className: "custom-worker-pin",
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+    popupAnchor: [0, -18],
+    html: `
+      <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
+        ${inDanger ? `<div style="position: absolute; width: 34px; height: 34px; border-radius: 9999px; background: rgba(239, 68, 68, 0.4); animation: ping 1.5s infinite;"></div>` : ''}
+        <div style="position: relative; width: 26px; height: 26px; border-radius: 9999px; background: ${bg}; border: 2px solid ${ring}; box-shadow: 0 0 10px ${bg}; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px;">
+          👷
+        </div>
+        <span style="position: absolute; bottom: -18px; font-size: 9px; font-weight: 700; color: white; white-space: nowrap; background: rgba(15, 23, 42, 0.9); padding: 0.5px 5px; border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.2);">${name.split(' ')[0]}</span>
+      </div>
+    `
+  })
+}
+
+// Helper: Build closed GeoJSON Polygon from array
+function toTurfPolygon(coords: { lat: number; lng: number }[]) {
+  if (!coords || coords.length < 3) return null
+  const ring: [number, number][] = coords.map((c) => [c.lng, c.lat])
+  const first = ring[0]
+  const last = ring[ring.length - 1]
+  if (first[0] !== last[0] || first[1] !== last[1]) {
+    ring.push([first[0], first[1]])
+  }
+  if (ring.length < 4) return null
+  try {
+    return turf.polygon([ring])
+  } catch {
+    return null
+  }
+}
+
 export default function BleEquipmentMap({
   center,
   zoom = 16,
   equipments,
+  siteZones = [],
   highlightedId,
   searchQuery = "",
   onSelectEquipment,
@@ -200,6 +283,116 @@ export default function BleEquipmentMap({
 }: BleEquipmentMapProps) {
   const isSearchActive = searchQuery.trim().length > 0
   const normalizedQuery = searchQuery.trim().toLowerCase()
+
+  // Live BLE Workers State
+  const [liveWorkers, setLiveWorkers] = useState<LiveBleWorker[]>([])
+
+  // Initialize and stream workers
+  useEffect(() => {
+    if (!center || !center[0] || !center[1]) return
+
+    const initial: LiveBleWorker[] = [
+      {
+        id: "w-1",
+        name: "Ahmet Yılmaz",
+        department: "Kaba Yapı",
+        position: "Kalıp Ustası",
+        latitude: center[0] + 0.0003,
+        longitude: center[1] + 0.0002,
+        pulse: 78,
+        battery: 89,
+        hasHelmet: true,
+        inDanger: false,
+        currentZoneName: "Ana Şantiye",
+        currentZoneType: "MAIN_SITE"
+      },
+      {
+        id: "w-2",
+        name: "Mustafa Kaya",
+        department: "İskele & Vinç",
+        position: "Vinç Operatörü",
+        latitude: center[0] - 0.00025,
+        longitude: center[1] + 0.00035,
+        pulse: 84,
+        battery: 64,
+        hasHelmet: true,
+        inDanger: false,
+        currentZoneName: "Ana Şantiye",
+        currentZoneType: "MAIN_SITE"
+      },
+      {
+        id: "w-3",
+        name: "Emre Demir",
+        department: "Demir & Donatı",
+        position: "Demirci Ustası",
+        latitude: center[0] + 0.0001,
+        longitude: center[1] - 0.0003,
+        pulse: 92,
+        battery: 76,
+        hasHelmet: false,
+        inDanger: false,
+        currentZoneName: "Genel Saha",
+        currentZoneType: null
+      },
+      {
+        id: "w-4",
+        name: "Ali Öztürk",
+        department: "Elektrik & Mekanik",
+        position: "Elektrik Teknisyeni",
+        latitude: center[0] - 0.0004,
+        longitude: center[1] - 0.0002,
+        pulse: 75,
+        battery: 94,
+        hasHelmet: true,
+        inDanger: false,
+        currentZoneName: "Dinlenme Alanı",
+        currentZoneType: "REST_AREA"
+      }
+    ]
+
+    setLiveWorkers(initial)
+
+    // Interval to simulate live BLE telemetry and autonomous Turf point-in-polygon
+    const interval = setInterval(() => {
+      setLiveWorkers((prev) =>
+        prev.map((w) => {
+          const newLat = w.latitude + (Math.random() - 0.5) * 0.00008
+          const newLng = w.longitude + (Math.random() - 0.5) * 0.00008
+          const newPulse = Math.max(68, Math.min(125, w.pulse + (Math.random() > 0.5 ? 1 : -1)))
+
+          // Turf calculation
+          const pt = turf.point([newLng, newLat])
+          let detectedZone: BleSiteZone | null = null
+
+          for (const zone of siteZones) {
+            if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
+              const poly = toTurfPolygon(zone.polygonCoordinates)
+              if (poly && turf.booleanPointInPolygon(pt, poly)) {
+                detectedZone = zone
+                break
+              }
+            }
+          }
+
+          const inDanger = detectedZone?.zoneType === "DANGER_ZONE"
+          const zoneName = detectedZone ? detectedZone.title : "Genel Şantiye Sahası"
+          const zoneType = detectedZone ? detectedZone.zoneType : null
+
+          return {
+            ...w,
+            latitude: newLat,
+            longitude: newLng,
+            pulse: newPulse,
+            inDanger,
+            currentZoneName: zoneName,
+            currentZoneType: zoneType
+          }
+        })
+      )
+    }, 2500)
+
+    return () => clearInterval(interval)
+  }, [center, siteZones])
 
   // Filter equipments: if search query exists, only show matching equipments!
   const visibleEquipments = useMemo(() => {
@@ -280,19 +473,47 @@ export default function BleEquipmentMap({
         {/* Dynamic View Controller */}
         <MapViewController center={center} zoom={zoom} targetPoint={targetPoint} />
 
-        {/* Project Center Geofence & Hub */}
-        <Circle
-          center={center}
-          radius={75}
-          pathOptions={{
-            color: "#38bdf8",
-            fillColor: "#0284c7",
-            fillOpacity: 0.08,
-            weight: 1.5,
-            dashArray: "4, 6"
-          }}
-        />
+        {/* 1. Poligon Sanal Çitler (Polygon Geofences per prompt specifications) */}
+        {siteZones.map((zone) => {
+          const cfg = ZONE_COLORS[zone.zoneType] || ZONE_COLORS.MAIN_SITE
+          if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
+            const positions: [number, number][] = zone.polygonCoordinates.map((c) => [c.lat, c.lng])
+            return (
+              <LeafletPolygon
+                key={zone.id}
+                positions={positions}
+                pathOptions={{
+                  color: cfg.stroke,
+                  fillColor: cfg.fill,
+                  fillOpacity: cfg.opacity,
+                  weight: 2
+                }}
+              >
+                <Popup>
+                  <div className="p-3 text-white min-w-[200px]">
+                    <div className="flex items-center justify-between border-b border-slate-700/80 pb-1.5 mb-2">
+                      <h4 className="font-bold text-sm text-cyan-300">{zone.title}</h4>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-slate-800 text-slate-300">
+                        {zone.zoneType}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      Köşe Noktaları: {zone.polygonCoordinates.length} Nokta
+                    </p>
+                    {zone.supervisor && (
+                      <p className="text-xs text-slate-400 mt-1">
+                        Sorumlu: {zone.supervisor}
+                      </p>
+                    )}
+                  </div>
+                </Popup>
+              </LeafletPolygon>
+            )
+          }
+          return null
+        })}
 
+        {/* 2. Project Center Hub */}
         <Marker position={center} icon={createProjectHubIcon(selectedProjectName)}>
           <Popup>
             <div className="p-3.5 min-w-[220px]">
@@ -316,16 +537,104 @@ export default function BleEquipmentMap({
                   <span className="text-slate-400">Boylam:</span>
                   <span className="font-mono text-slate-200">{center[1].toFixed(5)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">BLE Kapsama:</span>
-                  <span className="text-emerald-400 font-medium">75m Geofence</span>
-                </div>
               </div>
             </div>
           </Popup>
         </Marker>
 
-        {/* Equipment BLE Markers */}
+        {/* 3. Live Streaming BLE Personnel (Workers) */}
+        {liveWorkers.map((worker) => {
+          const workerIcon = createWorkerBleIcon(worker.inDanger, worker.hasHelmet, worker.name)
+          return (
+            <Marker
+              key={worker.id}
+              position={[worker.latitude, worker.longitude]}
+              icon={workerIcon}
+            >
+              <Popup>
+                <div className="p-4 min-w-[250px] max-w-[300px]">
+                  {/* Header */}
+                  <div className="flex items-start justify-between border-b border-slate-800 pb-2 mb-2">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">👷</span>
+                        <h4 className="font-bold text-white text-sm leading-tight">{worker.name}</h4>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {worker.position} - {worker.department}
+                      </p>
+                    </div>
+                    {worker.inDanger ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse">
+                        TEHLİKE
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+                        GÜVENLİ
+                      </span>
+                    )}
+                  </div>
+
+                  {/* O an içinde bulunduğu Poligon Sanal Çit */}
+                  <div className="mb-2.5">
+                    <div
+                      className={`p-2 rounded-lg text-xs font-semibold flex items-center justify-between border ${
+                        worker.inDanger
+                          ? "bg-red-950/40 border-red-500/40 text-red-300"
+                          : "bg-slate-900 border-slate-800 text-slate-200"
+                      }`}
+                    >
+                      <span className="text-slate-400">📍 Bulunduğu Alan:</span>
+                      <span className="font-mono truncate max-w-[140px] text-cyan-300">
+                        {worker.currentZoneName}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Nabız & BLE Pil Telemetrisi */}
+                  <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
+                    <div className="bg-slate-900/90 border border-slate-800 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block">❤️ Nabız:</span>
+                      <span className={`font-mono font-bold ${worker.pulse > 105 ? 'text-red-400' : 'text-slate-200'}`}>
+                        {worker.pulse} bpm
+                      </span>
+                    </div>
+                    <div className="bg-slate-900/90 border border-slate-800 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block">🔋 BLE Pil:</span>
+                      <span className="font-mono font-bold text-emerald-400">
+                        %{worker.battery}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Baret & KKD Durumu */}
+                  <div className="mb-3">
+                    <div
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between border ${
+                        worker.hasHelmet
+                          ? "bg-emerald-950/30 border-emerald-500/30 text-emerald-300"
+                          : "bg-amber-950/30 border-amber-500/40 text-amber-300 font-bold"
+                      }`}
+                    >
+                      <span>🪖 Baret Sinyali:</span>
+                      <span>{worker.hasHelmet ? "Onaylı" : "⚠️ BARET YOK"}</span>
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <a
+                    href="/admin/personnel"
+                    className="block w-full py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white text-xs font-semibold rounded text-center transition"
+                  >
+                    Personel Detayına Git
+                  </a>
+                </div>
+              </Popup>
+            </Marker>
+          )
+        })}
+
+        {/* 4. Equipment BLE Markers */}
         {visibleEquipments.map((eq) => {
           const isHighlighted = eq.id === highlightedId
           const isSearched = isSearchActive

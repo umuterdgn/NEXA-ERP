@@ -2639,7 +2639,7 @@ async function seedHierarchicalMockData(prisma: PrismaClient) {
     const phone = `+90 53${Math.floor(10 + (i % 80))} ${Math.floor(100 + i * 7)} ${Math.floor(10 + (i % 89))} ${Math.floor(10 + (i % 79))}`
     const email = `personel.${i}.${fn.toLowerCase()}.${ln.toLowerCase()}@nexa.com.tr`
 
-    let role = UserRole.WORKER
+    let role: UserRole = UserRole.WORKER
     let position = "Kalıpçı Ustası"
     let department = "Kaba Yapı"
     let assignedCompany = subZirve
@@ -2719,7 +2719,7 @@ async function seedHierarchicalMockData(prisma: PrismaClient) {
         email,
         department,
         position,
-        currentSite: assignedProject.name,
+        currentSite: assignedProject.name || assignedProject.title || "Vadi Evleri Projesi",
         gunlukYevmiye: dailyRate,
         salary: monthlySalary,
         status: PersonelStatus.ACTIVE,
@@ -2737,9 +2737,9 @@ async function seedHierarchicalMockData(prisma: PrismaClient) {
         gender: i % 7 === 0 ? Gender.FEMALE : Gender.MALE,
         department,
         position,
-        currentSite: assignedProject.name,
+        currentSite: assignedProject.name || assignedProject.title || "Vadi Evleri Projesi",
         hireDate: new Date("2023-01-15"),
-        employmentType: EmploymentType.FULL_TIME,
+        employmentType: i <= 10 ? EmploymentType.OFFICER : EmploymentType.WORKER,
         status: PersonelStatus.ACTIVE,
         gunlukYevmiye: dailyRate,
         salary: monthlySalary,

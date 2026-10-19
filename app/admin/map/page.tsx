@@ -28,7 +28,7 @@ import {
   ChevronRight,
   ShieldAlert
 } from "lucide-react"
-import type { BleEquipment } from "@/components/map/BleEquipmentMap"
+import type { BleEquipment, BleSiteZone } from "@/components/map/BleEquipmentMap"
 import { formatTimeAgo } from "@/components/map/BleEquipmentMap"
 
 // Critical SSR Protection: Dynamic import of Leaflet map with ssr: false
@@ -74,6 +74,7 @@ export default function AdminMapPage() {
   const [projects, setProjects] = useState<ProjectItem[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string>("")
   const [equipments, setEquipments] = useState<BleEquipment[]>([])
+  const [siteZones, setSiteZones] = useState<BleSiteZone[]>([])
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [loadingTracking, setLoadingTracking] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -118,16 +119,44 @@ export default function AdminMapPage() {
     return () => { isActive = false }
   }, [])
 
-  // Fetch Tracking data when selected project changes
+  // Fetch Tracking and Polygon Zones data when selected project changes
   const loadTrackingData = useCallback(async (projId: string) => {
     if (!projId) return
     setLoadingTracking(true)
     try {
-      const res = await fetch(`/api/admin/tracking?projectId=${encodeURIComponent(projId)}`)
-      if (res.ok) {
-        const data = await res.json()
+      const [trackingRes, zonesRes] = await Promise.all([
+        fetch(`/api/admin/tracking?projectId=${encodeURIComponent(projId)}`),
+        fetch(`/api/admin/site-zones?projectId=${encodeURIComponent(projId)}`)
+      ])
+
+      if (trackingRes.ok) {
+        const data = await trackingRes.json()
         setEquipments(data.equipments || [])
         setLastSyncTime(new Date())
+      }
+
+      if (zonesRes.ok) {
+        const zonesData = await zonesRes.json()
+        const formattedZones: BleSiteZone[] = (zonesData || []).map((z: any) => {
+          let coords = z.polygonCoordinates
+          if (typeof coords === "string") {
+            try {
+              coords = JSON.parse(coords)
+            } catch {}
+          }
+          let zType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" = "MAIN_SITE"
+          if (z.zoneType === "DANGER_ZONE" || z.category === "RISK") zType = "DANGER_ZONE"
+          else if (z.zoneType === "REST_AREA" || z.category === "REST_AREA") zType = "REST_AREA"
+
+          return {
+            id: z.id,
+            title: z.title,
+            zoneType: zType,
+            polygonCoordinates: Array.isArray(coords) ? coords : undefined,
+            supervisor: z.supervisor
+          }
+        })
+        setSiteZones(formattedZones)
       }
     } catch (err) {
       console.error("Failed to fetch tracking data:", err)
@@ -488,6 +517,7 @@ export default function AdminMapPage() {
           center={mapCenter}
           zoom={16}
           equipments={filteredEquipments}
+          siteZones={siteZones}
           highlightedId={highlightedEquipmentId}
           searchQuery={searchQuery}
           onSelectEquipment={(eq) => setHighlightedEquipmentId(eq.id)}
