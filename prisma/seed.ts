@@ -4,8 +4,9 @@
 * This code is the property of NXA Software.
 */
 
-import { PrismaClient, CompanyType, UserRole, Gender, EmploymentType, PersonelStatus } from "@prisma/client"
+import { PrismaClient, CompanyType, UserRole, Gender, EmploymentType, PersonelStatus, ContractStatus } from "@prisma/client"
 import bcrypt from "bcryptjs"
+import { faker } from "@faker-js/faker"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -2271,6 +2272,11 @@ async function main() {
 
   console.log(" Created 3 logistics appointments")
 
+  // ============================================================================
+  // KURUMSAL HİYERARŞİK MOCK DATA (TÜRKİYE İNŞAAT SEKTÖRÜ SAHTE VERİ SENARYOSU)
+  // ============================================================================
+  await seedHierarchicalMockData(prisma)
+
   console.log(" Seed completed successfully!")
   console.log(" Summary:")
   console.log("   - 5 Companies (2 Main, 3 Subcontractors)")
@@ -2332,6 +2338,820 @@ async function main() {
   console.log("   Rol:     Kontrol Elemanı (Staff)")
   console.log("\n")
   console.log("════════════════════════════════════════════════════════════════")
+}
+
+// ==============================================================================
+// BÖLÜM 2: GELİŞMİŞ TÜRKİYE İNŞAAT SEKTÖRÜ MOCK DATA GENERATOR (50 PERSONEL, BOQ, BIM, HAKEDİŞ)
+// ==============================================================================
+async function seedHierarchicalMockData(prisma: PrismaClient) {
+  console.log("\n🚀 [MOCK DATA] Kapsamlı Kurumsal Türkiye İnşaat Sektörü Mock Data Üretimi Başlıyor...")
+
+  const demoPassword = await bcrypt.hash("123456", 10)
+
+  // ----------------------------------------------------------------------------
+  // A. ORGANİZASYON VE ŞİRKETLER (COMPANY & SUBCONTRACTOR)
+  // ----------------------------------------------------------------------------
+  console.log("🏢 [MOCK DATA] A. Organizasyon ve Şirketler (1 Ana Yüklenici, 3 Taşeron, 1 Yapı Denetim) oluşturuluyor...")
+
+  // 1 Ana Yüklenici
+  const mainContractor = await prisma.company.upsert({
+    where: { id: "comp-nexa-main" },
+    update: {
+      name: "Nexa Yapı A.Ş.",
+      type: CompanyType.MAIN_CONTRACTOR,
+      contactName: "Umut Erdoğan",
+      phone: "+90 505 147 77 29",
+      email: "nxglobalinfo@gmail.com",
+      taxNumber: "8820491023",
+      taxOffice: "İskenderun Vergi Dairesi"
+    },
+    create: {
+      id: "comp-nexa-main",
+      name: "Nexa Yapı A.Ş.",
+      type: CompanyType.MAIN_CONTRACTOR,
+      contactName: "Umut Erdoğan",
+      phone: "+90 505 147 77 29",
+      email: "nxglobalinfo@gmail.com",
+      taxNumber: "8820491023",
+      taxOffice: "İskenderun Vergi Dairesi"
+    }
+  })
+
+  // 3 Taşeron Firma
+  const subDemirtas = await prisma.company.upsert({
+    where: { id: "comp-sub-demirtas" },
+    update: {
+      name: "Demirtaş Çelik Sistemleri",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "Kemal Demirtaş",
+      phone: "+90 326 614 20 40",
+      email: "info@demirtascelik.com.tr",
+      taxNumber: "2840192841",
+      taxOffice: "İskenderun Vergi Dairesi"
+    },
+    create: {
+      id: "comp-sub-demirtas",
+      name: "Demirtaş Çelik Sistemleri",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "Kemal Demirtaş",
+      phone: "+90 326 614 20 40",
+      email: "info@demirtascelik.com.tr",
+      taxNumber: "2840192841",
+      taxOffice: "İskenderun Vergi Dairesi"
+    }
+  })
+
+  const subZirve = await prisma.company.upsert({
+    where: { id: "comp-sub-zirve" },
+    update: {
+      name: "Zirve Beton Döküm",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "Murat Zirveoğlu",
+      phone: "+90 312 440 80 90",
+      email: "siparis@zirvebeton.com.tr",
+      taxNumber: "9182374610",
+      taxOffice: "Ostim Vergi Dairesi"
+    },
+    create: {
+      id: "comp-sub-zirve",
+      name: "Zirve Beton Döküm",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "Murat Zirveoğlu",
+      phone: "+90 312 440 80 90",
+      email: "siparis@zirvebeton.com.tr",
+      taxNumber: "9182374610",
+      taxOffice: "Ostim Vergi Dairesi"
+    }
+  })
+
+  const subAkim = await prisma.company.upsert({
+    where: { id: "comp-sub-akim" },
+    update: {
+      name: "Akım Elektrik",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "Fikret Akımcı",
+      phone: "+90 326 617 55 33",
+      email: "destek@akimelektrik.com",
+      taxNumber: "3819284712",
+      taxOffice: "Sahil Vergi Dairesi"
+    },
+    create: {
+      id: "comp-sub-akim",
+      name: "Akım Elektrik",
+      type: CompanyType.SUBCONTRACTOR,
+      contactName: "Fikret Akımcı",
+      phone: "+90 326 617 55 33",
+      email: "destek@akimelektrik.com",
+      taxNumber: "3819284712",
+      taxOffice: "Sahil Vergi Dairesi"
+    }
+  })
+
+  // 1 Yapı Denetim Firması
+  const inspCompany = await prisma.company.upsert({
+    where: { id: "comp-insp-guven" },
+    update: {
+      name: "Güven-Yapı Denetim A.Ş.",
+      type: CompanyType.INSPECTION,
+      contactName: "Mimar Selim Güvenç",
+      phone: "+90 326 618 90 90",
+      email: "hatay@guvenyapidenetim.com.tr",
+      taxNumber: "4591029384",
+      taxOffice: "Antakya Vergi Dairesi"
+    },
+    create: {
+      id: "comp-insp-guven",
+      name: "Güven-Yapı Denetim A.Ş.",
+      type: CompanyType.INSPECTION,
+      contactName: "Mimar Selim Güvenç",
+      phone: "+90 326 618 90 90",
+      email: "hatay@guvenyapidenetim.com.tr",
+      taxNumber: "4591029384",
+      taxOffice: "Antakya Vergi Dairesi"
+    }
+  })
+
+  // Subcontractor tablosu uyumluluğu
+  await prisma.subcontractor.upsert({
+    where: { id: "sub-demirtas" },
+    update: { name: "Demirtaş Çelik Sistemleri", contactName: "Kemal Demirtaş", phone: "+90 326 614 20 40", taxNumber: "2840192841" },
+    create: { id: "sub-demirtas", name: "Demirtaş Çelik Sistemleri", contactName: "Kemal Demirtaş", phone: "+90 326 614 20 40", taxNumber: "2840192841" }
+  })
+  await prisma.subcontractor.upsert({
+    where: { id: "sub-zirve" },
+    update: { name: "Zirve Beton Döküm", contactName: "Murat Zirveoğlu", phone: "+90 312 440 80 90", taxNumber: "9182374610" },
+    create: { id: "sub-zirve", name: "Zirve Beton Döküm", contactName: "Murat Zirveoğlu", phone: "+90 312 440 80 90", taxNumber: "9182374610" }
+  })
+  await prisma.subcontractor.upsert({
+    where: { id: "sub-akim" },
+    update: { name: "Akım Elektrik", contactName: "Fikret Akımcı", phone: "+90 326 617 55 33", taxNumber: "3819284712" },
+    create: { id: "sub-akim", name: "Akım Elektrik", contactName: "Fikret Akımcı", phone: "+90 326 617 55 33", taxNumber: "3819284712" }
+  })
+
+  // ----------------------------------------------------------------------------
+  // B. PROJELER VE HARİTA (PROJECT & SITEZONE)
+  // ----------------------------------------------------------------------------
+  console.log("🏗️ [MOCK DATA] B. Projeler ve Harita (2 Devasa Proje + SiteZone) oluşturuluyor...")
+
+  const projVadi = await prisma.project.upsert({
+    where: { id: "proj-vadi-iskenderun" },
+    update: {
+      name: "Vadi Konutları (İskenderun)",
+      title: "Vadi Konutları (İskenderun)",
+      description: "İskenderun Sahil Vadi Konutları ve Ticari Yaşam Alanı",
+      status: "SAHA",
+      category: "Konut ve Ticari",
+      city: "Hatay",
+      district: "İskenderun",
+      yibfNo: "YİBF-HAT-2024-001",
+      progress: 68,
+      latitude: 36.5784,
+      longitude: 36.1732,
+      gpsRadius: 450,
+      contractValue: 185000000,
+      companyId: mainContractor.id
+    },
+    create: {
+      id: "proj-vadi-iskenderun",
+      name: "Vadi Konutları (İskenderun)",
+      title: "Vadi Konutları (İskenderun)",
+      description: "İskenderun Sahil Vadi Konutları ve Ticari Yaşam Alanı",
+      status: "SAHA",
+      category: "Konut ve Ticari",
+      city: "Hatay",
+      district: "İskenderun",
+      yibfNo: "YİBF-HAT-2024-001",
+      progress: 68,
+      latitude: 36.5784,
+      longitude: 36.1732,
+      gpsRadius: 450,
+      contractValue: 185000000,
+      companyId: mainContractor.id
+    }
+  })
+
+  const projNexa = await prisma.project.upsert({
+    where: { id: "proj-nexa-ankara" },
+    update: {
+      name: "Nexa Plaza (Ankara)",
+      title: "Nexa Plaza (Ankara)",
+      description: "A+ Karma Ofis ve Alışveriş Kulesi",
+      status: "SAHA",
+      category: "Ticari",
+      city: "Ankara",
+      district: "Çankaya",
+      yibfNo: "YİBF-ANK-2024-002",
+      progress: 42,
+      latitude: 39.9042,
+      longitude: 32.8258,
+      gpsRadius: 350,
+      contractValue: 320000000,
+      companyId: mainContractor.id
+    },
+    create: {
+      id: "proj-nexa-ankara",
+      name: "Nexa Plaza (Ankara)",
+      title: "Nexa Plaza (Ankara)",
+      description: "A+ Karma Ofis ve Alışveriş Kulesi",
+      status: "SAHA",
+      category: "Ticari",
+      city: "Ankara",
+      district: "Çankaya",
+      yibfNo: "YİBF-ANK-2024-002",
+      progress: 42,
+      latitude: 39.9042,
+      longitude: 32.8258,
+      gpsRadius: 350,
+      contractValue: 320000000,
+      companyId: mainContractor.id
+    }
+  })
+
+  // SiteZones
+  const zoneVadiA = await prisma.siteZone.upsert({
+    where: { id: "zone-vadi-a-blok" },
+    update: { title: "A Blok Şantiye", category: "BUILDING", latitude: 36.5784, longitude: 36.1732, radius: 45 },
+    create: { id: "zone-vadi-a-blok", title: "A Blok Şantiye", category: "BUILDING", latitude: 36.5784, longitude: 36.1732, radius: 45, projectId: projVadi.id }
+  })
+  const zoneVadiB = await prisma.siteZone.upsert({
+    where: { id: "zone-vadi-b-blok" },
+    update: { title: "B Blok Şantiye", category: "BUILDING", latitude: 36.5788, longitude: 36.1736, radius: 40 },
+    create: { id: "zone-vadi-b-blok", title: "B Blok Şantiye", category: "BUILDING", latitude: 36.5788, longitude: 36.1736, radius: 40, projectId: projVadi.id }
+  })
+  const zoneVadiDemir = await prisma.siteZone.upsert({
+    where: { id: "zone-vadi-demir" },
+    update: { title: "Demir Atölyesi", category: "STORAGE", latitude: 36.5780, longitude: 36.1728, radius: 30 },
+    create: { id: "zone-vadi-demir", title: "Demir Atölyesi", category: "STORAGE", latitude: 36.5780, longitude: 36.1728, radius: 30, projectId: projVadi.id }
+  })
+  const zoneVadiVinc = await prisma.siteZone.upsert({
+    where: { id: "zone-vadi-vinc" },
+    update: { title: "Kule Vinç Altı", category: "RISK", latitude: 36.5785, longitude: 36.1734, radius: 25 },
+    create: { id: "zone-vadi-vinc", title: "Kule Vinç Altı", category: "RISK", latitude: 36.5785, longitude: 36.1734, radius: 25, projectId: projVadi.id }
+  })
+  await prisma.siteZone.upsert({
+    where: { id: "zone-vadi-yemekhane" },
+    update: { title: "Prefabrik Yemekhane & Sosyal Tesis", category: "REST_AREA", latitude: 36.5778, longitude: 36.1725, radius: 35 },
+    create: { id: "zone-vadi-yemekhane", title: "Prefabrik Yemekhane & Sosyal Tesis", category: "REST_AREA", latitude: 36.5778, longitude: 36.1725, radius: 35, projectId: projVadi.id }
+  })
+
+  await prisma.siteZone.upsert({
+    where: { id: "zone-nexa-kazi" },
+    update: { title: "Podium Kazı Alanı", category: "RISK", latitude: 39.9042, longitude: 32.8258, radius: 50 },
+    create: { id: "zone-nexa-kazi", title: "Podium Kazı Alanı", category: "RISK", latitude: 39.9042, longitude: 32.8258, radius: 50, projectId: projNexa.id }
+  })
+  await prisma.siteZone.upsert({
+    where: { id: "zone-nexa-cekerdek" },
+    update: { title: "Kule Çekirdeği", category: "BUILDING", latitude: 39.9045, longitude: 32.8260, radius: 30 },
+    create: { id: "zone-nexa-cekerdek", title: "Kule Çekirdeği", category: "BUILDING", latitude: 39.9045, longitude: 32.8260, radius: 30, projectId: projNexa.id }
+  })
+  await prisma.siteZone.upsert({
+    where: { id: "zone-nexa-depo" },
+    update: { title: "Malzeme Deposu", category: "STORAGE", latitude: 39.9038, longitude: 32.8252, radius: 40 },
+    create: { id: "zone-nexa-depo", title: "Malzeme Deposu", category: "STORAGE", latitude: 39.9038, longitude: 32.8252, radius: 40, projectId: projNexa.id }
+  })
+
+  // ----------------------------------------------------------------------------
+  // C. PERSONEL VE İK (50 GERÇEKÇİ PERSONEL, KULLANICILAR VE PUANTAJ)
+  // ----------------------------------------------------------------------------
+  console.log("👷 [MOCK DATA] C. Personel ve İK (50 Gerçekçi Personel, Roller ve 30 Günlük Puantaj) üretiliyor...")
+
+  const turkishFirstNames = [
+    "Ahmet", "Mehmet", "Mustafa", "Ali", "Hüseyin", "Hasan", "İbrahim", "İsmail", "Osman", "Ömer",
+    "Yusuf", "Halil", "Süleyman", "Murat", "Ramazan", "Mahmut", "Salih", "Fatih", "Recep", "Metin",
+    "Ayşe", "Fatma", "Emine", "Hatice", "Zeynep", "Elif", "Merve", "Büşra", "Zehra", "Sultan",
+    "Gökhan", "Serkan", "Hakan", "Tolga", "Cem", "Burak", "Onur", "Volkan", "Deniz", "Eren",
+    "Kadir", "Tarkan", "Barış", "Selim", "Ufuk", "Levent", "Yasin", "Tarık", "Batuhan", "Doğukan"
+  ]
+  const turkishLastNames = [
+    "Yılmaz", "Kaya", "Demir", "Çelik", "Şahin", "Yıldız", "Yıldırım", "Öztürk", "Aydın", "Özdemir",
+    "Arslan", "Doğan", "Kılıç", "Aslan", "Çetin", "Kara", "Koç", "Kurt", "Özkan", "Şimşek",
+    "Polat", "Özcan", "Korkmaz", "Çakır", "Erdoğan", "Yavuz", "Güneş", "Bozkurt", "Ünal", "Acar"
+  ]
+
+  const seededPersonnelList: any[] = []
+
+  for (let i = 1; i <= 50; i++) {
+    const fn = turkishFirstNames[(i - 1) % turkishFirstNames.length]
+    const ln = turkishLastNames[(i * 3) % turkishLastNames.length]
+    const fullName = `${fn} ${ln}`
+    const pNo = `MCK-P${i < 10 ? "00" + i : (i < 100 ? "0" + i : i)}`
+    const tcNo = `${Math.floor(10000000000 + i * 1482937)}`.slice(0, 11)
+    const phone = `+90 53${Math.floor(10 + (i % 80))} ${Math.floor(100 + i * 7)} ${Math.floor(10 + (i % 89))} ${Math.floor(10 + (i % 79))}`
+    const email = `personel.${i}.${fn.toLowerCase()}.${ln.toLowerCase()}@nexa.com.tr`
+
+    let role = UserRole.WORKER
+    let position = "Kalıpçı Ustası"
+    let department = "Kaba Yapı"
+    let assignedCompany = subZirve
+    let assignedProject = projVadi
+    let dailyRate = 1800
+    let monthlySalary = 45000
+
+    if (i <= 2) {
+      role = UserRole.ADMIN
+      position = "Proje Müdürü"
+      department = "Proje Yönetimi"
+      assignedCompany = mainContractor
+      assignedProject = i === 1 ? projVadi : projNexa
+      dailyRate = 4500
+      monthlySalary = 110000
+    } else if (i <= 7) {
+      role = UserRole.ADMIN
+      position = "Şantiye Şefi (İnşaat Müh.)"
+      department = "Saha Yönetimi"
+      assignedCompany = mainContractor
+      assignedProject = i % 2 === 0 ? projVadi : projNexa
+      dailyRate = 3200
+      monthlySalary = 80000
+    } else if (i <= 10) {
+      role = UserRole.ENGINEER
+      position = "A Sınıfı İSG Uzmanı"
+      department = "İş Sağlığı ve Güvenliği"
+      assignedCompany = i === 10 ? inspCompany : mainContractor
+      assignedProject = i % 2 === 0 ? projVadi : projNexa
+      dailyRate = 2800
+      monthlySalary = 70000
+    } else {
+      role = UserRole.WORKER
+      const workerTypes = [
+        { prof: "Kalıpçı Ustası", dept: "Kaba Yapı", comp: subZirve, rate: 1950, sal: 48000 },
+        { prof: "Demir Bağlama Ustası", dept: "Donatı İmalatı", comp: subDemirtas, rate: 1900, sal: 47000 },
+        { prof: "Gazaltı Kaynakçısı", dept: "Çelik Atölyesi", comp: subDemirtas, rate: 2200, sal: 55000 },
+        { prof: "Kule Vinç Operatörü", dept: "Ağır Ekipman", comp: mainContractor, rate: 2600, sal: 65000 },
+        { prof: "Beton Pompası Operatörü", dept: "Beton Santrali", comp: subZirve, rate: 2100, sal: 52000 },
+        { prof: "Elektrik Teknikeri", dept: "Kuvvetli Akım", comp: subAkim, rate: 2000, sal: 50000 },
+        { prof: "Pano Montaj Ustası", dept: "Zayıf Akım", comp: subAkim, rate: 2100, sal: 52000 },
+        { prof: "Alçı ve Sıva Ustası", dept: "İnce İşler", comp: subZirve, rate: 1800, sal: 45000 },
+        { prof: "Dış Cephe İskele Ustası", dept: "Cephe İmalatı", comp: subDemirtas, rate: 2300, sal: 58000 },
+        { prof: "Saha Formeni", dept: "Saha Yönetimi", comp: mainContractor, rate: 2500, sal: 62000 }
+      ]
+      const chosen = workerTypes[i % workerTypes.length]
+      position = chosen.prof
+      department = chosen.dept
+      assignedCompany = chosen.comp
+      assignedProject = i % 3 === 0 ? projNexa : projVadi
+      dailyRate = chosen.rate
+      monthlySalary = chosen.sal
+    }
+
+    const seededUser = await prisma.user.upsert({
+      where: { email },
+      update: {
+        name: fullName,
+        role,
+        companyType: assignedCompany.type
+      },
+      create: {
+        email,
+        password: demoPassword,
+        name: fullName,
+        role,
+        companyType: assignedCompany.type,
+        permissions: role === UserRole.ADMIN ? ["all"] : ["dashboard", "tasks", "attendance"]
+      }
+    })
+
+    const seededPersonel = await prisma.personel.upsert({
+      where: { personnelNo: pNo },
+      update: {
+        name: fullName,
+        phone,
+        email,
+        department,
+        position,
+        currentSite: assignedProject.name,
+        gunlukYevmiye: dailyRate,
+        salary: monthlySalary,
+        status: PersonelStatus.ACTIVE,
+        companyId: assignedCompany.id,
+        userId: seededUser.id
+      },
+      create: {
+        personnelNo: pNo,
+        tcNo,
+        name: fullName,
+        phone,
+        email,
+        age: 26 + (i % 30),
+        birthDate: new Date(1982 + (i % 20), (i % 12), 10),
+        gender: i % 7 === 0 ? Gender.FEMALE : Gender.MALE,
+        department,
+        position,
+        currentSite: assignedProject.name,
+        hireDate: new Date("2023-01-15"),
+        employmentType: EmploymentType.FULL_TIME,
+        status: PersonelStatus.ACTIVE,
+        gunlukYevmiye: dailyRate,
+        salary: monthlySalary,
+        companyId: assignedCompany.id,
+        userId: seededUser.id
+      }
+    })
+
+    seededPersonnelList.push({ personel: seededPersonel, user: seededUser, project: assignedProject })
+  }
+
+  // Son 30 günlük Puantaj kayıtları (İşçiler için)
+  console.log("⏱️ [MOCK DATA] Son 30 günlük Puantaj (Giriş/Çıkış ve Mesai) kayıtları yazılıyor...")
+  const attendanceWorkers = seededPersonnelList.filter(p => p.personel.gunlukYevmiye < 3000).slice(0, 35)
+  const now = new Date()
+
+  for (let dayOffset = 1; dayOffset <= 30; dayOffset++) {
+    const recordDate = new Date(now.getTime() - dayOffset * 24 * 60 * 60 * 1000)
+    // Pazar günlerini atla
+    if (recordDate.getDay() === 0) continue
+
+    for (const worker of attendanceWorkers) {
+      const isLate = Math.random() < 0.12
+      const isOvertime = Math.random() < 0.28
+      const hasOvertimeHours = isOvertime ? Math.floor(Math.random() * 3) + 1 : 0
+
+      const checkInHour = isLate ? 8 : 7
+      const checkInMin = isLate ? Math.floor(Math.random() * 35) + 10 : Math.floor(Math.random() * 25) + 40
+      const checkOutHour = 17 + hasOvertimeHours
+      const checkOutMin = Math.floor(Math.random() * 30)
+
+      const checkInTime = new Date(recordDate)
+      checkInTime.setHours(checkInHour, checkInMin, 0, 0)
+
+      const checkOutTime = new Date(recordDate)
+      checkOutTime.setHours(checkOutHour, checkOutMin, 0, 0)
+
+      await prisma.attendanceRecord.create({
+        data: {
+          personelId: worker.personel.id,
+          projectId: worker.project.id,
+          date: recordDate,
+          checkIn: checkInTime,
+          checkOut: checkOutTime,
+          status: isLate ? "LATE" : "PRESENT",
+          dayMultiplier: 1,
+          overtimeHours: hasOvertimeHours,
+          workerName: worker.personel.name
+        }
+      })
+    }
+  }
+
+  // ----------------------------------------------------------------------------
+  // D. İHALE, METRAJ VE 5D BIM (50 POZ & 20 BIM KUSURU)
+  // ----------------------------------------------------------------------------
+  console.log("📐 [MOCK DATA] D. İhale, Metraj ve 5D BIM (50 Poz ve 20 3D BIM Kusuru) oluşturuluyor...")
+
+  const boqPozTemplates = [
+    { name: "C30/37 Hazır Beton Dökümü (Kalıp İçi)", unit: "m3", unitPrice: 2850, baseQty: 1200, cat: "statik" },
+    { name: "S420 Nervürlü Donatı Çeliği Temini ve İşçiliği", unit: "ton", unitPrice: 32500, baseQty: 85, cat: "statik" },
+    { name: "Endüstriyel Çelik Perde ve Kolon Kalıbı Montajı", unit: "m2", unitPrice: 480, baseQty: 3400, cat: "statik" },
+    { name: "Tünel Kalıp Sistemi Kurulumu ve Sökümü", unit: "m2", unitPrice: 620, baseQty: 2500, cat: "statik" },
+    { name: "20 cm Gazbeton Duvar İmalatı (Harçlı)", unit: "m2", unitPrice: 420, baseQty: 1800, cat: "mimari" },
+    { name: "15 cm Delikli Bims Blok Duvar Örülmesi", unit: "m2", unitPrice: 360, baseQty: 2200, cat: "mimari" },
+    { name: "Çimento Esaslı Kaba ve İnce Sıva İmalatı", unit: "m2", unitPrice: 290, baseQty: 4500, cat: "mimari" },
+    { name: "Alçıpan Asma Tavan (Akustik Taşyünü Takviyeli)", unit: "m2", unitPrice: 550, baseQty: 1600, cat: "mimari" },
+    { name: "Taş Yünü Isı Yalıtım Levhalı Dış Mantolama (5 cm)", unit: "m2", unitPrice: 780, baseQty: 3200, cat: "mimari" },
+    { name: "Silikon Giydirme Cam Cephe Alüminyum İmalatı", unit: "m2", unitPrice: 4200, baseQty: 650, cat: "mimari" },
+    { name: "Seramik Kaplama (60x120 Porselen Granit)", unit: "m2", unitPrice: 680, baseQty: 1400, cat: "mimari" },
+    { name: "Lamine Parke Zemin İmalatı (32. Sınıf)", unit: "m2", unitPrice: 520, baseQty: 2100, cat: "mimari" },
+    { name: "Yangın Merdiveni ve Çelik Konstrüksiyon Fabrikasyonu", unit: "kg", unitPrice: 85, baseQty: 18000, cat: "statik" },
+    { name: "Kuvvetli Akım Kablolama (Halogen-Free 3x2.5)", unit: "mt", unitPrice: 68, baseQty: 12000, cat: "elektrik" },
+    { name: "Ana Dağıtım ve Kat Tali Elektrik Panoları", unit: "adet", unitPrice: 18500, baseQty: 14, cat: "elektrik" },
+    { name: "Sığınak ve Yangın Duman Tahliye Fanları", unit: "adet", unitPrice: 34000, baseQty: 6, cat: "mekanik" },
+    { name: "Yangın Springler Islak Borulu Söndürme Hattı", unit: "mt", unitPrice: 310, baseQty: 2800, cat: "mekanik" },
+    { name: "Polipropilen (PPRC) Temiz Su Tesisatı Döşenmesi", unit: "mt", unitPrice: 140, baseQty: 3500, cat: "mekanik" },
+    { name: "Sessiz Atık Su Borusu (PVC Dikey İniş Kolonları)", unit: "mt", unitPrice: 240, baseQty: 1900, cat: "mekanik" },
+    { name: "Su Deposu ve Frekans Konvertörlü Hidrofor Grubu", unit: "takım", unitPrice: 125000, baseQty: 2, cat: "mekanik" },
+    { name: "Temel Altı SBS Modifiye Bitümlü Çift Kat Su Yalıtımı", unit: "m2", unitPrice: 460, baseQty: 3800, cat: "mimari" },
+    { name: "Teras Çatı Poliüretan Esaslı UV Dayanımlı İzolasyon", unit: "m2", unitPrice: 580, baseQty: 1250, cat: "mimari" },
+    { name: "İkili Split VRF Klima Dış/İç Ünite Bakır Borulaması", unit: "hat", unitPrice: 16500, baseQty: 28, cat: "mekanik" },
+    { name: "Sedye ve İtfaiyeci Asansörü 1000 kg 1.6 m/sn", unit: "durak", unitPrice: 48000, baseQty: 14, cat: "mekanik" },
+    { name: "Otopark Trafik Çizgileri ve Epoksi Zemin Kaplaması", unit: "m2", unitPrice: 490, baseQty: 2800, cat: "mimari" }
+  ]
+
+  for (let i = 1; i <= 50; i++) {
+    const tmpl = boqPozTemplates[(i - 1) % boqPozTemplates.length]
+    const proj = i % 2 === 0 ? projNexa : projVadi
+    const pozCode = `POZ-2024-${i < 10 ? "0" + i : i}`
+    const qtyMultiplier = 1 + (i % 4) * 0.35
+    const plannedQty = Math.round(tmpl.baseQty * qtyMultiplier)
+    const completedQty = Math.round(plannedQty * ((20 + (i % 70)) / 100))
+    const totalBudget = plannedQty * tmpl.unitPrice
+
+    await prisma.workPackage.upsert({
+      where: { id: `wp-poz-${i}` },
+      update: {
+        code: pozCode,
+        pozNo: `15.${100 + i}.200`,
+        name: `${tmpl.name} (Bölge ${((i % 5) + 1)})`,
+        categoryKey: tmpl.cat,
+        unit: tmpl.unit,
+        unitPrice: tmpl.unitPrice,
+        plannedQuantity: plannedQty,
+        completedQuantity: completedQty,
+        totalBudget,
+        status: completedQty >= plannedQty ? "COMPLETED" : "IN_PROGRESS",
+        projectId: proj.id
+      },
+      create: {
+        id: `wp-poz-${i}`,
+        code: pozCode,
+        pozNo: `15.${100 + i}.200`,
+        name: `${tmpl.name} (Bölge ${((i % 5) + 1)})`,
+        categoryKey: tmpl.cat,
+        unit: tmpl.unit,
+        unitPrice: tmpl.unitPrice,
+        plannedQuantity: plannedQty,
+        completedQuantity: completedQty,
+        totalBudget,
+        status: completedQty >= plannedQty ? "COMPLETED" : "IN_PROGRESS",
+        projectId: proj.id
+      }
+    })
+  }
+
+  // ----------------------------------------------------------------------------
+  // E. FİNANS VE TAŞERON HAKEDİŞLERİ (CONTRACT & PROGRESSPAYMENT + CEZA BLOKESİ)
+  // ----------------------------------------------------------------------------
+  console.log("💰 [MOCK DATA] E. Finans ve Taşeron Hakedişleri (En az 5M TL Sözleşmeler ve 2 BLOKELİ Hakediş) oluşturuluyor...")
+
+  // Sözleşmeler (Contract model: totalAmount, startDate, endDate, status)
+  const contractDemirtas = await prisma.contract.upsert({
+    where: { id: "cnt-demirtas-2024" },
+    update: {
+      title: "Vadi Konutları Çelik ve Donatı İmalatı Taşeron Sözleşmesi",
+      subcontractorId: subDemirtas.id,
+      projectId: projVadi.id,
+      totalAmount: 18500000,
+      status: ContractStatus.ACTIVE,
+      startDate: new Date("2024-01-10"),
+      endDate: new Date("2024-12-31")
+    },
+    create: {
+      id: "cnt-demirtas-2024",
+      title: "Vadi Konutları Çelik ve Donatı İmalatı Taşeron Sözleşmesi",
+      subcontractorId: subDemirtas.id,
+      projectId: projVadi.id,
+      totalAmount: 18500000,
+      status: ContractStatus.ACTIVE,
+      startDate: new Date("2024-01-10"),
+      endDate: new Date("2024-12-31")
+    }
+  })
+
+  const contractZirve = await prisma.contract.upsert({
+    where: { id: "cnt-zirve-2024" },
+    update: {
+      title: "Vadi Konutları ve Nexa Plaza Hazır Beton & Kalıp Döküm Sözleşmesi",
+      subcontractorId: subZirve.id,
+      projectId: projVadi.id,
+      totalAmount: 24200000,
+      status: ContractStatus.ACTIVE,
+      startDate: new Date("2024-02-01"),
+      endDate: new Date("2025-03-30")
+    },
+    create: {
+      id: "cnt-zirve-2024",
+      title: "Vadi Konutları ve Nexa Plaza Hazır Beton & Kalıp Döküm Sözleşmesi",
+      subcontractorId: subZirve.id,
+      projectId: projVadi.id,
+      totalAmount: 24200000,
+      status: ContractStatus.ACTIVE,
+      startDate: new Date("2024-02-01"),
+      endDate: new Date("2025-03-30")
+    }
+  })
+
+  const contractAkim = await prisma.contract.upsert({
+    where: { id: "cnt-akim-2024" },
+    update: {
+      title: "Nexa Plaza Alçak & Orta Gerilim Elektrik Altyapı Sözleşmesi",
+      subcontractorId: subAkim.id,
+      projectId: projNexa.id,
+      totalAmount: 9000000,
+      status: ContractStatus.ACTIVE,
+      startDate: new Date("2024-03-15"),
+      endDate: new Date("2024-11-30")
+    },
+    create: {
+      id: "cnt-akim-2024",
+      title: "Nexa Plaza Alçak & Orta Gerilim Elektrik Altyapı Sözleşmesi",
+      subcontractorId: subAkim.id,
+      projectId: projNexa.id,
+      totalAmount: 9000000,
+      status: ContractStatus.ACTIVE,
+      startDate: new Date("2024-03-15"),
+      endDate: new Date("2024-11-30")
+    }
+  })
+
+  // 10 Adet Hakediş (2 Tanesi BLOCKED ve BIM Kusuruna Bağlı)
+  const progressPaymentConfigs = [
+    { id: "pay-demirtas-hakedis-1", title: "Ocak 2024 Donatı İmalatı Hakedişi No:1", cnt: contractDemirtas, subId: "sub-demirtas", qty: 45, unit: "ton", up: 32000, gross: 1440000, pen: 0, stat: "ODENDI", desc: "Ocak 2024 hakedişi eksiksiz ödendi." },
+    { id: "pay-demirtas-hakedis-2", title: "Şubat 2024 Donatı İmalatı Hakedişi No:2", cnt: contractDemirtas, subId: "sub-demirtas", qty: 52, unit: "ton", up: 32000, gross: 1664000, pen: 0, stat: "ODENDI", desc: "Şubat ayı metraj teslimi yapıldı." },
+    // KRİTİK BLOKE 1: BIM Kusuru (issue-bim-01) yüzünden sistemce otomatik bloke edildi!
+    { 
+      id: "pay-demirtas-hakedis-3", 
+      title: "Mart 2024 Donatı ve Kalıp Hakedişi No:3", 
+      cnt: contractDemirtas, 
+      subId: "sub-demirtas",
+      qty: 58, 
+      unit: "ton", 
+      up: 32000, 
+      gross: 1856000, 
+      pen: 65000, 
+      stat: "BLOCKED", 
+      desc: "⚠️ OTOMATİK KESİNTİ BLOKESİ: [BIM-REV-01] Kolon paspayı kusuru giderilmediği için sistem hakedişi bloke etti!" 
+    },
+    { id: "pay-demirtas-hakedis-4", title: "Nisan 2024 Donatı Hakedişi No:4", cnt: contractDemirtas, subId: "sub-demirtas", qty: 60, unit: "ton", up: 32000, gross: 1920000, pen: 0, stat: "PENDING", desc: "Nisan 2024 Donatı Hakedişi (Kontrol Mühendisi İncelemesinde)" },
+    { id: "pay-zirve-hakedis-1", title: "Şubat 2024 C30 Beton Döküm Hakedişi No:1", cnt: contractZirve, subId: "sub-zirve", qty: 740, unit: "m3", up: 2850, gross: 2109000, pen: 0, stat: "ODENDI", desc: "Şubat 2024 C30 Beton Hakedişi tamamlandı." },
+    { id: "pay-zirve-hakedis-2", title: "Mart 2024 C30 Beton Döküm Hakedişi No:2", cnt: contractZirve, subId: "sub-zirve", qty: 820, unit: "m3", up: 2850, gross: 2337000, pen: 0, stat: "ODENDI", desc: "Mart ayı dökümleri onaylandı." },
+    { id: "pay-zirve-hakedis-3", title: "Nisan 2024 Beton Döküm Hakedişi No:3", cnt: contractZirve, subId: "sub-zirve", qty: 700, unit: "m3", up: 2850, gross: 1995000, pen: 0, stat: "APPROVED", desc: "Nisan ayı onaylandı, ödeme listesinde." },
+    // KRİTİK BLOKE 2: Kiriş Segregasyon Kusuru (issue-bim-02) yüzünden BLOKE
+    { 
+      id: "pay-zirve-hakedis-4", 
+      title: "Mayıs 2024 Beton ve Kalıp Döküm Hakedişi No:4", 
+      cnt: contractZirve, 
+      subId: "sub-zirve",
+      qty: 850, 
+      unit: "m3", 
+      up: 2850, 
+      gross: 2422500, 
+      pen: 80000, 
+      stat: "BLOCKED", 
+      desc: "⚠️ OTOMATİK KESİNTİ BLOKESİ: [BIM-REV-02] Kiriş segregasyon ve bal peteği kusuru nedeniyle 80.000 TL ceza ve ödeme blokesi." 
+    },
+    { id: "pay-akim-hakedis-1", title: "Nisan 2024 Trafo ve Tava Hakedişi No:1", cnt: contractAkim, subId: "sub-akim", qty: 1, unit: "Adet", up: 1200000, gross: 1200000, pen: 0, stat: "ODENDI", desc: "Ana trafo montajı tamamlandı." },
+    { id: "pay-akim-hakedis-2", title: "Mayıs 2024 Kablolama Hakedişi No:2", cnt: contractAkim, subId: "sub-akim", qty: 1, unit: "Adet", up: 1400000, gross: 1400000, pen: 0, stat: "PENDING", desc: "Mayıs 2024 Kablolama Hakedişi inceleniyor." }
+  ]
+
+  for (const p of progressPaymentConfigs) {
+    const net = p.gross - p.pen
+    await prisma.progressPayment.upsert({
+      where: { id: p.id },
+      update: {
+        title: p.title,
+        description: p.desc,
+        quantity: p.qty,
+        unit: p.unit,
+        unitPrice: p.up,
+        totalPrice: p.gross,
+        amount: p.gross,
+        penaltyDeduction: p.pen,
+        netAmount: net,
+        status: p.stat,
+        subcontractorId: p.subId,
+        projectId: p.cnt.projectId,
+        contractId: p.cnt.id
+      },
+      create: {
+        id: p.id,
+        title: p.title,
+        description: p.desc,
+        quantity: p.qty,
+        unit: p.unit,
+        unitPrice: p.up,
+        totalPrice: p.gross,
+        amount: p.gross,
+        penaltyDeduction: p.pen,
+        netAmount: net,
+        status: p.stat,
+        subcontractorId: p.subId,
+        projectId: p.cnt.projectId,
+        contractId: p.cnt.id
+      }
+    })
+  }
+
+  // 20 Adet 3D BIM Kusuru (BimIssue)
+  console.log("🧱 [MOCK DATA] 20 adet x,y,z koordinatlı 3D BIM kusuru (BimIssue) işleniyor...")
+
+  const bimDefectTemplates = [
+    { title: "A-104 Kolonunda paspayı yetersizliği ve donatı teması", desc: "Beton dökümü öncesi paspayı elemanları düşmüş, donatı kalıba temas ediyor.", sev: "CRITICAL", block: true, pen: 65000, payId: "pay-demirtas-hakedis-3", x: 12.45, y: 3.20, z: -4.15 },
+    { title: "B-202 Kiriş alt kotunda segregasyon ve bal peteği boşluğu", desc: "Vibratör yetersiz kullanılmış, agreganın ayrışması sonucu 40cm boşluk oluştu.", sev: "CRITICAL", block: true, pen: 80000, payId: "pay-zirve-hakedis-4", x: -8.30, y: 7.10, z: 14.60 },
+    { title: "Kule Vinç yaklaşma sınırında şantiye konteyneri çakışması", desc: "Vinç bom hareket sahası içinde izinsiz ofis yapısı tespit edildi.", sev: "HIGH", block: false, pen: 0, payId: null, x: 22.10, y: 15.00, z: -1.20 },
+    { title: "Şaft boşluğunda yangın durdurucu harç eksikliği", desc: "Elektrik kablo geçişlerinde yangın bariyeri mastik çekilmemiş.", sev: "HIGH", block: false, pen: 0, payId: null, x: 4.80, y: 11.40, z: 2.30 },
+    { title: "Döşeme rezervasyon deliği projeden 15 cm kayık", desc: "Sıhhi tesisat pimaş borusu kiriş donatısına çakışma yaratıyor.", sev: "MEDIUM", block: false, pen: 0, payId: null, x: -14.20, y: 6.80, z: 8.40 },
+    { title: "Perde donatısında korozyon ve pas kalıntıları", desc: "Yağmur suyu tahliyesi geciktiği için donatıda yüzeyel paslanma var.", sev: "MEDIUM", block: false, pen: 0, payId: null, x: 1.10, y: -2.40, z: 5.60 },
+    { title: "Dilatasyon derzinde su tutucu bant montaj hatası", desc: "Genleşme derzinde kauçuk su tutucu profil ters yerleştirilmiş.", sev: "HIGH", block: false, pen: 0, payId: null, x: -3.50, y: 0.80, z: -2.10 },
+    { title: "Korkuluk ankraj pimlerinde kaynak yetersizliği", desc: "Merdiven kovası geçici güvenlik korkuluklarında 2 kaynak noktası kopuk.", sev: "HIGH", block: false, pen: 0, payId: null, x: 9.70, y: 8.90, z: 18.20 }
+  ]
+
+  for (let i = 1; i <= 20; i++) {
+    const tmpl = bimDefectTemplates[(i - 1) % bimDefectTemplates.length]
+    const isOpen = i <= 6 // İlk 6 kusur AÇIK kalsın
+    const isCritical = tmpl.sev === "CRITICAL" || i === 1 || i === 2
+    const blockPayment = isCritical && isOpen
+
+    await prisma.bimIssue.upsert({
+      where: { id: `issue-bim-${i < 10 ? "0" + i : i}` },
+      update: {
+        title: `[BIM-REV-${i}] ${tmpl.title}`,
+        description: tmpl.desc,
+        severity: tmpl.sev,
+        status: isOpen ? "OPEN" : "RESOLVED",
+        blockPayment,
+        penaltyAmount: blockPayment ? tmpl.pen : 0,
+        positionX: tmpl.x + (i * 0.5),
+        positionY: tmpl.y + (i * 0.2),
+        positionZ: tmpl.z - (i * 0.4),
+        imageUrl: `https://picsum.photos/seed/nexa-bim-${i}/800/600`,
+        projectId: projVadi.id,
+        subcontractorId: i % 2 === 0 ? "sub-zirve" : "sub-demirtas",
+        progressPaymentId: blockPayment ? tmpl.payId : null
+      },
+      create: {
+        id: `issue-bim-${i < 10 ? "0" + i : i}`,
+        title: `[BIM-REV-${i}] ${tmpl.title}`,
+        description: tmpl.desc,
+        severity: tmpl.sev,
+        status: isOpen ? "OPEN" : "RESOLVED",
+        blockPayment,
+        penaltyAmount: blockPayment ? tmpl.pen : 0,
+        positionX: tmpl.x + (i * 0.5),
+        positionY: tmpl.y + (i * 0.2),
+        positionZ: tmpl.z - (i * 0.4),
+        imageUrl: `https://picsum.photos/seed/nexa-bim-${i}/800/600`,
+        projectId: projVadi.id,
+        subcontractorId: i % 2 === 0 ? "sub-zirve" : "sub-demirtas",
+        progressPaymentId: blockPayment ? tmpl.payId : null
+      }
+    })
+  }
+
+  // ----------------------------------------------------------------------------
+  // F. İSG VE IOT (20 BLE BEACON & 14 İSG İHLALİ)
+  // ----------------------------------------------------------------------------
+  console.log("🦺 [MOCK DATA] F. İSG ve IoT (20 BLE Cihazı ve Son 1 Haftalık İSG İhlalleri) oluşturuluyor...")
+
+  const bleAssignedWorkers = seededPersonnelList.slice(0, 20)
+
+  for (let i = 0; i < 20; i++) {
+    const worker = bleAssignedWorkers[i]
+    const mac = `E4:5F:01:A2:${i < 10 ? "0" + i : i}:${Math.floor(10 + i * 4)}`
+    const battery = Math.floor(Math.random() * 85) + 14 // %14 - %98 arası
+
+    await prisma.bleDevice.upsert({
+      where: { id: `ble-dev-${i + 1}` },
+      update: {
+        macAddress: mac,
+        deviceType: i % 2 === 0 ? "BARET" : "YELEK",
+        batteryLevel: battery,
+        assignedTo: worker.personel.id,
+        userId: worker.user.id,
+        lastSeenAt: new Date(Date.now() - Math.floor(Math.random() * 600000)),
+        projectId: projVadi.id
+      },
+      create: {
+        id: `ble-dev-${i + 1}`,
+        macAddress: mac,
+        deviceType: i % 2 === 0 ? "BARET" : "YELEK",
+        batteryLevel: battery,
+        assignedTo: worker.personel.id,
+        userId: worker.user.id,
+        lastSeenAt: new Date(Date.now() - Math.floor(Math.random() * 600000)),
+        projectId: projVadi.id
+      }
+    })
+  }
+
+  // 14 Adet İSG İhlali (IsgViolation)
+  const isgViolationTemplates = [
+    { title: "Baret Takılmadı (Akıllı Kamera Tespiti)", zone: "A Blok Şantiye" },
+    { title: "Yasaklı Kule Vinç Kör Noktasına Giriş", zone: "Kule Vinç Altı" },
+    { title: "Yüksekte Emniyetsiz Çalışma (Paraşüt Tipi Emniyet Kemeri Eksik)", zone: "A Blok Şantiye" },
+    { title: "Kaynak Alanında Koruyucu Siperlik ve Yanmaz Önlük Eksikliği", zone: "Demir Atölyesi" },
+    { title: "Reflektörlü İş Yeleği Giyilmedi", zone: "B Blok Şantiye" },
+    { title: "Yangın Tüpü Önüne Malzeme Yığılması", zone: "B Blok Şantiye" },
+    { title: "Yetkisiz Elektrik Panosu Müdahalesi", zone: "Demir Atölyesi" }
+  ]
+
+  for (let i = 1; i <= 14; i++) {
+    const tmpl = isgViolationTemplates[(i - 1) % isgViolationTemplates.length]
+    const assignedWorker = seededPersonnelList[i + 5]
+    const daysAgo = Math.floor(Math.random() * 6) + 1
+    const violationDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
+
+    await prisma.isgViolation.upsert({
+      where: { id: `isg-viol-${i}` },
+      update: {
+        workerName: assignedWorker ? assignedWorker.personel.name : "Ahmet Usta",
+        violation: tmpl.title,
+        zoneName: tmpl.zone,
+        status: i <= 5 ? "OPEN" : "RESOLVED",
+        timestamp: violationDate,
+        projectId: projVadi.id
+      },
+      create: {
+        id: `isg-viol-${i}`,
+        workerName: assignedWorker ? assignedWorker.personel.name : "Ahmet Usta",
+        violation: tmpl.title,
+        zoneName: tmpl.zone,
+        status: i <= 5 ? "OPEN" : "RESOLVED",
+        timestamp: violationDate,
+        projectId: projVadi.id
+      }
+    })
+  }
+
+  console.log("✅ [MOCK DATA] Tüm hiyerarşik kurumsal mock veriler (Şirketler, Projeler, İK, Metraj, BIM, Finans, İSG) başarıyla oluşturuldu!\n")
 }
 
 main()
