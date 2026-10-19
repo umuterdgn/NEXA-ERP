@@ -194,6 +194,8 @@ model Project {
   // Digital Twin / YİBF fields
   yibfNo                   String?                   @unique // Yapı İzleme Belgesi Numarası
   totalArea                Float? // Toplam inşaat alanı (m2)
+  totalConstructionArea    Float? // Toplam inşaat alanı (YİBF)
+  buildingClass            String? // Yapı Sınıfı (Örn: 3B, IV-A)
   yibfStatus               String? // "Ruhsat Bekliyor", "Aktif Şantiye", "İskan Aşamasında" vb.
   lastYibfSync             DateTime? // Son YİBF bakanlık senkronizasyon zamanı
   healthScore              Int                       @default(100) // Proje sağlık skoru (0-100)
@@ -210,6 +212,7 @@ model Project {
   contractValue            Float? // Sözleşme bedeli (hakediş hesaplamaları için)
   // Relations
   coreSamples              CoreSample[]
+  yibfDocuments            YibfDocument[]
   archives                 Archive[]
   transactions             Transaction[]
   movements                StockMovement[]
@@ -342,6 +345,22 @@ model CoreSample {
   @@index([takenById])
   @@index([qrCode])
   @@index([status])
+}
+
+// ============================================================================
+// YİBF DOCUMENTS (Resmi Tutanaklar ve Denetim Kayıtları)
+// ============================================================================
+
+model YibfDocument {
+  id           String   @id @default(cuid())
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId    String
+  documentType String   // Örn: "Seviye Tespit Tutanağı", "Beton Döküm Tutanağı"
+  documentDate DateTime
+  externalUrl  String?  // Bakanlık sistemindeki evrak indirme linki (varsa)
+  createdAt    DateTime @default(now())
+
+  @@index([projectId])
 }
 
 // ============================================================================

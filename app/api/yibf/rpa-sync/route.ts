@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       status: result.status,
       requiresTwoFactor: result.requiresTwoFactor,
       message: result.message,
+      data: result.data,
     });
   } catch (error: any) {
     console.error("RPA Sync API Error:", error);

@@ -74,13 +74,20 @@ export async function POST(request: Request) {
     console.log("📥 Gelen Proje Verisi:", body)
 
     // id'yi ve varsa hatalı gelebilecek diğer alanları ayıklıyoruz
-    const { images, companyId, managerId, engineers, architects, ...restData } = body
+    const { images, companyId, managerId, engineers, architects, yibfDocuments, ...restData } = body
 
-    // Prisma schema'nda olabilecek zorunlu alanlar için güvenlik ağı kuruyoruz.
-    // Eğer veritabanın (örneğin SQLite) string array desteklemiyorsa images'ı JSON string yapman gerekebilir. 
-    // Mevcut şemana göre images: images veya images: JSON.stringify(images) olarak ayarla.
     const geofenceRadiusValue = restData.geofenceRadius ?? restData.gpsRadius ?? 100
-    const dataToSave = {
+    
+    // Metrekare alan dönüşümleri
+    const totalAreaVal = restData.totalArea !== undefined && restData.totalArea !== null && restData.totalArea !== ""
+      ? parseFloat(String(restData.totalArea))
+      : (restData.totalConstructionArea !== undefined && restData.totalConstructionArea !== null && restData.totalConstructionArea !== "" ? parseFloat(String(restData.totalConstructionArea)) : null);
+
+    const totalConstructionAreaVal = restData.totalConstructionArea !== undefined && restData.totalConstructionArea !== null && restData.totalConstructionArea !== ""
+      ? parseFloat(String(restData.totalConstructionArea))
+      : totalAreaVal;
+
+    const dataToSave: any = {
       ...restData,
       images: (images || []).filter((img: string) => img && img.trim() !== ''),
       title: restData.name || restData.title,
@@ -103,7 +110,12 @@ export async function POST(request: Request) {
       ada: restData.ada || null,
       parsel: restData.parsel || null,
       pafta: restData.pafta || null,
-      yapiSinifi: restData.yapiSinifi || null,
+      yapiSinifi: restData.yapiSinifi || restData.buildingClass || null,
+      buildingClass: restData.buildingClass || restData.yapiSinifi || null,
+      totalArea: totalAreaVal,
+      totalConstructionArea: totalConstructionAreaVal,
+      yibfNo: restData.yibfNo || null,
+      yibfStatus: restData.yibfStatus || null,
       clientName: restData.clientName || null,
       // Shift hours
       shiftStart: restData.shiftStart || "08:00",
@@ -113,13 +125,24 @@ export async function POST(request: Request) {
       longitude: restData.longitude ? parseFloat(restData.longitude) : null,
       gpsRadius: geofenceRadiusValue !== null && geofenceRadiusValue !== undefined ? Number(geofenceRadiusValue) : 100,
       geofenceRadius: geofenceRadiusValue !== null && geofenceRadiusValue !== undefined ? Number(geofenceRadiusValue) : 100,
+      // YİBF Resmi Tutanaklar ve Denetim Kayıtları
+      ...(Array.isArray(yibfDocuments) && yibfDocuments.length > 0 ? {
+        yibfDocuments: {
+          create: yibfDocuments.map((doc: any) => ({
+            documentType: doc.documentType || doc.title || "Resmi Tutanak",
+            documentDate: doc.documentDate ? new Date(doc.documentDate) : new Date(),
+            externalUrl: doc.externalUrl || null,
+          }))
+        }
+      } : {})
     }
 
     const newProject = await prisma.project.create({
       data: dataToSave,
       include: {
         company: true,
-        manager: true
+        manager: true,
+        yibfDocuments: true
       }
     })
 
@@ -177,6 +200,14 @@ export async function PUT(request: Request) {
       }
     }
 
+    const totalAreaVal = body.totalArea !== undefined && body.totalArea !== null && body.totalArea !== ""
+      ? parseFloat(String(body.totalArea))
+      : (body.totalConstructionArea !== undefined && body.totalConstructionArea !== null && body.totalConstructionArea !== "" ? parseFloat(String(body.totalConstructionArea)) : undefined);
+
+    const totalConstructionAreaVal = body.totalConstructionArea !== undefined && body.totalConstructionArea !== null && body.totalConstructionArea !== ""
+      ? parseFloat(String(body.totalConstructionArea))
+      : totalAreaVal;
+
     const project = await prisma.project.update({
       where: { id },
       data: {
@@ -202,6 +233,13 @@ export async function PUT(request: Request) {
         mintika: body.mintika || null,
         ada: body.ada || null,
         parsel: body.parsel || null,
+        pafta: body.pafta || null,
+        yapiSinifi: body.yapiSinifi || body.buildingClass || null,
+        buildingClass: body.buildingClass || body.yapiSinifi || null,
+        totalArea: totalAreaVal,
+        totalConstructionArea: totalConstructionAreaVal,
+        yibfNo: body.yibfNo || null,
+        yibfStatus: body.yibfStatus || null,
         clientName: body.clientName || null,
         // Shift hours
         shiftStart: body.shiftStart || null,
@@ -209,7 +247,8 @@ export async function PUT(request: Request) {
       },
       include: {
         company: true,
-        manager: true
+        manager: true,
+        yibfDocuments: true
       }
     })
 
