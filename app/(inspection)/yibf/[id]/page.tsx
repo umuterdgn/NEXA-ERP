@@ -7,8 +7,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Building, MapPin, User, Ruler, CheckCircle, AlertTriangle, Clock, ArrowLeft, Plus, FileText, Camera, Hash, Calendar, FolderOpen, Bot } from "lucide-react";
+import { Building, MapPin, User, Ruler, CheckCircle, AlertTriangle, Clock, ArrowLeft, Plus, FileText, Camera, Hash, Calendar, FolderOpen, Bot, ExternalLink, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function YibfDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function YibfDetailPage({ params }: { params: Promise<{ id: strin
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Mock data - gerçek API'den gelecek
-  const yibfData = {
+  const initialYibfData = {
     id: "1",
     yibfNo: "2024-001",
     address: "Atatürk Mah. Cumhuriyet Cad. No:123 Kadıköy/İstanbul",
@@ -26,6 +27,34 @@ export default function YibfDetailPage({ params }: { params: Promise<{ id: strin
     totalArea: 1250.5,
     floors: 8,
     status: "ACTIVE",
+    lastYibfSync: null as string | null,
+  };
+
+  const [yibfData, setYibfData] = useState(initialYibfData);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncYibf = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch("/api/yibf/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ yibfNo: yibfData.yibfNo }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setYibfData((prev) => ({
+          ...prev,
+          totalArea: result.data?.totalArea || prev.totalArea,
+          status: result.data?.yibfStatus || prev.status,
+          lastYibfSync: new Date().toLocaleTimeString("tr-TR"),
+        }));
+      }
+    } catch (err) {
+      console.error("YİBF sync error:", err);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const timelineEvents = [
@@ -185,9 +214,23 @@ export default function YibfDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                yibfData.status === "ACTIVE" ? "bg-green-900/30 text-green-400" : "bg-slate-800 text-slate-400"
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+              <Link
+                href="/samples"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition-all hover:border-cyan-500/50"
+              >
+                <span>Karot & Numune Takip</span>
+              </Link>
+              <button
+                onClick={handleSyncYibf}
+                disabled={isSyncing}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Bot className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+                <span>{isSyncing ? "Bakanlık Senkronize Ediliyor..." : "YİBF Senkronize Et"}</span>
+              </button>
+              <span className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium ${
+                yibfData.status === "ACTIVE" ? "bg-green-900/30 text-green-400 border border-green-700/50" : "bg-slate-800 text-slate-400"
               }`}>
                 {yibfData.status === "ACTIVE" ? "Aktif" : yibfData.status}
               </span>

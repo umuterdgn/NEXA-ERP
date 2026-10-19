@@ -51,6 +51,7 @@ model User {
   formSubmissions          FormSubmission[]
   approvalWorkflows        ApprovalWorkflow[]
   documentRevisions        DocumentRevision[]
+  coreSamplesTaken         CoreSample[]
 
   @@index([companyId])
   @@index([organizationId])
@@ -192,6 +193,9 @@ model Project {
   shiftEnd                 String                    @default("17:00") // Mesai Bitiş Saati
   // Digital Twin / YİBF fields
   yibfNo                   String?                   @unique // Yapı İzleme Belgesi Numarası
+  totalArea                Float? // Toplam inşaat alanı (m2)
+  yibfStatus               String? // "Ruhsat Bekliyor", "Aktif Şantiye", "İskan Aşamasında" vb.
+  lastYibfSync             DateTime? // Son YİBF bakanlık senkronizasyon zamanı
   healthScore              Int                       @default(100) // Proje sağlık skoru (0-100)
   progress                 Int                       @default(0) // İlerleme yüzdesi (0-100)
   // Geofencing (GPS) fields
@@ -205,6 +209,7 @@ model Project {
   locationCity             String? // Proje lokasyon şehri (hava durumu için)
   contractValue            Float? // Sözleşme bedeli (hakediş hesaplamaları için)
   // Relations
+  coreSamples              CoreSample[]
   archives                 Archive[]
   transactions             Transaction[]
   movements                StockMovement[]
@@ -309,6 +314,34 @@ model SiteZone {
   @@index([projectId])
   @@index([zoneType])
   @@index([category])
+}
+
+// ============================================================================
+// CORE SAMPLES (Karot/Numune Takip Tablosu)
+// ============================================================================
+
+model CoreSample {
+  id              String    @id @default(cuid())
+  qrCode          String    @unique // Fiziksel QR barkod numarası
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  takenBy         User      @relation(fields: [takenById], references: [id], onDelete: Cascade) // Numuneyi alan denetçi
+  takenById       String
+  location        String    // Örn: "A Blok, 3. Kat Kolon"
+  status          String    @default("TAKEN") // TAKEN, IN_LAB, TESTED
+  takenAt         DateTime  @default(now())
+  testedAt        DateTime?
+  resultStrength  Float?    // Laboratuvar kırım sonucu (MPa vb.)
+  isPassed        Boolean?  // İstenilen dayanıma ulaştı mı?
+  reportFileUrl   String?   // Yüklenen OCR PDF/Resim dosyası (UploadThing)
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  @@index([projectId])
+  @@index([takenById])
+  @@index([qrCode])
+  @@index([status])
 }
 
 // ============================================================================

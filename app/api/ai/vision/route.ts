@@ -9,12 +9,32 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, image } = body;
+    const { type, image, prompt } = body;
 
     // Simulate processing delay
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    if (type === "DOCUMENT") {
+    if (type === "CORE_SAMPLE" || prompt?.includes("beton kırım") || prompt?.includes("Basınç Dayanımı")) {
+      // Beton Kırım Test Raporu OCR Analizi
+      // Gerçekçi kırım dayanımı (C30/37 beton için tipik 31.4 - 36.8 MPa arası)
+      const strength = Number((31.5 + Math.random() * 5.2).toFixed(2));
+      const requiredThreshold = 30.0;
+      const isPassed = strength >= requiredThreshold;
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          resultStrength: strength,
+          isPassed,
+          decision: isPassed ? "PASS" : "FAIL",
+          targetClass: "C30/37",
+          unit: "MPa",
+          testedAt: new Date().toISOString(),
+          confidence: 0.96,
+          summary: `Beton basınç dayanımı ${strength} MPa olarak ölçüldü. Şartname sınırı (${requiredThreshold} MPa) sağlandı: ${isPassed ? "UYGUN (PASS)" : "UYGUN DEĞİL (FAIL)"}`
+        }
+      });
+    } else if (type === "DOCUMENT") {
       // Mock OCR response for documents
       return NextResponse.json({
         success: true,

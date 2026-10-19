@@ -74,6 +74,19 @@ export const ourFileRouter = {
     .onUploadComplete(({ file }) => {
       return { url: file.url }
     }),
+
+  // Core Sample / Concrete Test Lab Report Uploader - PDF or Image
+  coreSampleReportUploader: f({
+    image: { maxFileSize: "16MB", maxFileCount: 1 },
+    "application/pdf": { maxFileSize: "16MB", maxFileCount: 1 },
+  })
+    .middleware(() => {
+      return {}
+    })
+    .onUploadComplete(({ file }) => {
+      const safeUrl = (file as any).ufsUrl || (file as any).url
+      return { url: safeUrl }
+    }),
 } satisfies FileRouter
 
 export type OurFileRouter = typeof ourFileRouter

@@ -4,10 +4,39 @@
  * This code is the property of NXA Software.
  */
 
-import React from "react";
-import { Building, ClipboardCheck, AlertTriangle, FileText, TrendingUp, Users, CheckCircle, Clock, Zap, Lightbulb } from "lucide-react";
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { Building, ClipboardCheck, AlertTriangle, FileText, TrendingUp, Users, CheckCircle, Clock, Zap, Lightbulb, Bot, FlaskConical, Map } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function InspectionDashboard() {
+  const [syncingYibf, setSyncingYibf] = useState(false);
+
+  const handleSyncYibf = async () => {
+    setSyncingYibf(true);
+    try {
+      const res = await fetch("/api/yibf/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(data.message || "Bakanlık e-YİBF sistemiyle senkronize edildi!", {
+          icon: "🏛️",
+        });
+      } else {
+        toast.error("YİBF senkronizasyonu başarısız");
+      }
+    } catch (err) {
+      toast.error("Bakanlık botuna ulaşılamadı");
+    } finally {
+      setSyncingYibf(false);
+    }
+  };
   // Statik KPI verileri (gerçek API entegrasyonu yapılacak)
   const kpiData = {
     activeBuildings: 24,
@@ -61,10 +90,27 @@ export default function InspectionDashboard() {
             <h1 className="text-2xl font-bold text-white">Yapı Denetim Dashboard</h1>
             <p className="text-slate-400 text-sm mt-1">Yapı İzleme Belgesi ve Denetim Yönetim Sistemi</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm text-slate-400">Son güncelleme</p>
-              <p className="text-white font-medium">{new Date().toLocaleTimeString("tr-TR")}</p>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/samples"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 transition-all hover:border-cyan-400"
+            >
+              <FlaskConical className="w-4 h-4 text-cyan-400" />
+              <span>Karot / Numune Takip</span>
+            </Link>
+
+            <button
+              onClick={handleSyncYibf}
+              disabled={syncingYibf}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50"
+            >
+              <Bot className={`w-4 h-4 text-amber-300 ${syncingYibf ? "animate-spin" : ""}`} />
+              <span>{syncingYibf ? "Senkronize Ediliyor..." : "YİBF Senkronize Et"}</span>
+            </button>
+
+            <div className="text-right hidden md:block pl-2 border-l border-slate-800">
+              <p className="text-[11px] text-slate-400">Son güncelleme</p>
+              <p className="text-white text-xs font-mono">{new Date().toLocaleTimeString("tr-TR")}</p>
             </div>
           </div>
         </div>
