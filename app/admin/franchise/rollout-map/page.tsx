@@ -26,31 +26,8 @@ import {
   CheckCircle2,
 } from "lucide-react"
 
-interface StoreProject {
-  id: string
-  name: string
-  title: string
-  city: string | null
-  district: string | null
-  location: string | null
-  latitude: number | null
-  longitude: number | null
-  progress: number
-  status: string
-  grossAreaSqm: number | null
-  totalCapex: number | null
-  rolloutPhase: string
-  storeTemplate?: {
-    name: string
-  } | null
-  stageGates: Array<{
-    id: string
-    stageName: string
-    isApproved: boolean
-  }>
-}
-
-type PinCategory = "IDARI" | "INSAAT" | "IT_MONTAJ" | "ACIK"
+import RolloutMapWrapper from "./_components/RolloutMapWrapper"
+import type { StoreProject, PinCategory } from "./_components/RolloutLeafletMap"
 
 export default function FranchiseRolloutMapPage() {
   const [projects, setProjects] = useState<StoreProject[]>([])
@@ -58,7 +35,6 @@ export default function FranchiseRolloutMapPage() {
   const [selectedCategory, setSelectedCategory] = useState<"ALL" | PinCategory>("ALL")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedProject, setSelectedProject] = useState<StoreProject | null>(null)
-  const [zoomLevel, setZoomLevel] = useState(1)
 
   const fetchProjects = async () => {
     try {
@@ -289,100 +265,16 @@ export default function FranchiseRolloutMapPage() {
 
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <span>Harita Pinleri: <strong className="text-white">{filteredProjects.length}</strong></span>
-              <button
-                onClick={() => setZoomLevel((z) => (z >= 1.4 ? 1 : z + 0.2))}
-                className="px-2 py-1 bg-slate-950 border border-slate-800 rounded hover:bg-slate-800 text-[11px]"
-              >
-                Büyüt ({Math.round(zoomLevel * 100)}%)
-              </button>
             </div>
           </div>
 
-          {/* Map Surface */}
-          <div className="relative w-full h-[520px] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center p-4">
-            {/* Grid Pattern */}
-            <div
-              className="absolute inset-0 opacity-15 pointer-events-none"
-              style={{
-                backgroundImage:
-                  "radial-gradient(#3b82f6 1px, transparent 1px), radial-gradient(#1e293b 1px, transparent 1px)",
-                backgroundSize: "28px 28px",
-              }}
-            ></div>
-
-            {/* Stylized Vector Map of Turkey */}
-            <svg
-              viewBox="0 0 1000 500"
-              className="w-full h-full max-h-[480px] text-slate-800/40 select-none transition-transform duration-300"
-              style={{ transform: `scale(${zoomLevel})` }}
-              fill="currentColor"
-            >
-              <path
-                d="M 120 180 Q 200 130 350 140 Q 550 130 750 150 Q 880 170 920 220 Q 940 300 860 340 Q 720 370 560 380 Q 420 370 280 390 Q 180 370 140 310 Q 100 240 120 180 Z"
-                fill="#0f172a"
-                stroke="#1e293b"
-                strokeWidth="2"
-              />
-              <circle cx="220" cy="200" r="14" fill="#1e293b" opacity="0.6" />
-              <circle cx="200" cy="280" r="14" fill="#1e293b" opacity="0.6" />
-              <circle cx="450" cy="260" r="18" fill="#1e293b" opacity="0.4" />
-              <circle cx="430" cy="380" r="16" fill="#1e293b" opacity="0.5" />
-            </svg>
-
-            {/* Dynamic StageGate Pins */}
-            {filteredProjects.map((p) => {
-              const cat = getPinCategory(p)
-              const styles = getPinColorStyles(cat)
-              const isSelected = selectedProject?.id === p.id
-
-              const minLat = 35.5
-              const maxLat = 42.5
-              const minLng = 25.5
-              const maxLng = 45.0
-
-              const lat = p.latitude || 39.0
-              const lng = p.longitude || 35.0
-
-              const leftPercent = Math.max(6, Math.min(92, ((lng - minLng) / (maxLng - minLng)) * 100))
-              const topPercent = Math.max(10, Math.min(88, (1 - (lat - minLat) / (maxLat - minLat)) * 100))
-
-              return (
-                <div
-                  key={p.id}
-                  style={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20 group"
-                >
-                  <button
-                    onClick={() => setSelectedProject(p)}
-                    className={`relative p-2.5 rounded-full text-white shadow-2xl ring-4 transition-all duration-300 hover:scale-130 ${
-                      styles.bg
-                    } ${styles.ring} ${isSelected ? "scale-135 ring-white" : ""}`}
-                    title={`${p.name || p.title} (${styles.label})`}
-                  >
-                    <Store className="w-4 h-4 text-white" />
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-white ring-2 ring-slate-900"></span>
-                  </button>
-
-                  {/* Hover Mini Card */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-30 min-w-[190px]">
-                    <div className="bg-slate-900 border border-slate-700 text-white rounded-lg p-2.5 text-xs shadow-2xl space-y-1">
-                      <div className="font-bold text-blue-400 line-clamp-1">{p.name || p.title}</div>
-                      <div className="text-[11px] text-slate-300 flex items-center justify-between">
-                        <span>{p.city}</span>
-                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${styles.badge}`}>
-                          {styles.label.split(" ")[0]}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 pt-0.5">
-                        {p.grossAreaSqm ? `${p.grossAreaSqm} m²` : ""} • İlerleme %{p.progress}
-                      </div>
-                    </div>
-                    <div className="w-2 h-2 bg-slate-900 border-r border-b border-slate-700 transform rotate-45 -mt-1"></div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          {/* Real React-Leaflet Rollout Map (Esri Dark Gray & Dynamic StageGate Pins) */}
+          <RolloutMapWrapper
+            projects={filteredProjects}
+            selectedProject={selectedProject}
+            onSelectProject={setSelectedProject}
+            getPinCategory={getPinCategory}
+          />
         </div>
 
         {/* Selected Store Inspector & Quick Action Hub (1 Column) */}

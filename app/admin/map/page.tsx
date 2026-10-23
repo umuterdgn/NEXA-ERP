@@ -64,7 +64,7 @@ function MapLoadingSkeleton() {
       </div>
       <h3 className="text-lg font-semibold text-white mb-1">Şantiye Haritası Yükleniyor</h3>
       <p className="text-sm text-slate-400 max-w-sm text-center">
-        BLE Gateway sinyalleri ve CartoDB Dark Matter katmanı başlatılıyor...
+        BLE Gateway sinyalleri ve Esri Dark Gray harita katmanı başlatılıyor...
       </p>
     </div>
   )
