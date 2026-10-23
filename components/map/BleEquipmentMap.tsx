@@ -462,11 +462,10 @@ export default function BleEquipmentMap({
         className="z-0 h-full w-full"
         scrollWheelZoom={true}
       >
-        {/* Esri Dark Gray Base Harita Altlığı (Yazısız, modern dark mode) */}
+        {/* CartoCDN Dark All Harita Altlığı (Açık kaynak, koyu temalı) */}
         <TileLayer
-          attribution='&copy; <a href="https://www.esri.com/">Esri</a>, DeLorme, HERE, MapmyIndia'
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-          maxZoom={16}
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
 
         {/* Dynamic View Controller */}
