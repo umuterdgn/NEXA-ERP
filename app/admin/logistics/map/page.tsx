@@ -8,7 +8,7 @@
 import React from "react";
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { liveLogisticsCache } from "@/app/api/logistics/ping/route";
+import { liveLogisticsCache } from "@/lib/logistics-cache";
 import { ShipmentLiveItem } from "./_components/LogisticsLiveMap";
 import MapWrapper from "./_components/MapWrapper";
 

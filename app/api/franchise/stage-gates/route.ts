@@ -7,16 +7,9 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { DEFAULT_STAGE_GATES } from "@/lib/constants/stage-gates"
 
 export const dynamic = "force-dynamic"
-
-export const DEFAULT_STAGE_GATES = [
-  { stageName: "KİRALAMA", isRequired: true, label: "Kira Kontratı & Alan Tahsisi", billingPercentage: 15 },
-  { stageName: "AVM_ONAYI", isRequired: true, label: "AVM Mimari & Teknik Onayı", billingPercentage: 20 },
-  { stageName: "KABA_YAPI", isRequired: true, label: "Kaba & İnce Yapı İnşaat İzni", billingPercentage: 35 },
-  { stageName: "İTFAİYE_ONAYI", isRequired: true, label: "İtfaiye Yangın & İskan Ruhsatı", billingPercentage: 20 },
-  { stageName: "AÇILIŞ", isRequired: true, label: "Merkez Kurumsal Açılış Yetkisi", billingPercentage: 10 },
-]
 
 export async function GET(request: Request) {
   try {

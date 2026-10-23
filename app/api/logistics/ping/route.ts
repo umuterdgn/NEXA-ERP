@@ -8,32 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-export interface LiveShipmentPing {
-  trackingCode: string;
-  latitude: number;
-  longitude: number;
-  speed?: number | null;
-  heading?: number | null;
-  accuracy?: number | null;
-  status: string; // PREPARING, ON_THE_WAY, ARRIVED, DELIVERED
-  vehiclePlate?: string;
-  driverPhone?: string;
-  materialName?: string;
-  projectName?: string;
-  updatedAt: string;
-}
-
-// In-Memory Memory Cache across Next.js invocations
-const globalStore = globalThis as unknown as {
-  __liveLogisticsPings?: Map<string, LiveShipmentPing>;
-};
-
-if (!globalStore.__liveLogisticsPings) {
-  globalStore.__liveLogisticsPings = new Map<string, LiveShipmentPing>();
-}
-
-export const liveLogisticsCache = globalStore.__liveLogisticsPings;
+import { liveLogisticsCache, type LiveShipmentPing } from "@/lib/logistics-cache";
 
 export async function POST(req: NextRequest) {
   try {
