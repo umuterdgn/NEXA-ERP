@@ -25,10 +25,10 @@ const ROUTE_PROTECTION = {
   "/subcontractor": ["SUBCONTRACTOR", "ADMIN", "SUPER_ADMIN"],
   "/supplier": ["SUPPLIER", "ADMIN", "SUPER_ADMIN"],
   "/personnel": ["STAFF", "WORKER", "SITE_MANAGER", "ENGINEER", "ADMIN", "SUPER_ADMIN"],
-  "/dashboard": ["INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
-  "/yibf": ["INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
-  "/field": ["INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
-  "/dispatch": ["INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
+  "/dashboard": ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
+  "/yibf": ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
+  "/field": ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
+  "/dispatch": ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
 }
 
 // Multi-tenant & custom domain configuration
@@ -98,8 +98,8 @@ export default NextAuth(authConfig).auth((req) => {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // 1. role === 'INSPECTOR' (Yapı Denetim) ➔ /dashboard (veya /(inspection)/dashboard)
-    if (userRole === "INSPECTOR" || userRole === "AUDITOR") {
+    // 1. role === 'INSPECTION_ADMIN' veya 'INSPECTOR' (Yapı Denetim) ➔ KESİNLİKLE /dashboard
+    if (userRole === "INSPECTION_ADMIN" || userRole === "INSPECTOR" || userRole === "AUDITOR") {
       redirectUrl.pathname = "/dashboard"
       return NextResponse.redirect(redirectUrl)
     }
@@ -196,26 +196,58 @@ export default NextAuth(authConfig).auth((req) => {
     }
   }
 
-  // D. INSPECTOR / AUDITOR: Yapı Denetimciler Kasa, Finans, İK, Bordro görmemeli, /dashboard ve denetim modüllerine odaklı kalmalı
-  if (userRole === "INSPECTOR" || userRole === "AUDITOR") {
-    // Yasaklı admin rotaları: finans, muhasebe, ik, bordro, personel, puantaj
-    const restrictedAdminPaths = [
-      "/admin/finance",
-      "/admin/payroll",
-      "/admin/attendance",
-      "/admin/personel",
-      "/admin/personnel",
-      "/admin/billing",
-      "/admin/progress-payments",
-      "/admin/procurement",
-      "/admin/shifts",
-      "/admin/approvals",
-      "/admin/food-menu"
-    ]
-    if (restrictedAdminPaths.some(p => pathname.startsWith(p)) || pathname === "/admin" || pathname.startsWith("/supplier")) {
+  // D. INSPECTION_ADMIN & INSPECTOR: Yapı Denetimciler KESİNLİKLE /(inspection)/dashboard root dizininde kalmalı; Müteahhit /admin paneline erişimleri kesinlikle engellenmeli
+  if (userRole === "INSPECTION_ADMIN" || userRole === "INSPECTOR" || userRole === "AUDITOR") {
+    // 1. Müteahhit ana paneli (/admin) ve diğer portallar kesinlikle engellenir
+    if (
+      pathname === "/admin" ||
+      pathname.startsWith("/subcontractor") ||
+      pathname.startsWith("/supplier") ||
+      pathname.startsWith("/personnel")
+    ) {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = "/dashboard"
       return NextResponse.redirect(redirectUrl)
+    }
+
+    // 2. Müteahhit şantiye, satınalma, taşeron ve ikmal modülleri kesinlikle yasaktır
+    const contractorOnlyPaths = [
+      "/admin/procurement",
+      "/admin/subcontractors",
+      "/admin/bim",
+      "/admin/crm",
+      "/admin/shifts",
+      "/admin/approvals",
+      "/admin/food-menu",
+      "/admin/equipments",
+      "/admin/routes",
+      "/admin/drone-maps",
+      "/admin/logistics",
+      "/admin/inventory/qr-scanner"
+    ]
+    if (contractorOnlyPaths.some(p => pathname.startsWith(p))) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/dashboard"
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // 3. Saha Denetçisi (INSPECTOR): Kasa, Finans, İK, Personel, Muhasebe modüllerine erişemez
+    if (userRole === "INSPECTOR" || userRole === "AUDITOR") {
+      const inspectorRestrictedPaths = [
+        "/admin/finance",
+        "/admin/payroll",
+        "/admin/attendance",
+        "/admin/personel",
+        "/admin/personnel",
+        "/admin/billing",
+        "/admin/progress-payments",
+        "/admin/contracts"
+      ]
+      if (inspectorRestrictedPaths.some(p => pathname.startsWith(p))) {
+        const redirectUrl = req.nextUrl.clone()
+        redirectUrl.pathname = "/dashboard"
+        return NextResponse.redirect(redirectUrl)
+      }
     }
   }
 

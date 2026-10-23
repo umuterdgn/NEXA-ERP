@@ -24,7 +24,7 @@ export default async function InspectionLayout({
   }
 
   const role = session.user?.role as string
-  const allowedRoles = ["INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"]
+  const allowedRoles = ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"]
 
   if (role && !allowedRoles.includes(role)) {
     // Diğer roller kendi portallarına yönlendirilsin
