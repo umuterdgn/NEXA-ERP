@@ -119,7 +119,8 @@ const inspectorMenuItems: MenuItem[] = [
 // Franchise / Rollout Menü Listesi (companyType === 'FRANCHISE')
 const franchiseMenuItems: MenuItem[] = [
   { href: "/admin/franchise/dashboard", label: "AI Risk Radarı & Özet", icon: Bot, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/rollout", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/rollout-map", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/rollout", label: "Rollout Takip (Kanban)", icon: FolderKanban, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/projects", label: "Mağazalar (Projeler)", icon: Building2, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
@@ -213,7 +214,8 @@ const menuItems: MenuItem[] = [
   
   // FRANCHISE & ROLLOUT
   { href: "/admin/franchise/dashboard", label: "AI Risk Radarı & Özet", icon: Bot, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/rollout", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/rollout-map", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/rollout", label: "Rollout Takip (Kanban)", icon: FolderKanban, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/procurement/consolidated", label: "Konsolide Satınalma", icon: ShoppingCart, category: "FRANCHISE & ROLLOUT" },

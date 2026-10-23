@@ -29,6 +29,7 @@ import {
   Flame,
   Zap,
 } from "lucide-react"
+import CapexChartWidget from "@/components/dashboard/capex-chart"
 
 interface StoreProject {
   id: string
@@ -40,6 +41,8 @@ interface StoreProject {
   progress: number
   status: string
   rolloutPhase: string
+  grossAreaSqm?: number | null
+  totalCapex?: number | null
   storeTemplate?: {
     id: string
     name: string
@@ -390,6 +393,9 @@ export default function FranchiseDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* CAPEX m² Analitiği ve Finans Widget'ı */}
+      <CapexChartWidget projects={projects} />
 
       {/* Operations Quick Hub: Procurement & Logistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

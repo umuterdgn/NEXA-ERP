@@ -216,6 +216,8 @@ model Project {
   gpsRequired              Boolean                   @default(false) // Girişlerde GPS doğrulaması zorunlu mu?
   latitude                 Float? // Proje merkezi enlem
   longitude                Float? // Proje merkezi boylam
+  grossAreaSqm             Float? // Mağaza brüt metrekaresi (CAPEX hesabı için)
+  totalCapex               Float? // Gerçekleşen toplam maliyet
   gpsRadius                Float?                    @default(100) // Metre cinsinden izin verilen çap
   geofenceRadius           Float?                    @default(100) // Güvenlik/çit alanı metre cinsinden çap (uyumluluk)
   ifcModelUrl              String? // 3D BIM modelinin dosya yolu (.ifc)
@@ -302,6 +304,7 @@ model Project {
   storeTemplate            StoreTemplate?            @relation(fields: [storeTemplateId], references: [id], onDelete: SetNull)
   stageGates               StageGate[]
   punchLists               PunchList[]
+  handoverDocs             HandoverDocument[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -579,6 +582,7 @@ model Company {
   themeColor             String?                 // Firmanın kurumsal rengi (Örn: #1e3a8a)
   companyType            String?                 @default("CONTRACTOR") // "CONTRACTOR", "INSPECTION", "FRANCHISE"
   type                   CompanyType             @default(MAIN_CONTRACTOR)
+  slaScore               Float?                  @default(100.0) // 100 üzerinden başarı puanı (Gecikme/RMA ile düşer)
   contactName            String?
   phone                  String?
   email                  String?
@@ -4005,6 +4009,20 @@ model DeliveryIssue {
 
   @@index([goodsReceiptId])
   @@index([status])
+}
+
+// 4. DİJİTAL DEVİR-TESLİM (STORE HANDOVER & AS-BUILT) BELGELERİ
+model HandoverDocument {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  documentType    String   // "WARRANTY", "MANUAL", "AS_BUILT_DRAWING", "PANEL_PHOTO"
+  title           String   // Örn: "Mitsubishi Klima Garanti Belgesi"
+  fileUrl         String
+  uploadedAt      DateTime @default(now())
+
+  @@index([projectId])
+  @@index([documentType])
 }
 
 
