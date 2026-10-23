@@ -79,7 +79,9 @@ import {
   Construction,
   XCircle,
   Landmark,
-  Gavel
+  Gavel,
+  Navigation,
+  QrCode
 } from "lucide-react"
 
 interface MenuItem {
@@ -146,6 +148,8 @@ const menuItems: MenuItem[] = [
   { href: "/admin/progress-payments", label: "Hakediş ve Metraj", icon: Calculator, category: "FİNANS & TEDARİK" },
   { href: "/admin/procurement", label: "Satınalma & Talepler", icon: ShoppingCart, category: "FİNANS & TEDARİK" },
   { href: "/admin/procurement/logistics", label: "Kapı Güvenlik & Lojistik", icon: Truck, category: "FİNANS & TEDARİK" },
+  { href: "/admin/logistics/map", label: "Lojistik Canlı Harita", icon: Navigation, category: "FİNANS & TEDARİK" },
+  { href: "/admin/inventory/qr-scanner", label: "QR Mikro Tüketim", icon: QrCode, category: "FİNANS & TEDARİK" },
   { href: "/admin/ai-assistant", label: "AI Tahsilat & Risk Asistanı", icon: Bot, category: "FİNANS & TEDARİK" },
   { href: "/admin/collection-risk", label: "Tahsilat Risk AI", icon: PieChart, category: "FİNANS & TEDARİK" },
   
@@ -279,6 +283,8 @@ export default function AdminSidebar({
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin/procurement" ||
       item.href === "/admin/procurement/logistics" ||
+      item.href === "/admin/logistics/map" ||
+      item.href === "/admin/inventory/qr-scanner" ||
       item.href === "/admin/inventory" ||
       item.href === "/admin/equipments" ||
       item.href === "/admin/contracts" ||
@@ -289,6 +295,8 @@ export default function AdminSidebar({
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin/equipments" ||
       item.href === "/admin/procurement/logistics" ||
+      item.href === "/admin/logistics/map" ||
+      item.href === "/admin/inventory/qr-scanner" ||
       item.href === "/admin/inventory" ||
       item.href === "/admin/map" ||
       (item.category === "ANA MENÜ" && item.href === "/admin")

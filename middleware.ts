@@ -59,6 +59,11 @@ export default NextAuth(authConfig).auth((req) => {
   const { pathname } = req.nextUrl
   const session = req.auth
 
+  // --- PUBLIC ROTA İSTİSNASI (Şoför SMS Takip Ekranı vb.) ---
+  if (pathname.startsWith("/track")) {
+    return NextResponse.next()
+  }
+
   // --- 0. ROUTE GROUP URL NORMALIZATION ---
   if (pathname.startsWith("/(inspection)")) {
     const cleanPath = pathname.replace("/(inspection)", "") || "/dashboard"

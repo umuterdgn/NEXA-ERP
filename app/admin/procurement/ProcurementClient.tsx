@@ -25,6 +25,8 @@ import {
   TrendingDown,
   Truck,
   FileText,
+  Navigation,
+  QrCode,
 } from "lucide-react";
 
 interface MaterialRequest {
@@ -271,7 +273,21 @@ export default function ProcurementClient({ initialRequests }: ProcurementClient
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-slate-500 text-slate-200 text-xs font-semibold transition-all shadow-sm"
           >
             <Truck className="w-4 h-4 text-blue-400" />
-            Kapı Güvenlik & Lojistik
+            Kapı Güvenlik
+          </Link>
+          <Link
+            href="/admin/logistics/map"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-emerald-500/30 hover:border-emerald-500 text-emerald-300 text-xs font-bold transition-all shadow-sm"
+          >
+            <Navigation className="w-4 h-4 text-emerald-400" />
+            Canlı Filo Haritası
+          </Link>
+          <Link
+            href="/admin/inventory/qr-scanner"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-purple-500/30 hover:border-purple-500 text-purple-300 text-xs font-bold transition-all shadow-sm"
+          >
+            <QrCode className="w-4 h-4 text-purple-400" />
+            QR Mikro Tüketim
           </Link>
           <Link
             href="/admin/procurement/receipts/new"

@@ -79,6 +79,7 @@ enum UserRole {
   PROCUREMENT_MANAGER
   EQUIPMENT_MANAGER
   ISG_EXPERT
+  DRIVER
 }
 
 enum CompanyType {
@@ -2439,23 +2440,34 @@ model EInvoice {
 // ============================================================================
 
 model InventoryItem {
-  id             String   @id @default(cuid())
-  projectId      String
-  name           String // Örn: Çimento, Demir
-  category       String // Malzeme Kategorisi
-  quantity       Float // Miktar
-  unit           String // Birim (Adet, Ton, Paket)
-  qrCode         String?  @unique // Normal QR Kod ID'si
-  bleMacAddress  String?  @unique // BLE Sticker/Beacon MAC Adresi (ÖNEMLİ!)
-  locationStatus String   @default("DEPO") // DEPO, SAHADA, ZIMMETLI, KULLANILDI
-  assignedTo     String? // Zimmetlenen Kalfa/Usta
-  lastSeenLat    Float? // BLE'nin son görüldüğü enlem
-  lastSeenLng    Float? // BLE'nin son görüldüğü boylam
-  lastSeenAt     DateTime @default(now())
+  id             String    @id @default(cuid())
+  materialName   String    @default("") // Malzeme Adı (Örn: Çimento, Demir)
+  name           String?   // Alternatif / Eski ad
+  qrCode         String    @unique // Eşsiz QR Kod
+  quantity       Float
+  currentZone    String    @default("MAIN_WAREHOUSE") // Örn: MAIN_WAREHOUSE, A_BLOK_KAT_3
+  status         String    @default("IN_STOCK") // IN_STOCK, DISPATCHED, CONSUMED
+  assignedToId   String?   // Hangi ustaya/taşerona zimmetlendi
+  consumedAt     DateTime?
+  createdAt      DateTime  @default(now())
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // Şantiye / Depo / BLE Ek Alanları
+  projectId      String?
+  category       String?   // Malzeme Kategorisi
+  unit           String?   @default("Adet") // Birim (Adet, Ton, Paket)
+  bleMacAddress  String?   @unique // BLE Sticker/Beacon MAC Adresi
+  locationStatus String?   @default("DEPO") // DEPO, SAHADA, ZIMMETLI, KULLANILDI
+  assignedTo     String?   // Zimmetlenen Kalfa/Usta
+  lastSeenLat    Float?    // BLE / Son ping enlem
+  lastSeenLng    Float?    // BLE / Son ping boylam
+  lastSeenAt     DateTime? @default(now())
+
+  project        Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@index([qrCode])
+  @@index([currentZone])
+  @@index([status])
   @@index([locationStatus])
   @@index([bleMacAddress])
 }
@@ -3766,6 +3778,7 @@ model PurchaseRequest {
   status        String        @default("OPEN_FOR_BID") // OPEN_FOR_BID, COMPLETED, CANCELLED
   bids          SupplierBid[]
   deliveryAppointments DeliveryAppointment[]
+  shipmentTrackings    ShipmentTracking[]
   createdAt     DateTime      @default(now())
 
   @@index([projectId])
@@ -3870,6 +3883,27 @@ model GoodsReceipt {
   @@index([waybillNo])
   @@index([receivedById])
 }
+
+// Canlı Lojistik ve Sevkiyat Takibi
+model ShipmentTracking {
+  id                String          @id @default(cuid())
+  trackingCode      String          @unique // URL'de kullanılacak eşsiz kod (Örn: 8f7a9)
+  purchaseRequestId String
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
+  driverPhone       String          // SMS atılacak numara
+  vehiclePlate      String
+  status            String          @default("PREPARING") // PREPARING, ON_THE_WAY, ARRIVED, DELIVERED
+  lastLatitude      Float?          // Son ping (Enlem)
+  lastLongitude     Float?          // Son ping (Boylam)
+  updatedAt         DateTime        @updatedAt
+  createdAt         DateTime        @default(now())
+
+  @@index([trackingCode])
+  @@index([purchaseRequestId])
+  @@index([status])
+}
+
+
 
 
 
