@@ -60,6 +60,8 @@ model User {
   expenseClaims            ExpenseClaim[]
   sosAlerts                SosAlert[]
   reinforcementVisas       ReinforcementVisa[]
+  nonConformancesCreated   NonConformance[]
+  inspectionFormsFilled    InspectionForm[]
 
   @@index([companyId])
   @@index([organizationId])
@@ -318,6 +320,8 @@ model Project {
   progressAttachments      ProgressAttachment[]
   siteInstructions         SiteInstruction[]
   reinforcementVisas       ReinforcementVisa[]
+  nonConformances          NonConformance[]
+  inspectionForms          InspectionForm[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -363,11 +367,15 @@ model CoreSample {
   qrCode          String    @unique // Fiziksel QR barkod numarası
   project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId       String
-  takenBy         User      @relation(fields: [takenById], references: [id], onDelete: Cascade) // Numuneyi alan denetçi
-  takenById       String
-  location        String    // Örn: "A Blok, 3. Kat Kolon"
-  status          String    @default("TAKEN") // TAKEN, IN_LAB, TESTED
-  takenAt         DateTime  @default(now())
+  takenBy         User?     @relation(fields: [takenById], references: [id], onDelete: Cascade) // Numuneyi alan denetçi
+  takenById       String?
+  inspectorId     String?   // Alternatif denetçi ID (Yapı Denetim)
+  location        String?   // Örn: "A Blok, 3. Kat Kolon"
+  status          String    @default("WAITING_TEST") // WAITING_TEST, PASSED, FAILED, TAKEN, IN_LAB, TESTED
+  pourDate        DateTime? @default(now()) // Beton döküm tarihi
+  testDate        DateTime? // 7 veya 28 günlük kırım tarihi
+  strengthResult  Float?    // MPa cinsinden sonuç
+  takenAt         DateTime? @default(now())
   testedAt        DateTime?
   resultStrength  Float?    // Laboratuvar kırım sonucu (MPa vb.)
   isPassed        Boolean?  // İstenilen dayanıma ulaştı mı?
@@ -378,6 +386,7 @@ model CoreSample {
 
   @@index([projectId])
   @@index([takenById])
+  @@index([inspectorId])
   @@index([qrCode])
   @@index([status])
 }
@@ -4156,4 +4165,47 @@ model ReinforcementVisa {
   @@index([projectId])
   @@index([inspectorId])
   @@index([status])
+}
+
+// ============================================================================
+// YAPI DENETİM: UYGUNSUZLUK & DÖF (NON-CONFORMANCE REPORT)
+// ============================================================================
+
+model NonConformance {
+  id              String    @id @default(cuid())
+  reportNo        String    @unique // Örn: NCR-2026-001
+  projectId       String
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creatorId       String
+  creator         User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  subcontractorId String?
+  description     String    @db.Text
+  deadline        DateTime
+  status          String    @default("OPEN") // OPEN, RESOLVED, VERIFIED
+  photos          String[]  @default([]) // Kusur fotoğrafları
+  createdAt       DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([creatorId])
+  @@index([status])
+}
+
+// ============================================================================
+// YAPI DENETİM: DİNAMİK DENETİM FORMLARI (GENEL ŞABLON)
+// ============================================================================
+
+model InspectionForm {
+  id              String    @id @default(cuid())
+  formType        String    // "ISG", "KALITE", "CEVRE", "DEMIR_VIZE", "BETON_DOKUM"
+  projectId       String
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inspectorId     String
+  inspector       User      @relation(fields: [inspectorId], references: [id], onDelete: Cascade)
+  formData        Json      // Dinamik form cevapları (Soru-Cevap JSON)
+  isPassed        Boolean
+  createdAt       DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([inspectorId])
+  @@index([formType])
 }
