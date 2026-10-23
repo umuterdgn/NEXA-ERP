@@ -313,12 +313,14 @@ export default function RoutesPage() {
               <MapContainer
                 center={[36.58718, 36.17347]}
                 zoom={11}
+                maxZoom={19}
                 style={{ height: "100%", width: "100%" }}
                 className="z-0"
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  maxZoom={19}
                 />
                 
                 {stops.map((stop) => (

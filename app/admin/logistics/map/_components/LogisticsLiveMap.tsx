@@ -525,6 +525,7 @@ export default function LogisticsLiveMap({ initialShipments }: LogisticsLiveMapP
         <MapContainer
           center={validShipmentPoints[0] || defaultCenter}
           zoom={validShipmentPoints.length > 0 ? 11 : 6}
+          maxZoom={16}
           scrollWheelZoom={true}
           className="h-full w-full"
           style={{ background: "#020617" }}

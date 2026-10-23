@@ -217,12 +217,14 @@ export default function DroneMapsPage() {
                   <MapContainer
                     center={[36.5875, 35.9250]}
                     zoom={15}
+                    maxZoom={19}
                     style={{ height: "100%", width: "100%" }}
                     className="z-0"
                   >
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      maxZoom={19}
                     />
                     
                     {currentImage && (

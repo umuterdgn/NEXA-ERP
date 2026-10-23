@@ -98,12 +98,14 @@ export default function GISMap({ projects }: GISMapProps) {
       <MapContainer
         center={[39.0, 35.0]}
         zoom={6}
+        maxZoom={16}
         style={{ height: "100%", width: "100%" }}
         className="z-0"
       >
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           attribution='&copy; <a href="https://www.esri.com/">Esri</a>, DeLorme, HERE, MapmyIndia'
+          maxZoom={16}
         />
 
         {projects.map((project) => (

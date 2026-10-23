@@ -175,6 +175,7 @@ export default function RolloutLeafletMap({
       <MapContainer
         center={defaultCenter}
         zoom={6}
+        maxZoom={16}
         scrollWheelZoom={true}
         className="w-full h-full min-h-[500px] rounded-xl z-0"
         style={{ background: "#020617" }}

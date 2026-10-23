@@ -210,6 +210,7 @@ export default function DispatchMap({
       <MapContainer
         center={defaultCenter}
         zoom={12}
+        maxZoom={19}
         style={{ height: "100%", width: "100%" }}
         className="z-0 h-full w-full"
       >
@@ -217,6 +218,7 @@ export default function DispatchMap({
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
         />
 
         {/* Bounds Controller */}
