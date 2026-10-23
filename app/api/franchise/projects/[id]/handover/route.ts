@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -20,8 +20,8 @@ export async function GET(
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
-    const resolvedParams = await params
-    const projectId = resolvedParams.id
+    const { id } = await params
+    const projectId = id
 
     const project = await prisma.project.findUnique({
       where: { id: projectId },
@@ -55,7 +55,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -63,8 +63,8 @@ export async function POST(
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
-    const resolvedParams = await params
-    const projectId = resolvedParams.id
+    const { id } = await params
+    const projectId = id
     const body = await request.json()
     const { documentType, title, fileUrl } = body
 
