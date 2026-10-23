@@ -43,6 +43,7 @@ import {
   reviewExpenseClaim,
   reviewProgressBilling,
 } from "@/app/actions/approvals"
+import { isEngineerRole, isManagerRole } from "@/lib/roles"
 
 interface CurrentUser {
   id: string
@@ -208,8 +209,8 @@ export default function ApprovalsConsole({
   })
 
   const currentRole = currentUser?.role || "STAFF"
-  const isEngineer = ["STAFF", "ENGINEER"].includes(currentRole)
-  const isManager = ["SITE_MANAGER", "PROJECT_MANAGER", "ADMIN", "SUPER_ADMIN"].includes(currentRole)
+  const isEngineer = isEngineerRole(currentRole)
+  const isManager = isManagerRole(currentRole)
 
   // Calculations
   const pendingProofsCount = workProofs.filter((w) => w.status === "PENDING").length

@@ -10,17 +10,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
-
-// Role helpers
-export function isEngineerRole(role?: string): boolean {
-  if (!role) return false
-  return ["STAFF", "ENGINEER"].includes(role)
-}
-
-export function isManagerRole(role?: string): boolean {
-  if (!role) return false
-  return ["SITE_MANAGER", "PROJECT_MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role)
-}
+import { isEngineerRole, isManagerRole } from "@/lib/roles"
 
 /**
  * Taşeron İş Kanıtı Kademeli Onay Fonksiyonu:
