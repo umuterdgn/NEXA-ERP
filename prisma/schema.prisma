@@ -1033,6 +1033,7 @@ model ProgressBilling {
 
   contract              Contract?              @relation(fields: [contractId], references: [id])
   financialTransactions FinancialTransaction[]
+  stageGates            StageGate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3790,10 +3791,13 @@ model PurchaseRequest {
   bids          SupplierBid[]
   deliveryAppointments DeliveryAppointment[]
   shipmentTrackings    ShipmentTracking[]
-  createdAt     DateTime      @default(now())
+  consolidatedId       String?
+  consolidated         ConsolidatedProcurement? @relation(fields: [consolidatedId], references: [id], onDelete: SetNull)
+  createdAt            DateTime      @default(now())
 
   @@index([projectId])
   @@index([status])
+  @@index([consolidatedId])
 }
 
 model SupplierBid {
@@ -3888,6 +3892,7 @@ model GoodsReceipt {
   waybillNo         String   // İrsaliye Numarası
   receivedById      String   // Teslim alan personel (User ID)
   receivedDate      DateTime @default(now())
+  issues            DeliveryIssue[]
   createdAt         DateTime @default(now())
 
   @@index([purchaseRequestId])
@@ -3937,17 +3942,21 @@ model StageGate {
   id              String    @id @default(cuid())
   projectId       String
   project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  stageName       String    // "KİRALAMA", "AVM_ONAYI", "KABA_YAPI", "İTFAİYE_ONAYI"
-  isRequired      Boolean   @default(true)
-  isApproved      Boolean   @default(false)
-  documentUrl     String?   // İlgili ruhsat veya kontrat belgesi
-  approvedById    String?   // Onaylayan yöneticinin ID'si
-  approvedAt      DateTime?
-  createdAt       DateTime  @default(now())
+  stageName         String           // "KİRALAMA", "AVM_ONAYI", "KABA_YAPI", "İTFAİYE_ONAYI"
+  isRequired        Boolean          @default(true)
+  isApproved        Boolean          @default(false)
+  documentUrl       String?          // İlgili ruhsat veya kontrat belgesi
+  approvedById      String?          // Onaylayan yöneticinin ID'si
+  approvedAt        DateTime?
+  progressBillingId String?
+  progressBilling   ProgressBilling? @relation(fields: [progressBillingId], references: [id], onDelete: SetNull)
+  billingPercentage Float?           // Örn: Bu aşama bitince sözleşmenin %30'u ödenir
+  createdAt         DateTime         @default(now())
 
   @@index([projectId])
   @@index([stageName])
   @@index([isApproved])
+  @@index([progressBillingId])
 }
 
 // Kurumsal Denetim ve Eksik Listesi (Punch List)
@@ -3966,6 +3975,36 @@ model PunchList {
   @@index([projectId])
   @@index([status])
   @@index([deadline])
+}
+
+// ============================================================================
+// KONSOLİDE SATINALMA VE RMA (HASARLI TESLİMAT)
+// ============================================================================
+
+// 2. KONSOLİDE SATINALMA: Farklı mağazaların taleplerini birleştiren üst model
+model ConsolidatedProcurement {
+  id              String            @id @default(cuid())
+  title           String            // Örn: "Kasım Ayı Yeni Açılışlar Mobilya Tedariği"
+  status          String            @default("OPEN")
+  requests        PurchaseRequest[] // Birden fazla şantiyenin talebini buraya bağla
+  createdAt       DateTime          @default(now())
+
+  @@index([status])
+}
+
+// 3. HASARLI TESLİMAT VE İADE (RMA)
+model DeliveryIssue {
+  id              String       @id @default(cuid())
+  goodsReceiptId  String
+  goodsReceipt    GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  issueType       String       // "DAMAGED", "WRONG_ITEM", "MISSING_PARTS"
+  description     String
+  photoUrls       String[]
+  status          String       @default("REPORTED") // REPORTED, REPLACEMENT_SENT, RESOLVED
+  createdAt       DateTime     @default(now())
+
+  @@index([goodsReceiptId])
+  @@index([status])
 }
 
 

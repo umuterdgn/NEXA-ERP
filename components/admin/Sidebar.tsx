@@ -118,11 +118,14 @@ const inspectorMenuItems: MenuItem[] = [
 
 // Franchise / Rollout Menü Listesi (companyType === 'FRANCHISE')
 const franchiseMenuItems: MenuItem[] = [
+  { href: "/admin/franchise/dashboard", label: "AI Risk Radarı & Özet", icon: Bot, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/rollout", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/projects", label: "Mağazalar (Projeler)", icon: Building2, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/procurement/consolidated", label: "Konsolide Satınalma", icon: ShoppingCart, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/procurement/logistics", label: "OFCI Lojistik", icon: Truck, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/logistics/rma", label: "Hasarlı Teslimat (RMA)", icon: AlertTriangle, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
 ]
 
@@ -209,9 +212,12 @@ const menuItems: MenuItem[] = [
   { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "İLETİŞİM & OPERASYON" },
   
   // FRANCHISE & ROLLOUT
+  { href: "/admin/franchise/dashboard", label: "AI Risk Radarı & Özet", icon: Bot, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/rollout", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/procurement/consolidated", label: "Konsolide Satınalma", icon: ShoppingCart, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/logistics/rma", label: "Hasarlı Teslimat (RMA)", icon: AlertTriangle, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
 
   // SİSTEM & AYARLAR

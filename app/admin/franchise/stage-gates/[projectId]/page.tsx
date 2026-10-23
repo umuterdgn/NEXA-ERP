@@ -38,6 +38,8 @@ interface StageGate {
   documentUrl: string | null
   approvedById: string | null
   approvedAt: string | null
+  billingPercentage?: number | null
+  progressBillingId?: string | null
 }
 
 interface ProjectDetail {
@@ -164,7 +166,9 @@ export default function StageGatesProjectPage() {
 
       setStatusMessage({
         text: approve
-          ? `"${gate.stageName}" aşaması başarıyla onaylandı ve sonraki fazın kilidi açıldı!`
+          ? data.createdBillingId
+            ? `"${gate.stageName}" aşaması onaylandı, sonraki faz kilidi açıldı ve %${gate.billingPercentage || 25} hakediş bedeli için otonom taslak hakediş oluşturuldu!`
+            : `"${gate.stageName}" aşaması başarıyla onaylandı ve sonraki fazın kilidi açıldı!`
           : `"${gate.stageName}" onayı geri alındı.`,
         type: "success",
       })
@@ -368,7 +372,7 @@ export default function StageGatesProjectPage() {
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-sm font-bold text-white">{meta.title}</h3>
                         {gate.isApproved ? (
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
@@ -382,6 +386,24 @@ export default function StageGatesProjectPage() {
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-900 text-slate-500 border border-slate-800">
                             KİLİTLİ
                           </span>
+                        )}
+
+                        {gate.billingPercentage && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-950/60 text-amber-400 border border-amber-800">
+                            Hakediş: %{gate.billingPercentage}
+                          </span>
+                        )}
+
+                        {gate.progressBillingId && (
+                          <Link
+                            href="/admin/billing"
+                            className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800 hover:bg-emerald-900 flex items-center gap-1 transition-colors"
+                            title="Otonom oluşturulan taslak hakedişi incele"
+                          >
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                            <span>Hakediş Oluşturuldu</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </Link>
                         )}
                       </div>
                       <p className="text-xs text-slate-400 mt-1">{meta.subtitle}</p>

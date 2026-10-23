@@ -11,11 +11,11 @@ import { auth } from "@/lib/auth"
 export const dynamic = "force-dynamic"
 
 export const DEFAULT_STAGE_GATES = [
-  { stageName: "KİRALAMA", isRequired: true, label: "Kira Kontratı & Alan Tahsisi" },
-  { stageName: "AVM_ONAYI", isRequired: true, label: "AVM Mimari & Teknik Onayı" },
-  { stageName: "KABA_YAPI", isRequired: true, label: "Kaba & İnce Yapı İnşaat İzni" },
-  { stageName: "İTFAİYE_ONAYI", isRequired: true, label: "İtfaiye Yangın & İskan Ruhsatı" },
-  { stageName: "AÇILIŞ", isRequired: true, label: "Merkez Kurumsal Açılış Yetkisi" },
+  { stageName: "KİRALAMA", isRequired: true, label: "Kira Kontratı & Alan Tahsisi", billingPercentage: 15 },
+  { stageName: "AVM_ONAYI", isRequired: true, label: "AVM Mimari & Teknik Onayı", billingPercentage: 20 },
+  { stageName: "KABA_YAPI", isRequired: true, label: "Kaba & İnce Yapı İnşaat İzni", billingPercentage: 35 },
+  { stageName: "İTFAİYE_ONAYI", isRequired: true, label: "İtfaiye Yangın & İskan Ruhsatı", billingPercentage: 20 },
+  { stageName: "AÇILIŞ", isRequired: true, label: "Merkez Kurumsal Açılış Yetkisi", billingPercentage: 10 },
 ]
 
 export async function GET(request: Request) {
@@ -44,6 +44,7 @@ export async function GET(request: Request) {
                 projectId,
                 stageName: item.stageName,
                 isRequired: item.isRequired,
+                billingPercentage: item.billingPercentage,
                 isApproved: false,
               },
             })
@@ -146,6 +147,43 @@ export async function PATCH(request: Request) {
       }
     }
 
+    // OTONOM HAKEDİŞ TETİKLEYİCİSİ
+    let createdBillingId = currentGate.progressBillingId
+
+    if (
+      isApproved === true &&
+      currentGate.billingPercentage &&
+      currentGate.billingPercentage > 0 &&
+      !currentGate.progressBillingId
+    ) {
+      const contract = await prisma.contract.findFirst({
+        where: { projectId: currentGate.projectId },
+        orderBy: { createdAt: "desc" },
+      })
+      const contractAmount = (contract as any)?.totalAmount || 750000
+      const grossAmount = (contractAmount * currentGate.billingPercentage) / 100
+
+      const previousBillingsCount = contract?.id
+        ? await prisma.progressBilling.count({ where: { contractId: contract.id } })
+        : 0
+
+      const newBilling = await prisma.progressBilling.create({
+        data: {
+          contractId: contract?.id || null,
+          billingNumber: previousBillingsCount + 1,
+          period: new Date(),
+          grossAmount,
+          advanceDeduction: 0,
+          penaltyDeduction: 0,
+          retentionDeduction: 0,
+          netPayable: grossAmount,
+          status: "DRAFT",
+        },
+      })
+      createdBillingId = newBilling.id
+      console.log(`✅ [API StageGate] Otonom Hakediş #${newBilling.billingNumber} oluşturuldu (${grossAmount} ₺)`)
+    }
+
     const updated = await prisma.stageGate.update({
       where: { id },
       data: {
@@ -153,10 +191,11 @@ export async function PATCH(request: Request) {
         documentUrl: documentUrl !== undefined ? documentUrl : currentGate.documentUrl,
         approvedById: isApproved ? session.user.id : isApproved === false ? null : currentGate.approvedById,
         approvedAt: isApproved ? new Date() : isApproved === false ? null : currentGate.approvedAt,
+        progressBillingId: createdBillingId,
       },
     })
 
-    return NextResponse.json({ stageGate: updated, success: true })
+    return NextResponse.json({ stageGate: updated, createdBillingId, success: true })
   } catch (error: any) {
     console.error("❌ Stage-Gates PATCH Error:", error)
     return NextResponse.json({ error: error.message || "Aşama güncellenemedi" }, { status: 500 })
