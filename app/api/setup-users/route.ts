@@ -25,6 +25,41 @@ export async function GET() {
         password: hashedPassword
       },
       {
+        email: "lojistik@nexa.com",
+        name: "Satınalma ve Lojistik Müdürü",
+        role: "PROCUREMENT_MANAGER" as const,
+        permissions: ["DASHBOARD", "LOGISTICS", "PROCUREMENT", "INVENTORY"],
+        password: hashedPassword
+      },
+      {
+        email: "koordinator@nexa.com",
+        name: "Proje Koordinatörü",
+        role: "PROJECT_MANAGER" as const,
+        permissions: ["DASHBOARD", "PROJECTS", "APPROVALS", "BUDGET"],
+        password: hashedPassword
+      },
+      {
+        email: "sef@nexa.com",
+        name: "Şantiye Şefi",
+        role: "SITE_MANAGER" as const,
+        permissions: ["DASHBOARD", "PROJECTS", "SITE", "APPROVALS"],
+        password: hashedPassword
+      },
+      {
+        email: "muhendis@nexa.com",
+        name: "Saha Mühendisi",
+        role: "ENGINEER" as const,
+        permissions: ["DASHBOARD", "PROJECTS", "SITE", "WORK_PROOF"],
+        password: hashedPassword
+      },
+      {
+        email: "sofor@nexa.com",
+        name: "Kamyon Şoförü",
+        role: "DRIVER" as const,
+        permissions: ["LOGISTICS", "TRACKING", "DRIVER"],
+        password: hashedPassword
+      },
+      {
         email: "ik@nexa.com",
         name: "İK Müdürü",
         role: "HR_MANAGER" as const,
@@ -43,6 +78,20 @@ export async function GET() {
         name: "Yapı Denetim Patronu",
         role: "INSPECTION_ADMIN" as const,
         permissions: ["DASHBOARD", "INSPECTION", "REPORTS", "QA_QC"],
+        password: hashedPassword
+      },
+      {
+        email: "denetci@nexa.com",
+        name: "Saha Yapı Denetimcisi",
+        role: "INSPECTOR" as const,
+        permissions: ["DASHBOARD", "INSPECTION", "REPORTS", "FIELD_CHECKS"],
+        password: hashedPassword
+      },
+      {
+        email: "personel@nexa.com",
+        name: "Saha Personeli",
+        role: "STAFF" as const,
+        permissions: ["MY_TASKS", "MY_ATTENDANCE", "MY_SALARY"],
         password: hashedPassword
       }
     ]

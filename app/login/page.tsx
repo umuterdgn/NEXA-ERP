@@ -112,27 +112,27 @@ export default function LoginPage() {
     if (demoType === "admin") {
       setLoginMode("contractor");
       setEmail("admin@nexa.com");
-      setPassword("123456");
+      setPassword("demo123");
     } else if (demoType === "site_manager") {
       setLoginMode("contractor");
-      setEmail("sefi@nexa.com");
-      setPassword("123456");
+      setEmail("sef@nexa.com");
+      setPassword("demo123");
     } else if (demoType === "subcontractor") {
       setLoginMode("contractor");
       setEmail("taseron@nexa.com");
-      setPassword("123456");
+      setPassword("demo123");
     } else if (demoType === "worker") {
       setLoginMode("contractor");
       setEmail("personel@nexa.com");
-      setPassword("123456");
+      setPassword("demo123");
     } else if (demoType === "inspector") {
       setLoginMode("inspection");
-      setEmail("denetim@nexa.com");
-      setPassword("123456");
+      setEmail("denetci@nexa.com");
+      setPassword("demo123");
     } else if (demoType === "inspection_admin") {
       setLoginMode("inspection");
-      setEmail("denetim.patron@nexa.com");
-      setPassword("123456");
+      setEmail("denetim@nexa.com");
+      setPassword("demo123");
     }
   };
 

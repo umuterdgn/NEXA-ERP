@@ -71,90 +71,231 @@ async function main() {
   console.log(" Creating demo users for quick login...")
 
   // 1. Admin (Patron)
-  await prisma.user.upsert({
+  const adminUser = await prisma.user.upsert({
     where: { email: "admin@nexa.com" },
     update: {
       password: hashedPassword,
       name: "Admin (Patron)",
       role: UserRole.ADMIN,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
     },
     create: {
       email: "admin@nexa.com",
       password: hashedPassword,
       name: "Admin (Patron)",
       role: UserRole.ADMIN,
+      companyId: contractorCompany.id,
       companyType: CompanyType.MAIN_CONTRACTOR,
       permissions: ["dashboard", "projects", "personnel", "finance", "inventory", "subcontractors", "contracts", "procurement", "admin", "users"]
     }
   })
 
   // 2. İK Müdürü
-  await prisma.user.upsert({
+  const ikUser = await prisma.user.upsert({
     where: { email: "ik@nexa.com" },
     update: {
       password: hashedPassword,
       name: "İK Müdürü",
       role: UserRole.HR_MANAGER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
     },
     create: {
       email: "ik@nexa.com",
       password: hashedPassword,
       name: "İK Müdürü",
       role: UserRole.HR_MANAGER,
+      companyId: contractorCompany.id,
       companyType: CompanyType.MAIN_CONTRACTOR,
       permissions: ["dashboard", "personnel", "hr", "payroll", "attendance", "contracts"]
     }
   })
 
   // 3. Finans Müdürü
-  await prisma.user.upsert({
+  const finansUser = await prisma.user.upsert({
     where: { email: "finans@nexa.com" },
     update: {
       password: hashedPassword,
       name: "Finans Müdürü",
       role: UserRole.FINANCE_MANAGER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
     },
     create: {
       email: "finans@nexa.com",
       password: hashedPassword,
       name: "Finans Müdürü",
       role: UserRole.FINANCE_MANAGER,
+      companyId: contractorCompany.id,
       companyType: CompanyType.MAIN_CONTRACTOR,
       permissions: ["dashboard", "finance", "invoices", "payments", "cashflow", "accounting"]
     }
   })
 
   // 4. Yapı Denetim Patronu
-  await prisma.user.upsert({
+  const denetimUser = await prisma.user.upsert({
     where: { email: "denetim@nexa.com" },
     update: {
       password: hashedPassword,
       name: "Yapı Denetim Patronu",
       role: UserRole.INSPECTION_ADMIN,
+      companyId: inspectionCompany.id,
+      companyType: CompanyType.INSPECTION,
     },
     create: {
       email: "denetim@nexa.com",
       password: hashedPassword,
       name: "Yapı Denetim Patronu",
       role: UserRole.INSPECTION_ADMIN,
+      companyId: inspectionCompany.id,
       companyType: CompanyType.INSPECTION,
       permissions: ["dashboard", "inspection", "reports", "documents", "qa-qc", "isg", "admin"]
     }
   })
 
-  // 5. Saha Personeli
-  await prisma.user.upsert({
+  // 5. Satınalma / Lojistik Müdürü
+  const lojistikUser = await prisma.user.upsert({
+    where: { email: "lojistik@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Satınalma ve Lojistik Müdürü",
+      role: UserRole.PROCUREMENT_MANAGER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+    },
+    create: {
+      email: "lojistik@nexa.com",
+      password: hashedPassword,
+      name: "Satınalma ve Lojistik Müdürü",
+      role: UserRole.PROCUREMENT_MANAGER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["dashboard", "logistics", "procurement", "inventory", "stock", "suppliers", "orders"]
+    }
+  })
+
+  // 6. Proje Koordinatörü (Üst Onay)
+  const koordinatorUser = await prisma.user.upsert({
+    where: { email: "koordinator@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Proje Koordinatörü (Üst Onay)",
+      role: UserRole.PROJECT_MANAGER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+    },
+    create: {
+      email: "koordinator@nexa.com",
+      password: hashedPassword,
+      name: "Proje Koordinatörü (Üst Onay)",
+      role: UserRole.PROJECT_MANAGER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["dashboard", "projects", "approvals", "progress", "budget", "reports", "contracts"]
+    }
+  })
+
+  // 7. Şantiye Şefi (Orta Onay)
+  const sefUser = await prisma.user.upsert({
+    where: { email: "sef@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Şantiye Şefi (Orta Onay)",
+      role: UserRole.SITE_MANAGER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+    },
+    create: {
+      email: "sef@nexa.com",
+      password: hashedPassword,
+      name: "Şantiye Şefi (Orta Onay)",
+      role: UserRole.SITE_MANAGER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["dashboard", "projects", "site", "approvals", "work-orders", "daily-logs", "tasks", "attendance"]
+    }
+  })
+
+  // 8. Saha Mühendisi (İşlemi Başlatan)
+  const muhendisUser = await prisma.user.upsert({
+    where: { email: "muhendis@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Saha Mühendisi (İşlemi Başlatan)",
+      role: UserRole.ENGINEER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+    },
+    create: {
+      email: "muhendis@nexa.com",
+      password: hashedPassword,
+      name: "Saha Mühendisi (İşlemi Başlatan)",
+      role: UserRole.ENGINEER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["dashboard", "projects", "site", "work-proof", "instructions", "quality", "deficiencies"]
+    }
+  })
+
+  // 9. Kamyon Şoförü
+  const soforUser = await prisma.user.upsert({
+    where: { email: "sofor@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Kamyon Şoförü",
+      role: UserRole.DRIVER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+    },
+    create: {
+      email: "sofor@nexa.com",
+      password: hashedPassword,
+      name: "Kamyon Şoförü",
+      role: UserRole.DRIVER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["logistics", "tracking", "driver", "my-deliveries"]
+    }
+  })
+
+  // 10. Saha Yapı Denetimcisi
+  const sahaDenetciUser = await prisma.user.upsert({
+    where: { email: "denetci@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Saha Yapı Denetimcisi",
+      role: UserRole.INSPECTOR,
+      companyId: inspectionCompany.id,
+      companyType: CompanyType.INSPECTION,
+    },
+    create: {
+      email: "denetci@nexa.com",
+      password: hashedPassword,
+      name: "Saha Yapı Denetimcisi",
+      role: UserRole.INSPECTOR,
+      companyId: inspectionCompany.id,
+      companyType: CompanyType.INSPECTION,
+      permissions: ["dashboard", "inspection", "yibf", "field-checks", "reports", "qa-qc"]
+    }
+  })
+
+  // 11. Saha Personeli
+  const personelUser = await prisma.user.upsert({
     where: { email: "personel@nexa.com" },
     update: {
       password: hashedPassword,
       name: "Saha Personeli",
       role: UserRole.STAFF,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
     },
     create: {
       email: "personel@nexa.com",
       password: hashedPassword,
       name: "Saha Personeli",
       role: UserRole.STAFF,
+      companyId: contractorCompany.id,
       companyType: CompanyType.MAIN_CONTRACTOR,
       permissions: ["my-tasks", "my-attendance", "my-salary"]
     }
@@ -164,6 +305,12 @@ async function main() {
   console.log(` Created demo user: ik@nexa.com (İK Müdürü)`)
   console.log(` Created demo user: finans@nexa.com (Finans Müdürü)`)
   console.log(` Created demo user: denetim@nexa.com (Yapı Denetim Patronu)`)
+  console.log(` Created demo user: lojistik@nexa.com (Satınalma / Lojistik Müdürü)`)
+  console.log(` Created demo user: koordinator@nexa.com (Proje Koordinatörü)`)
+  console.log(` Created demo user: sef@nexa.com (Şantiye Şefi)`)
+  console.log(` Created demo user: muhendis@nexa.com (Saha Mühendisi)`)
+  console.log(` Created demo user: sofor@nexa.com (Kamyon Şoförü)`)
+  console.log(` Created demo user: denetci@nexa.com (Saha Yapı Denetimcisi)`)
   console.log(` Created demo user: personel@nexa.com (Saha Personeli)`)
 
   // Patron / Super Admin
@@ -689,7 +836,14 @@ async function main() {
 
   const vadiEvleri = await prisma.project.upsert({
     where: { id: "project-vadi" },
-    update: {},
+    update: {
+      managerId: sefUser.id,
+      projectManagerId: koordinatorUser.id,
+      siteManager: "Şantiye Şefi (sef@nexa.com)",
+      engineer: "Saha Mühendisi (muhendis@nexa.com)",
+      engineers: [muhendisUser.id],
+      companyId: contractorCompany.id,
+    },
     create: {
       id: "project-vadi",
       name: "Vadi Evleri Konut Projesi",
@@ -708,9 +862,11 @@ async function main() {
       mapUrl: "https://maps.google.com",
       startDate: new Date("2024-01-01"),
       endDate: new Date("2026-12-31"),
-      managerId: patron.id,
-      siteManager: "Ahmet Yılmaz",
-      engineer: "Mehmet Demir",
+      managerId: sefUser.id,
+      projectManagerId: koordinatorUser.id,
+      siteManager: "Şantiye Şefi (sef@nexa.com)",
+      engineer: "Saha Mühendisi (muhendis@nexa.com)",
+      engineers: [muhendisUser.id],
       architect: "Ayşe Kaya",
       yibfNo: "YIBF-2024-IST-001",
       healthScore: 85,
@@ -721,6 +877,47 @@ async function main() {
       gpsRadius: 200,
       contractValue: 250000000,
       companyId: contractorCompany.id
+    }
+  })
+
+  // Canlı Lojistik & Sevkiyat (sofor@nexa.com ve lojistik@nexa.com için aktif canlı tır)
+  const purchaseReq = await prisma.purchaseRequest.upsert({
+    where: { id: "req-vadi-c35-beton" },
+    update: {
+      projectId: vadiEvleri.id,
+      materialName: "C35/45 Hazır Beton & Donatı Çeliği",
+      quantity: 120,
+      unit: "m³",
+      status: "OPEN_FOR_BID"
+    },
+    create: {
+      id: "req-vadi-c35-beton",
+      projectId: vadiEvleri.id,
+      materialName: "C35/45 Hazır Beton & Donatı Çeliği",
+      quantity: 120,
+      unit: "m³",
+      status: "OPEN_FOR_BID"
+    }
+  })
+
+  await prisma.shipmentTracking.upsert({
+    where: { trackingCode: "TRK-2026-NEXA" },
+    update: {
+      purchaseRequestId: purchaseReq.id,
+      driverPhone: "+90 532 555 1020",
+      vehiclePlate: "34 NX 2026",
+      status: "ON_THE_WAY",
+      lastLatitude: 41.0125,
+      lastLongitude: 28.8830
+    },
+    create: {
+      trackingCode: "TRK-2026-NEXA",
+      purchaseRequestId: purchaseReq.id,
+      driverPhone: "+90 532 555 1020",
+      vehiclePlate: "34 NX 2026",
+      status: "ON_THE_WAY",
+      lastLatitude: 41.0125,
+      lastLongitude: 28.8830
     }
   })
 
@@ -2373,29 +2570,37 @@ async function main() {
   console.log("════════════════════════════════════════════════════════════════")
   console.log("\n")
   console.log("👑  ADMIN (PATRON):")
-  console.log("   E-posta: admin@nexa.com")
-  console.log("   Şifre:   demo123")
-  console.log("   Rol:     ADMIN")
+  console.log("   E-posta: admin@nexa.com | Şifre: demo123 | Rol: ADMIN")
+  console.log("\n")
+  console.log("📦  SATINALMA / LOJİSTİK MÜDÜRÜ:")
+  console.log("   E-posta: lojistik@nexa.com | Şifre: demo123 | Rol: PROCUREMENT_MANAGER")
+  console.log("\n")
+  console.log("🏗️  PROJE KOORDİNATÖRÜ (ÜST ONAY):")
+  console.log("   E-posta: koordinator@nexa.com | Şifre: demo123 | Rol: PROJECT_MANAGER")
+  console.log("\n")
+  console.log("📋  ŞANTİYE ŞEFİ (ORTA ONAY):")
+  console.log("   E-posta: sef@nexa.com | Şifre: demo123 | Rol: SITE_MANAGER")
+  console.log("\n")
+  console.log("📐  SAHA MÜHENDİSİ (İŞLEMİ BAŞLATAN):")
+  console.log("   E-posta: muhendis@nexa.com | Şifre: demo123 | Rol: ENGINEER")
+  console.log("\n")
+  console.log("🚚  KAMYON ŞOFÖRÜ:")
+  console.log("   E-posta: sofor@nexa.com | Şifre: demo123 | Rol: DRIVER")
   console.log("\n")
   console.log("👥  İK MÜDÜRÜ:")
-  console.log("   E-posta: ik@nexa.com")
-  console.log("   Şifre:   demo123")
-  console.log("   Rol:     HR_MANAGER")
+  console.log("   E-posta: ik@nexa.com | Şifre: demo123 | Rol: HR_MANAGER")
   console.log("\n")
   console.log("💰  FİNANS MÜDÜRÜ:")
-  console.log("   E-posta: finans@nexa.com")
-  console.log("   Şifre:   demo123")
-  console.log("   Rol:     FINANCE_MANAGER")
+  console.log("   E-posta: finans@nexa.com | Şifre: demo123 | Rol: FINANCE_MANAGER")
   console.log("\n")
   console.log("🏛️  YAPI DENETİM PATRONU:")
-  console.log("   E-posta: denetim@nexa.com")
-  console.log("   Şifre:   demo123")
-  console.log("   Rol:     INSPECTION_ADMIN")
+  console.log("   E-posta: denetim@nexa.com | Şifre: demo123 | Rol: INSPECTION_ADMIN")
+  console.log("\n")
+  console.log("🔍  SAHA YAPI DENETİMCİSİ:")
+  console.log("   E-posta: denetci@nexa.com | Şifre: demo123 | Rol: INSPECTOR")
   console.log("\n")
   console.log("👷  SAHA PERSONELİ:")
-  console.log("   E-posta: personel@nexa.com")
-  console.log("   Şifre:   demo123")
-  console.log("   Rol:     STAFF")
+  console.log("   E-posta: personel@nexa.com | Şifre: demo123 | Rol: STAFF")
   console.log("\n")
   console.log("════════════════════════════════════════════════════════════════")
 }
