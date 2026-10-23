@@ -1,37 +1,21 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Admin Lojistik Canlı Haritası Sayfası
+ * Admin Lojistik Canlı Haritası Sayfası (Server Component)
  * Tüm aktif sevkiyatların (ON_THE_WAY) harita üzerinde hareket eden araç ikonlarıyla gösterildiği panel.
  */
 
 import React from "react";
-import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { liveLogisticsCache } from "@/app/api/logistics/ping/route";
 import { ShipmentLiveItem } from "./_components/LogisticsLiveMap";
-import { Truck } from "lucide-react";
+import MapWrapper from "./_components/MapWrapper";
 
 export const metadata: Metadata = {
   title: "Lojistik Canlı Filo Haritası | NEXA ERP",
   description: "Şantiyeye doğru hareket eden tır ve sevkiyatların gerçek zamanlı GPS takip haritası.",
 };
-
-// Dynamic import to prevent SSR window/leaflet document errors
-const LogisticsLiveMap = dynamic(
-  () => import("./_components/LogisticsLiveMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-5rem)] bg-slate-950 text-slate-300">
-        <Truck className="w-12 h-12 text-emerald-400 animate-pulse mb-3" />
-        <h3 className="text-base font-bold text-white">Canlı Filo Haritası Yükleniyor...</h3>
-        <p className="text-xs text-slate-500 mt-1">Leaflet ve GPS motoru başlatılıyor</p>
-      </div>
-    ),
-  }
-);
 
 export default async function AdminLogisticsMapPage() {
   // DB'deki aktif sevkiyatları çek
@@ -83,5 +67,5 @@ export default async function AdminLogisticsMapPage() {
     };
   });
 
-  return <LogisticsLiveMap initialShipments={initialShipments} />;
+  return <MapWrapper shipments={initialShipments} />;
 }
