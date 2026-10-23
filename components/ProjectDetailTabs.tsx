@@ -117,6 +117,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
     { id: "bim", label: "3D BIM Modeli" },
     { id: "drone", label: "🚁 Drone Analizi" },
     { id: "gantt", label: "📅 İş Programı (Gantt)" },
+    { id: "instructions", label: "📋 Saha Talimatları (Kanban)" },
     { id: "dokumanlar", label: "📁 Dokümanlar & Revizyonlar" },
     { id: "denetim", label: "Yapı Denetim Arşivi" },
     { id: "yapi-agaci", label: "🏗️ Yapı Ağacı (Dijital İkiz)" },
@@ -308,7 +309,13 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              if (tab.id === "instructions") {
+                router.push(`/admin/projects/${project.id}/instructions`)
+              } else {
+                setActiveTab(tab.id)
+              }
+            }}
             className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap snap-start ${
               activeTab === tab.id
                 ? "border-blue-500 text-blue-400"

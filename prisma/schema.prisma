@@ -88,6 +88,7 @@ enum UserRole {
   ACCOUNTANT
   HR_STAFF
   PURCHASING_STAFF
+  PROJECT_MANAGER
 }
 
 enum CompanyType {
@@ -192,6 +193,7 @@ model Project {
   endDate                  DateTime?
   managerId                String? // Projeye atanan şantiye şefinin ID'si
   manager                  User?                     @relation("ProjectManager", fields: [managerId], references: [id], onDelete: SetNull)
+  projectManagerId         String? // Şantiye Şefinin (siteManager) üstündeki Koordinatör
   engineers                String[]                  @default([]) // Mühendis ID'leri
   architects               String[]                  @default([]) // Mimar ID'leri
   siteManager              String? // Şantiye Şefi (isim)
@@ -313,6 +315,7 @@ model Project {
   punchLists               PunchList[]
   handoverDocs             HandoverDocument[]
   progressAttachments      ProgressAttachment[]
+  siteInstructions         SiteInstruction[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -2626,6 +2629,10 @@ model WorkProof {
   description     String?
   imageUrl        String // Fotoğraf kanıtı (Upload URL)
   status          ProofStatus @default(PENDING) // PENDING, APPROVED, REJECTED
+  engineerStatus  String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  managerStatus   String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  engineerId      String?     // İlk onayı veren saha mühendisi
+  managerId       String?     // İkinci onayı veren şantiye şefi
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -2635,6 +2642,8 @@ model WorkProof {
   @@index([contractId])
   @@index([subcontractorId])
   @@index([status])
+  @@index([engineerStatus])
+  @@index([managerStatus])
   @@index([createdAt])
 }
 
@@ -2642,6 +2651,28 @@ enum ProofStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// ============================================================================
+// SITE INSTRUCTION (Sahadan Revizyon ve İş Emri)
+// ============================================================================
+
+model SiteInstruction {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id])
+  createdById     String   // Talebi açan (Genelde Saha Mühendisi)
+  subcontractorId String?  // Kime atandığı (İlgili Taşeron)
+  title           String   // Örn: "Mimari Revizyon - A Blok Kapı Genişletmesi"
+  description     String
+  attachments     String[] // Çizim, pafta veya saha fotoğrafları
+  priority        String   @default("NORMAL") // URGENT, NORMAL, LOW
+  status          String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  createdAt       DateTime @default(now())
+
+  @@index([projectId])
+  @@index([status])
+  @@index([priority])
 }
 
 // ============================================================================

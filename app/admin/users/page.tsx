@@ -62,6 +62,11 @@ const ROLE_CONFIG: Record<
     badge: "bg-indigo-950/80 border-indigo-800 text-indigo-300",
     category: "YONETIM",
   },
+  PROJECT_MANAGER: {
+    label: "Proje Müdürü / Koordinatör",
+    badge: "bg-blue-950/80 border-blue-800 text-blue-300",
+    category: "YONETIM",
+  },
   ACCOUNTANT: {
     label: "Muhasebe Personeli",
     badge: "bg-emerald-950/80 border-emerald-800 text-emerald-300",
@@ -708,6 +713,7 @@ function AddUserModal({
 
               <optgroup label="👑 Şirket Yönetimi">
                 <option value="ADMIN">Firma Yöneticisi (ADMIN) - Tam Yetkili</option>
+                <option value="PROJECT_MANAGER">Proje Müdürü / Koordinatör (PROJECT_MANAGER)</option>
                 <option value="SUPER_ADMIN">Süper Yönetici (SUPER_ADMIN)</option>
               </optgroup>
 
