@@ -54,6 +54,7 @@ model User {
   coreSamplesTaken         CoreSample[]
   leaveRequests            LeaveRequest[]
   advanceRequests          AdvanceRequest[]
+  personnelDocuments       PersonnelDocument[]
 
   @@index([companyId])
   @@index([organizationId])
@@ -72,6 +73,7 @@ enum UserRole {
   INSPECTOR
   AUDITOR
   WORKER
+  SUPPLIER
 }
 
 enum CompanyType {
@@ -287,6 +289,7 @@ model Project {
   bimElementMaps           BimElementMap[]
   backgroundJobs           BackgroundJob[]
   dailyAiReports           DailyAiReport[]
+  purchaseRequests         PurchaseRequest[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -580,6 +583,8 @@ model Company {
   workerDocuments        WorkerDocument[]
   eInvoices              EInvoice[]
   subcontractorScore     SubcontractorScore?
+  financialDocuments     FinancialDocument[]
+  supplierBids           SupplierBid[]
 
   @@index([type])
   @@index([organizationId])
@@ -3718,4 +3723,107 @@ model DailyAiReport {
   @@index([projectId])
   @@index([date])
 }
+
+// ============================================================================
+// 1. FİNANS: Çek, Senet ve Teminat Mektupları
+// ============================================================================
+model FinancialDocument {
+  id            String   @id @default(cuid())
+  documentType  String   // "CHECK" (Çek), "PROMISSORY_NOTE" (Senet), "GUARANTEE_LETTER" (Teminat Mektubu)
+  documentNo    String   @unique
+  amount        Float
+  currency      String   @default("TRY")
+  issueDate     DateTime
+  dueDate       DateTime // Vade veya Bitiş Tarihi
+  companyId     String   // Kime verildiği / Kimden alındığı
+  company       Company  @relation(fields: [companyId], references: [id])
+  status        String   @default("PORTFOLIO") // PORTFOLIO, CASHED, RETURNED, BOUNCED
+  createdAt     DateTime @default(now())
+
+  @@index([companyId])
+  @@index([documentType])
+  @@index([dueDate])
+  @@index([status])
+}
+
+// ============================================================================
+// 2. TEDARİK: Satınalma Talebi ve Tedarikçi Teklifleri
+// ============================================================================
+model PurchaseRequest {
+  id            String        @id @default(cuid())
+  projectId     String
+  project       Project       @relation(fields: [projectId], references: [id])
+  materialName  String
+  quantity      Float
+  unit          String
+  status        String        @default("OPEN_FOR_BID") // OPEN_FOR_BID, COMPLETED, CANCELLED
+  bids          SupplierBid[]
+  createdAt     DateTime      @default(now())
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model SupplierBid {
+  id                String          @id @default(cuid())
+  purchaseRequestId String
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
+  supplierId        String          // Company tablosundaki "SUPPLIER" ID'si
+  supplier          Company         @relation(fields: [supplierId], references: [id])
+  unitPrice         Float
+  totalPrice        Float
+  isWinningBid      Boolean         @default(false)
+  notes             String?         @db.Text
+  createdAt         DateTime        @default(now())
+
+  @@index([purchaseRequestId])
+  @@index([supplierId])
+  @@index([isWinningBid])
+}
+
+// ============================================================================
+// 3. İKMAL: Makine Yakıt ve Bakım Takibi
+// ============================================================================
+model EquipmentFuelRecord {
+  id            String   @id @default(cuid())
+  equipmentId   String   // İlgili iş makinesi / araç
+  liters        Float
+  cost          Float
+  odometer      Int      // O anki Kilometre veya Çalışma Saati
+  date          DateTime @default(now())
+
+  @@index([equipmentId])
+  @@index([date])
+}
+
+model EquipmentMaintenance {
+  id              String   @id @default(cuid())
+  equipmentId     String
+  maintenanceType String   // "PERIODIC", "REPAIR", "INSPECTION" (Örn: MMO Vize)
+  cost            Float
+  nextDueDate     DateTime // Bir sonraki bakım tarihi (Risk Radarı İçin)
+  isCompleted     Boolean  @default(false)
+
+  @@index([equipmentId])
+  @@index([nextDueDate])
+  @@index([isCompleted])
+}
+
+// ============================================================================
+// 4. İK: Süreli Evrak ve İSG Alarmı (Personel modeline veya ayrı tabloya)
+// ============================================================================
+model PersonnelDocument {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  docType       String   // "MYK", "HEAVY_MACHINE_LICENSE", "HEALTH_REPORT"
+  issueDate     DateTime
+  expiryDate    DateTime // Bitiş Tarihi
+  isAlertSent   Boolean  @default(false)
+
+  @@index([userId])
+  @@index([expiryDate])
+  @@index([docType])
+}
+
 

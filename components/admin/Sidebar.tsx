@@ -77,7 +77,9 @@ import {
   Activity,
   FileBadge,
   Construction,
-  XCircle
+  XCircle,
+  Landmark,
+  Gavel
 } from "lucide-react"
 
 interface MenuItem {
@@ -120,6 +122,7 @@ const menuItems: MenuItem[] = [
   // İNSAN KAYNAKLARI
   { href: "/admin/personel", label: "Personeller", icon: Users, category: "İNSAN KAYNAKLARI" },
   { href: "/admin/personnel", label: "Personel Takibi", icon: UserCheck, category: "İNSAN KAYNAKLARI" },
+  { href: "/admin/personel/alerts", label: "Süreli Evrak & İSG Alarmı", icon: AlertTriangle, category: "İNSAN KAYNAKLARI" },
   { href: "/admin/attendance", label: "Puantaj & Mesai", icon: Clock, category: "İNSAN KAYNAKLARI" },
   { href: "/admin/payroll", label: "Puantaj & Bordro", icon: Calculator, category: "İNSAN KAYNAKLARI" },
   { href: "/admin/shifts", label: "Vardiya Planlaması", icon: CalendarClock, category: "İNSAN KAYNAKLARI" },
@@ -136,6 +139,7 @@ const menuItems: MenuItem[] = [
   
   // FİNANS & TEDARİK
   { href: "/admin/finance", label: "Kasa & Finans", icon: DollarSign, category: "FİNANS & TEDARİK" },
+  { href: "/admin/finance/documents", label: "Çek / Senet & Teminat", icon: Landmark, category: "FİNANS & TEDARİK" },
   { href: "/admin/inventory", label: "Ambar & Karekod", icon: PackageSearch, category: "FİNANS & TEDARİK" },
   { href: "/admin/equipments", label: "Demirbaş", icon: Wrench, category: "FİNANS & TEDARİK" },
   { href: "/admin/contracts", label: "Sözleşmeler", icon: FileSignature, category: "FİNANS & TEDARİK" },

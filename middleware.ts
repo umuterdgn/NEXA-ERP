@@ -12,6 +12,7 @@ import { authConfig } from "@/lib/auth.config"
 const ROUTE_PROTECTION = {
   "/admin": ["ADMIN", "SUPER_ADMIN", "SITE_MANAGER", "MUHASEBE", "ENGINEER"],
   "/subcontractor": ["SUBCONTRACTOR", "ADMIN", "SUPER_ADMIN"],
+  "/supplier": ["SUPPLIER", "ADMIN", "SUPER_ADMIN"],
   "/personnel": ["STAFF", "WORKER", "SITE_MANAGER", "ENGINEER", "ADMIN", "SUPER_ADMIN"],
   "/dashboard": ["INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
   "/yibf": ["INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
@@ -75,6 +76,12 @@ export default NextAuth(authConfig).auth((req) => {
   if ((isOnLoginPage || pathname === "/") && session) {
     const redirectUrl = req.nextUrl.clone()
 
+    // 0. role === 'SUPPLIER' ➔ /supplier (Tedarikçi Teklif Portalı)
+    if (userRole === "SUPPLIER") {
+      redirectUrl.pathname = "/supplier"
+      return NextResponse.redirect(redirectUrl)
+    }
+
     // 1. role === 'INSPECTOR' (Yapı Denetim) ➔ /dashboard (veya /(inspection)/dashboard)
     if (userRole === "INSPECTOR" || userRole === "AUDITOR") {
       redirectUrl.pathname = "/dashboard"
@@ -116,7 +123,7 @@ export default NextAuth(authConfig).auth((req) => {
 
   // A. WORKER veya STAFF: Admin'e girmeye çalıştığında /personnel'e yönlendir (Admin bug'ı kesin çözümü)
   if (userRole === "STAFF" || userRole === "WORKER") {
-    if (pathname.startsWith("/admin") || pathname.startsWith("/subcontractor") || pathname.startsWith("/dashboard")) {
+    if (pathname.startsWith("/admin") || pathname.startsWith("/subcontractor") || pathname.startsWith("/supplier") || pathname.startsWith("/dashboard")) {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = "/personnel"
       return NextResponse.redirect(redirectUrl)
@@ -125,7 +132,7 @@ export default NextAuth(authConfig).auth((req) => {
 
   // B. SUBCONTRACTOR: Sadece /subcontractor rotalarına erişebilir
   if (userRole === "SUBCONTRACTOR") {
-    if (pathname.startsWith("/admin") || pathname.startsWith("/personnel") || pathname.startsWith("/dashboard")) {
+    if (pathname.startsWith("/admin") || pathname.startsWith("/personnel") || pathname.startsWith("/supplier") || pathname.startsWith("/dashboard")) {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = "/subcontractor"
       return NextResponse.redirect(redirectUrl)
@@ -137,7 +144,21 @@ export default NextAuth(authConfig).auth((req) => {
     }
   }
 
-  // C. INSPECTOR / AUDITOR: Yapı Denetimciler Kasa, Finans, İK, Bordro görmemeli, /dashboard ve denetim modüllerine odaklı kalmalı
+  // C. SUPPLIER: Sadece /supplier rotalarına erişebilir
+  if (userRole === "SUPPLIER") {
+    if (pathname.startsWith("/admin") || pathname.startsWith("/personnel") || pathname.startsWith("/subcontractor") || pathname.startsWith("/dashboard")) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/supplier"
+      return NextResponse.redirect(redirectUrl)
+    }
+    if (!pathname.startsWith("/supplier") && !isOnLoginPage) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/supplier"
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  // D. INSPECTOR / AUDITOR: Yapı Denetimciler Kasa, Finans, İK, Bordro görmemeli, /dashboard ve denetim modüllerine odaklı kalmalı
   if (userRole === "INSPECTOR" || userRole === "AUDITOR") {
     // Yasaklı admin rotaları: finans, muhasebe, ik, bordro, personel, puantaj
     const restrictedAdminPaths = [
@@ -153,14 +174,14 @@ export default NextAuth(authConfig).auth((req) => {
       "/admin/approvals",
       "/admin/food-menu"
     ]
-    if (restrictedAdminPaths.some(p => pathname.startsWith(p)) || pathname === "/admin") {
+    if (restrictedAdminPaths.some(p => pathname.startsWith(p)) || pathname === "/admin" || pathname.startsWith("/supplier")) {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = "/dashboard"
       return NextResponse.redirect(redirectUrl)
     }
   }
 
-  // D. Genel Rol ve Rota Koruması
+  // E. Genel Rol ve Rota Koruması
   const protectedRoute = Object.keys(ROUTE_PROTECTION).find(route => pathname.startsWith(route))
   if (protectedRoute) {
     const allowedRoles = ROUTE_PROTECTION[protectedRoute as keyof typeof ROUTE_PROTECTION]
@@ -171,6 +192,8 @@ export default NextAuth(authConfig).auth((req) => {
         redirectUrl.pathname = "/personnel"
       } else if (userRole === "SUBCONTRACTOR") {
         redirectUrl.pathname = "/subcontractor"
+      } else if (userRole === "SUPPLIER") {
+        redirectUrl.pathname = "/supplier"
       } else if (userRole === "INSPECTOR" || userRole === "AUDITOR") {
         redirectUrl.pathname = "/dashboard"
       } else {
