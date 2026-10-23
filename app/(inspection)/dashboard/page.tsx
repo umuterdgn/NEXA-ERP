@@ -101,7 +101,7 @@ export default function InspectionDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/samples"
+              href="/admin/samples"
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 transition-all hover:border-cyan-400"
             >
               <FlaskConical className="w-4 h-4 text-cyan-400" />

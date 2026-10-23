@@ -174,7 +174,7 @@ export default function IntegrationsSettingsPage() {
 
           <div className="flex items-center gap-3">
             <Link
-              href="/samples"
+              href="/admin/samples"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition-all hover:border-cyan-500/50"
             >
               <span>Karot & Numuneler</span>

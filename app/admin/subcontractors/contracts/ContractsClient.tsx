@@ -9,7 +9,9 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { FileText, Building2, Calendar, DollarSign, Plus, Edit, Trash2, Search, Filter } from "lucide-react"
+import { FileText, Building2, Calendar, DollarSign, Plus, Edit, Trash2, Search, Filter, Key, ShieldCheck, Lock, User, Mail, X } from "lucide-react"
+import { grantSubcontractorAccessAction } from "@/app/actions/subcontractor-auth"
+import { toast } from "react-hot-toast"
 
 interface ContractsClientProps {
   initialContracts: any[]
@@ -21,6 +23,15 @@ export default function ContractsClient({ initialContracts, subcontractors, proj
   const router = useRouter()
   const [contracts, setContracts] = useState(initialContracts)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showGrantModal, setShowGrantModal] = useState(false)
+  const [selectedSubForGrant, setSelectedSubForGrant] = useState<{ id: string; name: string } | null>(null)
+  const [grantFormData, setGrantFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    subcontractorId: ""
+  })
+  const [isGranting, setIsGranting] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [formData, setFormData] = useState({
     title: "",
@@ -114,6 +125,37 @@ export default function ContractsClient({ initialContracts, subcontractors, proj
     })
   }
 
+  const handleGrantSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!grantFormData.subcontractorId || !grantFormData.email || !grantFormData.password) {
+      toast.error("Lütfen tüm alanları doldurunuz.")
+      return
+    }
+
+    setIsGranting(true)
+    try {
+      const res = await grantSubcontractorAccessAction({
+        subcontractorId: grantFormData.subcontractorId,
+        name: grantFormData.name,
+        email: grantFormData.email,
+        password: grantFormData.password,
+      })
+
+      if (res.success) {
+        toast.success(res.message || "Giriş yetkisi verildi!", { icon: "🔑" })
+        setShowGrantModal(false)
+        setGrantFormData({ name: "", email: "", password: "", subcontractorId: "" })
+        router.refresh()
+      } else {
+        toast.error(res.error || "Giriş yetkisi verilemedi.")
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "İşlem sırasında bir hata oluştu.")
+    } finally {
+      setIsGranting(false)
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -122,18 +164,37 @@ export default function ContractsClient({ initialContracts, subcontractors, proj
       className="p-6 space-y-6"
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Taşeron Sözleşmeleri</h1>
-          <p className="text-slate-400 mt-1">Taşeron sözleşmelerini yönetin ve izleyin</p>
+          <h1 className="text-2xl font-bold text-white">Taşeron Sözleşmeleri & Yetkilendirme</h1>
+          <p className="text-slate-400 mt-1">Taşeron sözleşmelerini yönetin, alt yüklenicilere sisteme giriş yetkisi tanımlayın</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Yeni Sözleşme
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              const defaultSub = subcontractors[0] || null
+              setSelectedSubForGrant(defaultSub)
+              setGrantFormData({
+                name: defaultSub?.name || "",
+                email: "",
+                password: "",
+                subcontractorId: defaultSub?.id || ""
+              })
+              setShowGrantModal(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-lg transition-all shadow-lg shadow-orange-600/20 text-sm font-semibold cursor-pointer border border-orange-500/30"
+          >
+            <Key className="w-4 h-4 text-orange-200" />
+            <span>Giriş Yetkisi Ver</span>
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm font-semibold cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Yeni Sözleşme</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Kartları */}
@@ -310,15 +371,36 @@ export default function ContractsClient({ initialContracts, subcontractors, proj
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => {
+                            const sub = subcontractors.find(s => s.id === contract.subcontractorId) || {
+                              id: contract.subcontractorId,
+                              name: contract.subcontractor?.name || "Taşeron"
+                            }
+                            setSelectedSubForGrant(sub)
+                            setGrantFormData({
+                              name: contract.subcontractor?.name || "",
+                              email: "",
+                              password: "",
+                              subcontractorId: sub.id
+                            })
+                            setShowGrantModal(true)
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-lg text-xs font-semibold transition-all hover:scale-105 cursor-pointer shadow-sm"
+                          title="Taşeron Yetkilisine Sisteme Giriş İzni Tanımla"
+                        >
+                          <Key className="w-3.5 h-3.5 text-orange-400" />
+                          <span>Giriş Yetkisi Ver</span>
+                        </button>
+                        <button
                           onClick={() => router.push(`/admin/subcontractors/contracts/${contract.id}`)}
-                          className="text-blue-400 hover:text-blue-300 transition-colors"
-                          title="Detay"
+                          className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                          title="Sözleşme Detayı"
                         >
                           <FileText className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(contract.id)}
-                          className="text-red-400 hover:text-red-300 transition-colors"
+                          className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                           title="Sil"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -470,6 +552,143 @@ export default function ContractsClient({ initialContracts, subcontractors, proj
             </div>
           </motion.div>
         </motion.div>
+      )}
+
+      {/* Giriş Yetkisi Ver Modal (Taşeron Hesabı Oluşturma) */}
+      {showGrantModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+          >
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-orange-950/60 to-slate-900 border-b border-slate-800 p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Taşerona Giriş Yetkisi Ver</h3>
+                  <p className="text-xs text-orange-400">Taşeron Portalı Kullanıcı Hesabı</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGrantModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleGrantSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                  Taşeron Firma *
+                </label>
+                <select
+                  value={grantFormData.subcontractorId}
+                  onChange={(e) => {
+                    const selected = subcontractors.find(s => s.id === e.target.value)
+                    setGrantFormData({
+                      ...grantFormData,
+                      subcontractorId: e.target.value,
+                      name: selected ? selected.name : grantFormData.name
+                    })
+                  }}
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                  required
+                >
+                  <option value="">Taşeron Seçiniz...</option>
+                  {subcontractors.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                  Yetkili Kişi / Firma Adı
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    value={grantFormData.name}
+                    onChange={(e) => setGrantFormData({ ...grantFormData, name: e.target.value })}
+                    placeholder="Örn: Yılmaz İnşaat Yetkilisi"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                  Giriş E-postası *
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="email"
+                    value={grantFormData.email}
+                    onChange={(e) => setGrantFormData({ ...grantFormData, email: e.target.value })}
+                    placeholder="taseron@firma.com"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                  Giriş Şifresi *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="password"
+                    value={grantFormData.password}
+                    onChange={(e) => setGrantFormData({ ...grantFormData, password: e.target.value })}
+                    placeholder="En az 6 karakter"
+                    minLength={6}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Role Indicator */}
+              <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex items-center justify-between text-xs">
+                <span className="text-slate-400">Atanacak Rol & Portal:</span>
+                <span className="font-semibold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                  SUBCONTRACTOR (/subcontractor)
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowGrantModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                  disabled={isGranting}
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  disabled={isGranting}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-orange-600/30 disabled:opacity-50 cursor-pointer"
+                >
+                  {isGranting ? "Oluşturuluyor..." : "Yetkiyi Tanımla"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
       )}
     </motion.div>
   )

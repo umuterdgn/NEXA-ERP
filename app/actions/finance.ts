@@ -33,9 +33,9 @@ export interface ProgressPaymentCalculationResult {
  * İnşaat Muhasebesine Özel Hakediş Hesaplama Motoru:
  * Formül: Net Hakediş = Toplam İmalat Bedeli - (BIM Kusur Cezaları + %5 Teminat Kesintisi + Verilen Avans)
  */
-export function calculateProgressPaymentBreakdown(
+export async function calculateProgressPaymentBreakdown(
   input: ProgressPaymentCalculationInput
-): ProgressPaymentCalculationResult {
+): Promise<ProgressPaymentCalculationResult> {
   const grossAmount = Math.max(0, Number(input.grossAmount) || 0)
   const defectPenalties = Math.max(0, Number(input.defectPenalties) || 0)
   const retentionRate = typeof input.retentionRate === "number" ? input.retentionRate : 0.05
@@ -129,7 +129,7 @@ export async function getProgressPaymentDetail(id: string) {
       }
     }
 
-    const breakdown = calculateProgressPaymentBreakdown({
+    const breakdown = await calculateProgressPaymentBreakdown({
       grossAmount,
       defectPenalties: calculatedPenalties,
       retentionRate: payment.retentionRate ?? 0.05,
@@ -178,7 +178,7 @@ export async function approveProgressPaymentAction(
     const retentionRate = options?.retentionRate ?? payment.retentionRate ?? 0.05
     const advanceDeduction = options?.advanceDeduction ?? payment.advanceDeduction ?? 0
 
-    const breakdown = calculateProgressPaymentBreakdown({
+    const breakdown = await calculateProgressPaymentBreakdown({
       grossAmount,
       defectPenalties,
       retentionRate,

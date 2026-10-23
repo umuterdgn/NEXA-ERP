@@ -95,6 +95,23 @@ const subcontractorMenuItems: MenuItem[] = [
   { href: "/admin/subcontractor-inspections", label: "İş Kanıtı / Hakediş", icon: ShieldCheck, category: "TAŞERON PORTALI" },
 ]
 
+// Yapı Denetim Yalıtılmış Menü Listesi (Kasa, Finans, İK, Bordro, Hakediş GİZLENİR!)
+const inspectorMenuItems: MenuItem[] = [
+  { href: "/dashboard", label: "Yapı Denetim Dashboard", icon: LayoutDashboard, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/projects", label: "Denetlenen Yapılar", icon: Building2, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/samples", label: "Karot / Numune Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
+  { href: "/yibf", label: "Bakanlık e-YİBF Sistemi", icon: Building2, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: FileCheck, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/qa-qc/materials", label: "Malzeme Onayları (QA)", icon: CheckSquare, category: "KALİTE GÜVENCE (QA/QC)" },
+  { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: XCircle, category: "KALİTE GÜVENCE (QA/QC)" },
+  { href: "/admin/deficiencies", label: "Saha Eksiklikleri", icon: AlertTriangle, category: "KALİTE GÜVENCE (QA/QC)" },
+  { href: "/map", label: "Denetim Haritası", icon: Map, category: "SAHA & RAPORLAMA" },
+  { href: "/dispatch", label: "Mühendis Görev Dağıtımı", icon: Users, category: "SAHA & RAPORLAMA" },
+  { href: "/admin/reports", label: "Saha Denetim Raporları", icon: ClipboardList, category: "SAHA & RAPORLAMA" },
+]
+
 const menuItems: MenuItem[] = [
   // ANA MENÜ
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, category: "ANA MENÜ" },
@@ -137,7 +154,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/forms/builder", label: "Dinamik Form Oluşturucu", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", icon: FileWarning, category: "YAPI DENETİM & KONTROL" },
-  { href: "/samples", label: "Karot & Numune QR Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/samples", label: "Numune & Karot Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/attachment", label: "Ataşman & Delil", icon: Paperclip, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", icon: Archive, category: "YAPI DENETİM & KONTROL" },
@@ -230,7 +247,12 @@ export default function AdminSidebar({
 
   const userRole = session?.user?.role
   const isSubcontractor = (userRole as string) === "SUBCONTRACTOR"
-  const rawMenuItems = isSubcontractor ? subcontractorMenuItems : menuItems
+  const isInspector = (userRole as string) === "INSPECTOR" || (userRole as string) === "AUDITOR"
+  const rawMenuItems = isSubcontractor 
+    ? subcontractorMenuItems 
+    : isInspector 
+    ? inspectorMenuItems 
+    : menuItems
   const effectiveMenuItems = rawMenuItems.map((item) => {
     if (item.label === "Keşif & Metraj (BoQ)") {
       return { ...item, href: boqHref }

@@ -77,7 +77,14 @@ export default function AdminUsersPage() {
                       ? "bg-purple-900/50 text-purple-400"
                       : "bg-blue-900/50 text-blue-400"
                   }`}>
-                    {user.role === "ADMIN" ? "Admin" : "Personel"}
+                    {user.role === "SUPER_ADMIN" ? "Süper Admin" :
+                     user.role === "ADMIN" ? "Yönetici" :
+                     user.role === "SITE_MANAGER" ? "Şantiye Şefi" :
+                     user.role === "SUBCONTRACTOR" ? "Taşeron" :
+                     user.role === "INSPECTOR" ? "Yapı Denetçi" :
+                     user.role === "WORKER" ? "Saha İşçisi" :
+                     user.role === "ENGINEER" ? "Mühendis" :
+                     user.role === "MUHASEBE" ? "Muhasebe" : "Personel"}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-400">
@@ -275,9 +282,14 @@ function UserModal({ user, onClose, onSave }: any) {
                 className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 disabled={formData.isSuperAdmin}
               >
+                <option value="SITE_MANAGER">Şantiye Şefi</option>
                 <option value="STAFF">Personel</option>
+                <option value="WORKER">Saha Çalışanı</option>
+                <option value="SUBCONTRACTOR">Taşeron</option>
+                <option value="INSPECTOR">Yapı Denetim</option>
                 <option value="ADMIN">Admin</option>
-                <option value="SITE_MANAGER">Şantiye Yöneticisi</option>
+                <option value="AUDITOR">Denetçi</option>
+                <option value="ENGINEER">Mühendis</option>
                 <option value="MUHASEBE">Muhasebe</option>
               </select>
             </div>
