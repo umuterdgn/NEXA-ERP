@@ -162,13 +162,18 @@ export default function LogisticsLiveMap({ initialShipments }: LogisticsLiveMapP
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [tileMode, setTileMode] = useState<"dark" | "osm">("dark");
 
-  // 1. Canlı 5 Saniyede Bir Polling (In-Memory Ping'leri Merkeze Çek)
+  // 1. Canlı 5 Saniyede Bir Polling (Aktif Filo API'sinden Koordinatları Çek)
   const fetchLiveShipments = async () => {
     try {
       setIsRefreshing(true);
-      const res = await fetch("/api/logistics/ping");
+      const res = await fetch("/api/logistics/active");
+      if (!res.ok) {
+        return;
+      }
       const data = await res.json();
-      if (data.success && Array.isArray(data.shipments)) {
+      if (Array.isArray(data)) {
+        setShipments(data);
+      } else if (data && Array.isArray(data.shipments)) {
         setShipments(data.shipments);
       }
     } catch (err) {

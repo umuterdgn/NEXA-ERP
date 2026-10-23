@@ -83,9 +83,6 @@ export async function GET() {
     return NextResponse.json(projectsWithRisk);
   } catch (error) {
     console.error("Error fetching projects with risk:", error);
-    return NextResponse.json(
-      { error: "Projeler getirilirken hata oluştu" },
-      { status: 500 }
-    );
+    return NextResponse.json([]);
   }
 }

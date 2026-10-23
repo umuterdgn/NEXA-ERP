@@ -62,49 +62,97 @@ async function main() {
   // ============================================================================
   console.log(" Creating users and personnel...")
 
-  const hashedPassword = await bcrypt.hash("admin123", 10)
-  const demoPassword = await bcrypt.hash("123456", 10)
+  const hashedPassword = await bcrypt.hash("demo123", 10)
+  const demoPassword = hashedPassword
 
   // ============================================================================
-  // DEMO KULLANICILAR (Quick Login için)
+  // DEMO KULLANICILAR (Quick Login / Demo Giriş)
   // ============================================================================
   console.log(" Creating demo users for quick login...")
 
-  // Müteahhit Yöneticisi
+  // 1. Admin (Patron)
   await prisma.user.upsert({
     where: { email: "admin@nexa.com" },
-    update: {},
+    update: {
+      password: hashedPassword,
+      name: "Admin (Patron)",
+      role: UserRole.ADMIN,
+    },
     create: {
       email: "admin@nexa.com",
-      password: demoPassword,
-      name: "Müteahhit Yöneticisi",
+      password: hashedPassword,
+      name: "Admin (Patron)",
       role: UserRole.ADMIN,
       companyType: CompanyType.MAIN_CONTRACTOR,
-      permissions: ["dashboard", "projects", "personnel", "finance", "inventory", "subcontractors", "contracts", "procurement"]
+      permissions: ["dashboard", "projects", "personnel", "finance", "inventory", "subcontractors", "contracts", "procurement", "admin", "users"]
     }
   })
 
-  // Yapı Denetim Yöneticisi
+  // 2. İK Müdürü
+  await prisma.user.upsert({
+    where: { email: "ik@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "İK Müdürü",
+      role: UserRole.HR_MANAGER,
+    },
+    create: {
+      email: "ik@nexa.com",
+      password: hashedPassword,
+      name: "İK Müdürü",
+      role: UserRole.HR_MANAGER,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["dashboard", "personnel", "hr", "payroll", "attendance", "contracts"]
+    }
+  })
+
+  // 3. Finans Müdürü
+  await prisma.user.upsert({
+    where: { email: "finans@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Finans Müdürü",
+      role: UserRole.FINANCE_MANAGER,
+    },
+    create: {
+      email: "finans@nexa.com",
+      password: hashedPassword,
+      name: "Finans Müdürü",
+      role: UserRole.FINANCE_MANAGER,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["dashboard", "finance", "invoices", "payments", "cashflow", "accounting"]
+    }
+  })
+
+  // 4. Yapı Denetim Patronu
   await prisma.user.upsert({
     where: { email: "denetim@nexa.com" },
-    update: {},
+    update: {
+      password: hashedPassword,
+      name: "Yapı Denetim Patronu",
+      role: UserRole.INSPECTION_ADMIN,
+    },
     create: {
       email: "denetim@nexa.com",
-      password: demoPassword,
-      name: "Yapı Denetim Yöneticisi",
-      role: UserRole.ADMIN,
+      password: hashedPassword,
+      name: "Yapı Denetim Patronu",
+      role: UserRole.INSPECTION_ADMIN,
       companyType: CompanyType.INSPECTION,
-      permissions: ["dashboard", "inspection", "reports", "documents", "qa-qc", "isg"]
+      permissions: ["dashboard", "inspection", "reports", "documents", "qa-qc", "isg", "admin"]
     }
   })
 
-  // Saha Personeli
+  // 5. Saha Personeli
   await prisma.user.upsert({
     where: { email: "personel@nexa.com" },
-    update: {},
+    update: {
+      password: hashedPassword,
+      name: "Saha Personeli",
+      role: UserRole.STAFF,
+    },
     create: {
       email: "personel@nexa.com",
-      password: demoPassword,
+      password: hashedPassword,
       name: "Saha Personeli",
       role: UserRole.STAFF,
       companyType: CompanyType.MAIN_CONTRACTOR,
@@ -112,8 +160,10 @@ async function main() {
     }
   })
 
-  console.log(` Created demo user: admin@nexa.com (Müteahhit Yöneticisi)`)
-  console.log(` Created demo user: denetim@nexa.com (Yapı Denetim Yöneticisi)`)
+  console.log(` Created demo user: admin@nexa.com (Admin - Patron)`)
+  console.log(` Created demo user: ik@nexa.com (İK Müdürü)`)
+  console.log(` Created demo user: finans@nexa.com (Finans Müdürü)`)
+  console.log(` Created demo user: denetim@nexa.com (Yapı Denetim Patronu)`)
   console.log(` Created demo user: personel@nexa.com (Saha Personeli)`)
 
   // Patron / Super Admin
@@ -2319,23 +2369,33 @@ async function main() {
 
   console.log("\n")
   console.log("════════════════════════════════════════════════════════════════")
-  console.log("                    GİRİŞ BİLGİLERİ (LOGIN CREDENTIALS)")
+  console.log("          DEMO KULLANICI GİRİŞ BİLGİLERİ (DEMO CREDENTIALS)     ")
   console.log("════════════════════════════════════════════════════════════════")
   console.log("\n")
-  console.log("🏗️  MÜTEAHHİT GİRİŞİ (MAIN CONTRACTOR):")
-  console.log("   E-posta: patron@mahirbakay.com")
-  console.log("   Şifre:   admin123")
-  console.log("   Rol:     Super Admin")
+  console.log("👑  ADMIN (PATRON):")
+  console.log("   E-posta: admin@nexa.com")
+  console.log("   Şifre:   demo123")
+  console.log("   Rol:     ADMIN")
   console.log("\n")
-  console.log("🏛️  YAPI DENETİM GİRİŞİ (INSPECTION):")
-  console.log("   E-posta: ahmet.yilmaz@mahirbakay.com")
-  console.log("   Şifre:   admin123")
-  console.log("   Rol:     Denetçi (Engineer)")
+  console.log("👥  İK MÜDÜRÜ:")
+  console.log("   E-posta: ik@nexa.com")
+  console.log("   Şifre:   demo123")
+  console.log("   Rol:     HR_MANAGER")
   console.log("\n")
-  console.log("👷  KONTROL ELEMANI GİRİŞİ:")
-  console.log("   E-posta: ali.ozturk@mahirbakay.com")
-  console.log("   Şifre:   admin123")
-  console.log("   Rol:     Kontrol Elemanı (Staff)")
+  console.log("💰  FİNANS MÜDÜRÜ:")
+  console.log("   E-posta: finans@nexa.com")
+  console.log("   Şifre:   demo123")
+  console.log("   Rol:     FINANCE_MANAGER")
+  console.log("\n")
+  console.log("🏛️  YAPI DENETİM PATRONU:")
+  console.log("   E-posta: denetim@nexa.com")
+  console.log("   Şifre:   demo123")
+  console.log("   Rol:     INSPECTION_ADMIN")
+  console.log("\n")
+  console.log("👷  SAHA PERSONELİ:")
+  console.log("   E-posta: personel@nexa.com")
+  console.log("   Şifre:   demo123")
+  console.log("   Rol:     STAFF")
   console.log("\n")
   console.log("════════════════════════════════════════════════════════════════")
 }

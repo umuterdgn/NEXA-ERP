@@ -12,30 +12,37 @@ const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    // Hash the default password (123456)
-    const hashedPassword = await bcrypt.hash("123456", 10)
+    // Hash the default password (demo123)
+    const hashedPassword = await bcrypt.hash("demo123", 10)
 
     // Create or update demo users using upsert
     const demoUsers = [
       {
         email: "admin@nexa.com",
-        name: "Patron Demo",
+        name: "Admin (Patron)",
         role: "ADMIN" as const,
-        permissions: ["DASHBOARD", "PERSONNEL", "PROJECTS", "ANALYTICS"],
+        permissions: ["DASHBOARD", "PERSONNEL", "PROJECTS", "ANALYTICS", "ADMIN"],
         password: hashedPassword
       },
       {
-        email: "site@nexa.com",
-        name: "Şantiye Şefi",
-        role: "SITE_MANAGER" as const,
-        permissions: ["DASHBOARD", "PERSONNEL", "PROJECTS"],
+        email: "ik@nexa.com",
+        name: "İK Müdürü",
+        role: "HR_MANAGER" as const,
+        permissions: ["DASHBOARD", "PERSONNEL", "HR", "PAYROLL"],
         password: hashedPassword
       },
       {
-        email: "contractor@nexa.com",
-        name: "Müteahhit Demo",
-        role: "CLIENT" as const,
-        permissions: ["DASHBOARD", "PROJECTS"],
+        email: "finans@nexa.com",
+        name: "Finans Müdürü",
+        role: "FINANCE_MANAGER" as const,
+        permissions: ["DASHBOARD", "FINANCE", "INVOICES", "PAYMENTS"],
+        password: hashedPassword
+      },
+      {
+        email: "denetim@nexa.com",
+        name: "Yapı Denetim Patronu",
+        role: "INSPECTION_ADMIN" as const,
+        permissions: ["DASHBOARD", "INSPECTION", "REPORTS", "QA_QC"],
         password: hashedPassword
       }
     ]

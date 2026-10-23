@@ -18,54 +18,59 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminLogisticsMapPage() {
-  // DB'deki aktif sevkiyatları çek
-  const dbShipments = await prisma.shipmentTracking.findMany({
-    where: {
-      status: {
-        in: ["PREPARING", "ON_THE_WAY", "ARRIVED"],
+  try {
+    // DB'deki aktif sevkiyatları çek
+    const dbShipments = await prisma.shipmentTracking.findMany({
+      where: {
+        status: {
+          in: ["PREPARING", "ON_THE_WAY", "ARRIVED"],
+        },
       },
-    },
-    include: {
-      purchaseRequest: {
-        include: {
-          project: {
-            select: {
-              id: true,
-              name: true,
-              city: true,
-              district: true,
-              location: true,
-              latitude: true,
-              longitude: true,
+      include: {
+        purchaseRequest: {
+          include: {
+            project: {
+              select: {
+                id: true,
+                name: true,
+                city: true,
+                district: true,
+                location: true,
+                latitude: true,
+                longitude: true,
+              },
             },
           },
         },
       },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+      orderBy: { updatedAt: "desc" },
+    });
 
-  // Bellekteki (In-Memory) canlı koordinatlarla zenginleştir
-  const initialShipments: ShipmentLiveItem[] = dbShipments.map((s) => {
-    const live = liveLogisticsCache.get(s.trackingCode);
-    return {
-      id: s.id,
-      trackingCode: s.trackingCode,
-      vehiclePlate: s.vehiclePlate,
-      driverPhone: s.driverPhone,
-      status: live?.status ?? s.status,
-      latitude: live?.latitude ?? s.lastLatitude,
-      longitude: live?.longitude ?? s.lastLongitude,
-      speed: live?.speed ?? null,
-      heading: live?.heading ?? null,
-      updatedAt: live?.updatedAt ?? s.updatedAt.toISOString(),
-      materialName: s.purchaseRequest?.materialName || "İnşaat Malzemesi",
-      quantity: s.purchaseRequest?.quantity || 0,
-      unit: s.purchaseRequest?.unit || "Birim",
-      project: s.purchaseRequest?.project || null,
-      isLive: !!live,
-    };
-  });
+    // Bellekteki (In-Memory) canlı koordinatlarla zenginleştir
+    const initialShipments: ShipmentLiveItem[] = (dbShipments || []).map((s) => {
+      const live = liveLogisticsCache.get(s.trackingCode);
+      return {
+        id: s.id,
+        trackingCode: s.trackingCode,
+        vehiclePlate: s.vehiclePlate,
+        driverPhone: s.driverPhone,
+        status: live?.status ?? s.status,
+        latitude: live?.latitude ?? s.lastLatitude,
+        longitude: live?.longitude ?? s.lastLongitude,
+        speed: live?.speed ?? null,
+        heading: live?.heading ?? null,
+        updatedAt: live?.updatedAt ?? s.updatedAt.toISOString(),
+        materialName: s.purchaseRequest?.materialName || "İnşaat Malzemesi",
+        quantity: s.purchaseRequest?.quantity || 0,
+        unit: s.purchaseRequest?.unit || "Birim",
+        project: s.purchaseRequest?.project || null,
+        isLive: !!live,
+      };
+    });
 
-  return <MapWrapper shipments={initialShipments} />;
+    return <MapWrapper shipments={initialShipments} />;
+  } catch (error) {
+    console.error("Lojistik haritası başlangıç verisi çekilemedi:", error);
+    return <MapWrapper shipments={[]} />;
+  }
 }
