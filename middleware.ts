@@ -10,7 +10,18 @@ import { authConfig } from "@/lib/auth.config"
 
 // Define role-based access control rules
 const ROUTE_PROTECTION = {
-  "/admin": ["ADMIN", "SUPER_ADMIN", "SITE_MANAGER", "MUHASEBE", "ENGINEER"],
+  "/admin": [
+    "ADMIN",
+    "SUPER_ADMIN",
+    "SITE_MANAGER",
+    "MUHASEBE",
+    "ENGINEER",
+    "HR_MANAGER",
+    "FINANCE_MANAGER",
+    "PROCUREMENT_MANAGER",
+    "EQUIPMENT_MANAGER",
+    "ISG_EXPERT"
+  ],
   "/subcontractor": ["SUBCONTRACTOR", "ADMIN", "SUPER_ADMIN"],
   "/supplier": ["SUPPLIER", "ADMIN", "SUPER_ADMIN"],
   "/personnel": ["STAFF", "WORKER", "SITE_MANAGER", "ENGINEER", "ADMIN", "SUPER_ADMIN"],
@@ -100,13 +111,35 @@ export default NextAuth(authConfig).auth((req) => {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // 4. role === 'SITE_MANAGER' ➔ /admin (Şantiye Şefi)
+    // 4. Departman Bazlı Manager Yönlendirmeleri
+    if (userRole === "HR_MANAGER") {
+      redirectUrl.pathname = "/admin/personel"
+      return NextResponse.redirect(redirectUrl)
+    }
+    if (userRole === "FINANCE_MANAGER") {
+      redirectUrl.pathname = "/admin/finance"
+      return NextResponse.redirect(redirectUrl)
+    }
+    if (userRole === "PROCUREMENT_MANAGER") {
+      redirectUrl.pathname = "/admin/procurement"
+      return NextResponse.redirect(redirectUrl)
+    }
+    if (userRole === "EQUIPMENT_MANAGER") {
+      redirectUrl.pathname = "/admin/equipments"
+      return NextResponse.redirect(redirectUrl)
+    }
+    if (userRole === "ISG_EXPERT") {
+      redirectUrl.pathname = "/admin/personel/alerts"
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // 5. role === 'SITE_MANAGER' ➔ /admin (Şantiye Şefi)
     if (userRole === "SITE_MANAGER") {
       redirectUrl.pathname = "/admin"
       return NextResponse.redirect(redirectUrl)
     }
 
-    // 5. role === 'ADMIN' veya 'SUPER_ADMIN' ➔ /admin
+    // 6. role === 'ADMIN' veya 'SUPER_ADMIN' ➔ /admin
     redirectUrl.pathname = "/admin"
     return NextResponse.redirect(redirectUrl)
   }
@@ -177,6 +210,101 @@ export default NextAuth(authConfig).auth((req) => {
     if (restrictedAdminPaths.some(p => pathname.startsWith(p)) || pathname === "/admin" || pathname.startsWith("/supplier")) {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = "/dashboard"
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  // E. DEPARTMAN BAZLI YALITIM (HR_MANAGER, FINANCE_MANAGER, PROCUREMENT_MANAGER, EQUIPMENT_MANAGER, ISG_EXPERT)
+  if (userRole === "HR_MANAGER") {
+    const hrRestricted = [
+      "/admin/finance",
+      "/admin/billing",
+      "/admin/progress-payments",
+      "/admin/procurement",
+      "/admin/equipments",
+      "/admin/inventory",
+      "/admin/subcontractors/contracts",
+      "/admin/subcontractors/deductions",
+      "/admin/bim",
+      "/admin/samples",
+      "/admin/forms",
+    ]
+    if (hrRestricted.some((p) => pathname.startsWith(p))) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/admin/personel"
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  if (userRole === "FINANCE_MANAGER") {
+    const finRestricted = [
+      "/admin/personel",
+      "/admin/personnel",
+      "/admin/attendance",
+      "/admin/payroll",
+      "/admin/shifts",
+      "/admin/food-menu",
+      "/admin/forms",
+      "/admin/samples",
+      "/admin/qa-qc",
+      "/admin/deficiencies",
+    ]
+    if (finRestricted.some((p) => pathname.startsWith(p))) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/admin/finance"
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  if (userRole === "PROCUREMENT_MANAGER") {
+    const procRestricted = [
+      "/admin/personel",
+      "/admin/personnel",
+      "/admin/attendance",
+      "/admin/payroll",
+      "/admin/shifts",
+      "/admin/food-menu",
+      "/admin/billing",
+      "/admin/progress-payments",
+      "/admin/finance/documents",
+    ]
+    if (procRestricted.some((p) => pathname.startsWith(p))) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/admin/procurement"
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  if (userRole === "EQUIPMENT_MANAGER") {
+    const equipRestricted = [
+      "/admin/finance",
+      "/admin/billing",
+      "/admin/payroll",
+      "/admin/attendance",
+      "/admin/shifts",
+      "/admin/personel",
+      "/admin/progress-payments",
+    ]
+    if (equipRestricted.some((p) => pathname.startsWith(p))) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/admin/equipments"
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  if (userRole === "ISG_EXPERT") {
+    const isgRestricted = [
+      "/admin/finance",
+      "/admin/billing",
+      "/admin/payroll",
+      "/admin/attendance",
+      "/admin/procurement",
+      "/admin/progress-payments",
+      "/admin/shifts",
+    ]
+    if (isgRestricted.some((p) => pathname.startsWith(p))) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/admin/personel/alerts"
       return NextResponse.redirect(redirectUrl)
     }
   }

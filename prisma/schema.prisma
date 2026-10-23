@@ -74,6 +74,11 @@ enum UserRole {
   AUDITOR
   WORKER
   SUPPLIER
+  HR_MANAGER
+  FINANCE_MANAGER
+  PROCUREMENT_MANAGER
+  EQUIPMENT_MANAGER
+  ISG_EXPERT
 }
 
 enum CompanyType {
@@ -1816,6 +1821,8 @@ model Inventory {
   assignments InventoryAssignment[]
   createdAt   DateTime              @default(now())
   history     InventoryHistory[]
+  minimumStockLevel     Float?
+  isAutoReorderEnabled  Boolean               @default(false)
 
   @@index([projectId])
   @@index([type])
@@ -3758,6 +3765,7 @@ model PurchaseRequest {
   unit          String
   status        String        @default("OPEN_FOR_BID") // OPEN_FOR_BID, COMPLETED, CANCELLED
   bids          SupplierBid[]
+  deliveryAppointments DeliveryAppointment[]
   createdAt     DateTime      @default(now())
 
   @@index([projectId])
@@ -3825,5 +3833,43 @@ model PersonnelDocument {
   @@index([expiryDate])
   @@index([docType])
 }
+
+// ============================================================================
+// 5. LOJİSTİK VE AMBAR KABUL MODELLERİ
+// ============================================================================
+
+// Şantiye Kapı Randevu Sistemi (Trafik Kontrolü)
+model DeliveryAppointment {
+  id                String          @id @default(cuid())
+  purchaseRequestId String
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
+  supplierId        String
+  vehiclePlate      String   // Tır/Kamyon Plakası
+  driverName        String?
+  scheduledDate     DateTime // Randevu Tarihi ve Saati
+  status            String   @default("SCHEDULED") // SCHEDULED, ARRIVED, UNLOADED, REJECTED
+  createdAt         DateTime @default(now())
+
+  @@index([purchaseRequestId])
+  @@index([scheduledDate])
+  @@index([status])
+}
+
+// Ambar Kabul ve İrsaliye Eşleştirme
+model GoodsReceipt {
+  id                String   @id @default(cuid())
+  purchaseRequestId String
+  orderedQuantity   Float
+  deliveredQuantity Float    // Gerçekte ambara inen miktar
+  waybillNo         String   // İrsaliye Numarası
+  receivedById      String   // Teslim alan personel (User ID)
+  receivedDate      DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  @@index([purchaseRequestId])
+  @@index([waybillNo])
+  @@index([receivedById])
+}
+
 
 

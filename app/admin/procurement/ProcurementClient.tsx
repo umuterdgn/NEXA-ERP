@@ -23,6 +23,8 @@ import {
   Building2,
   DollarSign,
   TrendingDown,
+  Truck,
+  FileText,
 } from "lucide-react";
 
 interface MaterialRequest {
@@ -263,7 +265,21 @@ export default function ProcurementClient({ initialRequests }: ProcurementClient
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/admin/procurement/logistics"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-slate-500 text-slate-200 text-xs font-semibold transition-all shadow-sm"
+          >
+            <Truck className="w-4 h-4 text-blue-400" />
+            Kapı Güvenlik & Lojistik
+          </Link>
+          <Link
+            href="/admin/procurement/receipts/new"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-950/40 border border-emerald-800/80 hover:border-emerald-600 text-emerald-300 text-xs font-bold transition-all shadow-sm"
+          >
+            <FileText className="w-4 h-4 text-emerald-400" />
+            Ambar Mal Kabul Formu
+          </Link>
           <button
             onClick={() => setIsNewBiddingModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-lg shadow-blue-950"

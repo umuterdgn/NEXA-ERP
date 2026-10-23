@@ -145,6 +145,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/contracts", label: "Sözleşmeler", icon: FileSignature, category: "FİNANS & TEDARİK" },
   { href: "/admin/progress-payments", label: "Hakediş ve Metraj", icon: Calculator, category: "FİNANS & TEDARİK" },
   { href: "/admin/procurement", label: "Satınalma & Talepler", icon: ShoppingCart, category: "FİNANS & TEDARİK" },
+  { href: "/admin/procurement/logistics", label: "Kapı Güvenlik & Lojistik", icon: Truck, category: "FİNANS & TEDARİK" },
   { href: "/admin/ai-assistant", label: "AI Tahsilat & Risk Asistanı", icon: Bot, category: "FİNANS & TEDARİK" },
   { href: "/admin/collection-risk", label: "Tahsilat Risk AI", icon: PieChart, category: "FİNANS & TEDARİK" },
   
@@ -249,14 +250,62 @@ export default function AdminSidebar({
 
   const boqHref = activeProjectId ? `/admin/projects/${activeProjectId}/boq` : "/admin/projects"
 
-  const userRole = session?.user?.role
-  const isSubcontractor = (userRole as string) === "SUBCONTRACTOR"
-  const isInspector = (userRole as string) === "INSPECTOR" || (userRole as string) === "AUDITOR"
-  const rawMenuItems = isSubcontractor 
-    ? subcontractorMenuItems 
-    : isInspector 
-    ? inspectorMenuItems 
-    : menuItems
+  const userRole = session?.user?.role as string
+  const isSubcontractor = userRole === "SUBCONTRACTOR"
+  const isInspector = userRole === "INSPECTOR" || userRole === "AUDITOR"
+
+  // Role-based menu isolation
+  let rawMenuItems = menuItems
+  if (isSubcontractor) {
+    rawMenuItems = subcontractorMenuItems
+  } else if (isInspector) {
+    rawMenuItems = inspectorMenuItems
+  } else if (userRole === "HR_MANAGER") {
+    // Sadece İK, Personel ve Bordro linkleri (Kasa, Finans, Metraj tamamen gizlenir)
+    rawMenuItems = menuItems.filter(item => 
+      item.category === "İNSAN KAYNAKLARI" || 
+      (item.category === "ANA MENÜ" && item.href === "/admin")
+    )
+  } else if (userRole === "FINANCE_MANAGER") {
+    // Sadece Kasa, Finans, Hakediş, Çek/Senet (İK, Personel tamamen gizlenir)
+    rawMenuItems = menuItems.filter(item =>
+      item.category === "FİNANS & TEDARİK" ||
+      item.href === "/admin/billing" ||
+      item.href === "/admin/progress-payments" ||
+      (item.category === "ANA MENÜ" && item.href === "/admin")
+    )
+  } else if (userRole === "PROCUREMENT_MANAGER") {
+    // Sadece Satınalma, Talepler, Lojistik, Ambar, Demirbaş
+    rawMenuItems = menuItems.filter(item =>
+      item.href === "/admin/procurement" ||
+      item.href === "/admin/procurement/logistics" ||
+      item.href === "/admin/inventory" ||
+      item.href === "/admin/equipments" ||
+      item.href === "/admin/contracts" ||
+      (item.category === "ANA MENÜ" && item.href === "/admin")
+    )
+  } else if (userRole === "EQUIPMENT_MANAGER") {
+    // Sadece Demirbaş, Ambar, Lojistik, Harita
+    rawMenuItems = menuItems.filter(item =>
+      item.href === "/admin/equipments" ||
+      item.href === "/admin/procurement/logistics" ||
+      item.href === "/admin/inventory" ||
+      item.href === "/admin/map" ||
+      (item.category === "ANA MENÜ" && item.href === "/admin")
+    )
+  } else if (userRole === "ISG_EXPERT") {
+    // Sadece İSG Alarmı, İSG Evrak Takibi, Taşeron Denetimi, Eksiklikler, Harita
+    rawMenuItems = menuItems.filter(item =>
+      item.href === "/admin/personel/alerts" ||
+      item.href === "/admin/subcontractors/documents" ||
+      item.href === "/admin/audits" ||
+      item.href === "/admin/deficiencies" ||
+      item.href === "/admin/samples" ||
+      item.href === "/admin/map" ||
+      (item.category === "ANA MENÜ" && item.href === "/admin")
+    )
+  }
+
   const effectiveMenuItems = rawMenuItems.map((item) => {
     if (item.label === "Keşif & Metraj (BoQ)") {
       return { ...item, href: boqHref }
