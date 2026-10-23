@@ -16,6 +16,9 @@ export interface LiveShipmentPing {
   driverPhone?: string;
   materialName?: string;
   projectName?: string;
+  estimatedTimeOfArrival?: string | null;
+  delayInMinutes?: number;
+  linkedTaskId?: string | null;
   updatedAt: string;
 }
 

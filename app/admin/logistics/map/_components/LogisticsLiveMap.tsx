@@ -131,6 +131,71 @@ function createProjectDestinationIcon(name?: string | null) {
   });
 }
 
+// OSRM Gerçek Yol Koordinatları (Road Snapping) Polyline Bileşeni
+function OsrmRoadPolyline({
+  start,
+  end,
+  status,
+}: {
+  start: [number, number]; // [lat, lng]
+  end: [number, number];   // [lat, lng]
+  status: string;
+}) {
+  const [positions, setPositions] = useState<[number, number][]>([start, end]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchRoadRoute = async () => {
+      try {
+        const [startLat, startLng] = start;
+        const [endLat, endLng] = end;
+
+        // OSRM Driving API: {lng1},{lat1};{lng2},{lat2}?overview=full&geometries=geojson
+        const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("OSRM routing request failed");
+
+        const data = await res.json();
+        if (
+          data.code === "Ok" &&
+          data.routes?.[0]?.geometry?.coordinates?.length > 0
+        ) {
+          // OSRM GeoJSON format: [lng, lat] -> Leaflet format: [lat, lng]
+          const roadPositions: [number, number][] =
+            data.routes[0].geometry.coordinates.map(
+              ([lng, lat]: [number, number]) => [lat, lng]
+            );
+          if (!isCancelled) {
+            setPositions(roadPositions);
+          }
+        }
+      } catch (err) {
+        // Fallback to straight line if OSRM is unreachable
+        if (!isCancelled) {
+          setPositions([start, end]);
+        }
+      }
+    };
+
+    fetchRoadRoute();
+    return () => {
+      isCancelled = true;
+    };
+  }, [start[0], start[1], end[0], end[1]]);
+
+  return (
+    <Polyline
+      positions={positions}
+      pathOptions={{
+        color: status === "ON_THE_WAY" ? "#10b981" : "#38bdf8",
+        weight: 3.5,
+        dashArray: "6, 8",
+        opacity: 0.8,
+      }}
+    />
+  );
+}
+
 // Haritayı Seçilen Araca veya Tüm Araçlara Odaklayan Kontrolcü
 function MapViewController({
   selectedCoords,
@@ -468,6 +533,7 @@ export default function LogisticsLiveMap({ initialShipments }: LogisticsLiveMapP
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
               attribution='&copy; <a href="https://www.esri.com/">Esri</a>, DeLorme, HERE, MapmyIndia'
+              maxZoom={16}
             />
           ) : (
             <TileLayer
@@ -525,17 +591,10 @@ export default function LogisticsLiveMap({ initialShipments }: LogisticsLiveMapP
                       position={[s.project.latitude, s.project.longitude]}
                       icon={createProjectDestinationIcon(s.project.name)}
                     />
-                    <Polyline
-                      positions={[
-                        [s.latitude, s.longitude],
-                        [s.project.latitude, s.project.longitude],
-                      ]}
-                      pathOptions={{
-                        color: s.status === "ON_THE_WAY" ? "#10b981" : "#38bdf8",
-                        weight: 3,
-                        dashArray: "6, 8",
-                        opacity: 0.6,
-                      }}
+                    <OsrmRoadPolyline
+                      start={[s.latitude, s.longitude]}
+                      end={[s.project.latitude, s.project.longitude]}
+                      status={s.status}
                     />
                   </>
                 )}

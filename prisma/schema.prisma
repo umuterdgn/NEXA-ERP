@@ -3956,14 +3956,18 @@ model ShipmentTracking {
   driverPhone       String          // SMS atılacak numara
   vehiclePlate      String
   status            String          @default("PREPARING") // PREPARING, ON_THE_WAY, ARRIVED, DELIVERED
-  lastLatitude      Float?          // Son ping (Enlem)
-  lastLongitude     Float?          // Son ping (Boylam)
-  updatedAt         DateTime        @updatedAt
-  createdAt         DateTime        @default(now())
+  lastLatitude           Float?          // Son ping (Enlem)
+  lastLongitude          Float?          // Son ping (Boylam)
+  estimatedTimeOfArrival DateTime?       // Yapay zeka/OSRM tahmini varış zamanı (ETA)
+  delayInMinutes         Int             @default(0) // Gecikme süresi
+  linkedTaskId           String?         // Bu lojistik hangi inşaat görevini (Task/Gantt) besliyor?
+  updatedAt              DateTime        @updatedAt
+  createdAt              DateTime        @default(now())
 
   @@index([trackingCode])
   @@index([purchaseRequestId])
   @@index([status])
+  @@index([linkedTaskId])
 }
 
 // ============================================================================

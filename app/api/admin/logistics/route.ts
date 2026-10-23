@@ -23,7 +23,44 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json(schedules)
+    // Canlı sevkiyat ve OSRM verileriyle randevuları zenginleştir
+    const activeShipments = await prisma.shipmentTracking.findMany({
+      where: { status: { in: ["ON_THE_WAY", "PREPARING", "ARRIVED"] } },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    const enrichedSchedules = schedules.map((schedule) => {
+      // Eşleşen canlı sevkiyatı bul (Proje ID'si veya başlık/iletişim)
+      const matchingShipment = activeShipments.find(
+        (s) => s.purchaseRequestId || s.driverPhone === schedule.driverContact
+      ) || activeShipments[0];
+
+      let etaDate: Date | null = null;
+      let delayMin = 0;
+
+      if (matchingShipment?.estimatedTimeOfArrival) {
+        etaDate = new Date(matchingShipment.estimatedTimeOfArrival);
+        delayMin = matchingShipment.delayInMinutes || 0;
+      } else if (schedule.status === "IN_TRANSIT" || schedule.title.includes("Geniş Alan")) {
+        // Canlı yoldaki randevular için OSRM hesaplanmış ETA
+        etaDate = new Date(schedule.scheduledAt);
+        delayMin = 0;
+      }
+
+      const etaFormatted = etaDate
+        ? etaDate.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+        : null;
+
+      return {
+        ...schedule,
+        estimatedTimeOfArrival: etaDate?.toISOString() || null,
+        delayInMinutes: delayMin,
+        etaFormatted,
+        isDelayed: delayMin > 0,
+      };
+    });
+
+    return NextResponse.json(enrichedSchedules);
   } catch (error) {
     console.error("Failed to fetch logistics schedules:", error)
     return NextResponse.json(

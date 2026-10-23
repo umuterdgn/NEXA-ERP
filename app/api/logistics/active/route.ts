@@ -64,6 +64,9 @@ export async function GET() {
         quantity: s.purchaseRequest?.quantity || 0,
         unit: s.purchaseRequest?.unit || "Birim",
         project: s.purchaseRequest?.project || null,
+        estimatedTimeOfArrival: live?.estimatedTimeOfArrival ?? (s.estimatedTimeOfArrival ? s.estimatedTimeOfArrival.toISOString() : null),
+        delayInMinutes: live?.delayInMinutes ?? s.delayInMinutes ?? 0,
+        linkedTaskId: live?.linkedTaskId ?? s.linkedTaskId ?? null,
         isLive: !!live,
       };
     });

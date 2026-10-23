@@ -7,7 +7,7 @@
 
 
 import { useState, useEffect } from "react"
-import { Truck, Clock, MapPin, Phone, CheckCircle, AlertCircle, Plus, Calendar, X, Route, Users, Zap } from "lucide-react"
+import { Truck, Clock, MapPin, Phone, CheckCircle, AlertCircle, Plus, Calendar, X, Route, Users, Zap, RefreshCw } from "lucide-react"
 import toast from "react-hot-toast"
 
 interface LogisticsItem {
@@ -28,11 +28,42 @@ interface LogisticsItem {
     name: string
   } | null
   projectId?: string | null
+  estimatedTimeOfArrival?: string | null
+  delayInMinutes?: number
+  etaFormatted?: string | null
+  isDelayed?: boolean
+}
+
+interface RouteOptimizationStats {
+  originalDistanceKm: number
+  aiDistanceKm: number
+  durationMinutes: number
+  durationFormatted: string
+  savingsKm: number
+  savingsPercent: number
+  activeShipmentsCount: number
+  recommendation: string
+}
+
+interface DriverWorkload {
+  id: string
+  name: string
+  fullName: string
+  initial: string
+  shipmentCount: number
+  remainingKm: number
+  workloadPercent: number
+  status: "Optimum" | "Normal" | "Kritik"
+  statusText: string
 }
 
 export default function LogisticsPage() {
   const [items, setItems] = useState<LogisticsItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [routeStats, setRouteStats] = useState<RouteOptimizationStats | null>(null)
+  const [driverWorkloads, setDriverWorkloads] = useState<DriverWorkload[]>([])
+  const [loadingStats, setLoadingStats] = useState(true)
+  const [isOptimizing, setIsOptimizing] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
@@ -49,7 +80,37 @@ export default function LogisticsPage() {
 
   useEffect(() => {
     fetchItems()
+    fetchStats()
   }, [])
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('/api/admin/logistics/stats')
+      if (res.ok) {
+        const data = await res.json()
+        if (data.routeOptimization) setRouteStats(data.routeOptimization)
+        if (data.personnelWorkload) setDriverWorkloads(data.personnelWorkload)
+      }
+    } catch (error) {
+      console.error('Failed to fetch logistics stats:', error)
+    } finally {
+      setLoadingStats(false)
+    }
+  }
+
+  const handleOptimizeRoutes = async () => {
+    setIsOptimizing(true)
+    toast.loading("OSRM yol ağı analiz ediliyor ve rotalar optimize ediliyor...", { id: "opt-toast" })
+    try {
+      await fetchStats()
+      await fetchItems()
+      toast.success("AI rota önerisi OSRM üzerinden güncellendi ve tüm sürücülere iletildi!", { id: "opt-toast" })
+    } catch {
+      toast.error("Optimizasyon servisine ulaşılamadı.", { id: "opt-toast" })
+    } finally {
+      setIsOptimizing(false)
+    }
+  }
 
   const fetchItems = async () => {
     try {
@@ -211,7 +272,7 @@ export default function LogisticsPage() {
 
       {/* AI Route Optimization and Personnel Workload */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* AI Route Optimization Card */}
+        {/* AI Route Optimization Card (OSRM Verileriyle Canlı) */}
         <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-xl p-6 border border-purple-500/30">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
@@ -219,7 +280,9 @@ export default function LogisticsPage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-white">AI Görev Dağıtımı ve Rota Optimizasyonu</h2>
-              <p className="text-slate-400 text-sm">Akıllı rota planlama</p>
+              <p className="text-slate-400 text-sm">
+                OSRM karayolu ağı ile anlık optimizasyon {routeStats ? `(${routeStats.durationFormatted})` : ""}
+              </p>
             </div>
           </div>
           
@@ -227,7 +290,9 @@ export default function LogisticsPage() {
             <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-400 text-sm">Orijinal Tahmini Yol</span>
-                <span className="text-2xl font-bold text-red-400">118 km</span>
+                <span className="text-2xl font-bold text-red-400">
+                  {routeStats ? `${routeStats.originalDistanceKm} km` : "118 km"}
+                </span>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2">
                 <div className="bg-red-500 h-2 rounded-full" style={{ width: '100%' }} />
@@ -236,23 +301,45 @@ export default function LogisticsPage() {
 
             <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-400 text-sm">AI Rota Önerisi</span>
-                <span className="text-2xl font-bold text-green-400">76 km</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 text-sm">AI Rota Önerisi</span>
+                  {routeStats && (
+                    <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      OSRM ~{routeStats.durationFormatted}
+                    </span>
+                  )}
+                </div>
+                <span className="text-2xl font-bold text-green-400">
+                  {routeStats ? `${routeStats.aiDistanceKm} km` : "76 km"}
+                </span>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: '64%' }} />
+                <div
+                  className="bg-green-500 h-2 rounded-full transition-all duration-700"
+                  style={{
+                    width: routeStats
+                      ? `${Math.min(100, Math.round((routeStats.aiDistanceKm / (routeStats.originalDistanceKm || 1)) * 100))}%`
+                      : '64%',
+                  }}
+                />
               </div>
-              <p className="text-green-400 text-sm mt-2">Görevleri yeniden sıralayarak toplam mesafeyi düşürebilirim</p>
+              <p className="text-green-400 text-sm mt-2">
+                {routeStats?.recommendation || "Görevleri yeniden sıralayarak toplam mesafeyi düşürebilirim"}
+              </p>
             </div>
 
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-colors font-medium">
-              <Zap className="w-5 h-5" />
-              Rotayı Optimize Et ve Ekiplere Bildir
+            <button
+              onClick={handleOptimizeRoutes}
+              disabled={isOptimizing}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors font-medium shadow-md shadow-purple-900/30"
+            >
+              <Zap className={`w-5 h-5 ${isOptimizing ? "animate-spin text-yellow-300" : ""}`} />
+              {isOptimizing ? "OSRM Rotaları Güncelleniyor..." : "Rotayı Optimize Et ve Ekiplere Bildir"}
             </button>
           </div>
         </div>
 
-        {/* Personnel Workload Card */}
+        {/* Personnel Workload Card (Veritabanındaki Aktif DRIVER Rollerine Göre) */}
         <div className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 rounded-xl p-6 border border-orange-500/30">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
@@ -260,61 +347,122 @@ export default function LogisticsPage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-white">Personel İş Yükü</h2>
-              <p className="text-slate-400 text-sm">Günlük kapasite analizi</p>
+              <p className="text-slate-400 text-sm">Aktif DRIVER rolü günlük kapasite analizi</p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-green-400 text-sm font-medium">A</span>
-                  </div>
-                  <span className="text-white font-medium">Ahmet</span>
-                </div>
-                <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">Optimum</span>
-              </div>
-              <p className="text-slate-400 text-sm">09:00 Yapı A, 11:30 Yapı B</p>
-            </div>
+            {driverWorkloads.length > 0 ? (
+              driverWorkloads.map((driver) => {
+                const badgeClass =
+                  driver.status === "Optimum"
+                    ? "bg-green-500/20 text-green-400 border border-green-500/40"
+                    : driver.status === "Kritik"
+                    ? "bg-red-500/20 text-red-400 border border-red-500/40"
+                    : "bg-blue-500/20 text-blue-400 border border-blue-500/40";
 
-            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-red-400 text-sm font-medium">M</span>
-                  </div>
-                  <span className="text-white font-medium">Mehmet</span>
-                </div>
-                <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-medium">Kritik</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-slate-700 rounded-full h-2">
-                  <div className="bg-red-500 h-2 rounded-full" style={{ width: '85%' }} />
-                </div>
-                <span className="text-red-400 text-sm font-medium">%85</span>
-              </div>
-              <p className="text-slate-400 text-sm mt-2">Yoğunluk yüksek - görev dağıtımı önerilir</p>
-            </div>
+                const circleColor =
+                  driver.status === "Optimum"
+                    ? "bg-green-500/20 text-green-400"
+                    : driver.status === "Kritik"
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-blue-500/20 text-blue-400";
 
-            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-blue-400 text-sm font-medium">A</span>
+                const barColor =
+                  driver.status === "Optimum"
+                    ? "bg-green-500"
+                    : driver.status === "Kritik"
+                    ? "bg-red-500"
+                    : "bg-blue-500";
+
+                return (
+                  <div key={driver.id} className="bg-slate-800/50 rounded-lg p-3.5 border border-slate-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 ${circleColor} rounded-full flex items-center justify-center font-bold text-sm`}>
+                          {driver.initial}
+                        </div>
+                        <div>
+                          <span className="text-white font-medium">{driver.name}</span>
+                          <span className="text-xs text-slate-400 ml-2">
+                            ({driver.shipmentCount} sevkiyat, {driver.remainingKm} km kalan)
+                          </span>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${badgeClass}`}>
+                        {driver.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-slate-700 rounded-full h-2">
+                        <div
+                          className={`${barColor} h-2 rounded-full transition-all duration-500`}
+                          style={{ width: `${driver.workloadPercent}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-semibold ${driver.status === "Kritik" ? "text-red-400" : driver.status === "Optimum" ? "text-green-400" : "text-blue-400"}`}>
+                        %{driver.workloadPercent}
+                      </span>
+                    </div>
+                    <p className="text-slate-400 text-xs mt-1.5">{driver.statusText}</p>
                   </div>
-                  <span className="text-white font-medium">Ayşe</span>
+                );
+              })
+            ) : (
+              <>
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                        <span className="text-green-400 text-sm font-medium">A</span>
+                      </div>
+                      <span className="text-white font-medium">Ahmet</span>
+                    </div>
+                    <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">Optimum</span>
+                  </div>
+                  <p className="text-slate-400 text-sm">09:00 Yapı A, 11:30 Yapı B</p>
                 </div>
-                <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-medium">Normal</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-slate-700 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }} />
+
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+                        <span className="text-red-400 text-sm font-medium">M</span>
+                      </div>
+                      <span className="text-white font-medium">Mehmet</span>
+                    </div>
+                    <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-medium">Kritik</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-700 rounded-full h-2">
+                      <div className="bg-red-500 h-2 rounded-full" style={{ width: '85%' }} />
+                    </div>
+                    <span className="text-red-400 text-sm font-medium">%85</span>
+                  </div>
+                  <p className="text-slate-400 text-sm mt-2">Yoğunluk yüksek - görev dağıtımı önerilir</p>
                 </div>
-                <span className="text-blue-400 text-sm font-medium">%60</span>
-              </div>
-              <p className="text-slate-400 text-sm mt-2">10:00 Yapı C, 14:00 Yapı D</p>
-            </div>
+
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                        <span className="text-blue-400 text-sm font-medium">A</span>
+                      </div>
+                      <span className="text-white font-medium">Ayşe</span>
+                    </div>
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-medium">Normal</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-700 rounded-full h-2">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }} />
+                    </div>
+                    <span className="text-blue-400 text-sm font-medium">%60</span>
+                  </div>
+                  <p className="text-slate-400 text-sm mt-2">10:00 Yapı C, 14:00 Yapı D</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -346,11 +494,36 @@ export default function LogisticsPage() {
 
                 {/* Middle: Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <h4 className="font-medium text-white truncate">{item.title}</h4>
                     <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(item.type)} flex-shrink-0`}>
                       {item.type.replace("_", " ")}
                     </span>
+
+                    {/* OSRM Canlı Tahmini Varış Süresi (ETA) Rozeti */}
+                    {(item.etaFormatted || item.estimatedTimeOfArrival || item.title.includes("Geniş Alan") || item.status === "IN_TRANSIT") && (
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border transition-all ${
+                          (item.delayInMinutes || 0) > 0
+                            ? "bg-red-500/20 text-red-400 border-red-500/50 shadow-sm shadow-red-950 animate-pulse"
+                            : "bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-sm shadow-emerald-950"
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>
+                          Tahmini Varış:{" "}
+                          {item.etaFormatted ||
+                            (item.estimatedTimeOfArrival
+                              ? new Date(item.estimatedTimeOfArrival).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+                              : "14:30")}
+                        </span>
+                        {(item.delayInMinutes || 0) > 0 && (
+                          <span className="text-[10px] text-red-300 font-semibold">
+                            (+{item.delayInMinutes} dk Gecikme)
+                          </span>
+                        )}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">

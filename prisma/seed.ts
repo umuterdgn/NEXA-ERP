@@ -238,12 +238,12 @@ async function main() {
     }
   })
 
-  // 9. Kamyon Şoförü
+  // 9. Kamyon Şoförü (Ahmet Yılmaz)
   const soforUser = await prisma.user.upsert({
     where: { email: "sofor@nexa.com" },
     update: {
       password: hashedPassword,
-      name: "Kamyon Şoförü",
+      name: "Ahmet Yılmaz",
       role: UserRole.DRIVER,
       companyId: contractorCompany.id,
       companyType: CompanyType.MAIN_CONTRACTOR,
@@ -251,7 +251,49 @@ async function main() {
     create: {
       email: "sofor@nexa.com",
       password: hashedPassword,
-      name: "Kamyon Şoförü",
+      name: "Ahmet Yılmaz",
+      role: UserRole.DRIVER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["logistics", "tracking", "driver", "my-deliveries"]
+    }
+  })
+
+  // 9b. Mikser Şoförü (Mehmet Demir)
+  await prisma.user.upsert({
+    where: { email: "mehmet.sofor@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Mehmet Demir",
+      role: UserRole.DRIVER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+    },
+    create: {
+      email: "mehmet.sofor@nexa.com",
+      password: hashedPassword,
+      name: "Mehmet Demir",
+      role: UserRole.DRIVER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      permissions: ["logistics", "tracking", "driver", "my-deliveries"]
+    }
+  })
+
+  // 9c. Lojistik Şoförü (Ayşe Kaya)
+  await prisma.user.upsert({
+    where: { email: "ayse.sofor@nexa.com" },
+    update: {
+      password: hashedPassword,
+      name: "Ayşe Kaya",
+      role: UserRole.DRIVER,
+      companyId: contractorCompany.id,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+    },
+    create: {
+      email: "ayse.sofor@nexa.com",
+      password: hashedPassword,
+      name: "Ayşe Kaya",
       role: UserRole.DRIVER,
       companyId: contractorCompany.id,
       companyType: CompanyType.MAIN_CONTRACTOR,
@@ -900,6 +942,24 @@ async function main() {
     }
   })
 
+  // Bağlı Gantt İş Emri (linkedTaskId için)
+  const ganttTask = await prisma.projectTask.upsert({
+    where: { id: "task-bina-a-gantt" },
+    update: {},
+    create: {
+      id: "task-bina-a-gantt",
+      name: "Bina A - 3. Kat Kuru Duvar ve İnce Yapı İşi",
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 saat sonra
+      progress: 40,
+      projectId: vadiEvleri.id,
+      notes: "Malzeme sevkiyatı (Bina A - 3. Kat) bağlantılı inşaat iş emri.",
+    },
+  });
+
+  const nowTime = new Date();
+  const etaSample = new Date(nowTime.getTime() + 50 * 60 * 1000); // 50 dakika sonra
+
   await prisma.shipmentTracking.upsert({
     where: { trackingCode: "TRK-2026-NEXA" },
     update: {
@@ -908,7 +968,10 @@ async function main() {
       vehiclePlate: "34 NX 2026",
       status: "ON_THE_WAY",
       lastLatitude: 41.0125,
-      lastLongitude: 28.8830
+      lastLongitude: 28.8830,
+      estimatedTimeOfArrival: etaSample,
+      delayInMinutes: 0,
+      linkedTaskId: ganttTask.id,
     },
     create: {
       trackingCode: "TRK-2026-NEXA",
@@ -917,7 +980,10 @@ async function main() {
       vehiclePlate: "34 NX 2026",
       status: "ON_THE_WAY",
       lastLatitude: 41.0125,
-      lastLongitude: 28.8830
+      lastLongitude: 28.8830,
+      estimatedTimeOfArrival: etaSample,
+      delayInMinutes: 0,
+      linkedTaskId: ganttTask.id,
     }
   })
 
@@ -2518,6 +2584,76 @@ async function main() {
   })
 
   console.log(" Created 3 logistics appointments")
+
+  // ============================================================================
+  // LOGISTICS SCHEDULE (Lojistik & Randevu Ağı Panel Kayıtları)
+  // ============================================================================
+  console.log(" Creating logistics schedules...")
+  await prisma.logisticsSchedule.deleteMany({
+    where: {
+      title: {
+        in: [
+          "Bina A - 3. Kat - Geniş Alan (Malzeme Teslimatı)",
+          "C35/45 Hazır Beton Dökümü - Temel A Blok",
+          "Kalıp & İskele Güvenlik Denetimi",
+        ],
+      },
+    },
+  }).catch(() => {})
+
+  const schedNow = new Date()
+  const sched1430 = new Date(schedNow)
+  sched1430.setHours(14, 30, 0, 0)
+
+  const sched0900 = new Date(schedNow)
+  sched0900.setHours(9, 0, 0, 0)
+
+  const sched1600 = new Date(schedNow)
+  sched1600.setHours(16, 0, 0, 0)
+
+  await prisma.logisticsSchedule.create({
+    data: {
+      title: "Bina A - 3. Kat - Geniş Alan (Malzeme Teslimatı)",
+      type: "MALZEME_TESLİMAT",
+      location: "Bina A - 3. Kat - Geniş Alan",
+      supplierName: "Yıldız Çelik & Yapı Market",
+      driverContact: "+90 532 555 1020 (Ahmet Yılmaz)",
+      status: "IN_TRANSIT",
+      scheduledAt: sched1430,
+      notes: "Kuru duvar profilleri, alçıpan levhalar ve şantiye içi malzeme teslimatı",
+      projectId: vadiEvleri.id,
+    },
+  })
+
+  await prisma.logisticsSchedule.create({
+    data: {
+      title: "C35/45 Hazır Beton Dökümü - Temel A Blok",
+      type: "BETON",
+      location: "A Blok Temel Kazısı",
+      supplierName: "Oyak Beton A.Ş.",
+      driverContact: "+90 533 444 8899 (Mehmet Demir)",
+      status: "PLANNED",
+      scheduledAt: sched0900,
+      notes: "15 mikser C35/45 hazır beton dökümü ve transmikser pompa kontrolü",
+      projectId: vadiEvleri.id,
+    },
+  })
+
+  await prisma.logisticsSchedule.create({
+    data: {
+      title: "Kalıp & İskele Güvenlik Denetimi",
+      type: "DENETİM",
+      location: "B Blok Dış Cephe İskelesi",
+      supplierName: "Nexa İSG & Denetim Birimi",
+      driverContact: "+90 535 777 2211 (Ayşe Kaya)",
+      status: "DELIVERED",
+      scheduledAt: sched1600,
+      notes: "Dış cephe güvenlik ağları ve ankraj kontrolü tamamlandı",
+      projectId: vadiEvleri.id,
+    },
+  })
+
+  console.log(" Created 3 logistics schedules (including Bina A 3. Kat)")
 
   // ============================================================================
   // KURUMSAL HİYERARŞİK MOCK DATA (TÜRKİYE İNŞAAT SEKTÖRÜ SAHTE VERİ SENARYOSU)
