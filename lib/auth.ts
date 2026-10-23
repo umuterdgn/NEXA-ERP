@@ -17,7 +17,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        companyId: { label: "CompanyId", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -67,13 +68,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
-        console.log("✅ User authenticated:", user.email, "Role:", user.role)
+        // Multi-Tenant White-Label İzolasyon Doğrulaması:
+        // Eğer giriş belirli bir firma slug'ı/companyId üzerinden yapılıyorsa ve kullanıcının firma ID'si varsa, uyuşmalıdır.
+        const requestedCompanyId = (credentials.companyId as string | undefined)?.trim();
+        if (
+          requestedCompanyId &&
+          user.companyId &&
+          user.companyId !== requestedCompanyId &&
+          user.role !== "SUPER_ADMIN"
+        ) {
+          console.log(`❌ Yetkisiz Firma Girişi: ${user.email} (${user.companyId}) -> İstenen: ${requestedCompanyId}`);
+          return null;
+        }
+
+        console.log("✅ User authenticated:", user.email, "Role:", user.role, "CompanyId:", user.companyId)
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          companyId: user.companyId || null,
           permissions: (user as any).permissions || []
         }
       }
@@ -84,6 +99,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.role = user.role
         token.id = user.id
+        token.companyId = (user as any).companyId
         token.permissions = user.permissions
       }
       return token
@@ -92,6 +108,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token) {
         session.user.role = token.role as any
         session.user.id = token.id as string
+        ;(session.user as any).companyId = token.companyId as any
         session.user.permissions = token.permissions as any
       }
       return session

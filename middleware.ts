@@ -86,7 +86,7 @@ export default NextAuth(authConfig).auth((req) => {
   // --- 2. RBAC & KESİN YÖNLENDİRME KONTROLLERİ ---
   
   const userRole = session?.user?.role as string
-  const isOnLoginPage = pathname === "/login"
+  const isOnLoginPage = pathname === "/login" || pathname.endsWith("/login")
 
   // Giriş Yapmış Kullanıcı /login veya / Sayfasındaysa Kesin Yönlendirme (Redirect)
   if ((isOnLoginPage || pathname === "/") && session) {

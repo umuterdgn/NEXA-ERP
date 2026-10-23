@@ -568,6 +568,10 @@ model Announcement {
 model Company {
   id                     String                  @id @default(cuid())
   name                   String
+  slug                   String?                 @unique // URL için kısa ad (Örn: ronesans, zirveyapi)
+  logoUrl                String?                 // Firmanın kendi logosu
+  themeColor             String?                 // Firmanın kurumsal rengi (Örn: #1e3a8a)
+  companyType            String?                 @default("CONTRACTOR") // "CONTRACTOR", "INSPECTION", "FRANCHISE"
   type                   CompanyType             @default(MAIN_CONTRACTOR)
   contactName            String?
   phone                  String?

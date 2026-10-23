@@ -26,6 +26,7 @@ export const authConfig: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.companyId = (user as any).companyId
         token.permissions = user.permissions
       }
       return token
@@ -34,6 +35,7 @@ export const authConfig: NextAuthConfig = {
       if (token) {
         session.user.id = token.sub!
         session.user.role = token.role as any
+        ;(session.user as any).companyId = token.companyId as any
         session.user.permissions = token.permissions as any[]
       }
       return session
