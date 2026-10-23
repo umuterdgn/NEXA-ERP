@@ -53,19 +53,19 @@ interface NavItem {
 // 1. Operasyonel Modüller (Hem INSPECTOR hem INSPECTION_ADMIN görür)
 const operationalNavItems: NavItem[] = [
   { href: "/dashboard", label: "Yapı Denetim Dashboard", icon: LayoutDashboard, category: "operational" },
-  { href: "/admin/projects", label: "Denetlenen Yapılar / Projeler", icon: Building2, category: "operational" },
-  { href: "/admin/samples", label: "Karot & Numune QR Takip", icon: FlaskConical, category: "operational" },
-  { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "operational" },
+  { href: "/inspection/projects", label: "Denetlenen Yapılar / Projeler", icon: Building2, category: "operational" },
+  { href: "/inspection/core-samples", label: "Karot & Numune QR Takip", icon: FlaskConical, category: "operational" },
+  { href: "/inspection/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "operational" },
   { href: "/yibf", label: "Bakanlık e-YİBF Sistemi", icon: Building, category: "operational" },
-  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol (Vize)", icon: Construction, category: "operational" },
-  { href: "/admin/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: FileCheck, category: "operational" },
-  { href: "/admin/qa-qc/materials", label: "Kalite: Malzeme Onayları", icon: CheckSquare, category: "operational" },
-  { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: AlertTriangle, category: "operational" },
-  { href: "/admin/deficiencies", label: "Saha Kusur & Eksiklikleri", icon: FileWarning, category: "operational" },
+  { href: "/inspection/yibf-sync", label: "e-YİBF Senkronizasyon", icon: Bot, category: "operational" },
+  { href: "/inspection/reinforcement", label: "Demir & Kalıp Kontrol (Vize)", icon: Construction, category: "operational" },
+  { href: "/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: FileCheck, category: "operational" },
+  { href: "/inspection/materials", label: "Kalite: Malzeme Onayları", icon: CheckSquare, category: "operational" },
+  { href: "/inspection/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: AlertTriangle, category: "operational" },
+  { href: "/inspection/deficiencies", label: "Saha Kusur & Eksiklikleri", icon: FileWarning, category: "operational" },
   { href: "/map", label: "GIS Denetim Haritası", icon: Map, category: "operational" },
   { href: "/dispatch", label: "Mühendis Görev Dağıtımı", icon: Users, category: "operational" },
-  { href: "/admin/reports", label: "Saha Denetim Raporları", icon: FileText, category: "operational" },
-  { href: "/admin/settings/integrations", label: "Bakanlık e-YİBF Botu", icon: Bot, category: "operational" },
+  { href: "/reports", label: "Saha Denetim Raporları", icon: FileText, category: "operational" },
 ];
 
 // 2. Yönetimsel, Finans & Personel Modülleri (SADECE INSPECTION_ADMIN ve ADMIN görür, INSPECTOR'dan GİZLENİR!)
@@ -192,7 +192,7 @@ export default function InspectionSidebar({
           {/* Navigasyon Bağlantıları */}
           <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
             {navItems.map((item, index) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
               const Icon = item.icon;
 
               // Yönetimsel modüller başlığı (Sadece INSPECTION_ADMIN için ve ilk yönetim öğesinde)
