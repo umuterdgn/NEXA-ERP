@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import PersonnelSidebar from "@/components/PersonnelSidebar"
+import SosEmergencyFab from "@/components/personnel/SosEmergencyFab"
 
 export default function PersonnelLayoutShell({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -16,6 +17,7 @@ export default function PersonnelLayoutShell({ children }: { children: React.Rea
       >
         {children}
       </main>
+      <SosEmergencyFab />
     </>
   )
 }

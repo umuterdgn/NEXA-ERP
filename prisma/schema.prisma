@@ -55,6 +55,10 @@ model User {
   leaveRequests            LeaveRequest[]
   advanceRequests          AdvanceRequest[]
   personnelDocuments       PersonnelDocument[]
+  sentChatMessages         ChatMessage[]             @relation("SentMessages")
+  progressAttachments      ProgressAttachment[]
+  expenseClaims            ExpenseClaim[]
+  sosAlerts                SosAlert[]
 
   @@index([companyId])
   @@index([organizationId])
@@ -305,6 +309,7 @@ model Project {
   stageGates               StageGate[]
   punchLists               PunchList[]
   handoverDocs             HandoverDocument[]
+  progressAttachments      ProgressAttachment[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -2530,11 +2535,14 @@ model NonConformanceReport {
 // ============================================================================
 
 model ChatMessage {
-  id          String  @id @default(cuid())
-  senderId    String // Gönderen Personel ID
-  receiverId  String? // Alıcı Personel ID (Birebir mesajsa)
-  channelName String? // Grup mesajıysa (Örn: "Şantiye Şefleri", "İSG Acil Durum")
-  content     String  @db.Text
+  id          String   @id @default(cuid())
+  senderId    String   // Gönderen User ID
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId  String?  // Alıcı User ID (Birebir mesajsa)
+  projectId   String?  // Şantiye genel grubuna atılan mesajlar için
+  channelName String?  // Grup mesajıysa (Örn: "Şantiye Şefleri", "İSG Acil Durum")
+  content     String   @db.Text
+  photoUrl    String?  // Sahadan atılan anlık fotoğraflar
 
   // Referans Mantığı (Veritabanını şişirmemek için)
   attachmentType  String? // "NCR_REPORT", "ISG_ALARM", "MATERIAL_DOC" vb.
@@ -2546,6 +2554,7 @@ model ChatMessage {
 
   @@index([senderId])
   @@index([receiverId])
+  @@index([projectId])
   @@index([channelName])
   @@index([createdAt])
 }
@@ -4024,6 +4033,67 @@ model HandoverDocument {
   @@index([projectId])
   @@index([documentType])
 }
+
+// ============================================================================
+// SAHA İÇİ İLETİŞİM, İLERLEME KAMERASI, MASRAF VE SOS ALTYAPISI
+// ============================================================================
+
+
+
+// 2. ATAŞMAN & İLERLEME KAMERASI (Kanıt Fotoğrafları)
+model ProgressAttachment {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploaderId    String
+  uploader      User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  photoUrl      String
+  description   String?  // Örn: "A Blok 3. Kat Beton Dökümü Bitti"
+  latitude      Float?
+  longitude     Float?
+  stageGateId   String?  // Eğer bir franchise aşamasını (Stage-Gate) tamamlıyorsa
+  createdAt     DateTime @default(now())
+
+  @@index([projectId])
+  @@index([uploaderId])
+  @@index([stageGateId])
+}
+
+// 3. MASRAF & YAKIT FİŞİ GİRİŞİ (Personel Harcamaları)
+model ExpenseClaim {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId     String?
+  expenseType   String   // "FUEL" (Yakıt), "MATERIAL" (Malzeme), "FOOD" (Yemek)
+  amount        Float
+  receiptUrl    String   // Fiş/Fatura fotoğrafı
+  description   String?
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+}
+
+// 4. ACİL DURUM (SOS ALARMI)
+model SosAlert {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId     String?
+  latitude      Float?
+  longitude     Float?
+  status        String   @default("ACTIVE") // ACTIVE (Kırmızı Alarm), RESOLVED (Çözüldü)
+  resolvedById  String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+}
+
 
 
 

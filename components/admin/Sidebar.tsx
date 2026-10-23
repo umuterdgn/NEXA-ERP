@@ -81,7 +81,8 @@ import {
   Landmark,
   Gavel,
   Navigation,
-  QrCode
+  QrCode,
+  Receipt
 } from "lucide-react"
 
 interface MenuItem {
@@ -155,6 +156,7 @@ const menuItems: MenuItem[] = [
   
   // FİNANS & TEDARİK
   { href: "/admin/finance", label: "Kasa & Finans", icon: DollarSign, category: "FİNANS & TEDARİK" },
+  { href: "/admin/finance/expenses", label: "Masraf & Fiş Onayı", icon: Receipt, category: "FİNANS & TEDARİK" },
   { href: "/admin/finance/documents", label: "Çek / Senet & Teminat", icon: Landmark, category: "FİNANS & TEDARİK" },
   { href: "/admin/inventory", label: "Ambar & Karekod", icon: PackageSearch, category: "FİNANS & TEDARİK" },
   { href: "/admin/equipments", label: "Demirbaş", icon: Wrench, category: "FİNANS & TEDARİK" },

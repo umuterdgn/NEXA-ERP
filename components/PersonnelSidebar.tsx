@@ -29,7 +29,11 @@ import {
   ClipboardCheck,
   ShoppingCart,
   Download,
-  Truck
+  Truck,
+  MessageSquare,
+  Camera,
+  Receipt,
+  Siren
 } from "lucide-react"
 
 export default function PersonnelSidebar({
@@ -48,6 +52,10 @@ export default function PersonnelSidebar({
 
   const navItems = [
     { href: "/personnel", label: "Ana Sayfa", icon: Home },
+    { href: "/personnel/chat", label: "Mesajlar / Şantiye Chat", icon: MessageSquare },
+    { href: "/personnel/camera", label: "Saha Kamerası (İlerleme)", icon: Camera },
+    { href: "/personnel/qr-consume", label: "Malzeme Tüketimi (QR)", icon: QrCode },
+    { href: "/personnel/expenses", label: "Masraf & Fiş Bildirimi", icon: Receipt },
     { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList },
     { href: "/personnel/deliveries", label: "Malzeme Kabul & Teslimat", icon: Truck },
     { href: "/personnel/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck },

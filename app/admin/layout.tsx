@@ -7,6 +7,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import AdminLayoutShell from "@/components/admin/AdminLayoutShell"
+import GlobalSosBanner from "@/components/admin/GlobalSosBanner"
 import { Toaster } from "react-hot-toast"
 import NextAuthSessionProvider from "@/components/providers/SessionProvider"
 
@@ -25,7 +26,8 @@ export default async function AdminLayout({
 
   return (
     <NextAuthSessionProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col">
+        <GlobalSosBanner />
         <AdminLayoutShell>{children}</AdminLayoutShell>
         <Toaster position="bottom-right" />
       </div>

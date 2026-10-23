@@ -163,14 +163,55 @@ export default function ChatPage() {
     channel.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Fetch and poll live messages from database
+  useEffect(() => {
+    const syncLiveMessages = async () => {
+      try {
+        const res = await fetch("/api/chat")
+        const data = await res.json()
+        if (data.messages && data.messages.length > 0) {
+          const formatted: ChatMessage[] = data.messages.map((m: any) => ({
+            id: m.id,
+            senderId: m.senderId,
+            senderName: m.sender?.name || "Saha Personeli",
+            content: m.content,
+            attachmentUrl: m.photoUrl,
+            isRead: m.isRead,
+            createdAt: new Date(m.createdAt),
+          }))
+          setChannels((prev) =>
+            prev.map((c) =>
+              c.id === "1"
+                ? {
+                    ...c,
+                    messages: [
+                      ...c.messages.filter((old) => !formatted.some((nw) => nw.id === old.id)),
+                      ...formatted,
+                    ],
+                  }
+                : c
+            )
+          )
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    syncLiveMessages()
+    const timer = setInterval(syncLiveMessages, 5000)
+    return () => clearInterval(timer)
+  }, [])
+
   const handleSendMessage = async () => {
     if (!messageInput.trim()) return
+    const textToSend = messageInput
+    setMessageInput("")
     
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
-      senderId: "user1",
-      senderName: "Ahmet Yılmaz",
-      content: messageInput,
+      senderId: "admin",
+      senderName: "Merkez Ofis",
+      content: textToSend,
       isRead: true,
       createdAt: new Date()
     }
@@ -179,19 +220,31 @@ export default function ChatPage() {
       const updatedChannel = {
         ...selectedChannel,
         messages: [...selectedChannel.messages, newMessage],
-        lastMessage: messageInput,
+        lastMessage: textToSend,
         lastMessageTime: new Date()
       }
       setSelectedChannel(updatedChannel)
       setChannels(channels.map(c => c.id === selectedChannel.id ? updatedChannel : c))
     }
-    
-    // Check for @AI mention
-    if (messageInput.includes("@AI")) {
-      await handleAIResponse(messageInput)
+
+    // Persist to database ChatMessage model
+    try {
+      await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: textToSend,
+          channelName: selectedChannel?.name || "Genel",
+        }),
+      })
+    } catch (err) {
+      console.error("Chat sync error:", err)
     }
     
-    setMessageInput("")
+    // Check for @AI mention
+    if (textToSend.includes("@AI")) {
+      await handleAIResponse(textToSend)
+    }
   }
 
   const handleAIResponse = async (userMessage: string) => {
