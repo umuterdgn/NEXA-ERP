@@ -297,6 +297,37 @@ export default function AdminSidebar({
     rawMenuItems = subcontractorMenuItems
   } else if (isInspector) {
     rawMenuItems = inspectorMenuItems
+  } else if (userRole === "ACCOUNTANT") {
+    // Sadece Finans, Fatura, Çek/Senet, Hakediş menüleri
+    rawMenuItems = menuItems.filter(item =>
+      item.href === "/admin" ||
+      item.href === "/admin/finance" ||
+      item.href === "/admin/finance/expenses" ||
+      item.href === "/admin/finance/documents" ||
+      item.href === "/admin/billing" ||
+      item.href === "/admin/progress-payments"
+    )
+  } else if (userRole === "HR_STAFF") {
+    // Sadece Personel, Puantaj, İzinler menüleri
+    rawMenuItems = menuItems.filter(item =>
+      item.href === "/admin" ||
+      item.href === "/admin/personel" ||
+      item.href === "/admin/attendance" ||
+      item.href === "/admin/leave" ||
+      item.href === "/admin/personnel-documents" ||
+      item.href === "/admin/shifts"
+    )
+  } else if (userRole === "PURCHASING_STAFF") {
+    // Sadece Tedarik, İhaleler, Envanter menüleri
+    rawMenuItems = menuItems.filter(item =>
+      item.href === "/admin" ||
+      item.href === "/admin/procurement" ||
+      item.href === "/admin/franchise/procurement/consolidated" ||
+      item.href === "/admin/contracts" ||
+      item.href === "/admin/inventory" ||
+      item.href === "/admin/inventory/qr-scanner" ||
+      item.href === "/admin/procurement/logistics"
+    )
   } else if (userRole === "HR_MANAGER") {
     // Sadece İK, Personel ve Bordro linkleri (Kasa, Finans, Metraj tamamen gizlenir)
     rawMenuItems = menuItems.filter(item => 

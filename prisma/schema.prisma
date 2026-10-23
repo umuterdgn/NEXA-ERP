@@ -85,6 +85,9 @@ enum UserRole {
   EQUIPMENT_MANAGER
   ISG_EXPERT
   DRIVER
+  ACCOUNTANT
+  HR_STAFF
+  PURCHASING_STAFF
 }
 
 enum CompanyType {
