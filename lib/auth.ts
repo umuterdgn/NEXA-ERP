@@ -27,7 +27,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // First try to find user by email in User table (for admin users)
         let user = await prisma.user.findUnique({
-          where: { email: credentials.email as string }
+          where: { email: credentials.email as string },
+          include: { company: true }
         })
 
         if (!user) {
@@ -45,7 +46,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // If personnel found and has linked user, use that user
             if (personnel.userId) {
               user = await (prisma as any).user.findUnique({
-                where: { id: personnel.userId }
+                where: { id: personnel.userId },
+                include: { company: true }
               })
             } else {
               // Personnel exists but no linked user account
@@ -81,7 +83,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        console.log("✅ User authenticated:", user.email, "Role:", user.role, "CompanyId:", user.companyId)
+        const effectiveCompanyType =
+          user.company?.companyType ||
+          (user.companyType ? String(user.companyType) : null) ||
+          (user.company ? String(user.company.type) : null) ||
+          null
+
+        console.log("✅ User authenticated:", user.email, "Role:", user.role, "CompanyId:", user.companyId, "CompanyType:", effectiveCompanyType)
 
         return {
           id: user.id,
@@ -89,6 +97,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           role: user.role,
           companyId: user.companyId || null,
+          companyType: effectiveCompanyType,
           permissions: (user as any).permissions || []
         }
       }
@@ -100,6 +109,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = user.role
         token.id = user.id
         token.companyId = (user as any).companyId
+        token.companyType = (user as any).companyType
         token.permissions = user.permissions
       }
       return token
@@ -108,7 +118,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token) {
         session.user.role = token.role as any
         session.user.id = token.id as string
-        ;(session.user as any).companyId = token.companyId as any
+        session.user.companyId = token.companyId as any
+        session.user.companyType = token.companyType as any
         session.user.permissions = token.permissions as any
       }
       return session

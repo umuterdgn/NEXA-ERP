@@ -116,6 +116,16 @@ const inspectorMenuItems: MenuItem[] = [
   { href: "/admin/reports", label: "Saha Denetim Raporları", icon: ClipboardList, category: "SAHA & RAPORLAMA" },
 ]
 
+// Franchise / Rollout Menü Listesi (companyType === 'FRANCHISE')
+const franchiseMenuItems: MenuItem[] = [
+  { href: "/admin/franchise/rollout", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/projects", label: "Mağazalar (Projeler)", icon: Building2, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/procurement/logistics", label: "OFCI Lojistik", icon: Truck, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
+]
+
 const menuItems: MenuItem[] = [
   // ANA MENÜ
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, category: "ANA MENÜ" },
@@ -198,6 +208,12 @@ const menuItems: MenuItem[] = [
   { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "İLETİŞİM & OPERASYON" },
   { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "İLETİŞİM & OPERASYON" },
   
+  // FRANCHISE & ROLLOUT
+  { href: "/admin/franchise/rollout", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
+  { href: "/admin/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
+
   // SİSTEM & AYARLAR
   { href: "/admin/users", label: "Kullanıcılar", icon: Users, category: "SİSTEM & AYARLAR" },
   { href: "/admin/logs", label: "Sistem Logları", icon: FileLogIcon, category: "SİSTEM & AYARLAR" },
@@ -211,9 +227,11 @@ const menuItems: MenuItem[] = [
 export default function AdminSidebar({
   isCollapsed,
   setIsCollapsed,
+  companyType: propCompanyType,
 }: {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
+  companyType?: string
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -253,14 +271,19 @@ export default function AdminSidebar({
   }, [pathname])
 
   const boqHref = activeProjectId ? `/admin/projects/${activeProjectId}/boq` : "/admin/projects"
+  const stageGateHref = activeProjectId ? `/admin/franchise/stage-gates/${activeProjectId}` : "/admin/franchise/stage-gates"
 
   const userRole = session?.user?.role as string
+  const userCompanyType = propCompanyType || (session?.user as any)?.companyType as string | undefined
+  const isFranchise = userCompanyType === "FRANCHISE"
   const isSubcontractor = userRole === "SUBCONTRACTOR"
   const isInspector = userRole === "INSPECTOR" || userRole === "AUDITOR"
 
-  // Role-based menu isolation
+  // Role & CompanyType based menu isolation
   let rawMenuItems = menuItems
-  if (isSubcontractor) {
+  if (isFranchise) {
+    rawMenuItems = franchiseMenuItems
+  } else if (isSubcontractor) {
     rawMenuItems = subcontractorMenuItems
   } else if (isInspector) {
     rawMenuItems = inspectorMenuItems
@@ -317,6 +340,9 @@ export default function AdminSidebar({
   const effectiveMenuItems = rawMenuItems.map((item) => {
     if (item.label === "Keşif & Metraj (BoQ)") {
       return { ...item, href: boqHref }
+    }
+    if (item.label === "İdari İzinler" && activeProjectId) {
+      return { ...item, href: stageGateHref }
     }
     return item
   })

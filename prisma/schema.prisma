@@ -89,6 +89,7 @@ enum CompanyType {
   SUPPLIER
   CLIENT
   INSPECTION
+  FRANCHISE
 }
 
 // ============================================================================
@@ -297,6 +298,10 @@ model Project {
   backgroundJobs           BackgroundJob[]
   dailyAiReports           DailyAiReport[]
   purchaseRequests         PurchaseRequest[]
+  storeTemplateId          String?
+  storeTemplate            StoreTemplate?            @relation(fields: [storeTemplateId], references: [id], onDelete: SetNull)
+  stageGates               StageGate[]
+  punchLists               PunchList[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -306,6 +311,7 @@ model Project {
   @@index([category])
   @@index([city])
   @@index([district])
+  @@index([storeTemplateId])
 }
 
 // ============================================================================
@@ -3907,6 +3913,61 @@ model ShipmentTracking {
   @@index([purchaseRequestId])
   @@index([status])
 }
+
+// ============================================================================
+// FRANCHISE / ROLLOUT (ÇOKLU MAĞAZA KURULUMU) MODÜLÜ
+// ============================================================================
+
+// Tip Mağaza Şablonları
+model StoreTemplate {
+  id              String    @id @default(cuid())
+  companyId       String
+  name            String    // Örn: "AVM Konsepti - 100m2"
+  estimatedDays   Int       // Standart kurulum süresi (Örn: 45 gün)
+  defaultBoQ      Json      // Standart malzeme ve metraj şablonu
+  defaultTasks    Json      // Standart iş planı (Gantt) şablonu
+  projects        Project[]
+  createdAt       DateTime  @default(now())
+
+  @@index([companyId])
+}
+
+// Proje (Mağaza) Aşamaları ve İdari Kilitler (Stage-Gate)
+model StageGate {
+  id              String    @id @default(cuid())
+  projectId       String
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stageName       String    // "KİRALAMA", "AVM_ONAYI", "KABA_YAPI", "İTFAİYE_ONAYI"
+  isRequired      Boolean   @default(true)
+  isApproved      Boolean   @default(false)
+  documentUrl     String?   // İlgili ruhsat veya kontrat belgesi
+  approvedById    String?   // Onaylayan yöneticinin ID'si
+  approvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([stageName])
+  @@index([isApproved])
+}
+
+// Kurumsal Denetim ve Eksik Listesi (Punch List)
+model PunchList {
+  id              String    @id @default(cuid())
+  projectId       String
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inspectorId     String    // Denetleyen Bölge Müdürü
+  subcontractorId String    // Sorumlu taşeron
+  defectDesc      String    // Kusur açıklaması (Örn: "Tabela rengi yanlış")
+  photoUrl        String?
+  deadline        DateTime  // Düzeltme için son tarih
+  status          String    @default("OPEN") // OPEN, FIXED, VERIFIED
+  createdAt       DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([status])
+  @@index([deadline])
+}
+
 
 
 
