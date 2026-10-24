@@ -296,9 +296,15 @@ export default async function ProjectDetailPage({
           </div>
 
           {/* Progress */}
-          <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+          <Link
+            href={`/admin/projects/${resolvedParams.id}/progress`}
+            className="group block bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 hover:border-blue-500 transition-all cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-400">İlerleme</span>
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-400 group-hover:underline flex items-center gap-1">
+                <span>Fiziki İlerleme & Keşif (BoQ)</span>
+                <span className="text-xs">→</span>
+              </span>
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {progressValue}%
               </span>
@@ -309,7 +315,7 @@ export default async function ProjectDetailPage({
                 style={{ width: `${Math.min(100, Math.max(0, progressValue))}%` }}
               />
             </div>
-          </div>
+          </Link>
 
           {/* Quick Stats */}
           <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">

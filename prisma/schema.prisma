@@ -322,6 +322,7 @@ model Project {
   reinforcementVisas       ReinforcementVisa[]
   nonConformances          NonConformance[]
   inspectionForms          InspectionForm[]
+  boqProgressItems         BoqItem[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -4217,3 +4218,44 @@ model InspectionForm {
   @@index([inspectorId])
   @@index([formType])
 }
+
+// ============================================================================
+// ŞANTİYE İLERLEME TAKİBİ, KEŞİF / METRAJ (BoQ) VE İŞ PROGRAMI
+// ============================================================================
+
+model BoqItem {
+  id              String           @id @default(cuid())
+  projectId       String
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pozNo           String           // Örn: "15.120.1001" (Beton Dökümü)
+  description     String           // "C35/45 Hazır Beton"
+  unit            String           // "m3", "Ton", "m2"
+  plannedQuantity Float            // Toplam yapılması gereken
+  unitPrice       Float            // Birim fiyat
+  actualQuantity  Float            @default(0) // Sahada şu ana kadar yapılan (Onaylanmış)
+  startDate       DateTime?        // Planlanan başlangıç
+  endDate         DateTime?        // Planlanan bitiş
+  subcontractorId String?          // Bu işi yapan taşeron
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt @default(now())
+
+  progressLogs    BoqProgressLog[]
+
+  @@index([projectId])
+  @@index([pozNo])
+}
+
+model BoqProgressLog {
+  id            String   @id @default(cuid())
+  boqItemId     String
+  boqItem       BoqItem  @relation(fields: [boqItemId], references: [id], onDelete: Cascade)
+  quantityAdded Float    // Eklenen miktar (Örn: 50)
+  notes         String?  @db.Text
+  attachmentUrl String?  // Fotoğraf / Ataşman
+  createdByName String?  // Kaydeden personel
+  createdAt     DateTime @default(now())
+
+  @@index([boqItemId])
+  @@index([createdAt])
+}
+
