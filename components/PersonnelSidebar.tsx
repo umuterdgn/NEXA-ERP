@@ -33,7 +33,11 @@ import {
   MessageSquare,
   Camera,
   Receipt,
-  Siren
+  Siren,
+  Box,
+  CheckSquare,
+  AlertTriangle,
+  BookOpen
 } from "lucide-react"
 
 export default function PersonnelSidebar({
@@ -50,8 +54,21 @@ export default function PersonnelSidebar({
   const status = sessionContext?.status
   const { isInstallable, promptInstall } = usePwaInstall()
 
-  const navItems = [
+  const userRole = ((session?.user?.role as string) || "").toUpperCase()
+  // Roles that have access to engineering & field supervision tools
+  const isEngineerOrManager =
+    !userRole || ["ENGINEER", "SITE_MANAGER", "STAFF", "ADMIN", "SUPER_ADMIN", "PROJECT_MANAGER"].includes(userRole)
+
+  const engineerItems = [
+    { href: "/personnel/bim-viewer", label: "3D BIM & AR Navigasyon", icon: Box },
+    { href: "/personnel/subcontractor-approvals", label: "Taşeron İş Kabulleri", icon: CheckSquare },
+    { href: "/personnel/ncr-request", label: "Saha Revizyon (DÖF) Aç", icon: AlertTriangle },
+    { href: "/personnel/daily-journal", label: "Günlük Şantiye Jurnali", icon: BookOpen },
+  ]
+
+  const baseNavItems = [
     { href: "/personnel", label: "Ana Sayfa", icon: Home },
+    ...(isEngineerOrManager ? engineerItems : []),
     { href: "/personnel/chat", label: "Mesajlar / Şantiye Chat", icon: MessageSquare },
     { href: "/personnel/camera", label: "Saha Kamerası (İlerleme)", icon: Camera },
     { href: "/personnel/qr-consume", label: "Malzeme Tüketimi (QR)", icon: QrCode },
@@ -70,6 +87,8 @@ export default function PersonnelSidebar({
     { href: "/personnel/leave", label: "İzin Yönetimi", icon: Calendar },
     { href: "/personnel/announcements", label: "Duyurular ve Belgeler", icon: Bell },
   ]
+
+  const navItems = baseNavItems
 
   return (
     <>
