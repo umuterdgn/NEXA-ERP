@@ -2,7 +2,8 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Field Engineer Daily Construction Journal (Şantiye Jurnali) Page
+ * Field Engineer Intelligent Daily Construction Journal (Akıllı Şantiye Jurnali)
+ * Integrated Aggregator for QR Consumption, Attendance, and Subcontractor Proofs
  */
 
 import React, { useState, useEffect } from "react"
@@ -13,166 +14,97 @@ import {
   Calendar,
   CloudSun,
   Users,
-  Percent,
-  Camera,
-  Upload,
-  ArrowLeft,
+  QrCode,
+  PackageCheck,
   CheckCircle2,
+  ShieldCheck,
+  AlertTriangle,
+  ArrowLeft,
+  RefreshCw,
   Send,
   Loader2,
-  X,
-  Layers,
-  FileText
+  FileCheck2,
+  Sparkles,
+  Wind,
+  Droplets,
+  HardHat,
+  Eye,
+  Check,
+  MapPin,
+  Lock,
+  MessageSquare
 } from "lucide-react"
-import { getJournalInitialData, submitJournalEntryAction } from "./actions"
+import { getTodaySummary, submitDailyJournal, JournalSummary } from "@/app/actions/journal"
 import { toast } from "react-hot-toast"
 
-interface ProjectItem {
-  id: string
-  name?: string | null
-  title?: string | null
-  city?: string | null
-}
-
-interface BoqItem {
-  id: string
-  pozNo: string
-  description: string
-  unit: string
-  plannedQuantity: number
-  actualQuantity: number
-  unitPrice: number
-}
-
-export default function DailyJournalPage() {
+export default function SmartDailyJournalPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [submittedSuccess, setSubmittedSuccess] = useState(false)
 
-  const [projects, setProjects] = useState<ProjectItem[]>([])
-  const [boqItems, setBoqItems] = useState<BoqItem[]>([])
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string>("")
-  const [selectedBoqItemId, setSelectedBoqItemId] = useState<string>("")
+  const [summary, setSummary] = useState<JournalSummary | null>(null)
+  const [engineerNotes, setEngineerNotes] = useState("")
 
-  const [progressPercent, setProgressPercent] = useState<number>(15)
-  const [workforceCount, setWorkforceCount] = useState<number>(12)
-  const [weather, setWeather] = useState("Açık, 22°C (Rüzgar: 8 km/s)")
-  const [notes, setNotes] = useState("")
-
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
-  // Load Initial Data
-  useEffect(() => {
-    let isActive = true
-    const load = async () => {
-      try {
-        const res = await getJournalInitialData()
-        if (res.success && isActive) {
-          setProjects(res.projects || [])
-          if (res.selectedProjectId) {
-            setSelectedProjectId(res.selectedProjectId)
-            setBoqItems(res.boqItems || [])
-            if (res.boqItems && res.boqItems.length > 0) {
-              setSelectedBoqItemId(res.boqItems[0].id)
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Journal load error:", err)
-      } finally {
-        if (isActive) setLoading(false)
-      }
-    }
-    void load()
-    return () => { isActive = false }
-  }, [])
-
-  // Switch project
-  const handleProjectChange = async (newProjectId: string) => {
-    setSelectedProjectId(newProjectId)
-    setSelectedBoqItemId("")
+  const loadData = async (projId?: string) => {
+    setLoading(true)
     try {
-      const res = await getJournalInitialData(newProjectId)
-      if (res.success) {
-        setBoqItems(res.boqItems || [])
-        if (res.boqItems && res.boqItems.length > 0) {
-          setSelectedBoqItemId(res.boqItems[0].id)
-        }
+      const res = await getTodaySummary(projId)
+      if (res.success && res.summary) {
+        setSummary(res.summary)
+        setProjects(res.projects || [])
+        setSelectedProjectId(res.summary.projectId)
+      } else {
+        toast.error("Şantiye verileri toplanamadı.")
       }
     } catch (err) {
-      console.error("Change project error:", err)
+      console.error("Journal load error:", err)
+      toast.error("Veriler alınırken bir sorun oluştu.")
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Handle Photo File
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith("image/")) {
-      toast.error("Lütfen bir görsel seçiniz.")
-      return
-    }
-    setSelectedFile(file)
-    setPreviewUrl(URL.createObjectURL(file))
-  }
+  useEffect(() => {
+    void loadData()
+  }, [])
 
-  const handleRemovePhoto = () => {
-    setSelectedFile(null)
-    if (previewUrl && previewUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(previewUrl)
-    }
-    setPreviewUrl(null)
+  const handleProjectChange = (newProjId: string) => {
+    setSelectedProjectId(newProjId)
+    void loadData(newProjId)
   }
-
-  const selectedBoq = boqItems.find((b) => b.id === selectedBoqItemId)
-  const estimatedAddedQty = selectedBoq
-    ? ((selectedBoq.plannedQuantity * progressPercent) / 100).toFixed(1)
-    : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedProjectId) {
-      toast.error("Lütfen bir şantiye projesi seçiniz.")
-      return
-    }
-
-    if (!notes.trim()) {
-      toast.error("Lütfen günlük jurnali ve imalat notlarını giriniz.")
+    if (!summary) {
+      toast.error("Şantiye özeti bulunamadı.")
       return
     }
 
     setSubmitting(true)
-
     try {
-      const formData = new FormData()
-      formData.append("projectId", selectedProjectId)
-      formData.append("boqItemId", selectedBoqItemId)
-      formData.append("progressPercent", progressPercent.toString())
-      formData.append("workforceCount", workforceCount.toString())
-      formData.append("weather", weather)
-      formData.append("notes", notes)
-
-      if (selectedFile) {
-        formData.append("photo", selectedFile)
-      }
-
-      const res = await submitJournalEntryAction(formData)
+      const res = await submitDailyJournal({
+        projectId: summary.projectId,
+        weather: summary.weather,
+        workerCount: summary.workerCount,
+        consumedItems: summary.consumedItems,
+        completedWorks: summary.completedWorks,
+        ncrReports: summary.ncrReports,
+        engineerNotes
+      })
 
       if (res.success) {
-        toast.success(res.message || "Günlük şantiye jurnali başarıyla kaydedildi!")
-        setNotes("")
-        handleRemovePhoto()
-        setTimeout(() => {
-          router.push("/personnel")
-        }, 1200)
+        toast.success(res.message || "Günlük Şantiye Jurnali başarıyla Merkeze iletildi!")
+        setSubmittedSuccess(true)
       } else {
         toast.error(res.error || "Jurnal kaydedilemedi.")
       }
     } catch (err) {
-      console.error("Submit journal error:", err)
-      toast.error("Kayıt sırasında bir hata oluştu.")
+      console.error("Submit error:", err)
+      toast.error("İşlem sırasında beklenmedik bir hata oluştu.")
     } finally {
       setSubmitting(false)
     }
@@ -181,245 +113,354 @@ export default function DailyJournalPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8">
       {/* Top Header */}
-      <div className="max-w-3xl mx-auto mb-6">
-        <button
-          onClick={() => router.push("/personnel")}
-          className="flex items-center gap-2 text-sm text-orange-400 hover:text-orange-300 mb-3 transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Personel Portalı
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-            <BookOpen className="w-6 h-6" />
-          </div>
+      <div className="max-w-4xl mx-auto mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Günlük Şantiye Jurnali & Metraj Girişi
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-400">
-              Saha mühendisinin günlük teknik imalat, hava durumu ve BoQ ilerleme kaydı
-            </p>
+            <button
+              onClick={() => router.push("/personnel")}
+              className="flex items-center gap-2 text-xs text-orange-400 hover:text-orange-300 mb-2 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Personel Portalı
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                  Günlük Şantiye Jurnali & Onay Paneli
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <Sparkles className="w-3 h-3" />
+                    Otonom Sistem
+                  </span>
+                </h1>
+                <p className="text-xs text-slate-400">
+                  QR Malzeme Tüketimi, Puantaj ve Taşeron İş Kanıtlarını birleştiren akıllı rapor
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Project & Refresh */}
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedProjectId}
+              onChange={(e) => handleProjectChange(e.target.value)}
+              className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500 font-medium"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={() => loadData(selectedProjectId)}
+              disabled={loading}
+              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+              title="Verileri Yenile"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-orange-400" : ""}`} />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main Journal Form */}
-      <div className="max-w-3xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* 1. Proje & BoQ İmalat Seçimi */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
-              <Building2 className="w-4 h-4" />
-              Şantiye Projesi ve İmalat Kalemi
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Proje Seçimi *
-                </label>
-                <select
-                  value={selectedProjectId}
-                  onChange={(e) => handleProjectChange(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
-                  required
-                >
-                  <option value="">Proje Seçiniz</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name || p.title || "Proje"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  İmalat Pozu (BoQ Kalemi)
-                </label>
-                <select
-                  value={selectedBoqItemId}
-                  onChange={(e) => setSelectedBoqItemId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
-                >
-                  <option value="">Genel İmalat / Poz Yok</option>
-                  {boqItems.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.pozNo} - {b.description} ({b.plannedQuantity} {b.unit})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* BoQ Info Pill */}
-            {selectedBoq && (
-              <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div>
-                  <span className="text-slate-400">Planlanan Metraj: </span>
-                  <strong className="text-white">
-                    {selectedBoq.plannedQuantity.toLocaleString("tr-TR")} {selectedBoq.unit}
-                  </strong>
-                </div>
-                <div>
-                  <span className="text-slate-400">Mevcut İlerleme: </span>
-                  <strong className="text-emerald-400">
-                    {selectedBoq.actualQuantity.toLocaleString("tr-TR")} {selectedBoq.unit}
-                  </strong>
-                </div>
-                <div>
-                  <span className="text-slate-400">Bugün Eklenen: </span>
-                  <strong className="text-orange-400 font-mono font-bold">
-                    +{estimatedAddedQty} {selectedBoq.unit}
-                  </strong>
-                </div>
-              </div>
-            )}
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto">
+        {loading ? (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-16 text-center">
+            <Loader2 className="w-10 h-10 text-orange-400 animate-spin mx-auto mb-3" />
+            <h3 className="text-base font-bold text-white">Saha Verileri Konsolide Ediliyor...</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+              QR malzeme tüketimleri, puantaj turnike girişleri ve taşeron teknik kabulleri taranıyor.
+            </p>
           </div>
-
-          {/* 2. İlerleme Yüzdesi, Hava Durumu & Personel Sayısı */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
-                <Percent className="w-4 h-4" />
-                Günün İlerleme Yüzdesi (progressPercent)
+        ) : !summary ? (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center">
+            <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-2" />
+            <p className="text-sm text-slate-300">Özet veri bulunamadı.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* 1. Header Information Strip */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Building2 className="w-5 h-5 text-orange-400" />
+                <div>
+                  <div className="text-xs font-semibold text-white">{summary.projectName}</div>
+                  <div className="text-[11px] text-slate-400">Şantiye Sahası</div>
+                </div>
               </div>
-              <div className="font-mono text-base font-bold text-orange-400 bg-orange-500/10 px-3 py-1 rounded-xl border border-orange-500/20">
-                %{progressPercent}
+
+              <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                <Calendar className="w-3.5 h-3.5 text-orange-400" />
+                <span>Rapor Tarihi:</span>
+                <strong className="text-white font-mono">{summary.date}</strong>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                <Lock className="w-3.5 h-3.5" />
+                <span>Sistem Verileri Salt-Okunur (Korumalı)</span>
               </div>
             </div>
 
-            <div>
-              <input
-                type="range"
-                min="1"
-                max="100"
-                step="1"
-                value={progressPercent}
-                onChange={(e) => setProgressPercent(parseInt(e.target.value, 10))}
-                className="w-full h-2.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-orange-500 border border-slate-800"
+            {/* 2. Hava Durumu & Personel Puantaj Kartları */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Hava Durumu Kartı */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider">
+                    <CloudSun className="w-4 h-4" />
+                    Otonom Hava Durumu
+                  </div>
+                  <span className="text-[10px] text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                    API / İstasyon
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono">
+                    {summary.weather.temperature}
+                    <span className="text-orange-400">{summary.weather.unit}</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">{summary.weather.condition}</div>
+                    <div className="text-[11px] text-slate-400 flex items-center gap-3 mt-1">
+                      <span className="flex items-center gap-1">
+                        <Wind className="w-3 h-3 text-slate-500" />
+                        {summary.weather.windSpeed}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Droplets className="w-3 h-3 text-blue-400" />
+                        {summary.weather.humidity}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 text-[10px] text-slate-500 border-t border-slate-800/80 pt-2">
+                  Kaynak: {summary.weather.source}
+                </div>
+              </div>
+
+              {/* Personel Puantaj Kartı */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
+                    <Users className="w-4 h-4" />
+                    Aktif Saha Personeli (QR Puantaj)
+                  </div>
+                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold">
+                    Turnike Doğrulamalı
+                  </span>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono">
+                    {summary.workerCount}
+                  </div>
+                  <span className="text-xs text-slate-400">Kişi Bugün Giriş Yaptı</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-slate-800/80 text-xs">
+                  <div className="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                    <div className="text-[10px] text-slate-400">Kadrolu Teknik Kadro</div>
+                    <div className="text-sm font-bold text-blue-400 font-mono">
+                      {summary.workerBreakdown.staffCount} Personel
+                    </div>
+                  </div>
+                  <div className="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                    <div className="text-[10px] text-slate-400">Taşeron İşçi / Usta</div>
+                    <div className="text-sm font-bold text-amber-400 font-mono">
+                      {summary.workerBreakdown.subcontractorCount} Çalışan
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Tüketilen Malzemeler (QR Tüketim Özeti) */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                  <QrCode className="w-4 h-4" />
+                  Bugün Tüketilen Malzemeler (QR Envanter Düşümü)
+                </div>
+                <span className="text-xs text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
+                  {summary.consumedItems.length} Kalem
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {summary.consumedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                        <PackageCheck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-white">{item.materialName}</div>
+                        <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                          <span className="font-mono text-slate-500">[{item.qrCode}]</span>
+                          <span>•</span>
+                          <span className="text-orange-400">📍 {item.zone}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div className="font-mono font-bold text-emerald-400 text-sm">
+                        {item.quantity.toLocaleString("tr-TR")} {item.unit}
+                      </div>
+                      {item.consumedAt && (
+                        <div className="text-[10px] text-slate-500">Saat: {item.consumedAt}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 4. Tamamlanan & Onaylanan İmalatlar (Taşeron İş Kabulleri) */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                  <ShieldCheck className="w-4 h-4" />
+                  Bugün Onaylanan Taşeron İmalatları & Metrajlar
+                </div>
+                <span className="text-xs text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
+                  {summary.completedWorks.length} İmalat
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {summary.completedWorks.map((work) => (
+                  <div
+                    key={work.id}
+                    className="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white">{work.title}</span>
+                        <span className="text-[10px] font-semibold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                          {work.subcontractorName}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">{work.quantityText}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                        <Check className="w-3 h-3" />
+                        Teknik Kabul Onaylı
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 5. İSG & DÖF (NCR) Uygunsuzlukları */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-red-400 uppercase tracking-wider">
+                  <AlertTriangle className="w-4 h-4" />
+                  Saha Revizyon ve Kusur (DÖF) Durumu
+                </div>
+                <span className="text-xs text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
+                  {summary.ncrReports.length} Kayıt
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {summary.ncrReports.map((ncr) => (
+                  <div
+                    key={ncr.id}
+                    className="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div>
+                      <span className="font-mono font-bold text-orange-400 mr-2">
+                        {ncr.reportNo}
+                      </span>
+                      <span className="text-slate-200">{ncr.description}</span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
+                        ncr.status === "Açık DÖF"
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                          : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                      }`}
+                    >
+                      {ncr.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 6. Mühendisin Manuel Notu & Değerlendirmesi */}
+            <div className="bg-slate-900 border border-orange-500/30 rounded-2xl p-5 space-y-3 shadow-lg">
+              <label className="block text-xs font-bold text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Günlük Genel Değerlendirme / Ekstra Notlar
+              </label>
+              <textarea
+                value={engineerNotes}
+                onChange={(e) => setEngineerNotes(e.target.value)}
+                rows={4}
+                placeholder="Örn: 3. Kat beton dökümü sırasında mikser sirkülasyonu sorunsuz tamamlanmış olup, 7 ve 28 günlük numuneler laboratuvara sevk edilmiştir. Hava şartları elverişli seyretmiştir..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 resize-none transition"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
-                  <CloudSun className="w-3.5 h-3.5 text-amber-400" />
-                  Günün Hava Durumu
-                </label>
-                <input
-                  type="text"
-                  value={weather}
-                  onChange={(e) => setWeather(e.target.value)}
-                  placeholder="Örn: Açık, 24°C"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-blue-400" />
-                  Sahadaki Toplam Personel
-                </label>
-                <div className="flex items-center gap-2">
+            {/* 7. Büyük Doğrulama & Merkeze Gönder Butonu */}
+            <div className="pt-2">
+              {submittedSuccess ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 text-center space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                  <h3 className="text-base font-bold text-white">
+                    Günün Şantiye Jurnali Başarıyla Merkeze İletildi!
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Tüm QR tüketimleri, puantaj ve hakediş snapshot verileri DailyJournal modeline mühürlenerek kaydedildi.
+                  </p>
                   <button
                     type="button"
-                    onClick={() => setWorkforceCount(Math.max(1, workforceCount - 1))}
-                    className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center justify-center text-sm"
+                    onClick={() => setSubmittedSuccess(false)}
+                    className="mt-2 text-xs text-orange-400 hover:underline"
                   >
-                    -
+                    Yeni Bir Not Eklemek İçin Tekrar Aç
                   </button>
-                  <span className="font-mono text-sm font-bold text-white w-10 text-center">
-                    {workforceCount}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setWorkforceCount(workforceCount + 1)}
-                    className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center justify-center text-sm"
-                  >
-                    +
-                  </button>
-                  <span className="text-xs text-slate-400 ml-1">Kişi (Puantaj)</span>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Teknik İmalat Notları */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-            <label className="block text-xs font-semibold text-orange-400 uppercase tracking-wider">
-              Şantiye Jurnali Teknik Notları *
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={5}
-              required
-              placeholder="Günün özeti: A Blok 3. kat döşeme donatısı bağlandı, şakül ve paspayı kontrolleri yapıldı, 14:00 itibarıyla C35/45 beton dökümü sorunsuz başlatıldı..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 resize-none transition"
-            />
-          </div>
-
-          {/* 4. Saha Fotoğrafı */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
-                <Camera className="w-4 h-4" />
-                Saha İmalat Fotoğrafı
-              </div>
-              {previewUrl && (
+              ) : (
                 <button
-                  type="button"
-                  onClick={handleRemovePhoto}
-                  className="text-xs text-red-400 hover:underline flex items-center gap-1"
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-sm sm:text-base shadow-2xl shadow-orange-600/30 flex items-center justify-center gap-3 transition disabled:opacity-50 group"
                 >
-                  <X className="w-3.5 h-3.5" />
-                  Kaldır
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Veriler Doğrulanıyor ve Merkeze Gönderiliyor...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5 group-hover:translate-x-1 transition" />
+                      Verileri Doğrula & Jurnali Merkeze Gönder
+                    </>
+                  )}
                 </button>
               )}
             </div>
-
-            {!previewUrl ? (
-              <label className="border border-dashed border-slate-700 hover:border-orange-500 bg-slate-950 rounded-xl p-4 text-center cursor-pointer transition flex items-center justify-center gap-3">
-                <Camera className="w-5 h-5 text-orange-400" />
-                <span className="text-xs text-slate-400">
-                  {selectedFile ? selectedFile.name : "Fotoğraf Çek veya Galeriden Seç"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
-            ) : (
-              <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-black max-h-48 flex items-center justify-center">
-                <img src={previewUrl} alt="Jurnal Fotoğrafı" className="max-h-48 object-contain" />
-              </div>
-            )}
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 transition disabled:opacity-50"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Şantiye Jurnali Kaydediliyor...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Şantiye Jurnalini Onaylı Olarak Kaydet
-              </>
-            )}
-          </button>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   )

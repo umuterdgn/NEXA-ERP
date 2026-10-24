@@ -4265,3 +4265,26 @@ model BoqProgressLog {
   @@index([createdAt])
 }
 
+// ============================================================================
+// GÜNLÜK ŞANTİYE JURNALİ (Aggregated Field Daily Journal)
+// ============================================================================
+
+model DailyJournal {
+  id              String   @id @default(cuid())
+  projectId       String
+  engineerId      String   // Raporu onaylayan mühendis
+  date            DateTime @default(now())
+  weather         Json?    // Otonom çekilen hava durumu (Sıcaklık, Rüzgar)
+  workerCount     Int      // Sistemden otomatik hesaplanan
+  consumedItems   Json     // O gün tüketilen (QR) malzemelerin özeti
+  completedWorks  Json     // O gün onaylanan taşeron hakediş/kanıtları
+  ncrReports      Json     // O gün açılan kusur/DÖF kayıtları
+  engineerNotes   String?  // Mühendisin eklemek istediği manuel yorum
+  status          String   @default("SUBMITTED") // Merkez ofise iletildi
+  createdAt       DateTime @default(now())
+
+  @@index([projectId])
+  @@index([engineerId])
+  @@index([date])
+}
+
