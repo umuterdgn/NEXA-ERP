@@ -16,15 +16,32 @@ export default async function PersonnelPage() {
     redirect("/login")
   }
 
-  const userRole = session.user?.role as string
-  const isPersonnel = userRole === "STAFF" || userRole === "WORKER"
+  const userRole = ((session.user?.role as string) || "").toUpperCase()
+  const isPersonnel = [
+    "STAFF",
+    "WORKER",
+    "PERSONNEL",
+    "ENGINEER",
+    "SITE_MANAGER",
+    "ADMIN",
+    "SUPER_ADMIN"
+  ].includes(userRole)
 
   if (!isPersonnel) {
+    if (userRole === "INSPECTION_ADMIN" || userRole === "INSPECTOR" || userRole === "AUDITOR") {
+      redirect("/inspection/dashboard")
+    }
+    if (userRole === "SUBCONTRACTOR") {
+      redirect("/subcontractor")
+    }
+    if (userRole === "SUPPLIER") {
+      redirect("/supplier")
+    }
     redirect("/admin")
   }
 
   // Fetch personnel data
-  const personnel = await (prisma as any).personel.findFirst({
+  let personnel = await (prisma as any).personel.findFirst({
     where: {
       userId: session.user.id
     },
@@ -60,12 +77,21 @@ export default async function PersonnelPage() {
     }
   })
 
+  // Fallback for engineers/site managers without a linked personel record
   if (!personnel) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-white">Personel kaydı bulunamadı</div>
-      </div>
-    )
+    personnel = {
+      id: session.user.id || "eng-fallback",
+      name: session.user.name || "Saha Mühendisi / Personel",
+      department: userRole === "ENGINEER" ? "Mühendislik & Şantiye" : "Saha Yönetimi",
+      currentSite: "Merkez Şantiye Projesi",
+      phone: "+90 555 000 00 00",
+      email: session.user.email || "muhendis@nexa.com",
+      gunlukYevmiye: 2500,
+      attendanceRecords: [],
+      inventoryAssignments: [],
+      payments: [],
+      leaveRequests: []
+    }
   }
 
   // Calculate summary data

@@ -63,35 +63,67 @@ export default function LoginPage() {
 
       setLoginSuccess(true);
 
-      // Kullanıcı oturumundaki yetkiyi sorgula ve KESİN yönlendirmeyi uygula
-      let targetPath = loginMode === "inspection" ? "/dashboard" : "/admin";
+      // Kullanıcı oturumundaki role bilgisine göre KESİN DİNAMİK YÖNLENDİRME (Adım 1)
+      let targetPath = "/admin";
       try {
         const sessionRes = await fetch("/api/auth/session");
         if (sessionRes.ok) {
           const sessionData = await sessionRes.json();
-          const role = sessionData?.user?.role;
+          const role = (sessionData?.user?.role as string)?.toUpperCase() || "";
 
-          // Yapı Denetim rolleri KESİNLİKLE /dashboard'a yönlendirilir
-          if (role === "INSPECTION_ADMIN" || role === "INSPECTOR" || role === "AUDITOR") {
-            targetPath = "/dashboard";
-          } else if (role === "SUBCONTRACTOR") {
-            targetPath = "/subcontractor";
-          } else if (role === "WORKER" || role === "STAFF") {
-            targetPath = "/personnel";
-          } else if (role === "SUPPLIER") {
-            targetPath = "/supplier";
-          } else if (role === "HR_MANAGER") {
-            targetPath = "/admin/personel";
-          } else if (role === "FINANCE_MANAGER") {
-            targetPath = "/admin/finance";
-          } else if (role === "PROCUREMENT_MANAGER") {
-            targetPath = "/admin/procurement";
-          } else if (role === "EQUIPMENT_MANAGER") {
-            targetPath = "/admin/equipments";
-          } else if (role === "ISG_EXPERT") {
-            targetPath = "/admin/personel/alerts";
-          } else if (role === "SITE_MANAGER" || role === "ADMIN" || role === "SUPER_ADMIN") {
-            targetPath = "/admin";
+          switch (role) {
+            // 1. INSPECTION_ADMIN veya INSPECTOR (Yapı Denetim) ➔ /inspection/dashboard
+            case "INSPECTION_ADMIN":
+            case "INSPECTOR":
+            case "AUDITOR":
+              targetPath = "/inspection/dashboard";
+              break;
+
+            // 2. SUBCONTRACTOR ➔ /subcontractor
+            case "SUBCONTRACTOR":
+              targetPath = "/subcontractor";
+              break;
+
+            // 3. ENGINEER, SITE_MANAGER veya PERSONNEL ➔ /personnel/dashboard
+            case "ENGINEER":
+            case "SITE_MANAGER":
+            case "PERSONNEL":
+            case "STAFF":
+            case "WORKER":
+              targetPath = "/personnel/dashboard";
+              break;
+
+            // 4. SUPPLIER ➔ /supplier
+            case "SUPPLIER":
+              targetPath = "/supplier";
+              break;
+
+            // 5. Departman Yöneticileri
+            case "HR_MANAGER":
+              targetPath = "/admin/personel";
+              break;
+            case "FINANCE_MANAGER":
+              targetPath = "/admin/finance";
+              break;
+            case "PROCUREMENT_MANAGER":
+              targetPath = "/admin/procurement";
+              break;
+            case "EQUIPMENT_MANAGER":
+              targetPath = "/admin/equipments";
+              break;
+            case "ISG_EXPERT":
+              targetPath = "/admin/personel/alerts";
+              break;
+
+            // 6. ADMIN veya MANAGER ➔ /admin
+            case "ADMIN":
+            case "SUPER_ADMIN":
+            case "MANAGER":
+            case "PROJECT_MANAGER":
+            case "MUTEAHHIT":
+            default:
+              targetPath = "/admin";
+              break;
           }
         }
       } catch (err) {
@@ -107,7 +139,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickDemo = (demoType: "admin" | "site_manager" | "subcontractor" | "worker" | "inspector" | "inspection_admin") => {
+  const handleQuickDemo = (demoType: "admin" | "site_manager" | "engineer" | "subcontractor" | "worker" | "inspector" | "inspection_admin") => {
     setError("");
     if (demoType === "admin") {
       setLoginMode("contractor");
@@ -116,6 +148,10 @@ export default function LoginPage() {
     } else if (demoType === "site_manager") {
       setLoginMode("contractor");
       setEmail("sef@nexa.com");
+      setPassword("demo123");
+    } else if (demoType === "engineer") {
+      setLoginMode("contractor");
+      setEmail("muhendis@nexa.com");
       setPassword("demo123");
     } else if (demoType === "subcontractor") {
       setLoginMode("contractor");
@@ -308,6 +344,14 @@ export default function LoginPage() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => handleQuickDemo("engineer")}
+                  className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
+                >
+                  <HardHat className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                  <span className="truncate">Saha Mühendisi</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleQuickDemo("site_manager")}
                   className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
                 >
@@ -325,7 +369,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => handleQuickDemo("worker")}
-                  className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
+                  className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2 col-span-2 sm:col-span-1"
                 >
                   <Users className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span className="truncate">Saha Personeli</span>
