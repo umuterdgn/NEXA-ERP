@@ -180,6 +180,7 @@ model Project {
   year                     String?
   location                 String?
   isActive                 Boolean                   @default(true)
+  deletedAt                DateTime? // Cascading Soft-Delete desteği
   displayOrder             Int                       @default(0)
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
@@ -1061,6 +1062,7 @@ model ProgressBilling {
   retentionDeduction Float         @default(0)
   netPayable         Float         @default(0)
   status             BillingStatus @default(DRAFT)
+  version            Int           @default(1) // İyimser Kilitleme (Optimistic Concurrency Control)
 
   contract              Contract?              @relation(fields: [contractId], references: [id])
   financialTransactions FinancialTransaction[]

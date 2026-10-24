@@ -22,8 +22,20 @@ export type TestCategory =
   | "RETENTION_DEDUCTION"
   | "BLUEPRINT_INVALIDATION"
   | "IOT_HARDWARE_WEBHOOK"
+  // Faz 5: Kriz & İyimser Kilitleme
+  | "RESOURCE_OVERLAP_CONFLICT"
+  | "OPTIMISTIC_LOCK_COLLISION"
+  | "BUDGET_HARD_STOP_OVERFLOW"
+  // Faz 6: Yönetişim & Algoritmik Çöküş
+  | "EXECUTIVE_PROXY_DELEGATION"
+  | "GANTT_DAG_CIRCULAR_LOOP"
+  | "GDPR_KVKK_ANONYMIZATION"
+  // Faz 7: Kıyamet, Adli Bilişim & Suistimal
+  | "CONTRACT_PRICE_ESCALATION"
+  | "AI_ANOMALY_FRAUD_DETECTION"
+  | "CASCADING_SOFT_DELETE_RESTORE"
 
-export type TestPhase = "FAZ_1" | "FAZ_2" | "FAZ_3" | "FAZ_4"
+export type TestPhase = "FAZ_1" | "FAZ_2" | "FAZ_3" | "FAZ_4" | "FAZ_5" | "FAZ_6" | "FAZ_7"
 
 export type TestStatus = "IDLE" | "RUNNING" | "PASSED" | "FAILED" | "SKIPPED"
 
@@ -53,6 +65,53 @@ export interface DiagnosticLogLine {
   timestamp: string
   level: "INFO" | "SUCCESS" | "WARN" | "ERROR" | "SYSTEM"
   message: string
+}
+
+export interface TeardownPool {
+  // Faz 1
+  projectIds: string[]
+  userIds: string[]
+  subcontractorIds: string[]
+  boqItemIds: string[]
+  stageGateIds: string[]
+  coreSampleIds: string[]
+  ncrIds: string[]
+  progressBillingIds: string[]
+  workProofIds: string[]
+  inventoryItemIds: string[]
+  weatherForecastIds: string[]
+  uploadedFiles: string[]
+  // Faz 2
+  personelIds: string[]
+  personelPaymentIds: string[]
+  purchaseRequestIds: string[]
+  supplierBidIds: string[]
+  companyIds: string[]
+  purchaseOrderIds: string[]
+  materialRequestIds: string[]
+  punchListIds: string[]
+  deliveryIssueIds: string[]
+  goodsReceiptIds: string[]
+  // Faz 3
+  contractIds: string[]
+  equipmentIds: string[]
+  chatMessageIds: string[]
+  auditLogIds: string[]
+  systemLogIds: string[]
+  financialTransactionIds: string[]
+  // Faz 4
+  blueprintIds: string[]
+  reinforcementVisaIds: string[]
+  // Faz 5, 6, 7
+  projectTaskIds: string[]
+  equipmentFuelRecordIds: string[]
+}
+
+export interface SuiteContext {
+  runId: string
+  teardownPool: TeardownPool
+  addLog: (level: DiagnosticLogLine["level"], message: string) => void
+  testResults: DiagnosticTestResult[]
 }
 
 export interface DiagnosticRunReport {

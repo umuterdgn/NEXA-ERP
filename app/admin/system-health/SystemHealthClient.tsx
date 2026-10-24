@@ -48,7 +48,7 @@ import { DiagnosticRunReport, DiagnosticTestResult, DiagnosticLogLine } from "@/
 export default function SystemHealthClient() {
   const [report, setReport] = useState<DiagnosticRunReport | null>(null)
   const [isRunning, setIsRunning] = useState(false)
-  const [activeTab, setActiveTab] = useState<"ALL" | "FAZ_1" | "FAZ_2" | "FAZ_3" | "FAZ_4" | "FAILED">("ALL")
+  const [activeTab, setActiveTab] = useState<"ALL" | "FAZ_1" | "FAZ_2" | "FAZ_3" | "FAZ_4" | "FAZ_5" | "FAZ_6" | "FAZ_7" | "FAILED">("ALL")
   const [selectedTest, setSelectedTest] = useState<DiagnosticTestResult | null>(null)
   const [copiedLogs, setCopiedLogs] = useState(false)
   const [liveLogs, setLiveLogs] = useState<DiagnosticLogLine[]>([])
@@ -71,13 +71,13 @@ export default function SystemHealthClient() {
         id: "start-1",
         timestamp: new Date().toLocaleTimeString("tr-TR"),
         level: "SYSTEM",
-        message: "⚡ NEXA Enterprise Diagnostics Engine v3.0 başlatılıyor...",
+        message: "⚡ NEXA Enterprise Diagnostics Engine v4.0 başlatılıyor...",
       },
       {
         id: "start-2",
         timestamp: new Date().toLocaleTimeString("tr-TR"),
         level: "INFO",
-        message: "🧪 Faz 1 (Çekirdek Sistem), Faz 2 (Operasyon & İK), Faz 3 (Hukuk & Siber Güvenlik) ve Faz 4 (Global Kur, Revizyon & IoT) Testleri Başlatıldı...",
+        message: "🧪 Faz 1-7 (Çekirdek, İK, Hukuk, Global, Kriz, Yönetişim & Adli Bilişim) 31 Modül Testi Başlatıldı...",
       },
     ])
 
@@ -173,6 +173,27 @@ export default function SystemHealthClient() {
         return <Layers className="w-4 h-4 text-indigo-400" />
       case "IOT_HARDWARE_WEBHOOK":
         return <Cpu className="w-4 h-4 text-rose-400" />
+      // Faz 5: Kriz & İyimser Kilitleme
+      case "RESOURCE_OVERLAP_CONFLICT":
+        return <AlertTriangle className="w-4 h-4 text-rose-400" />
+      case "OPTIMISTIC_LOCK_COLLISION":
+        return <Lock className="w-4 h-4 text-amber-400" />
+      case "BUDGET_HARD_STOP_OVERFLOW":
+        return <Coins className="w-4 h-4 text-red-400" />
+      // Faz 6: Yönetişim & Algoritmik Çöküş
+      case "EXECUTIVE_PROXY_DELEGATION":
+        return <Award className="w-4 h-4 text-purple-400" />
+      case "GANTT_DAG_CIRCULAR_LOOP":
+        return <RotateCw className="w-4 h-4 text-cyan-400" />
+      case "GDPR_KVKK_ANONYMIZATION":
+        return <ShieldCheck className="w-4 h-4 text-emerald-400" />
+      // Faz 7: Kıyamet, Adli Bilişim & Suistimal
+      case "CONTRACT_PRICE_ESCALATION":
+        return <Coins className="w-4 h-4 text-teal-400" />
+      case "AI_ANOMALY_FRAUD_DETECTION":
+        return <Flame className="w-4 h-4 text-orange-400" />
+      case "CASCADING_SOFT_DELETE_RESTORE":
+        return <Database className="w-4 h-4 text-indigo-400" />
       default:
         return <Activity className="w-4 h-4 text-slate-400" />
     }
@@ -186,6 +207,9 @@ export default function SystemHealthClient() {
     if (activeTab === "FAZ_2") return t.phase === "FAZ_2"
     if (activeTab === "FAZ_3") return t.phase === "FAZ_3"
     if (activeTab === "FAZ_4") return t.phase === "FAZ_4"
+    if (activeTab === "FAZ_5") return t.phase === "FAZ_5"
+    if (activeTab === "FAZ_6") return t.phase === "FAZ_6"
+    if (activeTab === "FAZ_7") return t.phase === "FAZ_7"
     if (activeTab === "FAILED") return t.status === "FAILED"
     return true
   })
@@ -194,9 +218,12 @@ export default function SystemHealthClient() {
   const faz2Count = currentTests.filter((t) => t.phase === "FAZ_2").length
   const faz3Count = currentTests.filter((t) => t.phase === "FAZ_3").length
   const faz4Count = currentTests.filter((t) => t.phase === "FAZ_4").length
+  const faz5Count = currentTests.filter((t) => t.phase === "FAZ_5").length
+  const faz6Count = currentTests.filter((t) => t.phase === "FAZ_6").length
+  const faz7Count = currentTests.filter((t) => t.phase === "FAZ_7").length
   const failedCount = currentTests.filter((t) => t.status === "FAILED").length
 
-  const isFullCompliance = report && report.failedTests === 0 && report.totalTests >= 21
+  const isFullCompliance = report && report.failedTests === 0 && report.totalTests >= 31
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 space-y-8 font-sans">
@@ -208,7 +235,7 @@ export default function SystemHealthClient() {
             <span>NEXA Enterprise Diagnostics Engine v4.0</span>
             <span className="text-slate-600">•</span>
             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
-              FAZ 1, 2, 3 & 4 TAM ENTEGRE
+              FAZ 1 - 7 TAM ENTEGRE (31 MODÜL)
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
@@ -299,10 +326,10 @@ export default function SystemHealthClient() {
                   <CheckCheck className="w-8 h-8 text-emerald-400" />
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-                  Çekirdek Sistem (Faz 1), Operasyon & İK (Faz 2), Hukuk & Güvenlik (Faz 3) ve Global Holding, Revizyon & IoT Donanım (Faz 4) olmak üzere 4 ana fazın tümü 21/21 başarı ve sıfır veri kirliliği ile onaylanmıştır.
+                  Çekirdek Sistem (Faz 1), Operasyon & İK (Faz 2), Hukuk & Güvenlik (Faz 3), Global Kur & IoT (Faz 4), Kriz & İyimser Kilit (Faz 5), Yönetişim & KVKK (Faz 6) ve Adli Bilişim & Suistimal (Faz 7) olmak üzere 7 ana fazın tümü 31/31 başarı ve sıfır veri kirliliği ile mühürlenmiştir.
                 </p>
 
-                {/* 4 Faz Rozetleri */}
+                {/* 7 Faz Rozetleri */}
                 <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 font-semibold">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Faz 1: Çekirdek & Denetim
@@ -313,8 +340,17 @@ export default function SystemHealthClient() {
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 font-semibold">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Faz 3: Hukuk & Güvenlik
                   </span>
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 font-semibold shadow-xs shadow-teal-500/20">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> Faz 4: Global Holding & IoT
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> Faz 4: Global & IoT
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" /> Faz 5: Kriz & İyimser Kilit
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" /> Faz 6: Yönetişim & KVKK
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30 flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-orange-400" /> Faz 7: Adli Bilişim & Suistimal
                   </span>
                 </div>
               </div>
@@ -531,12 +567,36 @@ export default function SystemHealthClient() {
                 activeTab === "FAZ_4" ? "bg-teal-600 text-white font-bold shadow-md shadow-teal-950" : "bg-slate-900 text-slate-400 hover:text-white"
               }`}
             >
-              Faz 4: Kur, Revizyon & IoT ({faz4Count})
+              Faz 4: Kur & IoT ({faz4Count})
+            </button>
+            <button
+              onClick={() => setActiveTab("FAZ_5")}
+              className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${
+                activeTab === "FAZ_5" ? "bg-rose-600 text-white font-bold shadow-md shadow-rose-950" : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              Faz 5: Kriz & Kilit ({faz5Count})
+            </button>
+            <button
+              onClick={() => setActiveTab("FAZ_6")}
+              className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${
+                activeTab === "FAZ_6" ? "bg-purple-600 text-white font-bold shadow-md shadow-purple-950" : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              Faz 6: Yönetişim & KVKK ({faz6Count})
+            </button>
+            <button
+              onClick={() => setActiveTab("FAZ_7")}
+              className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${
+                activeTab === "FAZ_7" ? "bg-orange-600 text-white font-bold shadow-md shadow-orange-950" : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              Faz 7: Suistimal Radarı ({faz7Count})
             </button>
             <button
               onClick={() => setActiveTab("FAILED")}
               className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${
-                activeTab === "FAILED" ? "bg-rose-600 text-white" : "bg-slate-900 text-slate-400 hover:text-white"
+                activeTab === "FAILED" ? "bg-red-600 text-white" : "bg-slate-900 text-slate-400 hover:text-white"
               }`}
             >
               Hatalılar ({failedCount})
@@ -551,11 +611,18 @@ export default function SystemHealthClient() {
             const isFaz2 = test.phase === "FAZ_2"
             const isFaz3 = test.phase === "FAZ_3"
             const isFaz4 = test.phase === "FAZ_4"
+            const isFaz5 = test.phase === "FAZ_5"
+            const isFaz6 = test.phase === "FAZ_6"
+            const isFaz7 = test.phase === "FAZ_7"
 
             let phaseBadgeClass = "bg-indigo-950 text-indigo-300 border-indigo-500/30"
-            if (isFaz2) phaseBadgeClass = "bg-purple-950 text-purple-300 border-purple-500/30"
-            if (isFaz3) phaseBadgeClass = "bg-amber-950 text-amber-300 border-amber-500/30"
-            if (isFaz4) phaseBadgeClass = "bg-teal-950 text-teal-300 border-teal-500/30"
+            let phaseLabel = "FAZ 1"
+            if (isFaz2) { phaseBadgeClass = "bg-purple-950 text-purple-300 border-purple-500/30"; phaseLabel = "FAZ 2" }
+            if (isFaz3) { phaseBadgeClass = "bg-amber-950 text-amber-300 border-amber-500/30"; phaseLabel = "FAZ 3" }
+            if (isFaz4) { phaseBadgeClass = "bg-teal-950 text-teal-300 border-teal-500/30"; phaseLabel = "FAZ 4" }
+            if (isFaz5) { phaseBadgeClass = "bg-rose-950 text-rose-300 border-rose-500/30"; phaseLabel = "FAZ 5" }
+            if (isFaz6) { phaseBadgeClass = "bg-purple-950 text-purple-300 border-purple-500/30"; phaseLabel = "FAZ 6" }
+            if (isFaz7) { phaseBadgeClass = "bg-orange-950 text-orange-300 border-orange-500/30"; phaseLabel = "FAZ 7" }
 
             return (
               <div
@@ -574,7 +641,7 @@ export default function SystemHealthClient() {
                           {test.categoryTitle}
                         </span>
                         <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border ${phaseBadgeClass}`}>
-                          {isFaz4 ? "FAZ 4" : isFaz3 ? "FAZ 3" : isFaz2 ? "FAZ 2" : "FAZ 1"}
+                          {phaseLabel}
                         </span>
                       </div>
                       <h3 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">
@@ -1027,6 +1094,148 @@ const defaultPlaceholders: DiagnosticTestResult[] = [
       { name: "Turnike Donanım Yanıtı (Geçiş Engellendi - accessGranted=false)", expected: false, actual: false, passed: true },
       { name: "Otonom CRITICAL Seviyeli İSG DÖF (NCR) Kaydı Açılışı", expected: "CRITICAL", actual: "CRITICAL", passed: true },
       { name: "DÖF Tutanağında 'İzinsiz Sahaya Giriş (Yetkisiz Baret/RFID)' İbaresi", expected: true, actual: true, passed: true },
+    ],
+  },
+
+  // Faz 5: Kriz & İyimser Kilitleme
+  {
+    id: "TEST-18.1",
+    phase: "FAZ_5",
+    category: "RESOURCE_OVERLAP_CONFLICT",
+    categoryTitle: "Kaynak Çakışması & Zaman Planlaması",
+    title: "Aynı Mühendisin Aynı Saatte İki Farklı Projeye Atanması ve 409 Conflict Koruması",
+    description: "Aynı mühendis Proje A'da mesaideyken, aynı zaman diliminde Proje B'ye görev atanmaya çalışıldığında; sistem zaman çakışmasını anında yakalayıp 409 Conflict dönerek çift rezervasyonu engellemelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Zaman Çakışması Yanıt Kodu (409 Conflict)", expected: 409, actual: 409, passed: true },
+      { name: "Çakışan Görevin Tespit Edilmesi (Proje A)", expected: true, actual: true, passed: true },
+      { name: "Çift Proje Atamasının Reddi ve Hata İletisi", expected: true, actual: true, passed: true },
+    ],
+  },
+  {
+    id: "TEST-19.1",
+    phase: "FAZ_5",
+    category: "OPTIMISTIC_LOCK_COLLISION",
+    categoryTitle: "İyimser Kilitleme (Optimistic Concurrency)",
+    title: "Aynı Hakedişe Eşzamanlı Çift Onay Denemesi ve Version Mismatch Hatası",
+    description: "Aynı hakediş kaydı aynı anda 2 farklı thread/kullanıcı tarafından onaylanmaya çalışıldığında; sadece biri başarılı olmalı (Version: 1 -> 2), diğeri Version Mismatch fırlatarak tutarsızlığı önlemelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Yalnızca Bir İsteğin Başarılı Olması (hasOneWinner)", expected: true, actual: true, passed: true },
+      { name: "Çakışan Diğer İsteğin 'Version Mismatch' ile Reddedilmesi", expected: true, actual: true, passed: true },
+      { name: "Hakediş Sürümünün Güvenle Sadece 1 Artırılması (Version: 2)", expected: 2, actual: 2, passed: true },
+    ],
+  },
+  {
+    id: "TEST-20.1",
+    phase: "FAZ_5",
+    category: "BUDGET_HARD_STOP_OVERFLOW",
+    categoryTitle: "Bütçe Denetimi & Hard-Stop Kontrolleri",
+    title: "Proje Bütçesini Aşan Siparişte Otonom 'CEO_APPROVAL_REQUIRED' Statüsü",
+    description: "100.000 TL bütçeli projede 150.000 TL satınalma siparişi açıldığında; işlem tamamen iptal edilip bloke edilmemeli, sipariş otonom CEO_APPROVAL_REQUIRED statüsüne alınarak üst yönetime sevk edilmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Bütçe Aşımı Tespiti (150.000 TL > 100.000 TL)", expected: true, actual: true, passed: true },
+      { name: "Otonom CEO_APPROVAL_REQUIRED Statüsüne Sevk", expected: "CEO_APPROVAL_REQUIRED", actual: "CEO_APPROVAL_REQUIRED", passed: true },
+      { name: "Sipariş İptal Edilmedi (Aktif Üst Onay Kuyruğunda)", expected: true, actual: true, passed: true },
+    ],
+  },
+
+  // Faz 6: Yönetişim & Algoritmik Çöküş
+  {
+    id: "TEST-21.1",
+    phase: "FAZ_6",
+    category: "EXECUTIVE_PROXY_DELEGATION",
+    categoryTitle: "Kurumsal Yönetişim & Yetki Devri",
+    title: "CEO Yetki Devri (Proxy Delegation) ve AuditLog'da 'actingAs: CEO' Damgası",
+    description: "CEO yetkisini vekile devrettiğinde ve vekil onay verdiğinde; AuditLog tablosunda işlemi fiilen yapan vekilin kimliği gizlenmemeli, ancak 'actingAs: CEO' damgası otonom olarak güvenlik kütüğüne düşmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "AuditLog'da 'actingAs: CEO' Damgası Doğrulaması", expected: "CEO", actual: "CEO", passed: true },
+      { name: "İşlemi Yapan Gerçek Vekil Kimliğinin Korunması", expected: true, actual: true, passed: true },
+      { name: "Denetim İzi Özetinde Vekalet İbaresi", expected: true, actual: true, passed: true },
+    ],
+  },
+  {
+    id: "TEST-22.1",
+    phase: "FAZ_6",
+    category: "GANTT_DAG_CIRCULAR_LOOP",
+    categoryTitle: "İş Programı & Algoritmik Çöküş Koruması",
+    title: "Gantt Şemasında Sonsuz Döngüsel Bağımlılık (A->B->C->A) ve 422 Unprocessable Entity",
+    description: "İş programında A görevi B'ye, B görevi C'ye bağlıyken, C görevi de tekrar A'ya bağlanmak istendiğinde; sistemin sonsuz döngüsel bağımlılığı anında yakalayıp 422 Unprocessable Entity dönmesi doğrulanır.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Sonsuz Döngü Tespiti (hasCycle = true)", expected: true, actual: true, passed: true },
+      { name: "422 Unprocessable Entity Yanıt Kodu", expected: 422, actual: 422, passed: true },
+      { name: "Döngü Zinciri Açıklaması (DAG Circular Loop)", expected: true, actual: true, passed: true },
+    ],
+  },
+  {
+    id: "TEST-23.1",
+    phase: "FAZ_6",
+    category: "GDPR_KVKK_ANONYMIZATION",
+    categoryTitle: "KVKK Uyumluluk & Finansal Bütünlük",
+    title: "Personel 'KVKK Sil' İşleminde İsim Anonimleştirmesi ve Maaş Kaydı Korunması",
+    description: "Personel hakkında 'Unutulma Hakkı / KVKK Sil' çalıştırıldığında; personelin adı ANON-*** olmalı, kişisel verileri (TC, telefon, adres) temizlenmeli fakat finans modülündeki maaş ödemesi silinmemelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Personel Adının Anonimleştirilmesi (ANON-***)", expected: true, actual: true, passed: true },
+      { name: "İletişim / PII Verilerinin Silinmesi (ANONYMIZED)", expected: "ANONYMIZED", actual: "ANONYMIZED", passed: true },
+      { name: "Finans Modülündeki Maaş Ödemesinin (38.500 TL) Korunması", expected: 38500, actual: 38500, passed: true },
+    ],
+  },
+
+  // Faz 7: Kıyamet, Adli Bilişim & Suistimal
+  {
+    id: "TEST-24.1",
+    phase: "FAZ_7",
+    category: "CONTRACT_PRICE_ESCALATION",
+    categoryTitle: "Sözleşme Hukuku & Fiyat Farkı (Escalation)",
+    title: "Sözleşmeye %20 Yİ-ÜFE Enflasyon Farkı ve +20.000 TL Otonom Fiyat Farkı Satırı",
+    description: "100.000 TL'lik hakediş döneminde TÜİK Yİ-ÜFE enflasyon katsayısı (%20) devreye girdiğinde; hakedişte +20.000 TL fiyat farkı (escalation) kalemi otonom oluşmalı ve net ödenecek 120.000 TL olarak deftere geçmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Yİ-ÜFE Fiyat Farkı Katsayısı (%20)", expected: 0.20, actual: 0.20, passed: true },
+      { name: "Otonom Fiyat Farkı Tutarının Hesaplanması (+20.000 TL)", expected: 20000, actual: 20000, passed: true },
+      { name: "Enflasyon Farklı Net Hakediş Ödeme Tutarı (120.000 TL)", expected: 120000, actual: 120000, passed: true },
+      { name: "Finans Defteri 'Fiyat Farkı (Yİ-ÜFE Escalation)' Kaydı", expected: true, actual: true, passed: true },
+    ],
+  },
+  {
+    id: "TEST-25.1",
+    phase: "FAZ_7",
+    category: "AI_ANOMALY_FRAUD_DETECTION",
+    categoryTitle: "Yapay Zeka & Adli Bilişim (Suistimal Radarı)",
+    title: "Gece Saat 03:00'te Boş Şantiyede 50.000 TL Akaryakıt Fişine 'PENDING_INVESTIGATION' Blokajı",
+    description: "Tatil gününde sahada 0 kişi varken, gece saat 03:00'te 50.000 TL akaryakıt fişi girildiğinde; AI Suistimal Radarı işlemi otonom yakalamalı, risk skorunu %98 hesaplamalı ve işlemi PENDING_INVESTIGATION statüsüne alarak bloke etmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "AI Suistimal Risk Skoru (Risk Skoru >= 90)", expected: 98, actual: 98, passed: true },
+      { name: "Fişin Otonom PENDING_INVESTIGATION Statüsüne Alınması", expected: "PENDING_INVESTIGATION", actual: "PENDING_INVESTIGATION", passed: true },
+      { name: "3 Ayrı Anomali Bayrağının (Gece, Boş Saha, Yüksek Tutar) Tetiklenmesi", expected: 3, actual: 3, passed: true },
+    ],
+  },
+  {
+    id: "TEST-26.1",
+    phase: "FAZ_7",
+    category: "CASCADING_SOFT_DELETE_RESTORE",
+    categoryTitle: "Afet Kurtarma & Kaskad Soft-Delete",
+    title: "Proje Soft-Delete Edildiğinde Gizlenme ve RESTORE ile Tüm Alt Kayıtların Eksiksiz Kurtarılması",
+    description: "Proje DELETE edildiğinde (Soft-Delete) sistemde deletedAt damgalanmalı ve aktif sorgulardan gizlenmeli; ardından RESTORE yapıldığında projeye bağlı tüm alt kayıtlar (BoQ, Gantt görevleri, paftalar) saniyeler içinde eksiksiz geri gelmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Soft-Delete ile deletedAt Damgalanması ve isActive=false", expected: true, actual: true, passed: true },
+      { name: "Aktif Sorgularda Projenin Gizlenmesi (returned null)", expected: true, actual: true, passed: true },
+      { name: "RESTORE Sonrası Tüm 6 Alt Kaydın Eksiksiz Geri Gelmesi", expected: 6, actual: 6, passed: true },
     ],
   },
 ]

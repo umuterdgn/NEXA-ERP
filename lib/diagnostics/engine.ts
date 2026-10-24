@@ -13,11 +13,15 @@ import { updateCoreSampleStatus } from "@/app/actions/inspection-core"
 import { createVisa } from "@/app/actions/inspection"
 import { broadcastRealtimeEvent } from "@/lib/realtime/broadcast"
 import { POST as IotWebhookHandler } from "@/app/api/webhooks/iot/route"
+import { runPhase5Suite } from "./suites/phase5"
+import { runPhase6Suite } from "./suites/phase6"
+import { runPhase7Suite } from "./suites/phase7"
 import {
   DiagnosticRunReport,
   DiagnosticTestResult,
   DiagnosticLogLine,
   DiagnosticAssertion,
+  TeardownPool,
 } from "./types"
 
 // RBAC Tanımları (middleware.ts ile %100 uyumlu)
@@ -84,6 +88,9 @@ export async function runEnterpriseDiagnostics(): Promise<DiagnosticRunReport> {
     // Faz 4
     blueprintIds: [] as string[],
     reinforcementVisaIds: [] as string[],
+    // Faz 5, 6 & 7
+    projectTaskIds: [] as string[],
+    equipmentFuelRecordIds: [] as string[],
   }
 
   const addLog = (level: DiagnosticLogLine["level"], message: string) => {
@@ -95,8 +102,8 @@ export async function runEnterpriseDiagnostics(): Promise<DiagnosticRunReport> {
     })
   }
 
-  addLog("SYSTEM", `🚀 NEXA Enterprise Diagnostics Engine v3.0 Başlatıldı [Koşu ID: ${runId}]`)
-  addLog("SYSTEM", `🛡️ İzolasyon Protokolü: Faz 1, Faz 2 & Faz 3 Sıfır Kirlilik Teardown Modu Aktif`)
+  addLog("SYSTEM", `🚀 NEXA Enterprise Diagnostics Engine v4.0 Başlatıldı [Koşu ID: ${runId}]`)
+  addLog("SYSTEM", `🛡️ İzolasyon Protokolü: Faz 1 - Faz 7 Sıfır Kirlilik Modüler Teardown Aktif`)
 
   try {
     // =========================================================================
@@ -1764,6 +1771,13 @@ export async function runEnterpriseDiagnostics(): Promise<DiagnosticRunReport> {
       addLog("ERROR", `[TEST 17.1] Hata: ${err.message}`)
     }
 
+    // =========================================================================
+    // MODÜLER TEST SÜİTLERİ (FAZ 5, FAZ 6 & FAZ 7)
+    // =========================================================================
+    await runPhase5Suite({ runId, teardownPool, addLog, testResults })
+    await runPhase6Suite({ runId, teardownPool, addLog, testResults })
+    await runPhase7Suite({ runId, teardownPool, addLog, testResults })
+
   } finally {
     // =========================================================================
     // TEARDOWN (TEMİZLİK): SIFIR KİRLİLİK İLKESİ (FAZ 1 + FAZ 2 + FAZ 3 + FAZ 4)
@@ -1793,6 +1807,11 @@ export async function runEnterpriseDiagnostics(): Promise<DiagnosticRunReport> {
       }
       if (teardownPool.systemLogIds.length > 0) {
         const r = await prisma.systemLog.deleteMany({ where: { id: { in: teardownPool.systemLogIds } } })
+        cleanedCount += r.count
+      }
+      // Faz 5-7 Ekipman Yakıt Kayıtları
+      if (teardownPool.equipmentFuelRecordIds && teardownPool.equipmentFuelRecordIds.length > 0) {
+        const r = await prisma.equipmentFuelRecord.deleteMany({ where: { id: { in: teardownPool.equipmentFuelRecordIds } } })
         cleanedCount += r.count
       }
       if (teardownPool.equipmentIds.length > 0) {
@@ -1888,13 +1907,18 @@ export async function runEnterpriseDiagnostics(): Promise<DiagnosticRunReport> {
         const r = await prisma.subcontractor.deleteMany({ where: { id: { in: teardownPool.subcontractorIds } } })
         cleanedCount += r.count
       }
+      // Faz 5-7 Görev Kayıtları
+      if (teardownPool.projectTaskIds && teardownPool.projectTaskIds.length > 0) {
+        const r = await prisma.projectTask.deleteMany({ where: { id: { in: teardownPool.projectTaskIds } } })
+        cleanedCount += r.count
+      }
       if (teardownPool.projectIds.length > 0) {
         const r = await prisma.project.deleteMany({ where: { id: { in: teardownPool.projectIds } } })
         cleanedCount += r.count
       }
 
       addLog("SUCCESS", `🧹 Teardown Başarılı: Toplam ${cleanedCount} geçici test kaydı veritabanından silindi.`)
-      addLog("SUCCESS", "✅ Veritabanı Bütünlüğü: Sıfır kalıntı, Faz 1, 2, 3 ve 4 üretim tabloları %100 temiz.")
+      addLog("SUCCESS", "✅ Veritabanı Bütünlüğü: Sıfır kalıntı, Faz 1 - Faz 7 üretim tabloları %100 temiz.")
     } catch (cleanupErr: any) {
       addLog("WARN", `Teardown temizlik uyarısı: ${cleanupErr.message}`)
     }
