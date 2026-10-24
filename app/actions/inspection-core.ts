@@ -90,11 +90,15 @@ export async function createCoreSample(data: CreateCoreSampleInput) {
 
 export async function updateCoreSampleStatus(id: string, status: string, strengthResult?: number | null) {
   try {
+    const isPassed = strengthResult !== undefined && strengthResult !== null ? strengthResult >= 25 : undefined;
+    const finalStatus = isPassed === false ? "FAILED" : status;
+
     const updated = await prisma.coreSample.update({
       where: { id },
       data: {
-        status,
+        status: finalStatus,
         ...(strengthResult !== undefined ? { strengthResult, resultStrength: strengthResult } : {}),
+        ...(isPassed !== undefined ? { isPassed } : {}),
         testedAt: new Date(),
         testDate: new Date(),
       },
@@ -103,6 +107,32 @@ export async function updateCoreSampleStatus(id: string, status: string, strengt
         takenBy: true,
       },
     });
+
+    // Kritik düşük dayanımda (< 25 MPa) otonom NonConformance (DÖF) tetikle
+    if (strengthResult !== undefined && strengthResult !== null && strengthResult < 25) {
+      try {
+        const count = await prisma.nonConformance.count();
+        const reportNo = `NCR-${new Date().getFullYear()}-${String(count + 101).padStart(3, "0")}`;
+        let creatorId = updated.takenById || updated.inspectorId;
+        if (!creatorId) {
+          const user = await prisma.user.findFirst();
+          creatorId = user?.id || "system";
+        }
+
+        await prisma.nonConformance.create({
+          data: {
+            reportNo,
+            projectId: updated.projectId,
+            creatorId,
+            description: `Düşük Karot Dayanımı Uyarısı: ${updated.qrCode} barkodlu numune kırımında ${strengthResult} MPa tespit edildi. Standardın (min 25 MPa) altında kaldığı için otonom DÖF başlatılmıştır.`,
+            deadline: new Date(Date.now() + 7 * 86400000),
+            status: "OPEN",
+          },
+        });
+      } catch (ncrErr) {
+        console.warn("Otomatik NCR oluşturma uyarısı:", ncrErr);
+      }
+    }
 
     try {
       revalidatePath("/inspection/core-samples");

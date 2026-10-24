@@ -58,6 +58,22 @@ export async function createVisa(data: CreateVisaInput) {
       return { success: false, error: "Seçilen proje bulunamadı." };
     }
 
+    // Stage-Gate Kuralı: Ruhsat/önceki faz kilitli ise kaba inşaat (demir/kalıp) vizesi verilemez
+    const pendingPrerequisiteGate = await prisma.stageGate.findFirst({
+      where: {
+        projectId: data.projectId,
+        isRequired: true,
+        isApproved: false,
+        stageName: { in: ["RUHSAT", "KIRALAMA", "RUHSAT_BEKLIYOR", "0/5", "STAGE_0"] },
+      },
+    });
+    if (pendingPrerequisiteGate) {
+      return {
+        success: false,
+        error: "Önceki faz kilitli: Ruhsat aşaması tamamlanmadan kaba inşaat (demir/kalıp) vizesi verilemez.",
+      };
+    }
+
     // Vize Numarası Oluştur (Eğer girilmediyse)
     let visaNo = data.visaNo?.trim();
     if (!visaNo) {

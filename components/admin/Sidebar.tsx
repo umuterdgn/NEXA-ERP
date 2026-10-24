@@ -225,6 +225,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
 
   // SİSTEM & AYARLAR
+  { href: "/admin/system-health", label: "Sistem Sağlığı & Check-up", icon: Activity, category: "SİSTEM & AYARLAR" },
   { href: "/admin/users", label: "Kullanıcılar", icon: Users, category: "SİSTEM & AYARLAR" },
   { href: "/admin/logs", label: "Sistem Logları", icon: FileLogIcon, category: "SİSTEM & AYARLAR" },
   { href: "/admin/audit-logs", label: "İşlem Geçmişi", icon: History, category: "SİSTEM & AYARLAR" },
