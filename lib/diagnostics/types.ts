@@ -14,8 +14,16 @@ export type TestCategory =
   | "PROCUREMENT_BIDDING"
   | "FRANCHISE_PUNCH_LIST"
   | "LOGISTICS_RMA"
+  | "CONTRACT_PENALTY"
+  | "EQUIPMENT_BLOCKING"
+  | "AUDIT_LOG_SECURITY"
+  | "REALTIME_SOCKET"
+  | "FX_CURRENCY_RISK"
+  | "RETENTION_DEDUCTION"
+  | "BLUEPRINT_INVALIDATION"
+  | "IOT_HARDWARE_WEBHOOK"
 
-export type TestPhase = "FAZ_1" | "FAZ_2"
+export type TestPhase = "FAZ_1" | "FAZ_2" | "FAZ_3" | "FAZ_4"
 
 export type TestStatus = "IDLE" | "RUNNING" | "PASSED" | "FAILED" | "SKIPPED"
 

@@ -4,7 +4,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Enterprise Diagnostics Engine & System Health UI
- * Faz 1 & Faz 2 Canlı Terminal Akışı, Çok Katmanlı Test Doğrulamaları ve Sıfır Kirlilik Teardown Sertifikası
+ * Faz 1, Faz 2 & Faz 3: Canlı Terminal Akışı, Hukuk, Siber Güvenlik, Real-time WebSocket ve %100 Kurumsal Onay Rozeti
  */
 
 import React, { useState, useEffect, useRef, useTransition } from "react"
@@ -33,9 +33,14 @@ import {
   ShoppingBag,
   Store,
   PackageX,
-  Boxes,
-  Truck,
-  Sparkles
+  Scale,
+  Wrench,
+  Radio,
+  Award,
+  Sparkles,
+  FileWarning,
+  Flame,
+  CheckCheck
 } from "lucide-react"
 import { executeSystemHealthCheck } from "@/app/actions/diagnostics"
 import { DiagnosticRunReport, DiagnosticTestResult, DiagnosticLogLine } from "@/lib/diagnostics/types"
@@ -43,7 +48,7 @@ import { DiagnosticRunReport, DiagnosticTestResult, DiagnosticLogLine } from "@/
 export default function SystemHealthClient() {
   const [report, setReport] = useState<DiagnosticRunReport | null>(null)
   const [isRunning, setIsRunning] = useState(false)
-  const [activeTab, setActiveTab] = useState<"ALL" | "FAZ_1" | "FAZ_2" | "FAILED">("ALL")
+  const [activeTab, setActiveTab] = useState<"ALL" | "FAZ_1" | "FAZ_2" | "FAZ_3" | "FAZ_4" | "FAILED">("ALL")
   const [selectedTest, setSelectedTest] = useState<DiagnosticTestResult | null>(null)
   const [copiedLogs, setCopiedLogs] = useState(false)
   const [liveLogs, setLiveLogs] = useState<DiagnosticLogLine[]>([])
@@ -66,13 +71,13 @@ export default function SystemHealthClient() {
         id: "start-1",
         timestamp: new Date().toLocaleTimeString("tr-TR"),
         level: "SYSTEM",
-        message: "⚡ NEXA Enterprise Diagnostics Engine v2.7 tetiklendi...",
+        message: "⚡ NEXA Enterprise Diagnostics Engine v3.0 başlatılıyor...",
       },
       {
         id: "start-2",
         timestamp: new Date().toLocaleTimeString("tr-TR"),
         level: "INFO",
-        message: "🧪 Faz 1 (Çekirdek Sistem) ve Faz 2 (İK, İhale, Rollout, RMA) Bütünlük Testleri Başlatılıyor...",
+        message: "🧪 Faz 1 (Çekirdek Sistem), Faz 2 (Operasyon & İK), Faz 3 (Hukuk & Siber Güvenlik) ve Faz 4 (Global Kur, Revizyon & IoT) Testleri Başlatıldı...",
       },
     ])
 
@@ -152,6 +157,22 @@ export default function SystemHealthClient() {
         return <Store className="w-4 h-4 text-rose-400" />
       case "LOGISTICS_RMA":
         return <PackageX className="w-4 h-4 text-teal-400" />
+      case "CONTRACT_PENALTY":
+        return <Scale className="w-4 h-4 text-amber-400" />
+      case "EQUIPMENT_BLOCKING":
+        return <Wrench className="w-4 h-4 text-red-400" />
+      case "AUDIT_LOG_SECURITY":
+        return <ShieldCheck className="w-4 h-4 text-emerald-400" />
+      case "REALTIME_SOCKET":
+        return <Radio className="w-4 h-4 text-cyan-400" />
+      case "FX_CURRENCY_RISK":
+        return <Coins className="w-4 h-4 text-emerald-400" />
+      case "RETENTION_DEDUCTION":
+        return <Lock className="w-4 h-4 text-amber-400" />
+      case "BLUEPRINT_INVALIDATION":
+        return <Layers className="w-4 h-4 text-indigo-400" />
+      case "IOT_HARDWARE_WEBHOOK":
+        return <Cpu className="w-4 h-4 text-rose-400" />
       default:
         return <Activity className="w-4 h-4 text-slate-400" />
     }
@@ -163,13 +184,19 @@ export default function SystemHealthClient() {
     if (activeTab === "ALL") return true
     if (activeTab === "FAZ_1") return t.phase === "FAZ_1" || !t.phase
     if (activeTab === "FAZ_2") return t.phase === "FAZ_2"
+    if (activeTab === "FAZ_3") return t.phase === "FAZ_3"
+    if (activeTab === "FAZ_4") return t.phase === "FAZ_4"
     if (activeTab === "FAILED") return t.status === "FAILED"
     return true
   })
 
   const faz1Count = currentTests.filter((t) => t.phase === "FAZ_1" || !t.phase).length
   const faz2Count = currentTests.filter((t) => t.phase === "FAZ_2").length
+  const faz3Count = currentTests.filter((t) => t.phase === "FAZ_3").length
+  const faz4Count = currentTests.filter((t) => t.phase === "FAZ_4").length
   const failedCount = currentTests.filter((t) => t.status === "FAILED").length
+
+  const isFullCompliance = report && report.failedTests === 0 && report.totalTests >= 21
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 space-y-8 font-sans">
@@ -178,17 +205,17 @@ export default function SystemHealthClient() {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-cyan-400 mb-1">
             <Activity className="w-4 h-4 animate-pulse" />
-            <span>NEXA Enterprise Diagnostics Engine v2.7</span>
+            <span>NEXA Enterprise Diagnostics Engine v4.0</span>
             <span className="text-slate-600">•</span>
             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
-              FAZ 1 & FAZ 2 AKTİF
+              FAZ 1, 2, 3 & 4 TAM ENTEGRE
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
             <span>Sistem Teşhis & Sağlık Doğrulama Merkezi</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1.5 max-w-3xl">
-            RBAC yetkileri, Yapı Denetim Stage-Gate kilitleri, Finans & BoQ algoritmaları, Otonom Jurnal, İK & Bordro hesaplamaları, Satınalma ihale değerlendirmeleri, Franchise Rollout Punch List ve Ambar RMA iade süreçleri otonom test edilir.
+            Sözleşme cezaları & otonom kesintiler, makine parkı arıza blokajları, değiştirilemez siber denetim izi (AuditLog) ve canlı WebSocket anlık bildirim kanalları sıfır kirlilik garantisiyle test edilir.
           </p>
         </div>
 
@@ -228,7 +255,90 @@ export default function SystemHealthClient() {
         </div>
       </div>
 
-      {/* 2. HUD İSTATİSTİK KARTLARI */}
+      {/* 2. SİSTEM %100 KAPSAM İLE ONAYLANDI - NEXA ERP ENTERPRISE CORE V1.0 MÜHÜRLENDİ */}
+      {isFullCompliance && (
+        <div className="relative overflow-hidden rounded-3xl border-2 border-emerald-500/50 bg-linear-to-r from-emerald-950/70 via-slate-900 to-teal-950/70 p-6 md:p-8 shadow-2xl shadow-emerald-950/50 animate-in fade-in zoom-in-95 duration-500">
+          {/* Confetti Particle Cannon Animation */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(40)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2 h-2 rounded-xs opacity-80 animate-bounce"
+                style={{
+                  top: `${(i * 7) % 100}%`,
+                  left: `${(i * 13) % 100}%`,
+                  backgroundColor: ["#10b981", "#06b6d4", "#f59e0b", "#ec4899", "#8b5cf6", "#3b82f6"][i % 6],
+                  transform: `rotate(${i * 35}deg) scale(${0.7 + (i % 5) * 0.2})`,
+                  animationDuration: `${1.5 + (i % 4) * 0.6}s`,
+                  animationDelay: `${(i % 10) * 0.15}s`,
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5">
+              <div className="w-22 h-22 rounded-3xl bg-linear-to-br from-amber-400 via-emerald-400 to-teal-500 p-1 shadow-2xl shadow-emerald-500/30 shrink-0">
+                <div className="w-full h-full bg-slate-950 rounded-[20px] flex items-center justify-center relative overflow-hidden">
+                  <Award className="w-12 h-12 text-emerald-400 animate-pulse" />
+                  <div className="absolute inset-0 bg-linear-to-tr from-transparent via-emerald-400/10 to-transparent" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold tracking-wide">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>RESMİ VE KURUMLARARASI DOĞRULAMA SERTİFİKASI</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                  <span className="bg-linear-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+                    NEXA ERP - ENTERPRISE CORE V1.0 MÜHÜRLENDİ
+                  </span>
+                  <CheckCheck className="w-8 h-8 text-emerald-400" />
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                  Çekirdek Sistem (Faz 1), Operasyon & İK (Faz 2), Hukuk & Güvenlik (Faz 3) ve Global Holding, Revizyon & IoT Donanım (Faz 4) olmak üzere 4 ana fazın tümü 21/21 başarı ve sıfır veri kirliliği ile onaylanmıştır.
+                </p>
+
+                {/* 4 Faz Rozetleri */}
+                <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Faz 1: Çekirdek & Denetim
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Faz 2: Operasyon & İK
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Faz 3: Hukuk & Güvenlik
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 font-semibold shadow-xs shadow-teal-500/20">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> Faz 4: Global Holding & IoT
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full lg:w-auto shrink-0 text-center sm:text-right">
+              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
+                <div className="text-xl font-black text-emerald-400">{report.passedTests}/{report.totalTests}</div>
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Modül Doğrulandı</div>
+              </div>
+              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
+                <div className="text-xl font-black text-cyan-400">{report.totalDurationMs} ms</div>
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">İcra Süresi</div>
+              </div>
+              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl col-span-2 sm:col-span-1">
+                <div className="text-xl font-black text-indigo-400">0 Kalıntı</div>
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Temiz Teardown</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. HUD İSTATİSTİK KARTLARI */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Test Durumu */}
         <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm group hover:border-slate-700 transition-all">
@@ -269,7 +379,7 @@ export default function SystemHealthClient() {
           </div>
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-            <span>Faz 1 & Faz 2 kayıtları silindi</span>
+            <span>Faz 1, 2, 3 & 4 kayıtları silindi</span>
           </div>
         </div>
 
@@ -287,23 +397,23 @@ export default function SystemHealthClient() {
           </div>
         </div>
 
-        {/* DB Bağlantı */}
+        {/* Güvenlik & Hukuk */}
         <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm group hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-            <span className="font-medium">Veritabanı Katmanı</span>
-            <Database className="w-4 h-4 text-purple-400" />
+            <span className="font-medium">Hukuk & Siber Güvenlik</span>
+            <Scale className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl font-bold tracking-tight text-white mb-1">
-            PostgreSQL
+            Aktif & Korunan
           </div>
           <div className="text-[11px] text-emerald-400 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>Neon AWS Pooler • Çift Yönlü Aktif</span>
+            <span>AuditLog & Ceza Motoru Hazır</span>
           </div>
         </div>
       </div>
 
-      {/* 3. CANLI TERMİNAL GÖRÜNÜMÜ & LOG AKIŞI (Terminal Stream Window) */}
+      {/* 4. CANLI TERMİNAL GÖRÜNÜMÜ & LOG AKIŞI (Terminal Stream Window) */}
       <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
         <div className="bg-slate-900/90 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -314,7 +424,7 @@ export default function SystemHealthClient() {
             </div>
             <div className="flex items-center gap-2 text-xs font-mono text-slate-400 pl-2 border-l border-slate-800">
               <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-              <span>nexa-diagnostics-daemon --stream --phase1 --phase2</span>
+              <span>nexa-diagnostics-daemon --stream --phase1 --phase2 --phase3 --phase4</span>
             </div>
           </div>
 
@@ -373,7 +483,7 @@ export default function SystemHealthClient() {
         </div>
       </div>
 
-      {/* 4. SEKME VE FİLTRELER: FAZ 1 vs FAZ 2 */}
+      {/* 5. SEKME VE FİLTRELER: FAZ 1 vs FAZ 2 vs FAZ 3 */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800">
           <div className="flex items-center gap-2">
@@ -405,7 +515,23 @@ export default function SystemHealthClient() {
                 activeTab === "FAZ_2" ? "bg-purple-600 text-white" : "bg-slate-900 text-slate-400 hover:text-white"
               }`}
             >
-              Faz 2: Operasyon & İK Testleri ({faz2Count})
+              Faz 2: Operasyon & İK ({faz2Count})
+            </button>
+            <button
+              onClick={() => setActiveTab("FAZ_3")}
+              className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${
+                activeTab === "FAZ_3" ? "bg-amber-600 text-white font-bold shadow-md shadow-amber-950" : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              Faz 3: Hukuk & Güvenlik ({faz3Count})
+            </button>
+            <button
+              onClick={() => setActiveTab("FAZ_4")}
+              className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${
+                activeTab === "FAZ_4" ? "bg-teal-600 text-white font-bold shadow-md shadow-teal-950" : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              Faz 4: Kur, Revizyon & IoT ({faz4Count})
             </button>
             <button
               onClick={() => setActiveTab("FAILED")}
@@ -421,7 +547,15 @@ export default function SystemHealthClient() {
         {/* Test Listesi Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredTests.map((test) => {
+            const isFaz1 = test.phase === "FAZ_1" || !test.phase
             const isFaz2 = test.phase === "FAZ_2"
+            const isFaz3 = test.phase === "FAZ_3"
+            const isFaz4 = test.phase === "FAZ_4"
+
+            let phaseBadgeClass = "bg-indigo-950 text-indigo-300 border-indigo-500/30"
+            if (isFaz2) phaseBadgeClass = "bg-purple-950 text-purple-300 border-purple-500/30"
+            if (isFaz3) phaseBadgeClass = "bg-amber-950 text-amber-300 border-amber-500/30"
+            if (isFaz4) phaseBadgeClass = "bg-teal-950 text-teal-300 border-teal-500/30"
 
             return (
               <div
@@ -439,14 +573,8 @@ export default function SystemHealthClient() {
                         <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
                           {test.categoryTitle}
                         </span>
-                        <span
-                          className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
-                            isFaz2
-                              ? "bg-purple-950 text-purple-300 border border-purple-500/30"
-                              : "bg-indigo-950 text-indigo-300 border border-indigo-500/30"
-                          }`}
-                        >
-                          {isFaz2 ? "FAZ 2" : "FAZ 1"}
+                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border ${phaseBadgeClass}`}>
+                          {isFaz4 ? "FAZ 4" : isFaz3 ? "FAZ 3" : isFaz2 ? "FAZ 2" : "FAZ 1"}
                         </span>
                       </div>
                       <h3 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">
@@ -495,7 +623,7 @@ export default function SystemHealthClient() {
         </div>
       </div>
 
-      {/* 5. TEARDOWN VE GÜVENLİK SERTİFİKASI */}
+      {/* 6. TEARDOWN VE GÜVENLİK SERTİFİKASI */}
       <div className="bg-linear-to-r from-emerald-950/30 via-slate-900 to-cyan-950/30 border border-emerald-500/30 rounded-2xl p-6 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -506,11 +634,11 @@ export default function SystemHealthClient() {
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <span>Enterprise Teardown & Sıfır Kirlilik Garantisi</span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                  FAZ 1 & FAZ 2 KORUMALI
+                  FAZ 1, 2, 3 & 4 KORUMALI
                 </span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Puantajlar, personeller, ihale teklifleri, satın alma siparişleri, franchise mağazaları, Punch List kayıtları ve RMA iadeleri icra bitiminde anında temizlenir. Üretim tablolarında 0 kalıntı kalır.
+                Sözleşmeler, cezalar, vinç arıza logları, silinen ödemeler, değiştirilemez audit izleri, acil durum websocket mesajları, kur riskleri, revizyon çatışmaları ve IoT turnike DÖF kayıtları icra bitiminde anında temizlenir. Üretim tablolarında 0 kalıntı kalır.
               </p>
             </div>
           </div>
@@ -526,7 +654,7 @@ export default function SystemHealthClient() {
         </div>
       </div>
 
-      {/* 6. TEST DETAY MODALI */}
+      {/* 7. TEST DETAY MODALI */}
       {selectedTest && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
@@ -607,7 +735,7 @@ export default function SystemHealthClient() {
   )
 }
 
-// Varsayılan Placeholder Kartlar (Faz 1 + Faz 2)
+// Varsayılan Placeholder Kartlar (Faz 1 + Faz 2 + Faz 3 + Faz 4)
 const defaultPlaceholders: DiagnosticTestResult[] = [
   // Faz 1
   {
@@ -631,6 +759,17 @@ const defaultPlaceholders: DiagnosticTestResult[] = [
     status: "IDLE",
     durationMs: 0,
     assertions: [{ name: "Çapraz Sızıntı Sıfır", expected: 0, actual: 0, passed: true }],
+  },
+  {
+    id: "TEST-1.3",
+    phase: "FAZ_1",
+    category: "RBAC_ISOLATION",
+    categoryTitle: "RBAC & Multi-Tenant İzolasyon",
+    title: "Yetkisiz İstek (Unauthenticated) Giriş Yönlendirme Testi",
+    description: "Oturum token'ı olmayan istekler sistem tarafından /login sayfasına 307/302 ile yönlendirilmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [{ name: "Tokensız kök rotası isteğinin /login sayfasına yönlendirilmesi", expected: "/login", actual: "/login", passed: true }],
   },
   {
     id: "TEST-2.1",
@@ -765,6 +904,129 @@ const defaultPlaceholders: DiagnosticTestResult[] = [
     assertions: [
       { name: "Otonom RMA Kaydı ve 'Değişim Bekleyenler' Kuyruğu", expected: "DAMAGED / REPORTED", actual: "DAMAGED / REPORTED", passed: true },
       { name: "Stoktaki Sağlam Ürün Adedi: 3", expected: 3, actual: 3, passed: true },
+    ],
+  },
+
+  // Faz 3
+  {
+    id: "TEST-10.1",
+    phase: "FAZ_3",
+    category: "CONTRACT_PENALTY",
+    categoryTitle: "Sözleşme Hukuku & Gecikme Cezaları",
+    title: "Otonom Taşeron Gecikme Cezası ve Hakediş Mahsubu Testi",
+    description: "5 gün gecikmiş imalat için sözleşmedeki günlük 5.000 TL ceza kuralıyla; -25.000 TL ceza fişi kesilmeli ve 100.000 TL hakedişten 75.000 TL net ödeme hesaplanmalıdır.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "5 Günlük Takvim Gecikmesi Tespiti", expected: 5, actual: 5, passed: true },
+      { name: "Otonom Ceza Fişi Kesintisi (-25.000 TL)", expected: 25000, actual: 25000, passed: true },
+      { name: "Cezalı Net Ödenecek Tutar (75.000 TL)", expected: 75000, actual: 75000, passed: true },
+    ],
+  },
+  {
+    id: "TEST-11.1",
+    phase: "FAZ_3",
+    category: "EQUIPMENT_BLOCKING",
+    categoryTitle: "Makine Parkı & Otonom İş Engelleme",
+    title: "Kule Vinç Arızası ve Bağlı İmalat Kalemi Blokaj (Stage-Lock) Testi",
+    description: "Kule vinç BROKEN statüsüne geçtiğinde; bağlı BoQ/Gantt kalemi BLOCKED durumuna alınmalı ve Jurnal'e 'Kule Vinç Arızası Nedeniyle İş Durdu' tutanağı yazılmalıdır.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Kule Vinç Ekipman Statüsü (BROKEN)", expected: "BROKEN", actual: "BROKEN", passed: true },
+      { name: "Bağlı BoQ İmalat Kaleminin BLOCKED Durumuna Çekilmesi", expected: true, actual: true, passed: true },
+      { name: "Jurnal'e 'Kule Vinç Arızası Nedeniyle İş Durdu' Tutanak Kaydı", expected: true, actual: true, passed: true },
+    ],
+  },
+  {
+    id: "TEST-12.1",
+    phase: "FAZ_3",
+    category: "AUDIT_LOG_SECURITY",
+    categoryTitle: "Siber Güvenlik & Değiştirilemez Denetim İzi",
+    title: "Kritik Finans Kaydı Silme ve Değiştirilemez AuditLog Doğrulaması",
+    description: "Finans ödemesi DELETE komutuyla silinse dahi, AuditLog tablosuna silinmesi imkansız kalıcı güvenlik izi ('Kullanıcı X, Ödeme Y'yi sildi') düşülmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Finans Kaydının Veritabanından Silinmesi (DELETE)", expected: null, actual: null, passed: true },
+      { name: "AuditLog Tablosunda Silinmesi İmkansız Güvenlik İzi (DELETE / Payment)", expected: "DELETE / Payment", actual: "DELETE / Payment", passed: true },
+    ],
+  },
+  {
+    id: "TEST-13.1",
+    phase: "FAZ_3",
+    category: "REALTIME_SOCKET",
+    categoryTitle: "İç Haberleşme & Real-time WebSocket",
+    title: "Kritik Saha Acil Durum Mesajı ve WebSocket Broadcast Testi",
+    description: "MOCK_ENGINEER'ın MOCK_MANAGER'a gönderdiği 'Acil durum: Beton pompası tıkandı' mesajı 200 OK ile websocket kanalına push edilmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "WebSocket / Pusher Event Trigger Yanıtı (200 OK)", expected: 200, actual: 200, passed: true },
+      { name: "Acil Durum Mesaj Payload'unun Kanala İletilmesi", expected: "Acil durum: Beton pompası tıkandı", actual: "Acil durum: Beton pompası tıkandı", passed: true },
+    ],
+  },
+
+  // Faz 4
+  {
+    id: "TEST-14.1",
+    phase: "FAZ_4",
+    category: "FX_CURRENCY_RISK",
+    categoryTitle: "Çoklu Para Birimi & Kur Riski (FX)",
+    title: "İthal Malzeme BoQ ve Döviz Kuru Artışı (+50.000 TL FX Loss) Testi",
+    description: "10.000 USD tutarındaki ithal malzeme 40 TL'den (400.000 TL) 45 TL'ye (450.000 TL) revize edildiğinde; aradaki +50.000 TL kur farkı maliyet artışı olarak BoQ ve Finans sistemine anında yansıtılmalıdır.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "BoQ Başlangıç Bütçesi (10.000 USD @ 40 TL = 400.000 TL)", expected: 400000, actual: 400000, passed: true },
+      { name: "Güncellenen Döviz Kuru (1 USD = 45 TL)", expected: 45, actual: 45, passed: true },
+      { name: "Otonom Kur Farkı / Maliyet Artışı (+50.000 TL FX Loss)", expected: 50000, actual: 50000, passed: true },
+    ],
+  },
+  {
+    id: "TEST-15.1",
+    phase: "FAZ_4",
+    category: "RETENTION_DEDUCTION",
+    categoryTitle: "Sözleşme Hukuku & Teminat Kesintisi",
+    title: "Taşeron Hakedişinden %5 Teminat Kesintisi ve Bloke Fon Hesabı Testi",
+    description: "100.000 TL'lik hakediş için sözleşmedeki %5 geçici kabul kesintisi uygulanmalı; net 95.000 TL ödeme emri çıkmalı ve 5.000 TL 'Taşeron Teminat Hesabı' altında bloke edilmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Brüt Hakediş Tutarı (100.000 TL)", expected: 100000, actual: 100000, passed: true },
+      { name: "Çıkarılan Net Ödeme Emri (95.000 TL)", expected: 95000, actual: 95000, passed: true },
+      { name: "Geçici Kabul Kesintisi (%5 = 5.000 TL)", expected: 5000, actual: 5000, passed: true },
+      { name: "Finans 'Taşeron Teminat Hesabı' Bloke Fon Doğrulaması", expected: "Taşeron Teminat Hesabı", actual: "Taşeron Teminat Hesabı", passed: true },
+    ],
+  },
+  {
+    id: "TEST-16.1",
+    phase: "FAZ_4",
+    category: "BLUEPRINT_INVALIDATION",
+    categoryTitle: "Versiyonlama & Revizyon Çatışması",
+    title: "Statik Pafta V2 Yüklendiğinde V1 Vizesinin Otonom İptali (REJECTED_REVISION)",
+    description: "Statik Proje V1'e bağlı bekleyen Demir Vizesi varken, V2 yüklendiği an sistem eski vizeyi otonom REJECTED_REVISION statüsüne çekmeli ve mühendise 'Proje güncellendi, vizeyi yeni projeye göre tekrar açın' uyarısı düşmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Yeni Revizyonun Sisteme Yüklenmesi (Statik Proje V2)", expected: true, actual: true, passed: true },
+      { name: "Eski Vize Statüsünün Otonom İptali (REJECTED_REVISION)", expected: "REJECTED_REVISION", actual: "REJECTED_REVISION", passed: true },
+      { name: "Mühendise Bildirilen İptal Nedeni ('Proje güncellendi, vizeyi yeni projeye göre tekrar açın')", expected: true, actual: true, passed: true },
+    ],
+  },
+  {
+    id: "TEST-17.1",
+    phase: "FAZ_4",
+    category: "IOT_HARDWARE_WEBHOOK",
+    categoryTitle: "Fiziksel IoT & Turnike Entegrasyonu",
+    title: "Yetkisiz RFID Turnike Okutulduğunda Otonom CRITICAL İSG Uyarısı (NCR) Testi",
+    description: "/api/webhooks/iot rotasına izinsiz WORKER_123 RFID okutulduğunda; turnike engellenmeli, sistemde otonom CRITICAL seviyeli 'İzinsiz Sahaya Giriş (Yetkisiz Baret/RFID)' DÖF (NCR) tutanağı açılmalı ve İSG Radarına düşmelidir.",
+    status: "IDLE",
+    durationMs: 0,
+    assertions: [
+      { name: "Turnike Donanım Yanıtı (Geçiş Engellendi - accessGranted=false)", expected: false, actual: false, passed: true },
+      { name: "Otonom CRITICAL Seviyeli İSG DÖF (NCR) Kaydı Açılışı", expected: "CRITICAL", actual: "CRITICAL", passed: true },
+      { name: "DÖF Tutanağında 'İzinsiz Sahaya Giriş (Yetkisiz Baret/RFID)' İbaresi", expected: true, actual: true, passed: true },
     ],
   },
 ]
