@@ -10,6 +10,12 @@ export type TestCategory =
   | "FINANCE_BOQ_ALGORITHM"
   | "AUTONOMOUS_JOURNAL"
   | "EXTERNAL_IO_SYSTEMS"
+  | "HR_PAYROLL"
+  | "PROCUREMENT_BIDDING"
+  | "FRANCHISE_PUNCH_LIST"
+  | "LOGISTICS_RMA"
+
+export type TestPhase = "FAZ_1" | "FAZ_2"
 
 export type TestStatus = "IDLE" | "RUNNING" | "PASSED" | "FAILED" | "SKIPPED"
 
@@ -22,6 +28,7 @@ export interface DiagnosticAssertion {
 
 export interface DiagnosticTestResult {
   id: string
+  phase?: TestPhase
   category: TestCategory
   categoryTitle: string
   title: string
