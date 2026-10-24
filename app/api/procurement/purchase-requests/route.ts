@@ -76,6 +76,9 @@ export async function POST(req: Request) {
         quantity: parseFloat(quantity),
         unit,
         status: status || "OPEN_FOR_BID",
+        deadline: body.deadline ? new Date(body.deadline) : null,
+        paymentType: body.paymentType || "PEŞİN",
+        deliveryNotes: body.deliveryNotes || null,
       },
       include: {
         project: true,

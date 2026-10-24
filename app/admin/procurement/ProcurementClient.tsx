@@ -6,7 +6,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ShoppingCart,
@@ -55,6 +55,9 @@ interface PurchaseRequestItem {
   quantity: number;
   unit: string;
   status: string;
+  deadline?: string | null;
+  paymentType?: string | null;
+  deliveryNotes?: string | null;
   createdAt: string;
   project?: {
     title: string;
@@ -83,6 +86,9 @@ export default function ProcurementClient({ initialRequests }: ProcurementClient
     materialName: "",
     quantity: "",
     unit: "Ton",
+    deadline: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+    paymentType: "PEŞİN",
+    deliveryNotes: "",
   });
 
   const [formData, setFormData] = useState({
@@ -143,6 +149,9 @@ export default function ProcurementClient({ initialRequests }: ProcurementClient
           materialName: "",
           quantity: "",
           unit: "Ton",
+          deadline: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+          paymentType: "PEŞİN",
+          deliveryNotes: "",
         });
         await fetchPurchaseRequests();
       }
@@ -357,12 +366,29 @@ export default function ProcurementClient({ initialRequests }: ProcurementClient
 
                     <div>
                       <h3 className="text-base font-bold text-white">{pr.materialName}</h3>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Talep Miktarı:{" "}
-                        <strong className="text-amber-400 font-bold">
-                          {pr.quantity} {pr.unit}
-                        </strong>
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-xs text-slate-400">
+                          Miktar:{" "}
+                          <strong className="text-amber-400 font-bold">
+                            {pr.quantity} {pr.unit}
+                          </strong>
+                        </span>
+                        {pr.paymentType && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                            {pr.paymentType}
+                          </span>
+                        )}
+                        {pr.deadline && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                            Son: {new Date(pr.deadline).toLocaleDateString("tr-TR")}
+                          </span>
+                        )}
+                      </div>
+                      {pr.deliveryNotes && (
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-1 italic">
+                          Not: {pr.deliveryNotes}
+                        </p>
+                      )}
                     </div>
 
                     {/* Lowest Bid Highlight */}
@@ -573,6 +599,56 @@ export default function ProcurementClient({ initialRequests }: ProcurementClient
                     <option value="Torba">Torba</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Bitiş Tarihi & Ödeme Tipi */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Bitiş Tarihi (Teklif Son Günü) *
+                  </label>
+                  <input
+                    type="date"
+                    value={newBiddingData.deadline}
+                    onChange={(e) =>
+                      setNewBiddingData({ ...newBiddingData, deadline: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Ödeme Tipi *
+                  </label>
+                  <select
+                    value={newBiddingData.paymentType}
+                    onChange={(e) =>
+                      setNewBiddingData({ ...newBiddingData, paymentType: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="PEŞİN">Peşin (Nakit / Havale)</option>
+                    <option value="VADELİ">Vadeli (Çek / 30-60 Gün)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Teslimat Notu */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Teslimat Notu & Şantiye Koşulları
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Örn: Malzeme şantiye sahasına mesai saatlerinde boşaltma dahil teslim edilecektir."
+                  value={newBiddingData.deliveryNotes}
+                  onChange={(e) =>
+                    setNewBiddingData({ ...newBiddingData, deliveryNotes: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-sm rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-blue-500 placeholder-slate-600"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">

@@ -1,52 +1,86 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * This code is the property of NXA Software.
+ * Progress Payments / Billings API
  */
 
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const projectId = searchParams.get("projectId");
-    
-    const payments = await prisma.progressPayment.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-    
-    return NextResponse.json(payments);
-  } catch (error) {
-    console.error("Error fetching progress payments:", error);
-    return NextResponse.json({ error: "Hakedişler yüklenirken hata oluştu" }, { status: 500 });
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const billings = await prisma.progressBilling.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        contract: {
+          include: {
+            subcontractor: true,
+            project: true,
+          },
+        },
+      },
+    })
+
+    const formatted = billings.map((b) => ({
+      id: b.id,
+      billingNumber: b.billingNumber,
+      subcontractor: b.contract?.subcontractor?.name || "Taşeron Firma",
+      projectName: b.contract?.project?.name || b.contract?.project?.title || "Genel Proje",
+      grossAmount: b.grossAmount,
+      totalAmount: b.netPayable > 0 ? b.netPayable : b.grossAmount,
+      netPayable: b.netPayable,
+      status: b.status,
+      period: b.period,
+      createdAt: b.createdAt,
+    }))
+
+    return NextResponse.json(formatted)
+  } catch (error: any) {
+    console.error("Progress Payments GET Error:", error)
+    return NextResponse.json({ error: error.message || "Failed to fetch progress payments" }, { status: 500 })
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
-    const { title, description, quantity, unit, unitPrice, date } = data;
-    
-    const totalPrice = unitPrice ? quantity * unitPrice : null;
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-    const payment = await prisma.progressPayment.create({
-      data: { 
-        title,
-        description,
-        quantity,
-        unit,
-        unitPrice,
-        totalPrice,
-        date: date ? new Date(date) : new Date()
-      }
-    });
-    
-    return NextResponse.json(payment);
-  } catch (error) {
-    console.error("Error creating progress payment:", error);
-    return NextResponse.json({ error: "Hakediş oluşturulamadı" }, { status: 500 });
+    const body = await req.json()
+    const { contractId, billingNumber, grossAmount, advanceDeduction, penaltyDeduction, retentionDeduction, netPayable, status } = body
+
+    const newBilling = await prisma.progressBilling.create({
+      data: {
+        contractId: contractId || null,
+        billingNumber: billingNumber ? parseInt(billingNumber) : 1,
+        grossAmount: grossAmount ? parseFloat(grossAmount) : 0,
+        advanceDeduction: advanceDeduction ? parseFloat(advanceDeduction) : 0,
+        penaltyDeduction: penaltyDeduction ? parseFloat(penaltyDeduction) : 0,
+        retentionDeduction: retentionDeduction ? parseFloat(retentionDeduction) : 0,
+        netPayable: netPayable ? parseFloat(netPayable) : (parseFloat(grossAmount || "0")),
+        status: status || "DRAFT",
+      },
+      include: {
+        contract: {
+          include: {
+            subcontractor: true,
+            project: true,
+          },
+        },
+      },
+    })
+
+    return NextResponse.json(newBilling, { status: 201 })
+  } catch (error: any) {
+    console.error("Progress Payments POST Error:", error)
+    return NextResponse.json({ error: error.message || "Failed to create progress payment" }, { status: 500 })
   }
 }

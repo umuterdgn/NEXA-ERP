@@ -101,6 +101,7 @@ export async function POST(req: Request) {
         dueDate: new Date(dueDate),
         companyId,
         status: status || "PORTFOLIO",
+        documentUrl: body.documentUrl || null,
       },
       include: {
         company: true,

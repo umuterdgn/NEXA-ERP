@@ -6,7 +6,7 @@
  * Nexa ERP - İleri Düzey Finans: Kıymetli Evraklar & Vade Radarı (Çek / Senet / Teminat Mektubu)
  */
 
-import React, { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   FileText,
   AlertTriangle,
@@ -39,6 +39,7 @@ interface FinancialDoc {
   dueDate: string
   companyId: string
   status: "PORTFOLIO" | "CASHED" | "RETURNED" | "BOUNCED" | string
+  documentUrl?: string | null
   createdAt: string
   diffDays?: number
   urgency?: "RED" | "YELLOW" | "NORMAL"
@@ -66,6 +67,7 @@ export default function FinancialDocumentsPage() {
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
   // Form State
   const [formData, setFormData] = useState({
@@ -77,6 +79,7 @@ export default function FinancialDocumentsPage() {
     dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
     companyId: "",
     status: "PORTFOLIO",
+    documentUrl: "",
   })
 
   useEffect(() => {
@@ -118,6 +121,44 @@ export default function FinancialDocumentsPage() {
     }
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const uploadFormData = new FormData()
+      uploadFormData.append("file", file)
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.url) {
+          setFormData((prev) => ({ ...prev, documentUrl: data.url }))
+        }
+      } else {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setFormData((prev) => ({ ...prev, documentUrl: reader.result as string }))
+        }
+        reader.readAsDataURL(file)
+      }
+    } catch (err) {
+      console.error("Upload error:", err)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, documentUrl: reader.result as string }))
+      }
+      reader.readAsDataURL(file)
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   const handleCreateDocument = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.companyId || !formData.documentNo || !formData.amount) {
@@ -144,6 +185,7 @@ export default function FinancialDocumentsPage() {
           dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
           companyId: companies[0]?.id || "",
           status: "PORTFOLIO",
+          documentUrl: "",
         })
         await fetchDocuments()
       } else {
@@ -539,7 +581,21 @@ export default function FinancialDocumentsPage() {
 
                       {/* Document No */}
                       <td className="py-3.5 px-4 font-mono font-medium text-slate-200">
-                        {doc.documentNo}
+                        <div className="flex items-center gap-2">
+                          <span>{doc.documentNo}</span>
+                          {doc.documentUrl && (
+                            <a
+                              href={doc.documentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              title="Ekli Evrakı İndir / İncele"
+                              className="p-1 rounded bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
                       </td>
 
                       {/* Company */}
@@ -771,6 +827,35 @@ export default function FinancialDocumentsPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                {/* Dosya Yükleme (Evrak Görseli / PDF) */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                    Evrak Dosyası Yükle (Çek/Senet/Teminat Görseli veya PDF)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                      className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-emerald-400 hover:file:bg-slate-700 cursor-pointer bg-slate-950 border border-slate-800 rounded-lg p-1.5"
+                    />
+                    {isUploading && (
+                      <RefreshCw className="w-4 h-4 animate-spin text-emerald-400 flex-shrink-0" />
+                    )}
+                    {formData.documentUrl && !isUploading && (
+                      <a
+                        href={formData.documentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-emerald-400 hover:underline flex items-center gap-1 flex-shrink-0 font-medium"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Dosya Eklendi
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
 

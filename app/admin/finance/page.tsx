@@ -14,6 +14,7 @@ import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { getProgressBillingsData, getRecentBillingMovements } from "./actions"
 
 export default function FinancePage() {
   const router = useRouter()
@@ -24,6 +25,7 @@ export default function FinancePage() {
   const [companies, setCompanies] = useState<any[]>([])
   const [personnel, setPersonnel] = useState<any[]>([])
   const [progressPayments, setProgressPayments] = useState<any[]>([])
+  const [recentBillingMovements, setRecentBillingMovements] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isProgressPaymentModalOpen, setIsProgressPaymentModalOpen] = useState(false)
@@ -33,7 +35,7 @@ export default function FinancePage() {
   useEffect(() => {
     if (status === "loading") return
     
-    const userRole = session?.user?.role
+    const userRole = (session?.user as any)?.role
     const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN"
     
     if (!isAdmin) {
@@ -43,7 +45,7 @@ export default function FinancePage() {
   }, [status, session, router])
 
   useEffect(() => {
-    const userRole = session?.user?.role
+    const userRole = (session?.user as any)?.role
     const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN"
     
     if (!isAdmin) return
@@ -194,14 +196,23 @@ export default function FinancePage() {
 
   const fetchProgressPayments = async () => {
     try {
-      const response = await fetch("/api/admin/progress-payments")
-      if (response.ok) {
-        const data = await response.json()
-        console.log("FİNANS VERİ ÇEKME - Gelen Veri (ProgressPayments):", data)
-        setProgressPayments(Array.isArray(data) ? data : [])
+      const data = await getProgressBillingsData()
+      if (Array.isArray(data) && data.length > 0) {
+        setProgressPayments(data)
+      } else {
+        const response = await fetch("/api/admin/progress-payments")
+        if (response.ok) {
+          const apiData = await response.json()
+          setProgressPayments(Array.isArray(apiData) ? apiData : [])
+        }
+      }
+
+      const movements = await getRecentBillingMovements()
+      if (Array.isArray(movements) && movements.length > 0) {
+        setRecentBillingMovements(movements)
       }
     } catch (error) {
-      console.error("FİNANS VERİ ÇEKME HATASI DETAYI (ProgressPayments):", error)
+      console.error("Hakediş verisi getirme hatası:", error)
     }
   }
 
@@ -671,47 +682,84 @@ export default function FinancePage() {
         </ResponsiveContainer>
       </div>
 
-      {/* Progress Payments Section */}
+      {/* Progress Payments Section (Gerçek Prisma Veritabanı Sorguları) */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         {/* Taşeron Hakedişleri */}
-        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-lg">
           <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-white">🏗️ Taşeron Hakedişleri</h3>
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <span>🏗️ Taşeron Hakedişleri</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                Canlı Veri
+              </span>
+            </h3>
             <span className="text-sm text-slate-400">Toplam: {progressPayments.length} hakediş</span>
           </div>
           <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
             <table className="w-full min-w-max">
-              <thead className="bg-slate-800">
+              <thead className="bg-slate-800/80">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Taşeron</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Tutar</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Durum</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300">Hakediş / Taşeron</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300">Proje</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-300">Net Tutar</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-300">Durum</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-800/60 text-sm">
                 {progressPayments.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-slate-400">
-                      Hakediş kaydı bulunamadı
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                      Kayıtlı taşeron hakedişi bulunamadı
                     </td>
                   </tr>
                 ) : (
-                  (Array.isArray(progressPayments) ? progressPayments.slice(0, 5) : []).map((payment) => (
-                    <tr key={payment.id}>
-                      <td className="px-4 py-3 text-sm text-white">{payment.subcontractor}</td>
-                      <td className="px-4 py-3 text-sm text-white font-medium">{payment.totalAmount?.toLocaleString("tr-TR")} ₺</td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          payment.status === "BEKLIYOR" ? "bg-yellow-900/50 text-yellow-400" :
-                          payment.status === "ONAYLANDI" ? "bg-green-900/50 text-green-400" :
-                          "bg-red-900/50 text-red-400"
-                        }`}>
-                          {payment.status === "BEKLIYOR" ? "Bekliyor" :
-                           payment.status === "ONAYLANDI" ? "Onaylandı" : "Reddedildi"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  progressPayments.slice(0, 6).map((payment) => {
+                    const status = payment.status?.toUpperCase()
+                    const isApproved = status === "APPROVED" || status === "ONAYLANDI"
+                    const isPaid = status === "PAID" || status === "ODENDI"
+                    const isRejected = status === "REJECTED" || status === "REDDEDILDI"
+                    const isPending = !isApproved && !isPaid && !isRejected
+
+                    const amount = payment.netPayable > 0 ? payment.netPayable : (payment.grossAmount || payment.totalAmount || 0)
+
+                    return (
+                      <tr key={payment.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-white">
+                            {payment.subcontractor || "Taşeron Firma"}
+                          </div>
+                          <div className="text-xs text-slate-400 font-mono">
+                            Hakediş No: #{payment.billingNumber || 1}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-300">
+                          {payment.projectName || "Genel Proje"}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-bold text-white whitespace-nowrap">
+                          {amount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          {isPaid ? (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950/70 text-emerald-300 border border-emerald-800">
+                              Ödendi
+                            </span>
+                          ) : isApproved ? (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-950/70 text-blue-300 border border-blue-800">
+                              Onaylandı
+                            </span>
+                          ) : isRejected ? (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-950/70 text-rose-300 border border-rose-800">
+                              Reddedildi
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-950/70 text-amber-300 border border-amber-800">
+                              İnceleniyor
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
             </table>
@@ -719,36 +767,52 @@ export default function FinancePage() {
         </div>
 
         {/* Son Hakediş Hareketleri */}
-        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-lg">
           <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-white">📊 Son Hakediş Hareketleri</h3>
-            <span className="text-sm text-slate-400">Son 5 işlem</span>
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <span>📊 Son Hakediş Hareketleri</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Prisma Log
+              </span>
+            </h3>
+            <span className="text-sm text-slate-400">Son hareketler</span>
           </div>
           <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
             <table className="w-full min-w-max">
-              <thead className="bg-slate-800">
+              <thead className="bg-slate-800/80">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Proje</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Tutar</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Tarih</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300">Proje & Hakediş</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-300">Taşeron</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-300">Tutar</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-300">Tarih</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
-                {transactions.length === 0 ? (
+              <tbody className="divide-y divide-slate-800/60 text-sm">
+                {(recentBillingMovements.length > 0 ? recentBillingMovements : progressPayments).length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-slate-400">
-                      İşlem kaydı bulunamadı
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                      Hakediş hareketi bulunamadı
                     </td>
                   </tr>
                 ) : (
-                  (Array.isArray(transactions) ? transactions.slice(0, 5) : []).map((transaction) => (
-                    <tr key={transaction.id}>
-                      <td className="px-4 py-3 text-sm text-white">{transaction.description || 'Genel'}</td>
-                      <td className={`px-4 py-3 text-sm font-medium ${transaction.type === "GELIR" ? "text-green-400" : "text-red-400"}`}>
-                        {transaction.type === "GELIR" ? "+" : "-"}{transaction.amount?.toLocaleString("tr-TR")} ₺
+                  (recentBillingMovements.length > 0 ? recentBillingMovements : progressPayments).slice(0, 6).map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-white text-xs">
+                          {item.projectName || "Şantiye Projesi"}
+                        </div>
+                        <div className="text-[11px] text-blue-400 font-mono">
+                          Hakediş #{item.billingNumber || 1}
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-400">
-                        {new Date(transaction.date).toLocaleDateString('tr-TR')}
+                      <td className="px-4 py-3 text-xs text-slate-300">
+                        {item.subcontractor || "Taşeron Firma"}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-emerald-400 text-xs whitespace-nowrap">
+                        {(item.amount || item.netPayable || item.grossAmount || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺
+                      </td>
+                      <td className="px-4 py-3 text-center text-xs text-slate-400 font-mono whitespace-nowrap">
+                        {new Date(item.date || item.createdAt || item.period).toLocaleDateString("tr-TR")}
                       </td>
                     </tr>
                   ))

@@ -431,12 +431,16 @@ model Archive {
 // ============================================================================
 
 model SiteReport {
-  id          String   @id @default(cuid())
-  date        DateTime @default(now())
-  weather     String? // Örn: Güneşli, Yağmurlu 30°C
-  workerCount Int      @default(0)
-  notes       String   @db.Text
-  images      String? // Virgülle ayrılmış resim URL'leri veya JSON
+  id               String   @id @default(cuid())
+  date             DateTime @default(now())
+  weather          String? // Örn: Güneşli, Yağmurlu 30°C
+  workerCount      Int      @default(0)
+  staffWorkerCount Int?     @default(0) // Kadrolu personel sayısı
+  subWorkerCount   Int?     @default(0) // Taşeron işçi sayısı
+  activities       String?  @db.Text // Yapılan İmalatlar
+  dailyEvents      String?  @db.Text // Bağlı Olaylar (DÖF, Karot, Kalite vb. JSON veya text)
+  notes            String   @db.Text
+  images           String? // Virgülle ayrılmış resim URL'leri veya JSON
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id])
@@ -3827,6 +3831,7 @@ model FinancialDocument {
   companyId     String   // Kime verildiği / Kimden alındığı
   company       Company  @relation(fields: [companyId], references: [id])
   status        String   @default("PORTFOLIO") // PORTFOLIO, CASHED, RETURNED, BOUNCED
+  documentUrl   String?  // Evrak görseli / PDF bağlantısı
   createdAt     DateTime @default(now())
 
   @@index([companyId])
@@ -3839,19 +3844,22 @@ model FinancialDocument {
 // 2. TEDARİK: Satınalma Talebi ve Tedarikçi Teklifleri
 // ============================================================================
 model PurchaseRequest {
-  id            String        @id @default(cuid())
-  projectId     String
-  project       Project       @relation(fields: [projectId], references: [id])
-  materialName  String
-  quantity      Float
-  unit          String
-  status        String        @default("OPEN_FOR_BID") // OPEN_FOR_BID, COMPLETED, CANCELLED
-  bids          SupplierBid[]
+  id                   String                   @id @default(cuid())
+  projectId            String
+  project              Project                  @relation(fields: [projectId], references: [id])
+  materialName         String
+  quantity             Float
+  unit                 String
+  status               String                   @default("OPEN_FOR_BID") // OPEN_FOR_BID, COMPLETED, CANCELLED
+  deadline             DateTime?                // İhale Bitiş Tarihi
+  paymentType          String?                  // Peşin, Vadeli
+  deliveryNotes        String?                  @db.Text // Teslimat koşulları ve şantiye notları
+  bids                 SupplierBid[]
   deliveryAppointments DeliveryAppointment[]
   shipmentTrackings    ShipmentTracking[]
   consolidatedId       String?
   consolidated         ConsolidatedProcurement? @relation(fields: [consolidatedId], references: [id], onDelete: SetNull)
-  createdAt            DateTime      @default(now())
+  createdAt            DateTime                 @default(now())
 
   @@index([projectId])
   @@index([status])
