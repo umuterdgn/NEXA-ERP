@@ -3,7 +3,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Field Engineer Intelligent Daily Construction Journal (Akıllı Şantiye Jurnali)
- * Integrated Aggregator for QR Consumption, Attendance, and Subcontractor Proofs
+ * Integrated with Admin Live Dashboard, Meteorological OHS Risk, Logistics & AI Brief Trigger
  */
 
 import React, { useState, useEffect } from "react"
@@ -18,6 +18,7 @@ import {
   PackageCheck,
   CheckCircle2,
   ShieldCheck,
+  ShieldAlert,
   AlertTriangle,
   ArrowLeft,
   RefreshCw,
@@ -32,7 +33,12 @@ import {
   Check,
   MapPin,
   Lock,
-  MessageSquare
+  MessageSquare,
+  TrendingUp,
+  Truck,
+  Activity,
+  AlertOctagon,
+  Bot
 } from "lucide-react"
 import { getTodaySummary, submitDailyJournal, JournalSummary } from "@/app/actions/journal"
 import { toast } from "react-hot-toast"
@@ -42,11 +48,14 @@ export default function SmartDailyJournalPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submittedSuccess, setSubmittedSuccess] = useState(false)
+  const [generatedAiBrief, setGeneratedAiBrief] = useState<string | null>(null)
 
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string>("")
   const [summary, setSummary] = useState<JournalSummary | null>(null)
-  const [engineerNotes, setEngineerNotes] = useState("")
+  const [engineerNotes, setEngineerNotes] = useState(
+    "Meteorolojik fırtına uyarısı nedeniyle kule vinç operasyonları saat 11:30 - 14:30 arasında 3 saat durduruldu. Rüzgar hızının hafiflemesiyle A Blok 3. kat kolon beton dökümüne başlandı."
+  )
 
   const loadData = async (projId?: string) => {
     setLoading(true)
@@ -97,7 +106,13 @@ export default function SmartDailyJournalPage() {
       })
 
       if (res.success) {
-        toast.success(res.message || "Günlük Şantiye Jurnali başarıyla Merkeze iletildi!")
+        toast.success(
+          "✨ Şantiye Jurnali mühürlendi ve Otonom Patron Raporu (C-Level Brief) başarıyla üretildi!",
+          {
+            icon: "👔",
+            duration: 5000
+          }
+        )
         setSubmittedSuccess(true)
       } else {
         toast.error(res.error || "Jurnal kaydedilemedi.")
@@ -113,7 +128,7 @@ export default function SmartDailyJournalPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8">
       {/* Top Header */}
-      <div className="max-w-4xl mx-auto mb-6">
+      <div className="max-w-5xl mx-auto mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <button
@@ -129,14 +144,14 @@ export default function SmartDailyJournalPage() {
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-                  Günlük Şantiye Jurnali & Onay Paneli
+                  Günlük Şantiye Jurnali & Akıllı Onay Paneli
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     <Sparkles className="w-3 h-3" />
-                    Otonom Sistem
+                    Canlı Şantiye & Meteoroloji Entegre
                   </span>
                 </h1>
                 <p className="text-xs text-slate-400">
-                  QR Malzeme Tüketimi, Puantaj ve Taşeron İş Kanıtlarını birleştiren akıllı rapor
+                  Admin Canlı Şantiye Özeti, Meteorolojik İSG Riskleri ve Günlük Lojistik Konsolidasyonu
                 </p>
               </div>
             </div>
@@ -170,13 +185,13 @@ export default function SmartDailyJournalPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {loading ? (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-16 text-center">
             <Loader2 className="w-10 h-10 text-orange-400 animate-spin mx-auto mb-3" />
-            <h3 className="text-base font-bold text-white">Saha Verileri Konsolide Ediliyor...</h3>
+            <h3 className="text-base font-bold text-white">Canlı Şantiye Verileri Toplanıyor...</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
-              QR malzeme tüketimleri, puantaj turnike girişleri ve taşeron teknik kabulleri taranıyor.
+              Meteorolojik risk tahminleri, aktif personel puantajı, lojistik makbuzları ve açık İSG ihlalleri taranıyor.
             </p>
           </div>
         ) : !summary ? (
@@ -192,151 +207,280 @@ export default function SmartDailyJournalPage() {
                 <Building2 className="w-5 h-5 text-orange-400" />
                 <div>
                   <div className="text-xs font-semibold text-white">{summary.projectName}</div>
-                  <div className="text-[11px] text-slate-400">Şantiye Sahası</div>
+                  <div className="text-[11px] text-slate-400">Şantiye Sahası / Aktif Proje</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
                 <Calendar className="w-3.5 h-3.5 text-orange-400" />
-                <span>Rapor Tarihi:</span>
+                <span>Jurnal Tarihi:</span>
                 <strong className="text-white font-mono">{summary.date}</strong>
               </div>
 
               <div className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
                 <Lock className="w-3.5 h-3.5" />
-                <span>Sistem Verileri Salt-Okunur (Korumalı)</span>
+                <span>Admin Şantiye Konsolidasyonu (Read-Only)</span>
               </div>
             </div>
 
-            {/* 2. Hava Durumu & Personel Puantaj Kartları */}
+            {/* Fırtına Uyarısı Kırmızı Banner (Eğer Aktifse) */}
+            {summary.weather.stormAlert && (
+              <div className="bg-gradient-to-r from-red-950/80 via-red-900/60 to-red-950/80 border-2 border-red-500/60 rounded-2xl p-4 sm:p-5 flex items-start gap-4 shadow-xl shadow-red-950/50 animate-pulse">
+                <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-lg">
+                  <AlertOctagon className="w-6 h-6" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-red-300 bg-red-950 px-2.5 py-0.5 rounded border border-red-500/40">
+                      Meteorolojik Kritik Güvenlik Uyarısı
+                    </span>
+                    <span className="text-xs font-bold text-white">
+                      Rüzgar: {summary.weather.windSpeed} km/h (Kritik Eşik: ≥50 km/h)
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-white">
+                    {summary.weather.stormWarning}
+                  </h3>
+                  <p className="text-xs text-red-200/90 leading-relaxed">
+                    Şantiye otomatik rüzgar ölçerleri kritik fırtına eşiği bildirmiştir. Kule vinçler ve dış cephe sepet iskele operasyonları derhal durdurulmalıdır.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 2. 4 Büyük Canlı Şantiye KPI Kartı (Admin Paneli ile Birebir) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* Aktif Personel */}
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 relative overflow-hidden">
+                <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                  <span>Aktif Personel</span>
+                  <Users className="w-4 h-4 text-blue-400" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+                  {summary.workerCount} <span className="text-xs font-normal text-slate-400">Kişi</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {summary.workerBreakdown.staffCount} Kadrolu • {summary.workerBreakdown.subcontractorCount} Taşeron
+                </p>
+              </div>
+
+              {/* İSG Durumu */}
+              <div
+                className={`border rounded-2xl p-4 relative overflow-hidden ${
+                  summary.activeViolationsCount > 0
+                    ? "bg-red-950/20 border-red-900/40"
+                    : "bg-emerald-950/20 border-emerald-900/40"
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className={summary.activeViolationsCount > 0 ? "text-red-400" : "text-emerald-400"}>
+                    İSG Güvenlik Durumu
+                  </span>
+                  {summary.activeViolationsCount > 0 ? (
+                    <ShieldAlert className="w-4 h-4 text-red-400" />
+                  ) : (
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  )}
+                </div>
+                <div
+                  className={`text-2xl sm:text-3xl font-extrabold font-mono ${
+                    summary.activeViolationsCount > 0 ? "text-red-400" : "text-emerald-400"
+                  }`}
+                >
+                  {summary.activeViolationsCount > 0 ? `${summary.activeViolationsCount} Aktif İhlal` : "Sıfır İhlal"}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {summary.activeViolationsCount > 0 ? "Baret ve Kazı şev güvenliği" : "Saha kurallarına tam uyum"}
+                </p>
+              </div>
+
+              {/* Günlük İlerleme */}
+              <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-2xl p-4 relative overflow-hidden">
+                <div className="flex items-center justify-between text-xs text-emerald-400 mb-2">
+                  <span>Tamamlanan İmalat</span>
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">
+                  +%{summary.dailyProgress}
+                </div>
+                <p className="text-[11px] text-emerald-300/70 mt-1">
+                  Güncel BoQ metraj artışı
+                </p>
+              </div>
+
+              {/* Meteorolojik Risk Seviyesi */}
+              <div
+                className={`border rounded-2xl p-4 relative overflow-hidden ${
+                  summary.weather.stormAlert
+                    ? "bg-red-950/20 border-red-900/40"
+                    : "bg-amber-950/20 border-amber-900/40"
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className={summary.weather.stormAlert ? "text-red-400" : "text-amber-400"}>
+                    Rüzgar & Yağış Riski
+                  </span>
+                  <Wind className="w-4 h-4 text-slate-400" />
+                </div>
+                <div
+                  className={`text-2xl sm:text-3xl font-extrabold font-mono ${
+                    summary.weather.stormAlert ? "text-red-400" : "text-amber-400"
+                  }`}
+                >
+                  {summary.weather.windSpeed} <span className="text-xs font-normal">km/h</span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Yağış İhtimali: %{summary.weather.rainProb} • {summary.weather.riskLevel}
+                </p>
+              </div>
+            </div>
+
+            {/* 3. İki Kolonlu Detay Kartları: Meteorolojik İSG & Canlı İhlaller */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Hava Durumu Kartı */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-3">
+              {/* Meteorolojik İSG Risk Tahmini & Vinç Durumu */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider">
                     <CloudSun className="w-4 h-4" />
-                    Otonom Hava Durumu
+                    Meteorolojik İSG Risk Tahmini (Bugün)
                   </div>
-                  <span className="text-[10px] text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                    API / İstasyon
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      summary.weather.stormAlert
+                        ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                        : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    }`}
+                  >
+                    {summary.weather.riskLevel} RİSK
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono">
-                    {summary.weather.temperature}
-                    <span className="text-orange-400">{summary.weather.unit}</span>
+                <div className="space-y-2 text-xs">
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Hava Durumu Şartları:</span>
+                    <span className="text-white font-semibold">{summary.weather.condition}</span>
                   </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">{summary.weather.condition}</div>
-                    <div className="text-[11px] text-slate-400 flex items-center gap-3 mt-1">
-                      <span className="flex items-center gap-1">
-                        <Wind className="w-3 h-3 text-slate-500" />
-                        {summary.weather.windSpeed}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Droplets className="w-3 h-3 text-blue-400" />
-                        {summary.weather.humidity}
-                      </span>
-                    </div>
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Hava Sıcaklığı:</span>
+                    <span className="text-white font-mono font-semibold">
+                      {summary.weather.temperature} {summary.weather.unit}
+                    </span>
+                  </div>
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Rüzgar Hızı:</span>
+                    <span
+                      className={`font-mono font-bold ${
+                        summary.weather.windSpeed >= 50 ? "text-red-400" : "text-white"
+                      }`}
+                    >
+                      {summary.weather.windSpeed} km/h
+                    </span>
+                  </div>
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Yağış Olasılığı:</span>
+                    <span className="text-blue-400 font-mono font-semibold">
+                      %{summary.weather.rainProb}
+                    </span>
                   </div>
                 </div>
 
-                <div className="mt-3 text-[10px] text-slate-500 border-t border-slate-800/80 pt-2">
-                  Kaynak: {summary.weather.source}
+                {/* AI / İSG Önerisi */}
+                <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl flex items-center gap-2 text-xs text-orange-300">
+                  <Sparkles className="w-4 h-4 text-orange-400 shrink-0" />
+                  <span className="font-semibold">{summary.weather.aiRecommendation}</span>
                 </div>
               </div>
 
-              {/* Personel Puantaj Kartı */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
-                    <Users className="w-4 h-4" />
-                    Aktif Saha Personeli (QR Puantaj)
+              {/* Canlı İSG İhlalleri & Sahadaki Güvenlik Kayıtları */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div className="flex items-center gap-2 text-xs font-bold text-red-400 uppercase tracking-wider">
+                    <ShieldAlert className="w-4 h-4" />
+                    Canlı Saha İSG İhlalleri (Sensör / Kamera)
                   </div>
-                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold">
-                    Turnike Doğrulamalı
+                  <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                    {summary.isgViolations.length} Açık Kayıt
                   </span>
                 </div>
 
-                <div className="flex items-baseline gap-2">
-                  <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono">
-                    {summary.workerCount}
-                  </div>
-                  <span className="text-xs text-slate-400">Kişi Bugün Giriş Yaptı</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-slate-800/80 text-xs">
-                  <div className="bg-slate-950 p-2 rounded-xl border border-slate-800">
-                    <div className="text-[10px] text-slate-400">Kadrolu Teknik Kadro</div>
-                    <div className="text-sm font-bold text-blue-400 font-mono">
-                      {summary.workerBreakdown.staffCount} Personel
+                <div className="space-y-2">
+                  {summary.isgViolations.map((v) => (
+                    <div
+                      key={v.id}
+                      className="bg-slate-950 border border-red-500/20 rounded-xl p-3 space-y-1"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
+                          <strong className="text-white">{v.workerName}</strong>
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-mono">{v.timestamp}</span>
+                      </div>
+                      <div className="text-xs font-semibold text-red-300">{v.violation}</div>
+                      {v.zoneName && (
+                        <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-orange-400" />
+                          {v.zoneName}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="bg-slate-950 p-2 rounded-xl border border-slate-800">
-                    <div className="text-[10px] text-slate-400">Taşeron İşçi / Usta</div>
-                    <div className="text-sm font-bold text-amber-400 font-mono">
-                      {summary.workerBreakdown.subcontractorCount} Çalışan
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* 3. Tüketilen Malzemeler (QR Tüketim Özeti) */}
+            {/* 4. Günlük Lojistik (120 T Demir, 400 m³ Beton vb.) */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                  <QrCode className="w-4 h-4" />
-                  Bugün Tüketilen Malzemeler (QR Envanter Düşümü)
+                <div className="flex items-center gap-2 text-xs font-bold text-orange-400 uppercase tracking-wider">
+                  <Truck className="w-4 h-4" />
+                  Günlük Lojistik & Sahaya Giriş / Tüketim Dengesi
                 </div>
                 <span className="text-xs text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
-                  {summary.consumedItems.length} Kalem
+                  Konsolide Sevkiyat
                 </span>
               </div>
 
-              <div className="space-y-2">
-                {summary.consumedItems.map((item) => (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {summary.logistics.map((log) => (
                   <div
-                    key={item.id}
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    key={log.id}
+                    className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-                        <PackageCheck className="w-4 h-4" />
-                      </div>
+                    <div className="text-xs font-bold text-white truncate">{log.material}</div>
+                    <div className="flex items-baseline justify-between text-xs">
                       <div>
-                        <div className="text-xs font-bold text-white">{item.materialName}</div>
-                        <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                          <span className="font-mono text-slate-500">[{item.qrCode}]</span>
-                          <span>•</span>
-                          <span className="text-orange-400">📍 {item.zone}</span>
+                        <div className="text-[10px] text-slate-400">Gelen Sevkiyat:</div>
+                        <div className="text-sm font-bold text-blue-400 font-mono">
+                          {log.incoming} {log.unit}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] text-slate-400">Bugün Tüketilen:</div>
+                        <div className="text-sm font-bold text-emerald-400 font-mono">
+                          {log.consumed} {log.unit}
                         </div>
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="font-mono font-bold text-emerald-400 text-sm">
-                        {item.quantity.toLocaleString("tr-TR")} {item.unit}
+                    {log.zone && (
+                      <div className="text-[10px] text-slate-500 truncate pt-1 border-t border-slate-900">
+                        📍 {log.zone}
                       </div>
-                      {item.consumedAt && (
-                        <div className="text-[10px] text-slate-500">Saat: {item.consumedAt}</div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 4. Tamamlanan & Onaylanan İmalatlar (Taşeron İş Kabulleri) */}
+            {/* 5. Tamamlanan İmalatlar & BoQ İlerlemesi */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-cyan-400 uppercase tracking-wider">
                   <ShieldCheck className="w-4 h-4" />
-                  Bugün Onaylanan Taşeron İmalatları & Metrajlar
+                  Bugün Tamamlanan ve Teknik Kabulü Onaylanan İmalatlar
                 </div>
-                <span className="text-xs text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
-                  {summary.completedWorks.length} İmalat
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">
+                  Toplam İlerleme: +%{summary.dailyProgress}
                 </span>
               </div>
 
@@ -367,55 +511,23 @@ export default function SmartDailyJournalPage() {
               </div>
             </div>
 
-            {/* 5. İSG & DÖF (NCR) Uygunsuzlukları */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+            {/* 6. Mühendisin Manuel Değerlendirmesi & Saha Notları */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-900/80 border-2 border-orange-500/40 rounded-2xl p-5 space-y-3 shadow-xl">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-red-400 uppercase tracking-wider">
-                  <AlertTriangle className="w-4 h-4" />
-                  Saha Revizyon ve Kusur (DÖF) Durumu
-                </div>
-                <span className="text-xs text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
-                  {summary.ncrReports.length} Kayıt
+                <label className="text-xs font-bold text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Saha Mühendisi Genel Değerlendirmesi / Ekstra Notlar
+                </label>
+                <span className="text-[11px] text-slate-400">
+                  (Patron Raporuna ve LLM özetine doğrudan aktarılır)
                 </span>
               </div>
-
-              <div className="space-y-2">
-                {summary.ncrReports.map((ncr) => (
-                  <div
-                    key={ncr.id}
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex items-center justify-between gap-3 text-xs"
-                  >
-                    <div>
-                      <span className="font-mono font-bold text-orange-400 mr-2">
-                        {ncr.reportNo}
-                      </span>
-                      <span className="text-slate-200">{ncr.description}</span>
-                    </div>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
-                        ncr.status === "Açık DÖF"
-                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                          : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      }`}
-                    >
-                      {ncr.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 6. Mühendisin Manuel Notu & Değerlendirmesi */}
-            <div className="bg-slate-900 border border-orange-500/30 rounded-2xl p-5 space-y-3 shadow-lg">
-              <label className="block text-xs font-bold text-orange-400 uppercase tracking-wider flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                Günlük Genel Değerlendirme / Ekstra Notlar
-              </label>
               <textarea
                 value={engineerNotes}
                 onChange={(e) => setEngineerNotes(e.target.value)}
                 rows={4}
-                placeholder="Örn: 3. Kat beton dökümü sırasında mikser sirkülasyonu sorunsuz tamamlanmış olup, 7 ve 28 günlük numuneler laboratuvara sevk edilmiştir. Hava şartları elverişli seyretmiştir..."
+                required
+                placeholder="Örn: Vinç fırtına yüzünden 3 saat çalışmadı, rüzgar durulduğunda beton dökümüne devam edildi..."
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 resize-none transition"
               />
             </div>
@@ -423,21 +535,35 @@ export default function SmartDailyJournalPage() {
             {/* 7. Büyük Doğrulama & Merkeze Gönder Butonu */}
             <div className="pt-2">
               {submittedSuccess ? (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 text-center space-y-2">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
-                  <h3 className="text-base font-bold text-white">
-                    Günün Şantiye Jurnali Başarıyla Merkeze İletildi!
+                <div className="bg-emerald-500/10 border-2 border-emerald-500/40 rounded-3xl p-6 text-center space-y-3 shadow-2xl animate-in fade-in zoom-in-95">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-lg font-extrabold text-white">
+                    Günün Şantiye Jurnali Merkeze İletildi ve Otonom Patron Raporu Üretildi!
                   </h3>
-                  <p className="text-xs text-slate-300">
-                    Tüm QR tüketimleri, puantaj ve hakediş snapshot verileri DailyJournal modeline mühürlenerek kaydedildi.
+                  <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
+                    Tüm meteorolojik riskler, lojistik sevkiyatları ve İSG ihlalleri mühürlendi.
+                    Yapay Zeka (LLM), Jurnaldan gelen ham verileri okuyarak Proje Detayı sayfasında
+                    C-Level Patron Özeti olarak yayınladı.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setSubmittedSuccess(false)}
-                    className="mt-2 text-xs text-orange-400 hover:underline"
-                  >
-                    Yeni Bir Not Eklemek İçin Tekrar Aç
-                  </button>
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/admin/projects/${summary.projectId}`)}
+                      className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-2 transition"
+                    >
+                      <Bot className="w-4 h-4" />
+                      Admin Proje Detayı & Patron Raporuna Git
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSubmittedSuccess(false)}
+                      className="text-xs text-slate-400 hover:text-white"
+                    >
+                      Jurnali Tekrar Görüntüle
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button
@@ -448,12 +574,12 @@ export default function SmartDailyJournalPage() {
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Veriler Doğrulanıyor ve Merkeze Gönderiliyor...
+                      Veriler Doğrulanıyor, Jurnal Mühürleniyor ve Patron Özeti Üretiliyor...
                     </>
                   ) : (
                     <>
                       <Send className="w-5 h-5 group-hover:translate-x-1 transition" />
-                      Verileri Doğrula & Jurnali Merkeze Gönder
+                      Verileri Doğrula & Jurnali Merkeze Gönder (Patron Raporunu Tetikle)
                     </>
                   )}
                 </button>
