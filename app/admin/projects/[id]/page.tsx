@@ -268,6 +268,13 @@ export default async function ProjectDetailPage({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href={`/admin/projects/${resolvedParams.id}/boq`}
+              className="px-3.5 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-xs font-semibold transition-colors flex items-center gap-1.5"
+            >
+              <span>Keşif & Metraj (BoQ)</span>
+              <span>→</span>
+            </Link>
             <ProjectDetailClient project={project} />
             {Boolean(project.status) && (
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(String(project.status ?? ""))}`}>

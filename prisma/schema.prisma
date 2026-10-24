@@ -2506,6 +2506,7 @@ model InventoryItem {
   lastSeenAt     DateTime? @default(now())
 
   project        Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  boqItems       BoqItem[]
 
   @@index([projectId])
   @@index([qrCode])
@@ -4238,10 +4239,16 @@ model BoqItem {
   unit            String           // "m3", "Ton", "m2"
   plannedQuantity Float            // Toplam yapılması gereken
   unitPrice       Float            // Birim fiyat
+  totalPrice      Float            @default(0) // plannedQuantity * unitPrice (Sistem hesaplar)
   actualQuantity  Float            @default(0) // Sahada şu ana kadar yapılan (Onaylanmış)
   startDate       DateTime?        // Planlanan başlangıç
   endDate         DateTime?        // Planlanan bitiş
   subcontractorId String?          // Bu işi yapan taşeron
+  
+  // BÜTÜNLEŞİK YAPI: Bu imalat için hangi malzeme gerekiyor?
+  requiredMaterialId String?       // InventoryItem tablosuna referans (Opsiyonel)
+  requiredMaterial   InventoryItem? @relation(fields: [requiredMaterialId], references: [id], onDelete: SetNull)
+  
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt @default(now())
 
@@ -4249,6 +4256,7 @@ model BoqItem {
 
   @@index([projectId])
   @@index([pozNo])
+  @@index([requiredMaterialId])
 }
 
 model BoqProgressLog {

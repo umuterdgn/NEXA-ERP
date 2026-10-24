@@ -37,7 +37,8 @@ import {
   Eye,
   SlidersHorizontal,
   ChevronDown,
-  Info
+  Info,
+  Calculator
 } from "lucide-react"
 import {
   BoqItemWithLogs,
@@ -307,6 +308,14 @@ export default function ProjectProgressClient({
         </div>
 
         <div className="flex items-center gap-2.5">
+          <Link
+            href={`/admin/projects/${projectId}/boq`}
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-bold transition-all border border-slate-700 shadow-sm"
+          >
+            <Calculator className="w-4 h-4 text-blue-400" />
+            <span>İnteraktif BoQ DataGrid</span>
+          </Link>
+
           {boqItems.length === 0 && (
             <button
               onClick={handleSeedTemplate}
