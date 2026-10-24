@@ -458,23 +458,25 @@ export default function BleEquipmentMap({
       <MapContainer
         center={center}
         zoom={zoom}
-        maxZoom={19}
+        maxZoom={22}
         style={{ height: "100%", width: "100%" }}
         className="z-0 h-full w-full"
         scrollWheelZoom={true}
       >
-        {/* Esri World Imagery (Yüksek Çözünürlüklü Uydu Haritası - 19 Zoom Seviyesi) */}
+        {/* Esri World Imagery (Yüksek Çözünürlüklü Uydu Haritası - 18 Max Native Zoom, 22 Dijital Zoom) */}
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           attribution='&copy; <a href="https://www.esri.com/">Esri</a>, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-          maxZoom={19}
+          maxNativeZoom={18}
+          maxZoom={22}
         />
 
         {/* Esri Hybrid Sokak, Sınır ve Yer İsimleri Şeffaf Katmanı */}
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
           attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-          maxZoom={19}
+          maxNativeZoom={18}
+          maxZoom={22}
         />
 
         {/* Dynamic View Controller */}
