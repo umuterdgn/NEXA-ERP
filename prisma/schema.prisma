@@ -2649,6 +2649,9 @@ model WorkProof {
   managerStatus   String      @default("PENDING") // PENDING, APPROVED, REJECTED
   engineerId      String?     // İlk onayı veren saha mühendisi
   managerId       String?     // İkinci onayı veren şantiye şefi
+  latitude        Float?      // Fotoğrafın GPS Enlemi
+  longitude       Float?      // Fotoğrafın GPS Boylamı
+  bimElementId    String?     // 3D BIM Eleman ID (kolon, kiriş, döşeme)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -2661,6 +2664,7 @@ model WorkProof {
   @@index([engineerStatus])
   @@index([managerStatus])
   @@index([createdAt])
+  @@index([bimElementId])
 }
 
 enum ProofStatus {
@@ -4107,14 +4111,16 @@ model ProgressAttachment {
   uploader      User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
   photoUrl      String
   description   String?  // Örn: "A Blok 3. Kat Beton Dökümü Bitti"
-  latitude      Float?
-  longitude     Float?
+  latitude      Float?   // Fotoğrafın GPS Enlemi (EXIF'ten veya tarayıcıdan alınacak)
+  longitude     Float?   // Fotoğrafın GPS Boylamı
+  bimElementId  String?  // Eğer 3D modeldeki bir kolon/kiriş ile eşleşiyorsa
   stageGateId   String?  // Eğer bir franchise aşamasını (Stage-Gate) tamamlıyorsa
   createdAt     DateTime @default(now())
 
   @@index([projectId])
   @@index([uploaderId])
   @@index([stageGateId])
+  @@index([bimElementId])
 }
 
 // 3. MASRAF & YAKIT FİŞİ GİRİŞİ (Personel Harcamaları)

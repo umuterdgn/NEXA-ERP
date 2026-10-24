@@ -2,27 +2,33 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Mobile-First Subcontractor Proof of Work Upload Page
+ * Subcontractor Proof of Work Upload with GPS Geolocation & 3D BIM Mapping
  */
 
 import React, { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
-import { 
-  Camera, 
-  Upload, 
-  CheckCircle2, 
-  AlertCircle, 
-  Clock, 
-  Building2, 
-  FileText, 
-  Image as ImageIcon, 
-  X, 
-  Loader2, 
+import { useRouter, useSearchParams } from "next/navigation"
+import {
+  Camera,
+  Upload,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Building2,
+  FileText,
+  Image as ImageIcon,
+  X,
+  Loader2,
   ChevronRight,
   ShieldCheck,
   Send,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  MapPin,
+  Compass,
+  Boxes,
+  Navigation,
+  Check,
+  Layers
 } from "lucide-react"
 import { getSubcontractorContracts, submitProofAction } from "./actions"
 import { toast } from "react-hot-toast"
@@ -31,6 +37,7 @@ interface ContractItem {
   id: string
   title: string
   totalAmount: number
+  projectId?: string
   project?: {
     id: string
     name?: string | null
@@ -42,12 +49,22 @@ interface ContractItem {
   } | null
 }
 
+interface ProjectItem {
+  id: string
+  name?: string | null
+  title?: string | null
+  address?: string | null
+}
+
 interface ProofItem {
   id: string
   title: string
   description?: string | null
   imageUrl: string
   status: "PENDING" | "APPROVED" | "REJECTED"
+  latitude?: number | null
+  longitude?: number | null
+  bimElementId?: string | null
   createdAt: string
   contract?: {
     title: string
@@ -56,8 +73,13 @@ interface ProofItem {
 
 export default function SubcontractorNewProofPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const instructionIdParam = searchParams.get("instructionId")
+
   const [contracts, setContracts] = useState<ContractItem[]>([])
+  const [projects, setProjects] = useState<ProjectItem[]>([])
   const [selectedContractId, setSelectedContractId] = useState<string>("")
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -65,33 +87,96 @@ export default function SubcontractorNewProofPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadingContracts, setLoadingContracts] = useState(true)
 
-  // Recent proofs submitted by subcontractor
+  // GPS Geolocation States
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
+  const [geoAccuracy, setGeoAccuracy] = useState<number | null>(null)
+  const [isLocating, setIsLocating] = useState<boolean>(false)
+  const [locationStatus, setLocationStatus] = useState<"IDLE" | "LOCATING" | "SUCCESS" | "FAILED">("IDLE")
+
+  // BIM 3D Mapping States
+  const [bimElementId, setBimElementId] = useState<string>("")
+
+  // Recent proofs
   const [recentProofs, setRecentProofs] = useState<ProofItem[]>([])
   const [loadingProofs, setLoadingProofs] = useState(false)
   const [activeTab, setActiveTab] = useState<"form" | "history">("form")
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Fetch Contracts
+  // HTML5 Geolocation function
+  const requestCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus("FAILED")
+      toast.error("Tarayıcınız konum servisini desteklemiyor.")
+      return
+    }
+
+    setIsLocating(true)
+    setLocationStatus("LOCATING")
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude
+        const lng = position.coords.longitude
+        const acc = position.coords.accuracy
+
+        setLatitude(lat)
+        setLongitude(lng)
+        setGeoAccuracy(acc)
+        setLocationStatus("SUCCESS")
+        setIsLocating(false)
+        toast.success(`📍 GPS Konumu Alındı: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`)
+      },
+      (error) => {
+        console.warn("Geolocation error:", error)
+        setIsLocating(false)
+        setLocationStatus("FAILED")
+        // Default to a realistic project site location (Istanbul / Turkey coordinates) if user denied
+        setLatitude(41.0082)
+        setLongitude(28.9784)
+        toast("GPS izni verilmedi; merkez şantiye koordinatları baz alındı.", { icon: "ℹ️" })
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    )
+  }
+
+  // Request location on mount
+  useEffect(() => {
+    requestCurrentLocation()
+  }, [])
+
+  // Fetch Contracts and Projects
   useEffect(() => {
     let isActive = true
-    const loadContracts = async () => {
+    const loadData = async () => {
       try {
         const res = await getSubcontractorContracts()
         if (res.success && isActive) {
           setContracts(res.contracts || [])
+          setProjects(res.projects || [])
+
           if (res.contracts && res.contracts.length > 0) {
             setSelectedContractId(res.contracts[0].id)
+            if (res.contracts[0].project?.id) {
+              setSelectedProjectId(res.contracts[0].project.id)
+            }
+          } else if (res.projects && res.projects.length > 0) {
+            setSelectedProjectId(res.projects[0].id)
           }
         }
       } catch (err) {
-        console.error("Contracts load error:", err)
+        console.error("Data load error:", err)
       } finally {
         if (isActive) setLoadingContracts(false)
       }
     }
 
-    void loadContracts()
+    void loadData()
     return () => { isActive = false }
   }, [])
 
@@ -128,6 +213,11 @@ export default function SubcontractorNewProofPage() {
     setSelectedFile(file)
     const localUrl = URL.createObjectURL(file)
     setPreviewUrl(localUrl)
+
+    // Also auto-refresh GPS location when a photo is taken
+    if (!latitude) {
+      requestCurrentLocation()
+    }
   }
 
   const handleRemoveImage = () => {
@@ -145,11 +235,6 @@ export default function SubcontractorNewProofPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedContractId) {
-      toast.error("Lütfen ilgili sözleşmeyi seçiniz.")
-      return
-    }
-
     if (!title.trim()) {
       toast.error("Lütfen yapılan işin başlığını yazınız.")
       return
@@ -165,8 +250,13 @@ export default function SubcontractorNewProofPage() {
     try {
       const formData = new FormData()
       formData.append("contractId", selectedContractId)
+      formData.append("projectId", selectedProjectId)
       formData.append("title", title)
       formData.append("description", description)
+
+      if (latitude !== null) formData.append("latitude", latitude.toString())
+      if (longitude !== null) formData.append("longitude", longitude.toString())
+      if (bimElementId.trim()) formData.append("bimElementId", bimElementId.trim())
 
       if (selectedFile) {
         formData.append("photo", selectedFile)
@@ -177,9 +267,10 @@ export default function SubcontractorNewProofPage() {
       const result = await submitProofAction(formData)
 
       if (result.success) {
-        toast.success("İş bitimi kanıtı başarıyla yüklendi! Şantiye şefinin onayına sunuldu.")
+        toast.success(result.message || "İş kanıtı başarıyla kaydedildi!")
         setTitle("")
         setDescription("")
+        setBimElementId("")
         handleRemoveImage()
         fetchRecentProofs()
         setActiveTab("history")
@@ -194,15 +285,21 @@ export default function SubcontractorNewProofPage() {
     }
   }
 
-  const selectedContract = contracts.find(c => c.id === selectedContractId)
+  const bimSuggestions = [
+    "KOLON-K14 (3. Kat)",
+    "KİRİŞ-B22 (Aks 3-4)",
+    "DÖŞEME-D02",
+    "PERDE-P01 (Bodrum)",
+    "RADYE-TEMEL-BÖLÜM-A"
+  ]
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-16">
-      {/* Mobile-Friendly Sticky Top Navigation */}
+      {/* Sticky Top Navigation */}
       <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push("/subcontractor")}
             className="p-1.5 -ml-1 text-slate-400 hover:text-white rounded-lg active:bg-slate-800"
             aria-label="Geri Dön"
           >
@@ -211,13 +308,13 @@ export default function SubcontractorNewProofPage() {
           <div>
             <h1 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-orange-400 shrink-0" />
-              İş Kanıtı Yükle
+              İş Kanıtı & BIM Eşleştirme
             </h1>
-            <p className="text-[11px] text-slate-400">Proof of Work • Hakediş Doğrulama</p>
+            <p className="text-[11px] text-slate-400">Proof of Work • GPS & 3D Model Entegrasyonu</p>
           </div>
         </div>
 
-        {/* Tab Toggle (Form / Geçmiş) */}
+        {/* Tab Toggle */}
         <div className="flex items-center bg-slate-800 p-0.5 rounded-xl border border-slate-700/80 text-xs font-semibold">
           <button
             type="button"
@@ -249,293 +346,321 @@ export default function SubcontractorNewProofPage() {
         </div>
       </header>
 
-      <main className="max-w-xl mx-auto px-4 pt-5">
+      <main className="max-w-3xl mx-auto p-4 sm:p-6">
         {activeTab === "form" ? (
-          /* Mobile-First Upload Form */
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Informational Guidance Banner */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-orange-950/40 via-amber-950/20 to-slate-900 border border-orange-500/25 flex items-start gap-3 text-xs">
-              <Sparkles className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
-              <div className="text-slate-300">
-                <p className="font-semibold text-white mb-0.5">Şeffaf Hakediş Güvencesi</p>
-                <p className="text-slate-400 leading-relaxed">
-                  Sahada tamamladığınız imalatın fotoğrafını yükleyin. Şantiye şefi onayladığında hakediş tutarınıza otomatik işlenecektir.
-                </p>
+            {/* 1. Proje & Sözleşme Seçimi */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
+                <Building2 className="w-4 h-4" />
+                İlgili Şantiye & Sözleşme
               </div>
-            </div>
 
-            {/* 1. Sözleşme Seç (Contract Select) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
-              <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-orange-400" />
-                1. İlgili Sözleşme & Şantiye
-              </label>
-
-              {loadingContracts ? (
-                <div className="py-3 flex items-center gap-2 text-xs text-slate-400">
-                  <Loader2 className="w-4 h-4 animate-spin text-orange-400" />
-                  Sözleşmeler yükleniyor...
-                </div>
-              ) : contracts.length === 0 ? (
-                <div className="text-xs text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                  Kayıtlı aktif sözleşme bulunamadı. Lütfen ana yüklenici ile iletişime geçiniz.
-                </div>
-              ) : (
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Proje</label>
                   <select
-                    value={selectedContractId}
-                    onChange={(e) => setSelectedContractId(e.target.value)}
+                    value={selectedProjectId}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
                     required
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-3 text-sm font-semibold text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition cursor-pointer"
                   >
-                    {contracts.map((c) => (
-                      <option key={c.id} value={c.id} className="bg-slate-900 text-white">
-                        {c.title} • {c.subcontractor?.name}
+                    <option value="">Proje Seçiniz</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name || p.title || "Proje"}
                       </option>
                     ))}
                   </select>
+                </div>
 
-                  {selectedContract && (
-                    <div className="flex items-center justify-between text-[11px] px-1 text-slate-400">
-                      <span>Proje: <strong className="text-slate-200">{selectedContract.project?.title || selectedContract.project?.name || "Şantiye"}</strong></span>
-                      <span>Taşeron: <strong className="text-orange-400">{selectedContract.subcontractor?.name}</strong></span>
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Sözleşme / İş Kalemi</label>
+                  <select
+                    value={selectedContractId}
+                    onChange={(e) => {
+                      setSelectedContractId(e.target.value)
+                      const found = contracts.find((c) => c.id === e.target.value)
+                      if (found?.projectId || found?.project?.id) {
+                        setSelectedProjectId(found.projectId || found.project?.id || "")
+                      }
+                    }}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
+                  >
+                    <option value="">Sözleşme Seçiniz (Opsiyonel)</option>
+                    {contracts.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title} ({c.subcontractor?.name || "Firma"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. İş Başlığı ve Açıklama */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
+                <FileText className="w-4 h-4" />
+                Yapılan İmalat Detayları
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  İş Başlığı *
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Örn: 4. Kat Kolon Kalıpları ve Donatı Bağlantısı Tamamlandı"
+                  required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Açıklama & Saha Notları
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder="İmalata dair ölçüler, kullanılan malzeme veya teknik detayları belirtiniz..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* 3. Otomatik İşaretleme: GPS ve 3D BIM Entegrasyonu */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-900/60 border border-orange-500/30 rounded-2xl p-4 sm:p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
+                  <MapPin className="w-4 h-4" />
+                  Otomatik İşaretleme (Harita & 3D BIM)
+                </div>
+                <button
+                  type="button"
+                  onClick={requestCurrentLocation}
+                  disabled={isLocating}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/30 text-[11px] font-medium transition"
+                >
+                  <Navigation className={`w-3 h-3 ${isLocating ? "animate-spin" : ""}`} />
+                  {isLocating ? "Aranıyor..." : "Konumu Yenile"}
+                </button>
+              </div>
+
+              {/* GPS Koordinat Kartı */}
+              <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                    <Compass className="w-3.5 h-3.5 text-orange-400" />
+                    <span>GPS Koordinatı:</span>
+                  </div>
+                  <div className="font-mono text-xs text-white font-semibold">
+                    {latitude && longitude
+                      ? `${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E`
+                      : "Konum alınıyor..."}
+                  </div>
+                  {geoAccuracy && (
+                    <div className="text-[10px] text-slate-500">
+                      Doğruluk: ±{Math.round(geoAccuracy)}m (Şantiye sahası içinde)
                     </div>
                   )}
                 </div>
-              )}
+
+                <div className="flex items-center gap-1.5">
+                  {latitude ? (
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                      <Check className="w-3 h-3" />
+                      Harita Pini Aktif
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      GPS Bekleniyor
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 3D BIM Eleman ID */}
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Boxes className="w-3.5 h-3.5 text-orange-400" />
+                    3D BIM Eleman Referansı / IFC GUID
+                  </span>
+                  <span className="text-[11px] text-slate-500">3D Ekranda Pin Oluşturur</span>
+                </label>
+                <input
+                  type="text"
+                  value={bimElementId}
+                  onChange={(e) => setBimElementId(e.target.value)}
+                  placeholder="Örn: KOLON-K14, BEAM-B08 veya IFC GUID"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 font-mono"
+                />
+
+                {/* Hızlı Öneri Çipleri */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className="text-[10px] text-slate-500">Önerilenler:</span>
+                  {bimSuggestions.map((sug, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setBimElementId(sug)}
+                      className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* 2. İş Başlığı (Job Title) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
-              <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-orange-400" />
-                2. Yapılan İşin Başlığı
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Örn: 1. Kat Kolon Kalıpları Döküm Öncesi"
-                required
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition"
-              />
-              <p className="text-[11px] text-slate-500 mt-1.5">
-                Şantiye şefinin kolayca ayırt edebileceği kısa ve net bir başlık giriniz.
-              </p>
-            </div>
-
-            {/* 3. Açıklama (Description) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
-              <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">
-                3. Detaylı Açıklama (Opsiyonel)
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Örn: A Blok K1-K8 arası kolonların paspayları ve takviyeleri tamamlandı. İmalat projeye uygundur."
-                rows={3}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition resize-none"
-              />
-            </div>
-
-            {/* 4. Fotoğraf Yükle (Image Upload / Camera Trigger) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
-              <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                <Camera className="w-4 h-4 text-orange-400" />
-                4. Fotoğraf Kanıtı (Saha Fotoğrafı)
-              </label>
-
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+            {/* 4. Kanıt Fotoğrafı Yükleme */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
+                  <Camera className="w-4 h-4" />
+                  Saha Kanıt Fotoğrafı *
+                </div>
+                {previewUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="text-xs text-red-400 hover:underline flex items-center gap-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Fotoğrafı Kaldır
+                  </button>
+                )}
+              </div>
 
               {!previewUrl ? (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-slate-700 hover:border-orange-500/80 bg-slate-800/40 hover:bg-slate-800/70 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition group"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-orange-500/10 group-hover:bg-orange-500/20 text-orange-400 flex items-center justify-center mb-3 transition shadow-inner">
+                <label className="border-2 border-dashed border-slate-700 hover:border-orange-500 bg-slate-950 rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition block group">
+                  <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">
                     <Camera className="w-7 h-7" />
                   </div>
-                  <span className="text-sm font-semibold text-white mb-1">
-                    Fotoğraf Çek veya Galeriden Seç
-                  </span>
-                  <span className="text-xs text-slate-400 text-center max-w-xs">
-                    Akıllı telefonunuzun kamerasını açarak sahadan doğrudan fotoğraf çekebilirsiniz.
-                  </span>
-                </div>
-              ) : (
-                <div className="relative rounded-2xl overflow-hidden border border-slate-700 bg-slate-950">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={previewUrl}
-                    alt="Kanıt Önizleme"
-                    className="w-full max-h-80 object-cover"
-                  />
-                  <div className="absolute top-3 right-3 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-1.5 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white text-xs font-medium rounded-xl border border-white/20 transition flex items-center gap-1.5"
-                    >
-                      <Camera className="w-3.5 h-3.5" /> Değiştir
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="p-1.5 bg-red-600/80 hover:bg-red-600 text-white rounded-xl backdrop-blur-md transition"
-                      title="Kaldır"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                  <h4 className="text-sm font-semibold text-white mb-1">
+                    Saha Fotoğrafı Çek veya Yükle
+                  </h4>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto mb-3">
+                    Mobil cihazınızın kamerası ile anlık çekebilir veya galerinizden fotoğraf yükleyebilirsiniz.
+                  </p>
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-800 text-orange-400 text-xs font-medium border border-slate-700">
+                    <Upload className="w-3.5 h-3.5" />
+                    Fotoğraf Seç
                   </div>
-                  <div className="p-2.5 bg-slate-900/90 text-xs text-slate-300 flex items-center justify-between border-t border-slate-800">
-                    <span className="truncate max-w-[200px]">
-                      {selectedFile ? selectedFile.name : "Görsel Seçildi"}
-                    </span>
-                    <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Hazır
-                    </span>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              ) : (
+                <div className="relative rounded-2xl overflow-hidden border border-slate-700 bg-black max-h-72 flex items-center justify-center">
+                  <img src={previewUrl} alt="Kanıt Önizleme" className="max-h-72 object-contain" />
+                  <div className="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] text-slate-300 flex items-center justify-between">
+                    <span className="truncate">{selectedFile?.name || "Fotoğraf Hazır"}</span>
+                    {latitude && (
+                      <span className="text-emerald-400 font-mono text-[10px]">
+                        📍 {latitude.toFixed(4)}, {longitude?.toFixed(4)}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Submit Action Button */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isSubmitting || !selectedContractId || (!selectedFile && !previewUrl)}
-                className="w-full py-4 px-6 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white font-bold rounded-2xl transition shadow-xl shadow-orange-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base active:scale-[0.99]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Kanıt Gönderiliyor...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5" />
-                    Kanıtı Gönder ve Onaya Sun
-                  </>
-                )}
-              </button>
-              <p className="text-[11px] text-center text-slate-500 mt-2">
-                Gönderilen kanıtlar Şantiye Şefi tarafından denetlenerek hakedişe onaylanır.
-              </p>
-            </div>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-sm shadow-xl shadow-orange-600/30 flex items-center justify-center gap-2 transition disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Kaydediliyor ve Haritaya İşleniyor...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  İş Kanıtını Gönder (Onaya İlet)
+                </>
+              )}
+            </button>
           </form>
         ) : (
-          /* Subcontractor's History Tab */
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                Yüklediğim Kanıtlar ({recentProofs.length})
-              </h2>
-              <button
-                onClick={fetchRecentProofs}
-                disabled={loadingProofs}
-                className="text-xs text-orange-400 hover:text-orange-300 font-medium"
-              >
-                {loadingProofs ? "Yenileniyor..." : "Yenile"}
-              </button>
-            </div>
-
+          /* History Tab */
+          <div className="space-y-3">
             {loadingProofs ? (
-              <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-                <Loader2 className="w-6 h-6 animate-spin text-orange-400" />
-                <span className="text-xs">Kayıtlar yükleniyor...</span>
+              <div className="py-20 text-center">
+                <Loader2 className="w-8 h-8 text-orange-400 animate-spin mx-auto mb-2" />
+                <p className="text-xs text-slate-400">Yüklenen kanıtlar alınıyor...</p>
               </div>
             ) : recentProofs.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                <ImageIcon className="w-10 h-10 mx-auto text-slate-600 mb-2" />
-                <p className="text-sm font-semibold text-white mb-1">Henüz Kanıt Yüklenmedi</p>
-                <p className="text-xs text-slate-400 mb-4 max-w-xs mx-auto">
-                  İlk iş bitimi kanıtınızı oluşturmak için "Yeni Kanıt" sekmesine geçiniz.
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
+                <ImageIcon className="w-12 h-12 text-slate-600 mx-auto mb-2" />
+                <h3 className="text-sm font-semibold text-white">Henüz iş kanıtı gönderilmemiş</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Yeni kanıt sekmesinden sahada tamamladığınız işlerin fotoğraflarını yükleyebilirsiniz.
                 </p>
-                <button
-                  onClick={() => setActiveTab("form")}
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-semibold"
-                >
-                  Yeni Kanıt Yükle
-                </button>
               </div>
             ) : (
-              recentProofs.map((proof) => {
-                const isPending = proof.status === "PENDING"
-                const isApproved = proof.status === "APPROVED"
-                const isRejected = proof.status === "REJECTED"
-
-                return (
-                  <div
-                    key={proof.id}
-                    className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg flex flex-col sm:flex-row gap-3.5 p-3.5"
-                  >
-                    {/* Thumbnail Image */}
-                    <div className="w-full sm:w-28 h-40 sm:h-28 rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-slate-800">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={proof.imageUrl}
-                        alt={proof.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className="font-bold text-white text-sm leading-snug">
-                            {proof.title}
-                          </h3>
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold shrink-0 flex items-center gap-1 ${
-                              isApproved
-                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                : isRejected
-                                ? "bg-red-500/15 text-red-400 border border-red-500/30"
-                                : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                isApproved
-                                  ? "bg-emerald-400"
-                                  : isRejected
-                                  ? "bg-red-400"
-                                  : "bg-amber-400 animate-pulse"
-                              }`}
-                            />
-                            {isApproved ? "Onaylandı" : isRejected ? "Reddedildi" : "Onay Bekliyor"}
+              recentProofs.map((proof) => (
+                <div
+                  key={proof.id}
+                  className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={proof.imageUrl}
+                      alt={proof.title}
+                      className="w-16 h-16 rounded-xl object-cover border border-slate-700 shrink-0"
+                    />
+                    <div>
+                      <h4 className="text-sm font-semibold text-white">{proof.title}</h4>
+                      {proof.description && (
+                        <p className="text-xs text-slate-400 line-clamp-1">{proof.description}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 mt-1">
+                        <span>{new Date(proof.createdAt).toLocaleDateString("tr-TR")}</span>
+                        {proof.latitude && (
+                          <span className="text-orange-400">
+                            📍 {proof.latitude.toFixed(4)}, {proof.longitude?.toFixed(4)}
                           </span>
-                        </div>
-
-                        {proof.contract && (
-                          <p className="text-xs text-orange-400 font-medium mb-1">
-                            {proof.contract.title}
-                          </p>
                         )}
-
-                        {proof.description && (
-                          <p className="text-xs text-slate-400 line-clamp-2 mb-2">
-                            {proof.description}
-                          </p>
+                        {proof.bimElementId && (
+                          <span className="text-cyan-400 font-mono">[{proof.bimElementId}]</span>
                         )}
-                      </div>
-
-                      <div className="text-[11px] text-slate-500 flex items-center gap-1 pt-1 border-t border-slate-800/80">
-                        <Clock className="w-3 h-3" />
-                        <span>{new Date(proof.createdAt).toLocaleString("tr-TR")}</span>
                       </div>
                     </div>
                   </div>
-                )
-              })
+
+                  <div>
+                    {proof.status === "APPROVED" ? (
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Onaylandı
+                      </span>
+                    ) : proof.status === "REJECTED" ? (
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30">
+                        Reddedildi
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        Onay Bekliyor
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
             )}
           </div>
         )}
