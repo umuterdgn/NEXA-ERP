@@ -42,7 +42,7 @@ interface BoqItemData {
 
 interface WorkProofData {
   id: string
-  boqItemId: string
+  boqItemId?: string | null
   bimElementId?: string | null
   claimedQuantity: number
   approvedQuantity?: number | null

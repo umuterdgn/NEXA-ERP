@@ -2657,9 +2657,9 @@ model FoodMenu {
 model WorkProof {
   id                String   @id @default(cuid())
   subcontractorId   String
-  projectId         String
+  projectId         String?  // Zorunluluk (Required) kaldırıldı
   progressBillingId String?  // Bu kanıt hangi hakedişe bağlandı?
-  boqItemId         String   // Hangi metraj kalemine ait? (ZORUNLU)
+  boqItemId         String?  // Zorunluluk (Required) kaldırıldı
   bimElementId      String?  // 3D Modeldeki IFC eleman ID'si (Opsiyonel)
   claimedQuantity   Float    @default(0) // Taşeronun bu kanıtla iddia ettiği imalat miktarı (Örn: 50 m3)
   approvedQuantity  Float?   // Denetçi onaylarken miktarı kırpabilir
@@ -2681,7 +2681,7 @@ model WorkProof {
   updatedAt         DateTime @updatedAt @default(now())
 
   progressBilling ProgressBilling? @relation(fields: [progressBillingId], references: [id])
-  boqItem         BoqItem          @relation(fields: [boqItemId], references: [id])
+  boqItem         BoqItem?         @relation(fields: [boqItemId], references: [id])
   contract        Contract?        @relation(fields: [contractId], references: [id])
   subcontractor   Subcontractor    @relation(fields: [subcontractorId], references: [id])
 
