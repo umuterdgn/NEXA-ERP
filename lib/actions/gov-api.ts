@@ -6,7 +6,7 @@
 
 "use server"
 
-import { fetchYibfMockData, YibfGovResponse } from "@/app/api/gov/yibf/route"
+import { fetchYibfMockData, YibfGovResponse } from "@/lib/services/yibf-mock"
 
 export async function getYibfGovData(yibfNo: string): Promise<{ success: boolean; data?: YibfGovResponse; error?: string }> {
   try {
