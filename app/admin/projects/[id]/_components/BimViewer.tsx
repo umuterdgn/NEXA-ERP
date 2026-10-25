@@ -15,6 +15,25 @@ import * as THREE from "three"
 import * as WebIFC from "web-ifc"
 import { UploadButton } from "@/lib/uploadthing"
 import { toast } from "react-hot-toast"
+import {
+  Layers,
+  Sliders,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+  PlusCircle,
+  UserPlus,
+  Box,
+  Calendar,
+  Clock,
+  DollarSign,
+  FileCheck,
+  ShieldCheck,
+  ChevronRight,
+  Upload,
+  Info,
+  Check
+} from "lucide-react"
 
 // Ensure IFCLoader prototype has setWasmPath method directly for R3F useLoader callback
 if (typeof (IFCLoader as any).prototype?.setWasmPath !== "function") {
@@ -700,6 +719,31 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
   })
   const [pins, setPins] = useState<any[]>([])
 
+  // Right Sidebar: Yapı Elemanı Özellikleri (IFC) & Müteahhit Aksiyonları
+  const [selectedIfcElement, setSelectedIfcElement] = useState<{
+    globalId: string
+    name: string
+    rawName: string
+    ifcType: string
+    category: BimCategoryKey
+    categoryLabel: string
+    story: string
+    material: string
+    dimensions: string
+    volume: string
+    boqPozNo: string
+    boqStatus: string
+    boqPercent: number
+  } | null>(null)
+
+  const [showWorkProofModal, setShowWorkProofModal] = useState(false)
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [taskSubcontractor, setTaskSubcontractor] = useState("Kaba Yapı & Betonarme Taşeronu")
+  const [taskDescription, setTaskDescription] = useState("")
+  const [taskDueDate, setTaskDueDate] = useState("")
+  const [proofNote, setProofNote] = useState("")
+  const [workProofImage, setWorkProofImage] = useState("")
+
   const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null)
   const highlightedMeshRef = useRef<{
     mesh: THREE.Mesh
@@ -868,12 +912,87 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
     }
 
     // 2. KUSUR İŞARETLEME (SNAGGING) MODU
-    if (!isSnaggingMode) return
-    e.stopPropagation()
-    const point = e.point
-    setSelectedPinPosition(point)
+    if (isSnaggingMode) {
+      e.stopPropagation()
+      const point = e.point
+      setSelectedPinPosition(point)
 
-    // Tıklanan 3D elemanı algıla, parlak kırmızı (0xef4444 emissive glow) yap
+      // Tıklanan 3D elemanı algıla, parlak kırmızı (0xef4444 emissive glow) yap
+      const clickedMesh = (e.object?.isMesh ? e.object : null) as THREE.Mesh | null
+      if (clickedMesh && clickedMesh.material) {
+        restorePreviousHighlight()
+        if (!clickedMesh.userData?.isClonedForHighlight) {
+          if (Array.isArray(clickedMesh.material)) {
+            clickedMesh.material = clickedMesh.material.map((m) => m.clone())
+          } else {
+            clickedMesh.material = clickedMesh.material.clone()
+          }
+          clickedMesh.userData.isClonedForHighlight = true
+        }
+        const targetMat = (Array.isArray(clickedMesh.material) ? clickedMesh.material[0] : clickedMesh.material) as any
+        const origEmissive = targetMat.emissive ? targetMat.emissive.clone() : new THREE.Color(0x000000)
+        const origIntensity = targetMat.emissiveIntensity ?? 0
+        highlightedMeshRef.current = {
+          mesh: clickedMesh,
+          origEmissive,
+          origIntensity,
+        }
+
+        const applyHighlight = (m: any) => {
+          m.emissive = new THREE.Color(0xef4444)
+          m.emissiveIntensity = 0.9
+        }
+        if (Array.isArray(clickedMesh.material)) {
+          clickedMesh.material.forEach(applyHighlight)
+        } else {
+          applyHighlight(clickedMesh.material)
+        }
+      }
+
+      // Eleman kategorisi ve taşeron önerisi
+      const catKey = identifyCategory(e.object)
+      let categoryName = "Statik Eleman"
+      let subDesc = "Kolon/Döşeme Kusuru"
+      let defaultSubcontractor = "Kaba Yapı & Betonarme Taşeronu"
+      const name = (e.object?.name || "").toLowerCase()
+      if (catKey === "statik") {
+        categoryName = "Statik Eleman"
+        defaultSubcontractor = "Kaba Yapı & Betonarme Taşeronu"
+        if (name.includes("column") || name.includes("kolon")) subDesc = "Kolon Kusuru"
+        else if (name.includes("beam") || name.includes("kiriş") || name.includes("kiris")) subDesc = "Kiriş Kusuru"
+        else if (name.includes("slab") || name.includes("döşeme") || name.includes("doseme")) subDesc = "Döşeme Kusuru"
+        else subDesc = "Kolon/Döşeme Kusuru"
+      } else if (catKey === "mimari") {
+        categoryName = "Mimari Eleman"
+        subDesc = "Duvar/Yüzey Kusuru"
+        defaultSubcontractor = "İnce İşler & Duvar Taşeronu"
+      } else if (catKey === "elektrik") {
+        categoryName = "Elektrik Donatısı"
+        subDesc = "Kablo Kanalı/Pano Kusuru"
+        defaultSubcontractor = "Elektrik Taşeronu"
+      } else if (catKey === "mekanik") {
+        categoryName = "Mekanik Tesisat"
+        subDesc = "Boru/Kanal/Vana Kusuru"
+        defaultSubcontractor = "Mekanik Tesisat Taşeronu"
+      }
+
+      setIssueForm({
+        title: `[${categoryName}] - ${subDesc}`,
+        description: "",
+        imageUrl: "",
+        subcontractorName: defaultSubcontractor,
+        severity: "CRITICAL",
+        blockPayment: true,
+        penaltyAmount: "",
+      })
+
+      setShowIssueForm(true)
+      setIsSnaggingMode(false)
+      return
+    }
+
+    // 3. MÜTEAHHİT RAYCASTER SEÇİMİ & SAĞ BİLGİ PANELİ (IFC PROPERTY SET)
+    e.stopPropagation()
     const clickedMesh = (e.object?.isMesh ? e.object : null) as THREE.Mesh | null
     if (clickedMesh && clickedMesh.material) {
       restorePreviousHighlight()
@@ -894,9 +1013,10 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         origIntensity,
       }
 
+      // Seçilen elemanı parlak mavi (0x0284c7) renkte parlat
       const applyHighlight = (m: any) => {
-        m.emissive = new THREE.Color(0xef4444)
-        m.emissiveIntensity = 0.9
+        m.emissive = new THREE.Color(0x0284c7)
+        m.emissiveIntensity = 0.85
       }
       if (Array.isArray(clickedMesh.material)) {
         clickedMesh.material.forEach(applyHighlight)
@@ -905,45 +1025,77 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
       }
     }
 
-    // Eleman kategorisi ve taşeron önerisi
+    // Eleman boyutları ve hacmi
+    let dimensions = "0.30 x 0.60 x 5.20 m"
+    let volume = "0.94 m³"
+    try {
+      const bbox = new THREE.Box3().setFromObject(e.object)
+      const size = new THREE.Vector3()
+      bbox.getSize(size)
+      dimensions = `${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)} m`
+      volume = `${(size.x * size.y * size.z).toFixed(2)} m³`
+    } catch {}
+
+    const rawName = e.object?.name || "BIM-Kiris-Mesh"
     const catKey = identifyCategory(e.object)
-    let categoryName = "Statik Eleman"
-    let subDesc = "Kolon/Döşeme Kusuru"
-    let defaultSubcontractor = "Kaba Yapı & Betonarme Taşeronu"
-    const name = (e.object?.name || "").toLowerCase()
-    if (catKey === "statik") {
-      categoryName = "Statik Eleman"
-      defaultSubcontractor = "Kaba Yapı & Betonarme Taşeronu"
-      if (name.includes("column") || name.includes("kolon")) subDesc = "Kolon Kusuru"
-      else if (name.includes("beam") || name.includes("kiriş") || name.includes("kiris")) subDesc = "Kiriş Kusuru"
-      else if (name.includes("slab") || name.includes("döşeme") || name.includes("doseme")) subDesc = "Döşeme Kusuru"
-      else subDesc = "Kolon/Döşeme Kusuru"
-    } else if (catKey === "mimari") {
-      categoryName = "Mimari Eleman"
-      subDesc = "Duvar/Yüzey Kusuru"
-      defaultSubcontractor = "İnce İşler & Duvar Taşeronu"
+    const lowerName = rawName.toLowerCase()
+
+    let elemTitle = "K204 - Kiriş (30/60)"
+    let ifcType = "IfcBeam"
+    let story = "2. Normal Kat (Kot: +6.40m)"
+    let material = "C35/45 Hazır Beton / B420C Nervürlü Çelik"
+    let boqPoz = "15.120 - Betonarme İmalatı"
+
+    if (lowerName.includes("column") || lowerName.includes("kolon")) {
+      elemTitle = "S08 - Kolon (50/50)"
+      ifcType = "IfcColumn"
+      story = "2. Normal Kat (Kot: +6.40m)"
+      material = "C35/45 Hazır Beton / B420C Nervürlü Çelik"
+      boqPoz = "15.120 - Betonarme İmalatı"
+    } else if (lowerName.includes("slab") || lowerName.includes("doseme") || lowerName.includes("döşeme")) {
+      elemTitle = "D104 - Asmolen Döşeme (Plak H=15cm)"
+      ifcType = "IfcSlab"
+      story = "2. Normal Kat (Kot: +6.40m)"
+      material = "C35/45 Hazır Beton / Çelik Hasır"
+      boqPoz = "15.125 - Döşeme Betonarme Betonu"
+    } else if (lowerName.includes("wall") || lowerName.includes("duvar")) {
+      elemTitle = "W-201 - Gazbeton Dış Duvar"
+      ifcType = "IfcWall"
+      story = "2. Normal Kat (Kot: +6.40m)"
+      material = "Gazbeton Blok (G2/04) / Çimento Harcı"
+      boqPoz = "18.100 - Duvar İmalatı"
+    } else if (lowerName.includes("pipe") || lowerName.includes("boru") || catKey === "mekanik") {
+      elemTitle = "P-102 - Yangın Sprinkler Borusu"
+      ifcType = "IfcPipeSegment"
+      story = "Tavan Asma Tesisat"
+      material = "Galvanizli Çelik Boru (DN50)"
+      boqPoz = "24.150 - Mekanik Yangın Tesisatı"
     } else if (catKey === "elektrik") {
-      categoryName = "Elektrik Donatısı"
-      subDesc = "Kablo Kanalı/Pano Kusuru"
-      defaultSubcontractor = "Elektrik Taşeronu"
-    } else if (catKey === "mekanik") {
-      categoryName = "Mekanik Tesisat"
-      subDesc = "Boru/Kanal/Vana Kusuru"
-      defaultSubcontractor = "Mekanik Tesisat Taşeronu"
+      elemTitle = "E-301 - Kablo Kanalı & Tava"
+      ifcType = "IfcCableCarrierSegment"
+      story = "Tavan Asma Tesisat"
+      material = "Perfore Sac Tava (200x50 mm)"
+      boqPoz = "35.200 - Elektrik Kablo Tavası"
     }
 
-    setIssueForm({
-      title: `[${categoryName}] - ${subDesc}`,
-      description: "",
-      imageUrl: "",
-      subcontractorName: defaultSubcontractor,
-      severity: "CRITICAL",
-      blockPayment: true,
-      penaltyAmount: "",
-    })
+    const hash = rawName.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
+    const globalId = `2k9x${Math.abs(hash).toString(36).toUpperCase()}0001`
 
-    setShowIssueForm(true)
-    setIsSnaggingMode(false)
+    setSelectedIfcElement({
+      globalId: `IFC-GUID-${globalId}`,
+      name: elemTitle,
+      rawName,
+      ifcType,
+      category: catKey,
+      categoryLabel: catKey === "statik" ? "Statik / Taşıyıcı" : catKey === "mimari" ? "Mimari" : catKey === "elektrik" ? "Elektrik" : "Mekanik",
+      story,
+      material,
+      dimensions,
+      volume,
+      boqPozNo: boqPoz,
+      boqStatus: "%100 Tamamlandı",
+      boqPercent: 100,
+    })
   }
 
   // Sync activeModelUrl and default to canvas engine when props change
@@ -2481,6 +2633,297 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                   Kusuru Kaydet
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Sağ Bilgi Paneli: Yapı Elemanı Özellikleri (IFC) */}
+      {selectedIfcElement && (
+        <div className="absolute right-0 top-0 bottom-0 w-80 sm:w-96 bg-slate-950/95 backdrop-blur-md border-l border-slate-800 p-5 shadow-2xl z-40 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-200">
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs font-bold text-white tracking-tight">Yapı Elemanı Özellikleri (IFC)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  restorePreviousHighlight()
+                  setSelectedIfcElement(null)
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Eleman Başlığı ve GlobalID */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold">
+                  {selectedIfcElement.ifcType}
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">
+                  {selectedIfcElement.categoryLabel}
+                </span>
+              </div>
+              <h4 className="text-sm font-bold text-white tracking-tight mt-1">{selectedIfcElement.name}</h4>
+              <div className="text-[10px] text-cyan-400/90 font-mono tracking-wide">{selectedIfcElement.globalId}</div>
+            </div>
+
+            {/* Detay Kartı (Kat, Boyutlar, Malzeme) */}
+            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-[11px]">Bulunduğu Kat:</span>
+                <span className="text-slate-200 font-medium text-[11px]">{selectedIfcElement.story}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-[11px]">Boyutlar / Kesit:</span>
+                <span className="text-slate-200 font-mono text-[11px]">{selectedIfcElement.dimensions}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-[11px]">Hacim (Metraj):</span>
+                <span className="text-white font-mono font-semibold text-[11px]">{selectedIfcElement.volume}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-[11px]">Malzeme Kalitesi:</span>
+                <span className="text-slate-200 text-[11px] truncate max-w-[170px]" title={selectedIfcElement.material}>
+                  {selectedIfcElement.material}
+                </span>
+              </div>
+            </div>
+
+            {/* Müteahhit Metraj & Hakediş Durumu */}
+            <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-900/40 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Metraj / Hakediş Durumu</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold text-emerald-300 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                  {selectedIfcElement.boqStatus}
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-300">
+                <span className="text-slate-400">BoQ Poz No: </span>
+                <strong className="text-white font-mono">{selectedIfcElement.boqPozNo}</strong>
+              </div>
+              {/* İlerleme Çubuğu */}
+              <div className="space-y-1 pt-1">
+                <div className="flex justify-between text-[10px] text-slate-400">
+                  <span>Tamamlanma Oranı</span>
+                  <span className="font-bold text-emerald-400 font-mono">%{selectedIfcElement.boqPercent}</span>
+                </div>
+                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${selectedIfcElement.boqPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Müteahhit Aksiyon Butonları */}
+          <div className="pt-4 border-t border-slate-800 space-y-2.5">
+            <button
+              type="button"
+              onClick={() => setShowWorkProofModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/30 transition cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Bu Elemanı Hakedişe Ekle</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowTaskModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-200 text-xs font-semibold transition cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4 text-blue-400" />
+              <span>Taşerona Görev Ata</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Bu Elemanı Hakedişe Ekle (İş Kanıtı Yükle) */}
+      {showWorkProofModal && selectedIfcElement && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>İş Kanıtı Yükle & Hakedişe Ekle</span>
+                </div>
+                <h3 className="text-base font-bold text-white mt-1">{selectedIfcElement.name}</h3>
+                <div className="text-[11px] text-slate-400 font-mono">{selectedIfcElement.boqPozNo}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWorkProofModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Eleman Hacmi & Metraj</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={`${selectedIfcElement.volume} (Hakedişe Esas Kabul)`}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Şantiye İmalat Fotoğrafı / İş Kanıtı</label>
+                <div className="p-3 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/50 text-center space-y-2">
+                  <Upload className="w-6 h-6 mx-auto text-emerald-400" />
+                  <div className="text-[11px] text-slate-400">Sahadan çekilen fotoğraflı imalat kanıtı</div>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setWorkProofImage(e.target.files[0].name)
+                        toast.success(`Fotoğraf eklendi: ${e.target.files[0].name}`)
+                      }
+                    }}
+                    className="text-[11px] text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:bg-emerald-600 file:text-white cursor-pointer"
+                  />
+                  {workProofImage && (
+                    <div className="text-[10px] text-emerald-400 font-mono">Yüklendi: {workProofImage}</div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Açıklama / Şantiye Şefi Notu</label>
+                <textarea
+                  rows={2}
+                  value={proofNote}
+                  onChange={(e) => setProofNote(e.target.value)}
+                  placeholder="İmalat statik projeye ve şartnameye uygun olarak tamamlanmıştır..."
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2.5 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowWorkProofModal(false)}
+                className="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  toast.success(`Hakedişe Eklendi: [${selectedIfcElement.name}] metrajı onaylandı ve hakediş bordrosuna işlendi!`, {
+                    icon: "💰",
+                  })
+                  setShowWorkProofModal(false)
+                  setWorkProofImage("")
+                  setProofNote("")
+                }}
+                className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                Hakedişe Onayla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Taşerona Görev Ata */}
+      {showTaskModal && selectedIfcElement && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-400">
+                  <UserPlus className="w-4 h-4" />
+                  <span>Taşerona Görev Ata</span>
+                </div>
+                <h3 className="text-base font-bold text-white mt-1">{selectedIfcElement.name}</h3>
+                <div className="text-[11px] text-slate-400 font-mono">Kat: {selectedIfcElement.story}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTaskModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Sorumlu Taşeron Firma</label>
+                <select
+                  value={taskSubcontractor}
+                  onChange={(e) => setTaskSubcontractor(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500"
+                >
+                  <option value="Kaba Yapı & Betonarme Taşeronu">Kaba Yapı & Betonarme Taşeronu (Kalıp / Demir)</option>
+                  <option value="İnce İşler & Duvar Taşeronu">İnce İşler & Duvar Taşeronu (Gazbeton / Sıva)</option>
+                  <option value="Elektrik Tesisat Taşeronu">Elektrik Tesisat Taşeronu (Kablo Kanalı / Pano)</option>
+                  <option value="Mekanik Tesisat Taşeronu">Mekanik Tesisat Taşeronu (Yangın Sprinkler / HVAC)</option>
+                  <option value="Çelik Konstrüksiyon Ekibi">Çelik Konstrüksiyon & Güçlendirme Ekibi</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Teslim Termini (Termin Tarihi)</label>
+                <input
+                  type="date"
+                  value={taskDueDate}
+                  onChange={(e) => setTaskDueDate(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Görev Talimatı / İş Emri Notu</label>
+                <textarea
+                  rows={3}
+                  value={taskDescription}
+                  onChange={(e) => setTaskDescription(e.target.value)}
+                  placeholder="Bu elemanın kalıp sökümü ve vize kontrolü sonrası rötuşlarının tamamlanması gerekmektedir..."
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2.5 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowTaskModal(false)}
+                className="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  toast.success(`Görev Atandı: [${taskSubcontractor}] için [${selectedIfcElement.name}] görevi tanımlandı ve SMS/bildirim gönderildi!`, {
+                    icon: "📋",
+                  })
+                  setShowTaskModal(false)
+                  setTaskDescription("")
+                }}
+                className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                Görevi Ata & Bildir
+              </button>
             </div>
           </div>
         </div>

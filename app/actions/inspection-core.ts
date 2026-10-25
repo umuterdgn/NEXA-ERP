@@ -16,6 +16,7 @@ import { revalidatePath } from "next/cache";
 
 export interface CreateCoreSampleInput {
   qrCode?: string;
+  ebisRfidTag?: string;
   projectId: string;
   pourDate?: Date | string;
   testDate?: Date | string | null;
@@ -56,6 +57,7 @@ export async function createCoreSample(data: CreateCoreSampleInput) {
     const sample = await prisma.coreSample.create({
       data: {
         qrCode,
+        ebisRfidTag: data.ebisRfidTag?.trim() || null,
         projectId: data.projectId,
         takenById: inspectorId,
         inspectorId: inspectorId,
@@ -357,3 +359,48 @@ export async function getInspectionForms() {
     return { success: false, error: error?.message || "Formlar alınamadı.", data: [] };
   }
 }
+
+/**
+ * EBİS Çipli Beton RFID sorgusu yaparak numunenin kırım verilerini otomatik günceller
+ */
+export async function syncEbisToSample(sampleId: string, ebisRfidTag: string) {
+  try {
+    const { syncEbisCoreSample } = await import("@/lib/services/gov-api");
+    const ebisData = await syncEbisCoreSample(ebisRfidTag);
+
+    const mpa28 = ebisData.kirimSonuclari.yirmisekizGunluk.basincDayanimiMpa;
+    const isPassed = ebisData.onayDurumu === "ONAYLANDI";
+    const status = isPassed ? "PASSED" : "FAILED";
+
+    const updated = await prisma.coreSample.update({
+      where: { id: sampleId },
+      data: {
+        ebisRfidTag: ebisData.ebisRfidTag,
+        strengthResult: mpa28,
+        resultStrength: mpa28,
+        status,
+        isPassed,
+        testedAt: new Date(ebisData.kirimSonuclari.yirmisekizGunluk.tarih),
+        testDate: new Date(ebisData.kirimSonuclari.yirmisekizGunluk.tarih),
+      },
+      include: {
+        project: {
+          select: { id: true, name: true, title: true, yibfNo: true },
+        },
+        takenBy: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    try {
+      revalidatePath("/inspection/core-samples");
+    } catch {}
+
+    return { success: true, data: updated, ebisData };
+  } catch (error: any) {
+    console.error("syncEbisToSample error:", error);
+    return { success: false, error: error?.message || "EBİS senkronizasyonu başarısız." };
+  }
+}
+

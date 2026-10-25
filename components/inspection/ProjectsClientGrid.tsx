@@ -1,7 +1,7 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Denetlenen Yapılar & Projeler Portföyü İstemci Görünümü (Prisma)
+ * Denetlenen Yapılar & Projeler Portföyü İstemci Görünümü (Prisma + YİBF Entegrasyonu)
  */
 
 "use client";
@@ -13,14 +13,17 @@ import {
   Search,
   Filter,
   MapPin,
-  Calendar,
-  Layers,
-  ArrowRight,
-  ShieldCheck,
   CheckCircle2,
-  Clock,
   FileText,
+  Plus,
+  X,
+  Loader2,
+  AlertCircle,
+  Database,
+  Globe,
+  Radio,
 } from "lucide-react";
+import { createProjectFromYibf } from "@/app/actions/inspection-gov";
 
 interface ProjectRecord {
   id: string;
@@ -31,7 +34,7 @@ interface ProjectRecord {
   city?: string | null;
   district?: string | null;
   location?: string | null;
-  status: string;
+  status?: string | null;
   progress: number;
   totalArea?: number | null;
   buildingClass?: string | null;
@@ -46,10 +49,18 @@ export default function ProjectsClientGrid({
 }: {
   initialProjects: ProjectRecord[];
 }) {
+  const [projectsList, setProjectsList] = useState<ProjectRecord[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  const filteredProjects = initialProjects.filter((p) => {
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [yibfInput, setYibfInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successResult, setSuccessResult] = useState<{ project?: ProjectRecord; govData?: unknown } | null>(null);
+
+  const filteredProjects = projectsList.filter((p) => {
     const term = searchTerm.toLowerCase();
     const title = (p.title || p.name || "").toLowerCase();
     const yibf = (p.yibfNo || "").toLowerCase();
@@ -63,6 +74,40 @@ export default function ProjectsClientGrid({
     const matchesStatus = statusFilter === "ALL" || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleYibfSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!yibfInput.trim()) {
+      setErrorMessage("Lütfen geçerli bir YİBF Numarası giriniz.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage(null);
+    setSuccessResult(null);
+
+    try {
+      const res = await createProjectFromYibf(yibfInput.trim());
+      if (!res.success) {
+        setErrorMessage(res.error || "Proje sorgulanamadı.");
+      } else {
+        setSuccessResult(res);
+        if (res.project) {
+          setProjectsList((prev) => [res.project, ...prev]);
+        }
+        setTimeout(() => {
+          setIsModalOpen(false);
+          setYibfInput("");
+          setSuccessResult(null);
+        }, 1800);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Bakanlık API bağlantı hatası oluştu.";
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -79,13 +124,27 @@ export default function ProjectsClientGrid({
           </p>
         </div>
 
-        <Link
-          href="/yibf"
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer self-start sm:self-auto"
-        >
-          <FileText className="w-4 h-4" />
-          <span>Bakanlık e-YİBF Listesi</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setErrorMessage(null);
+              setSuccessResult(null);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Yeni Proje Ekle (YİBF İle)</span>
+          </button>
+
+          <Link
+            href="/yibf"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer self-start sm:self-auto"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Bakanlık e-YİBF Listesi</span>
+          </Link>
+        </div>
       </div>
 
       {/* Arama ve Filtre */}
@@ -108,7 +167,7 @@ export default function ProjectsClientGrid({
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-slate-900/80 border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition"
           >
-            <option value="ALL">Tüm Projeler ({initialProjects.length})</option>
+            <option value="ALL">Tüm Projeler ({projectsList.length})</option>
             <option value="ACTIVE">Aktif Şantiyeler</option>
             <option value="PENDING">Vize Bekleyenler</option>
             <option value="COMPLETED">Tamamlananlar</option>
@@ -213,6 +272,134 @@ export default function ProjectsClientGrid({
           </div>
         )}
       </div>
+
+      {/* YİBF İle Otonom Proje Ekleme Modalı */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-800/80 pb-4">
+              <div>
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                  <Globe className="w-4 h-4" />
+                  <span>Devlet Sistemleri Otonom Entegrasyonu</span>
+                </div>
+                <h3 className="text-lg font-bold text-white tracking-tight">Yeni Proje Ekle (YİBF)</h3>
+                <p className="text-slate-400 text-xs mt-0.5">
+                  UYDS, MAKS ve YAMBİS verileri tek tıkla çekilerek şantiye kütüğü oluşturulur.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form Body */}
+            <form onSubmit={handleYibfSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-slate-300">
+                  YİBF Numarası <span className="text-emerald-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Örn: 1049283"
+                    value={yibfInput}
+                    onChange={(e) => setYibfInput(e.target.value)}
+                    disabled={loading}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono tracking-wider disabled:opacity-50"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500">
+                    e-Devlet Kütüğü
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 pt-1">
+                  <span className="text-slate-500">Hızlı Test YİBF No:</span>
+                  {["1049283", "2084915", "3091824"].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setYibfInput(tag)}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition text-[10px]"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bilgi Kutusu */}
+              <div className="p-3 rounded-lg border border-slate-800/80 bg-slate-900/50 space-y-1.5 text-xs">
+                <div className="flex items-center gap-2 text-slate-300 font-medium">
+                  <Database className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Otonom Sorgulanacak Bakanlık Servisleri:</span>
+                </div>
+                <ul className="text-slate-400 text-[11px] space-y-1 list-disc list-inside">
+                  <li><strong className="text-slate-300">MAKS:</strong> Ada, Parsel, Pafta, UAVT Kodu, Harita Koordinatları</li>
+                  <li><strong className="text-slate-300">YAMBİS:</strong> Müteahhit Sicil No, Firma Unvanı, Yetki Grubu</li>
+                  <li><strong className="text-slate-300">UYDS:</strong> Ruhsat No, Taşıyıcı Sistem, Kat Adetleri, Yapı Sınıfı</li>
+                </ul>
+              </div>
+
+              {/* Hata Mesajı */}
+              {errorMessage && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-950/60 border border-red-900/80 text-red-400 text-xs animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Başarı Mesajı */}
+              {successResult && (
+                <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-900/80 text-emerald-300 text-xs space-y-1 animate-in fade-in">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>Bakanlık Verisi Başarıyla Çekildi ve Kaydedildi!</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-400/90 pl-6">
+                    {successResult.project?.title} kütüğe aktarıldı.
+                  </p>
+                </div>
+              )}
+
+              {/* Modal Butonları */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition disabled:opacity-50"
+                >
+                  Vazgeç
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading || !yibfInput.trim()}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Sorgulanıyor & Kaydediliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Radio className="w-3.5 h-3.5" />
+                      <span>Sorgula ve Ekle</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

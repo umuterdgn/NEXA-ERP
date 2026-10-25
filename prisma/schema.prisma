@@ -225,6 +225,8 @@ model Project {
   shiftEnd                 String                    @default("17:00") // Mesai Bitiş Saati
   // Digital Twin / YİBF fields
   yibfNo                   String?                   @unique // Yapı İzleme Belgesi Numarası
+  maksAdaParsel            String?                   // MAKS Mekansal Adres Kayıt Sistemi Ada/Parsel
+  yambisId                 String?                   // YAMBİS Müteahhit Sicil / Yetki Belge No
   totalArea                Float? // Toplam inşaat alanı (m2)
   totalConstructionArea    Float? // Toplam inşaat alanı (YİBF)
   buildingClass            String? // Yapı Sınıfı (Örn: 3B, IV-A)
@@ -374,6 +376,7 @@ model SiteZone {
 model CoreSample {
   id              String    @id @default(cuid())
   qrCode          String    @unique // Fiziksel QR barkod numarası
+  ebisRfidTag     String?   @unique // EBİS Çipli Beton RFID Etiket No
   project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId       String
   takenBy         User?     @relation(fields: [takenById], references: [id], onDelete: Cascade) // Numuneyi alan denetçi
