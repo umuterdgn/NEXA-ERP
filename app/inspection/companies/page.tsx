@@ -37,7 +37,7 @@ export default function CompaniesPage() {
     if (status === "loading") return
     
     const userRole = session?.user?.role
-    const isAuthorized = ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"].includes(userRole as string)
+    const isAuthorized = ["INSPECTION_ADMIN", "ADMIN", "SUPER_ADMIN"].includes(userRole as string)
     
     if (!isAuthorized) {
       router.push("/inspection/dashboard")
@@ -47,7 +47,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     const userRole = session?.user?.role
-    const isAuthorized = ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"].includes(userRole as string)
+    const isAuthorized = ["INSPECTION_ADMIN", "ADMIN", "SUPER_ADMIN"].includes(userRole as string)
     
     if (!isAuthorized) return
     

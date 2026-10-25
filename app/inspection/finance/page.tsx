@@ -36,7 +36,7 @@ export default function FinancePage() {
     if (status === "loading") return
     
     const userRole = (session?.user as any)?.role
-    const isAuthorized = ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN", "ACCOUNTANT", "MUHASEBE"].includes(userRole)
+    const isAuthorized = ["INSPECTION_ADMIN", "ADMIN", "SUPER_ADMIN", "ACCOUNTANT", "MUHASEBE"].includes(userRole)
     
     if (!isAuthorized) {
       router.push("/inspection/dashboard")
@@ -46,7 +46,7 @@ export default function FinancePage() {
 
   useEffect(() => {
     const userRole = (session?.user as any)?.role
-    const isAuthorized = ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN", "ACCOUNTANT", "MUHASEBE"].includes(userRole)
+    const isAuthorized = ["INSPECTION_ADMIN", "ADMIN", "SUPER_ADMIN", "ACCOUNTANT", "MUHASEBE"].includes(userRole)
     
     if (!isAuthorized) return
     

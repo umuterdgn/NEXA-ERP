@@ -295,6 +295,9 @@ export default NextAuth(authConfig).auth((req) => {
         "/inspection/finance",
         "/inspection/billing",
         "/inspection/personnel",
+        "/inspection/personel",
+        "/inspection/crm",
+        "/inspection/companies",
         "/inspection/contracts"
       ]
       if (inspectorRestrictedPaths.some(p => pathname.startsWith(p))) {

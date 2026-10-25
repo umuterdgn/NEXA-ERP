@@ -144,7 +144,22 @@ export default function InspectionSidebar({
   const boqHref = activeProjectId ? `/inspection/projects/${activeProjectId}/boq` : "/inspection/projects"
   const bimHref = activeProjectId ? `/inspection/projects/${activeProjectId}/bim` : "/inspection/projects"
 
-  const effectiveMenuItems = menuItems.map((item) => {
+  const userRole = (session?.user as any)?.role as string | undefined
+  const isInspectionAdmin = userRole === "INSPECTION_ADMIN" || userRole === "SUPER_ADMIN" || userRole === "ADMIN"
+
+  // Saha denetçisi (INSPECTOR/AUDITOR) için Finans, CRM, Personeller ve Sözleşmeler gizlenir
+  const roleFilteredMenuItems = menuItems.filter((item) => {
+    if (isInspectionAdmin) return true
+
+    if (item.category === "FİNANS & TEDARİK") return false
+    if (item.category === "PERSONEL YÖNETİMİ") return false
+    if (item.href === "/inspection/crm" || item.label.includes("CRM")) return false
+    if (item.href === "/inspection/contracts" || item.label.includes("Sözleşme")) return false
+
+    return true
+  })
+
+  const effectiveMenuItems = roleFilteredMenuItems.map((item) => {
     if (item.label === "Keşif & Metraj (BoQ)") {
       return { ...item, href: boqHref }
     }
