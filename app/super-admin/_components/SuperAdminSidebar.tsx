@@ -22,29 +22,24 @@ export default function SuperAdminSidebar({
 
   const menuItems = [
     {
-      href: "/super-admin",
-      label: "Dashboard",
+      href: "/superadmin/dashboard",
+      label: "Komuta Merkezi",
       icon: LayoutDashboard,
     },
     {
-      href: "/super-admin/tenants",
-      label: "Firmalar (Tenants)",
-      icon: Building2,
-    },
-    {
-      href: "/super-admin/quotas",
-      label: "Kota Yönetimi",
+      href: "/superadmin/system-health",
+      label: "Sistem Sağlığı & Şalter",
       icon: Database,
     },
     {
-      href: "/super-admin/subscriptions",
-      label: "Abonelikler",
-      icon: CreditCard,
+      href: "/admin/system-health",
+      label: "Teşhis Motoru (31 Test)",
+      icon: Shield,
     },
     {
-      href: "/super-admin/settings",
-      label: "Sistem Ayarları",
-      icon: Settings,
+      href: "/admin",
+      label: "ERP Ana Terminali",
+      icon: Building2,
     },
   ]
 

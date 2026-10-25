@@ -98,6 +98,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role: user.role,
           companyId: user.companyId || null,
           companyType: effectiveCompanyType,
+          tenantId: user.tenantId || null,
           permissions: (user as any).permissions || []
         }
       }
@@ -110,6 +111,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id
         token.companyId = (user as any).companyId
         token.companyType = (user as any).companyType
+        token.tenantId = (user as any).tenantId || null
         token.permissions = user.permissions
       }
       return token
@@ -120,6 +122,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string
         session.user.companyId = token.companyId as any
         session.user.companyType = token.companyType as any
+        ;(session.user as any).tenantId = (token as any).tenantId || null
         session.user.permissions = token.permissions as any
       }
       return session

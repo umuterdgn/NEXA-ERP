@@ -10,6 +10,8 @@ import { authConfig } from "@/lib/auth.config"
 
 // Define role-based access control rules
 const ROUTE_PROTECTION = {
+  "/superadmin": ["SUPER_ADMIN"],
+  "/super-admin": ["SUPER_ADMIN"],
   "/admin": [
     "ADMIN",
     "SUPER_ADMIN",
@@ -107,6 +109,12 @@ export default NextAuth(authConfig).auth((req) => {
   // Giriş Yapmış Kullanıcı /login veya / (Kök Dizin) Sayfasındaysa Rolüne Göre Yönlendirme (Adım 2)
   if ((isOnLoginPage || pathname === "/") && session) {
     const redirectUrl = req.nextUrl.clone()
+
+    // 0. SUPER_ADMIN ➔ /superadmin/dashboard
+    if (userRole === "SUPER_ADMIN") {
+      redirectUrl.pathname = "/superadmin/dashboard"
+      return NextResponse.redirect(redirectUrl)
+    }
 
     // 1. INSPECTION_ADMIN veya INSPECTOR ➔ /inspection/dashboard
     if (userRole === "INSPECTION_ADMIN" || userRole === "INSPECTOR" || userRole === "AUDITOR") {

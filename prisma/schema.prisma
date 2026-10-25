@@ -108,13 +108,18 @@ enum CompanyType {
 // ============================================================================
 
 model Tenant {
-  id        String      @id @default(cuid())
-  name      String // Şirket adı
-  domain    String? // Özel domain (opsiyonel)
-  type      CompanyType @default(MAIN_CONTRACTOR) // Firma türü
-  isActive  Boolean     @default(true)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id               String       @id @default(cuid())
+  name             String       // Şirket adı: Örn: "Demirtaş İnşaat Ltd."
+  domain           String?      // Özel domain (opsiyonel)
+  type             CompanyType  @default(MAIN_CONTRACTOR) // Firma türü: MAIN_CONTRACTOR veya INSPECTION
+  subscriptionPlan String       @default("STARTER") // "STARTER", "PROFESSIONAL", "ENTERPRISE"
+  status           String       @default("ACTIVE") // "ACTIVE", "SUSPENDED" (Ödeme yapmayanlar için)
+  licenses         Int          @default(50) // Kaç kullanıcı ekleyebilir? (Örn: 50 kişi)
+  iyzicoSubId      String?      // Ödeme gateway abonelik ID'si
+  features         String[]     @default(["BIM_VIEWER", "AI_VISION", "OCR", "DRONE"]) // Modül aç/kapat (SaaS Upsell)
+  isActive         Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   projects    Project[]
   personnel   Personel[]
@@ -125,6 +130,8 @@ model Tenant {
   users       User[]       @relation("UserTenant")
 
   @@index([isActive])
+  @@index([status])
+  @@index([subscriptionPlan])
   @@index([type])
 }
 

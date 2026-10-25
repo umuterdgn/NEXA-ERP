@@ -27,6 +27,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.role = user.role
         token.companyId = (user as any).companyId
+        token.tenantId = (user as any).tenantId
         token.permissions = user.permissions
       }
       return token
@@ -36,6 +37,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.sub!
         session.user.role = token.role as any
         ;(session.user as any).companyId = token.companyId as any
+        ;(session.user as any).tenantId = token.tenantId as any
         session.user.permissions = token.permissions as any[]
       }
       return session

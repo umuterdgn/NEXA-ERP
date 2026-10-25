@@ -12,6 +12,8 @@ import ProjectDetailTabs from "@/components/ProjectDetailTabs"
 import ProjectTimeline from "@/components/ProjectTimeline"
 import LiveSiteDashboard from "@/app/admin/projects/[id]/_components/LiveSiteDashboard"
 import AiExecutiveSummaryCard from "@/app/admin/projects/[id]/_components/AiExecutiveSummaryCard"
+import { auth } from "@/lib/auth"
+import { enforceTenantBarrier } from "@/lib/tenant/tenantBarrier"
 
 export const dynamic = 'force-dynamic'
 
@@ -160,6 +162,11 @@ export default async function ProjectDetailPage({
   if (!project) {
     notFound()
   }
+
+  // Multi-Tenant Güvenlik ve İzolasyon Bariyeri:
+  // Superadmin hariç, A firmasının mühendisi B firmasının projesine erişmeye çalışırsa 404 Not Found döner.
+  const session = await auth()
+  enforceTenantBarrier((project as any).tenantId, session)
 
   // Ensure BIM models are always populated and passed to the component
   if (!project.bimFiles || (project.bimFiles as any[]).length === 0) {
