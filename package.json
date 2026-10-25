@@ -12,7 +12,7 @@
     "seed": "tsx prisma/seed.ts",
     "seed:contracts": "tsx prisma/seed-contracts.ts",
     "fix:admin": "tsx scripts/fix-admin-role.ts",
-    "postinstall": "prisma generate && prisma db push && node patch-ifc-viewer.js && node -e \"const fs=require('fs'); const dst='public/wasm'; fs.mkdirSync(dst,{recursive:true}); try{ fs.copyFileSync('node_modules/web-ifc/web-ifc.wasm', dst+'/web-ifc.wasm'); fs.copyFileSync('node_modules/web-ifc/web-ifc-mt.wasm', dst+'/web-ifc-mt.wasm'); console.log('✅ WASM files copied to public/wasm/'); }catch(e){ console.log('⚠️ WASM copy failed:',e.message); }\""
+    "postinstall": "prisma generate && prisma db push --accept-data-loss && node patch-ifc-viewer.js && node -e \"const fs=require('fs'); const dst='public/wasm'; fs.mkdirSync(dst,{recursive:true}); try{ fs.copyFileSync('node_modules/web-ifc/web-ifc.wasm', dst+'/web-ifc.wasm'); fs.copyFileSync('node_modules/web-ifc/web-ifc-mt.wasm', dst+'/web-ifc-mt.wasm'); console.log('✅ WASM files copied to public/wasm/'); }catch(e){ console.log('⚠️ WASM copy failed:',e.message); }\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1124.0",
