@@ -121,13 +121,14 @@ model Tenant {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  projects    Project[]
-  personnel   Personel[]
-  equipment   Equipment[]
-  droneMedia  DroneMedia[]
-  chatThreads ChatThread[]
-  systemLogs  SystemLog[]
-  users       User[]       @relation("UserTenant")
+  projects     Project[]
+  yibfProjects YibfProject[]
+  personnel    Personel[]
+  equipment    Equipment[]
+  droneMedia   DroneMedia[]
+  chatThreads  ChatThread[]
+  systemLogs   SystemLog[]
+  users        User[]       @relation("UserTenant")
 
   @@index([isActive])
   @@index([status])
@@ -343,6 +344,7 @@ model Project {
   @@index([city])
   @@index([district])
   @@index([storeTemplateId])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1404,6 +1406,8 @@ model YibfProject {
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
+  tenantId  String?
+  tenant    Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
 
   inspectionRecords InspectionRecord[]
   deficiencies      Deficiency[]
@@ -1414,6 +1418,7 @@ model YibfProject {
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
+  @@index([tenantId])
   @@index([yibfNo])
   @@index([status])
   @@index([createdAt])

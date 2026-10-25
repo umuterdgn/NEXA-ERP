@@ -18,13 +18,24 @@ export async function GET(request: Request) {
     const session = await auth()
     const userRole = session?.user?.role
     const userId = session?.user?.id
+    let userTenantId = (session?.user as any)?.tenantId as string | null | undefined
+
+    if (!userTenantId && userId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { tenantId: true },
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
+
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
 
-    console.log("📋 Projects API - Session:", { userRole, userId })
+    console.log("📋 Projects API - Session:", { userRole, userId, userTenantId })
 
-    const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN"
-    const roleWhereClause = !isAdmin && userId ? { managerId: userId } : {}
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantWhereClause = !isSuperAdmin && userTenantId ? { tenantId: userTenantId } : {}
+    const roleWhereClause = !isSuperAdmin && !userTenantId && userId ? { managerId: userId } : {}
 
     const searchWhereClause = search
       ? {
@@ -41,6 +52,7 @@ export async function GET(request: Request) {
       : {}
 
     const whereClause = {
+      ...tenantWhereClause,
       ...roleWhereClause,
       ...searchWhereClause
     }
@@ -70,8 +82,29 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
     const body = await request.json()
     console.log("📥 Gelen Proje Verisi:", body)
+
+    // Tenant Isolation: Oturum açan kullanıcının tenantId'si
+    let tenantId = (session?.user as any)?.tenantId as string | null | undefined
+    if (!tenantId && session?.user?.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      })
+      tenantId = dbUser?.tenantId || null
+    }
+
+    if (!tenantId) {
+      const inspectionTenant = await prisma.tenant.findFirst({
+        where: { type: "INSPECTION", isActive: true },
+        select: { id: true },
+      })
+      if (inspectionTenant) {
+        tenantId = inspectionTenant.id
+      }
+    }
 
     // id'yi ve varsa hatalı gelebilecek diğer alanları ayıklıyoruz
     const { images, companyId, managerId, engineers, architects, yibfDocuments, ...restData } = body
@@ -89,11 +122,12 @@ export async function POST(request: Request) {
 
     const dataToSave: any = {
       ...restData,
+      tenantId: tenantId || restData.tenantId || null, // KRİTİK: Proje ilgili tenant'a kilitlenir
       images: (images || []).filter((img: string) => img && img.trim() !== ''),
       title: restData.name || restData.title,
       description: restData.description || restData.name || restData.title,
       company: companyId ? { connect: { id: companyId } } : undefined,
-      manager: managerId ? { connect: { id: managerId } } : undefined,
+      manager: managerId ? { connect: { id: managerId } } : (session?.user?.id ? { connect: { id: session.user.id } } : undefined),
       engineers: engineers || [],
       architects: architects || [],
       startDate: restData.startDate && restData.startDate !== "" ? new Date(restData.startDate) : new Date(),

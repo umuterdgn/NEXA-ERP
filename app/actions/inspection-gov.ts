@@ -43,26 +43,45 @@ export async function createProjectFromYibf(yibfNo: string) {
     // 2. Bakanlık API Simülasyonundan veriyi çek
     const govData: YibfProjectGovData = await fetchYibfData(cleanYibf);
 
-    // 3. Oturum & Tenant tespiti
-    let tenantId: string | null = null;
+    // 3. Oturum & Rol Doğrulaması (Tenant Isolation)
+    const session = await auth();
+    if (!session || !session.user) {
+      return { success: false, error: "Yetkisiz işlem: Oturum açmanız gerekmektedir." };
+    }
 
-    try {
-      const session = await auth();
-      if (session?.user) {
-        const extUser = session.user as SessionUserExtended;
-        tenantId = extUser.tenantId || null;
-      }
-    } catch {
-      // Background execution fallback
+    const userRole = (session.user as any)?.role;
+    const authorizedRoles = ["INSPECTION_ADMIN", "INSPECTOR", "ADMIN", "SUPER_ADMIN", "DENETCI"];
+    if (!authorizedRoles.includes(userRole)) {
+      return { success: false, error: "Yetkisiz işlem: Yalnızca Yapı Denetim yetkilileri proje ekleyebilir." };
+    }
+
+    let tenantId = (session.user as any)?.tenantId || null;
+    if (!tenantId && session.user.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      });
+      tenantId = dbUser?.tenantId || null;
     }
 
     if (!tenantId) {
       const inspectionTenant = await prisma.tenant.findFirst({
-        where: { type: "INSPECTION" },
+        where: { type: "INSPECTION", isActive: true },
+        select: { id: true },
       });
       if (inspectionTenant) {
         tenantId = inspectionTenant.id;
+        if (session.user.id) {
+          await prisma.user.update({
+            where: { id: session.user.id },
+            data: { tenantId: inspectionTenant.id },
+          }).catch(() => null);
+        }
       }
+    }
+
+    if (!tenantId) {
+      return { success: false, error: "Firma / Tenant kimliği bulunamadı. İzolasyon gereği işlem reddedildi." };
     }
 
     const title = `${govData.maks.ilce} ${govData.maks.mahalle} Yapı Denetim Projesi (YİBF ${cleanYibf})`;

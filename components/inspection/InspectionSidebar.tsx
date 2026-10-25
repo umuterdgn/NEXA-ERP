@@ -44,7 +44,8 @@ import {
   Receipt,
   Search,
   CheckSquare,
-  FileSignature
+  FileSignature,
+  Files
 } from "lucide-react"
 
 interface MenuItem {
@@ -80,6 +81,7 @@ const menuItems: MenuItem[] = [
   { href: "/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL" },
   { href: "/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: Paperclip, category: "YAPI DENETİM & KONTROL" },
   { href: "/inspection/documents", label: "Ruhsat & Evrak Arşivi", icon: Archive, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/archive", label: "Dijital Evrak Arşivi", icon: Files, category: "YAPI DENETİM & KONTROL" },
   { href: "/inspection/ocr", label: "Akıllı Evrak Denetimi (OCR)", icon: ScanText, category: "YAPI DENETİM & KONTROL" },
   { href: "/inspection/reports", label: "Saha Raporları", icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
   { href: "/inspection/ai-vision", label: "AI Görsel Analiz", icon: ImagePlus, category: "YAPI DENETİM & KONTROL" },

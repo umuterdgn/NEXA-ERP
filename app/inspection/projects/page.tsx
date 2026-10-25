@@ -10,7 +10,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
-import { Plus, X, FileText, Shield, AlertTriangle } from "lucide-react"
+import { Plus, X, FileText, Shield, AlertTriangle, Search, Loader2, Building2, Sparkles, CheckCircle2, MapPin, RotateCw, Building } from "lucide-react"
+import { createInspectionProject } from "@/lib/actions/project"
 
 export const dynamic = 'force-dynamic'
 
@@ -25,13 +26,25 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("Tüm Projeler")
   const [isYibfModalOpen, setIsYibfModalOpen] = useState(false)
+  const [isQueryingYibf, setIsQueryingYibf] = useState(false)
+  const [yibfQuerySuccess, setYibfQuerySuccess] = useState(false)
   const [yibfSubmitting, setYibfSubmitting] = useState(false)
   const [yibfFormData, setYibfFormData] = useState({
     yibfNo: "",
+    projectName: "",
     contractorName: "",
+    yambisNo: "",
+    city: "",
+    district: "",
+    ada: "",
+    parsel: "",
+    totalArea: "",
+    floorCount: "",
+    buildingClass: "",
+    uydsStatus: "",
     supervisor: "",
-    riskScore: "",
-    healthScore: ""
+    riskScore: "50",
+    healthScore: "85",
   })
 
   useEffect(() => {
@@ -110,39 +123,106 @@ export default function ProjectsPage() {
     }
   }
 
+  const handleQueryYibf = async (sampleNo?: string) => {
+    const targetNo = (sampleNo || yibfFormData.yibfNo).trim()
+    if (!targetNo) {
+      toast.error("Lütfen bir YİBF Numarası girin (Örn: 14582)")
+      return
+    }
+
+    if (sampleNo) {
+      setYibfFormData((prev) => ({ ...prev, yibfNo: sampleNo }))
+    }
+
+    try {
+      setIsQueryingYibf(true)
+      setYibfQuerySuccess(false)
+
+      const response = await fetch(`/api/gov/yibf?yibfNo=${encodeURIComponent(targetNo)}`)
+      const resData = await response.json()
+
+      if (resData.success && resData.data) {
+        const item = resData.data
+        setYibfFormData((prev) => ({
+          ...prev,
+          yibfNo: item.yibfNo,
+          projectName: item.projectName,
+          contractorName: item.contractor?.name || "",
+          yambisNo: item.contractor?.yambisNo || "",
+          city: item.location?.city || "",
+          district: item.location?.district || "",
+          ada: item.location?.maksAda || "",
+          parsel: item.location?.maksParsel || "",
+          totalArea: String(item.details?.totalAreaSquareMeters || ""),
+          floorCount: String(item.details?.floorCount || ""),
+          buildingClass: item.details?.buildingClass || "",
+          uydsStatus: item.uydsStatus || "RUHSAT_ALINDI",
+        }))
+        setYibfQuerySuccess(true)
+        toast.success(`Bakanlık verileri çekildi: ${item.projectName}`)
+      } else {
+        toast.error(resData.error || "Bakanlık sorgusu başarısız oldu.")
+      }
+    } catch (err) {
+      console.error("YİBF sorgu hatası:", err)
+      toast.error("Bakanlık sistemine bağlanırken bir hata oluştu.")
+    } finally {
+      setIsQueryingYibf(false)
+    }
+  }
+
   const handleYibfSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!yibfFormData.yibfNo || !yibfFormData.contractorName) {
-      toast.error("Lütfen YİBF No ve Müteahhit Adı girin")
+    if (!yibfFormData.yibfNo.trim() || !yibfFormData.projectName.trim()) {
+      toast.error("Lütfen önce YİBF sorgusu yapın ve Proje Adını doğrulayın")
       return
     }
 
     setYibfSubmitting(true)
     try {
-      const response = await fetch('/api/admin/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: yibfFormData.contractorName,
-          yibfNo: yibfFormData.yibfNo,
-          supervisor: yibfFormData.supervisor,
-          riskScore: parseInt(yibfFormData.riskScore) || 50,
-          healthScore: parseInt(yibfFormData.healthScore) || 50,
-          status: "ETUT"
-        })
+      // Server Action: Tenant Isolation (Yapı Denetim Firması bağlamında kilitli kayıt)
+      const result = await createInspectionProject({
+        yibfNo: yibfFormData.yibfNo,
+        projectName: yibfFormData.projectName,
+        contractorName: yibfFormData.contractorName,
+        yambisNo: yibfFormData.yambisNo,
+        city: yibfFormData.city || undefined,
+        district: yibfFormData.district || undefined,
+        ada: yibfFormData.ada || undefined,
+        parsel: yibfFormData.parsel || undefined,
+        totalArea: yibfFormData.totalArea ? parseFloat(yibfFormData.totalArea) : null,
+        buildingClass: yibfFormData.buildingClass || undefined,
+        uydsStatus: yibfFormData.uydsStatus || "RUHSAT_ALINDI",
       })
 
-      if (response.ok) {
-        toast.success("YİBF başarıyla eklendi")
+      if (result.success) {
+        toast.success("Proje firmanızın denetim kütüğüne (Tenant) başarıyla kilitlendi!")
         setIsYibfModalOpen(false)
-        setYibfFormData({ yibfNo: "", contractorName: "", supervisor: "", riskScore: "", healthScore: "" })
+        setYibfQuerySuccess(false)
+        setYibfFormData({
+          yibfNo: "",
+          projectName: "",
+          contractorName: "",
+          yambisNo: "",
+          city: "",
+          district: "",
+          ada: "",
+          parsel: "",
+          totalArea: "",
+          floorCount: "",
+          buildingClass: "",
+          uydsStatus: "",
+          supervisor: "",
+          riskScore: "50",
+          healthScore: "85",
+        })
         fetchProjects()
       } else {
-        toast.error("YİF eklenirken hata oluştu")
+        toast.error(result.error || "Proje kaydedilirken hata oluştu")
       }
-    } catch (error) {
-      console.error('Failed to add YİBF:', error)
-      toast.error("Bir hata oluştu")
+    } catch (error: any) {
+      console.error('Failed to add YİBF project:', error)
+      toast.error(error?.message || "Proje kaydedilirken bir hata oluştu")
     } finally {
       setYibfSubmitting(false)
     }
@@ -224,11 +304,14 @@ export default function ProjectsPage() {
             Yeni Proje Ekle
           </button>
           <button
-            onClick={() => setIsYibfModalOpen(true)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors flex items-center gap-2"
+            onClick={() => {
+              setIsYibfModalOpen(true)
+              setYibfQuerySuccess(false)
+            }}
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg transition-all shadow-md shadow-purple-600/20 flex items-center gap-2 font-medium"
           >
-            <FileText className="w-4 h-4" />
-            Manuel YİBF Ekle
+            <Building2 className="w-4 h-4" />
+            YİBF İle Yeni Proje Ekle
           </button>
           </div>
         </div>
@@ -379,96 +462,263 @@ export default function ProjectsPage() {
 
       {/* YİBF Modal */}
       {isYibfModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-md">
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-400" />
-                Manuel YİBF Ekle
-              </h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700 w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden my-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-900/80">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    YİBF İle Yeni Proje Ekle
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      Bakanlık UYDS
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    T.C. Çevre ve Şehircilik Bakanlığı YİBF / UYDS Veri Çekme Motoru
+                  </p>
+                </div>
+              </div>
               <button
+                type="button"
                 onClick={() => setIsYibfModalOpen(false)}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleYibfSubmit} className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">YİBF No *</label>
-                <input
-                  type="text"
-                  value={yibfFormData.yibfNo}
-                  onChange={(e) => setYibfFormData({ ...yibfFormData, yibfNo: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                  placeholder="Örn: 2024/1234"
-                  required
-                />
+
+            <div className="p-6 space-y-6">
+              {/* Step 1: YİBF Sorgulama */}
+              <div className="bg-slate-800/60 rounded-xl p-4 border border-slate-700/80">
+                <label className="block text-xs font-bold uppercase tracking-wider text-purple-300 mb-2">
+                  1. Adım: Bakanlık YİBF No Sorgula
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Building className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={yibfFormData.yibfNo}
+                      onChange={(e) => setYibfFormData({ ...yibfFormData, yibfNo: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          handleQueryYibf()
+                        }
+                      }}
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-purple-500"
+                      placeholder="Örn: 14582 veya 34591"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleQueryYibf()}
+                    disabled={isQueryingYibf || !yibfFormData.yibfNo.trim()}
+                    className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-lg shadow-purple-600/20"
+                  >
+                    {isQueryingYibf ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sorgulanıyor...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4" />
+                        <span>Sorgula</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Hızlı Test Senaryoları */}
+                <div className="mt-3 flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-slate-400">Hızlı Senaryolar:</span>
+                  {["14582", "34591", "78214"].map((no) => (
+                    <button
+                      key={no}
+                      type="button"
+                      onClick={() => handleQueryYibf(no)}
+                      disabled={isQueryingYibf}
+                      className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-700 text-purple-300 border border-slate-700 transition-colors"
+                    >
+                      #{no}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Müteahhit / Firma Adı *</label>
-                <input
-                  type="text"
-                  value={yibfFormData.contractorName}
-                  onChange={(e) => setYibfFormData({ ...yibfFormData, contractorName: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                  placeholder="Örn: XYZ İnşaat A.Ş."
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Yapı Denetim Sorumlusu</label>
-                <input
-                  type="text"
-                  value={yibfFormData.supervisor}
-                  onChange={(e) => setYibfFormData({ ...yibfFormData, supervisor: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                  placeholder="Örn: Ahmet Yılmaz"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Loading Animasyonu */}
+              {isQueryingYibf && (
+                <div className="p-4 rounded-xl bg-purple-950/40 border border-purple-500/30 flex items-center gap-3 animate-pulse">
+                  <Loader2 className="w-6 h-6 text-purple-400 animate-spin shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-purple-200">
+                      Loading (Bakanlık Sistemine Bağlanılıyor...)
+                    </p>
+                    <p className="text-xs text-purple-300/80">
+                      UYDS Ruhsat, YAMBİS Müteahhit ve MAKS Kadastro verileri çekiliyor...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Başarılı Sorgu Bildirimi */}
+              {yibfQuerySuccess && !isQueryingYibf && (
+                <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-300 text-xs font-medium">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <span>✓ Bakanlık Verileri Otomatik Olarak Dolduruldu (UYDS: {yibfFormData.uydsStatus})</span>
+                  </div>
+                  {yibfFormData.yambisNo && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-200 border border-emerald-700/50">
+                      YAMBİS: {yibfFormData.yambisNo}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Step 2: Form Alanları (Otomatik Dolan Veriler) */}
+              <form onSubmit={handleYibfSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Risk Skoru (1-100)</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Proje Adı *
+                  </label>
                   <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={yibfFormData.riskScore}
-                    onChange={(e) => setYibfFormData({ ...yibfFormData, riskScore: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                    placeholder="50"
+                    type="text"
+                    value={yibfFormData.projectName}
+                    onChange={(e) => setYibfFormData({ ...yibfFormData, projectName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500"
+                    placeholder="Bakanlık sorgusu yapın veya yazın"
+                    required
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Sağlık Skoru (1-100)</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Müteahhit / Yüklenici Firma *
+                  </label>
                   <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={yibfFormData.healthScore}
-                    onChange={(e) => setYibfFormData({ ...yibfFormData, healthScore: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                    placeholder="50"
+                    type="text"
+                    value={yibfFormData.contractorName}
+                    onChange={(e) => setYibfFormData({ ...yibfFormData, contractorName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500"
+                    placeholder="Müteahhit Firma Unvanı"
+                    required
                   />
                 </div>
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsYibfModalOpen(false)}
-                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  disabled={yibfSubmitting}
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {yibfSubmitting ? "Kaydediliyor..." : "Kaydet"}
-                </button>
-              </div>
-            </form>
+
+                {/* Ada / Parsel ve Toplam m2 */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Ada (MAKS)
+                    </label>
+                    <input
+                      type="text"
+                      value={yibfFormData.ada}
+                      onChange={(e) => setYibfFormData({ ...yibfFormData, ada: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-purple-500"
+                      placeholder="Ada"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Parsel (MAKS)
+                    </label>
+                    <input
+                      type="text"
+                      value={yibfFormData.parsel}
+                      onChange={(e) => setYibfFormData({ ...yibfFormData, parsel: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-purple-500"
+                      placeholder="Parsel"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Toplam Alan (m²)
+                    </label>
+                    <input
+                      type="number"
+                      value={yibfFormData.totalArea}
+                      onChange={(e) => setYibfFormData({ ...yibfFormData, totalArea: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-purple-500"
+                      placeholder="m²"
+                    />
+                  </div>
+                </div>
+
+                {/* İl / İlçe ve Yapı Sınıfı */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      İl
+                    </label>
+                    <input
+                      type="text"
+                      value={yibfFormData.city}
+                      onChange={(e) => setYibfFormData({ ...yibfFormData, city: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500"
+                      placeholder="İl"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      İlçe
+                    </label>
+                    <input
+                      type="text"
+                      value={yibfFormData.district}
+                      onChange={(e) => setYibfFormData({ ...yibfFormData, district: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500"
+                      placeholder="İlçe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Yapı Sınıfı
+                    </label>
+                    <input
+                      type="text"
+                      value={yibfFormData.buildingClass}
+                      onChange={(e) => setYibfFormData({ ...yibfFormData, buildingClass: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-purple-500"
+                      placeholder="Örn: 4B"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsYibfModalOpen(false)}
+                    className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg transition-colors"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={yibfSubmitting || isQueryingYibf || !yibfFormData.projectName.trim()}
+                    className="flex-1 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg transition-all shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2"
+                  >
+                    {yibfSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Veritabanına Yazılıyor...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Kaydet (Projeyi Oluştur)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
