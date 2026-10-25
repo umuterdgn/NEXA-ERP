@@ -1,359 +1,354 @@
-"use client";
-
+"use client"
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Inspection Sidebar Component - Role-Isolated Building Inspection Terminal
- * 
- * RBAC Kuralları:
- * - INSPECTOR (Saha Denetçisi): Operasyonel, AI, Dijital Proje, Bakanlık ve Kalite modüllerini görür. Kasa, Finans, Muhasebe ve Personel GİZLENİR.
- * - INSPECTION_ADMIN (Yapı Denetim Patronu): Tüm modüllere ek olarak Kuruluş Yönetimi & Finans modüllerini görür.
+ * Inspection Sidebar Component - 1:1 Match with Admin Sidebar Design
  */
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
-import { usePwaInstall } from "@/hooks/use-pwa-install";
-import {
-  LayoutDashboard,
-  Building2,
-  Building,
-  FlaskConical,
-  ClipboardCheck,
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { signOut, useSession } from "next-auth/react"
+import NotificationBell from "@/components/NotificationBell"
+import { usePwaInstall } from "@/hooks/use-pwa-install"
+import { 
+  LayoutDashboard, 
+  Archive, 
+  DollarSign, 
+  Building2, 
+  FolderKanban, 
+  Users, 
+  ClipboardList, 
+  Calculator, 
+  Box, 
+  TestTube, 
+  FileCheck, 
+  ClipboardCheck, 
+  AlertTriangle, 
+  Map, 
+  History, 
+  ScanText, 
+  Plane, 
+  ChevronLeft, 
+  ChevronRight, 
+  Download, 
+  LogOut, 
+  FileWarning, 
+  Paperclip, 
+  ImagePlus, 
+  PenTool, 
+  PencilRuler, 
+  Construction, 
+  XCircle, 
+  Landmark, 
+  Receipt,
+  Search,
   CheckSquare,
-  AlertTriangle,
-  Construction,
-  FileCheck,
-  FileWarning,
-  Map,
-  Users,
-  Route,
-  PenTool,
-  Sparkles,
-  ScanText,
-  Plane,
-  Layers,
-  Pencil,
-  History,
-  FolderArchive,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
-  ShieldCheck,
-  Download,
-  DollarSign,
-  Landmark,
-  Wallet,
-  UserCheck,
-  FileSignature,
-} from "lucide-react";
+  FileSignature
+} from "lucide-react"
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: any;
-  badge?: string;
-  badgeColor?: string;
+interface MenuItem {
+  href: string
+  label: string
+  icon: any
+  category: string
 }
 
-interface NavSection {
-  title: string;
-  adminOnly?: boolean;
-  items: NavItem[];
-}
+const menuItems: MenuItem[] = [
+  // ANA MENÜ
+  { href: "/inspection/dashboard", label: "Dashboard", icon: LayoutDashboard, category: "ANA MENÜ" },
 
-// Kategorik Menü Yapısı
-const navSections: NavSection[] = [
-  // 1. YAPI DENETİM & KONTROL
-  {
-    title: "YAPI DENETİM & KONTROL",
-    items: [
-      { href: "/inspection/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/inspection/projects", label: "Denetlenen Yapılar / Projeler", icon: Building2 },
-      { href: "/inspection/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck },
-      { href: "/inspection/form-builder", label: "Dinamik Form Oluşturucu", icon: PenTool, badge: "YENİ", badgeColor: "bg-blue-500/20 text-blue-300 border-blue-500/40" },
-      { href: "/inspection/core-samples", label: "Karot & Numune QR Takip", icon: FlaskConical },
-      { href: "/inspection/reinforcement", label: "Demir & Kalıp Kontrol (Vize)", icon: Construction },
-      { href: "/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: FileCheck },
-      { href: "/inspection/deficiencies", label: "Saha Kusur & Eksiklikleri", icon: FileWarning },
-    ],
-  },
+  // PERSONEL YÖNETİMİ
+  { href: "/inspection/personnel", label: "Personeller", icon: Users, category: "PERSONEL YÖNETİMİ" },
 
-  // 2. YAPAY ZEKA & İLERİ TEKNOLOJİ [YENİ KATEGORİ]
-  {
-    title: "YAPAY ZEKA & İLERİ TEKNOLOJİ",
-    items: [
-      { href: "/inspection/ai-vision", label: "AI Görsel Analiz & Hasar Tespit", icon: Sparkles, badge: "AI", badgeColor: "bg-purple-500/20 text-purple-300 border-purple-500/40" },
-      { href: "/inspection/ocr", label: "Akıllı Evrak Denetimi (OCR)", icon: ScanText, badge: "OCR", badgeColor: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" },
-      { href: "/inspection/drone", label: "Hava & Drone Gözlem", icon: Plane, badge: "İHA", badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" },
-    ],
-  },
+  // FİNANS & TEDARİK
+  { href: "/inspection/finance", label: "Kasa & Finans", icon: DollarSign, category: "FİNANS & TEDARİK" },
+  { href: "/inspection/finance/expenses", label: "Masraf & Fiş Onayı", icon: Receipt, category: "FİNANS & TEDARİK" },
+  { href: "/inspection/finance/cheques", label: "Çek / Senet & Teminat", icon: Landmark, category: "FİNANS & TEDARİK" },
 
-  // 3. DİJİTAL PROJE & ARŞİV [YENİ KATEGORİ]
-  {
-    title: "DİJİTAL PROJE & ARŞİV",
-    items: [
-      { href: "/inspection/blueprints", label: "Dijital Projeler / Çizimler", icon: Layers },
-      { href: "/inspection/sketch", label: "Serbest Çizim / Plan", icon: Pencil },
-      { href: "/inspection/revisions", label: "Proje Revizyonları", icon: History },
-      { href: "/inspection/archive", label: "Ruhsat & Dijital Evrak Arşivi", icon: FolderArchive },
-    ],
-  },
+  // PROJE YÖNETİMİ
+  { href: "/inspection/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
+  { href: "/inspection/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ" },
+  { href: "/inspection/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ" },
+  { href: "/inspection/boq", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ" },
 
-  // 4. BAKANLIK & OPERASYON
-  {
-    title: "BAKANLIK & OPERASYON",
-    items: [
-      { href: "/inspection/yibf", label: "Bakanlık e-YİBF Sistemi", icon: Building },
-      { href: "/inspection/map", label: "GIS Denetim Haritası", icon: Map },
-      { href: "/inspection/dispatch", label: "Görev Dağıtımı & Rota Optimizasyonu", icon: Route },
-    ],
-  },
+  // YAPI DENETİM & KONTROL
+  { href: "/inspection/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/form-builder", label: "Dinamik Form Oluşturucu", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/inspection/reports/create", label: "Hasar Tespit & Rapor", icon: FileWarning, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/samples", label: "Numune & Karot Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: Paperclip, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/documents", label: "Ruhsat & Evrak Arşivi", icon: Archive, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/ocr", label: "Akıllı Evrak Denetimi (OCR)", icon: ScanText, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/reports", label: "Saha Raporları", icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/ai-vision", label: "AI Görsel Analiz", icon: ImagePlus, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/revisions", label: "Proje Revizyonları", icon: History, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/routes", label: "Rota Optimizasyonu", icon: Map, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/drone", label: "Hava & Drone Gözlem", icon: Plane, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/blueprints", label: "Dijital Projeler / Çizimler", icon: PenTool, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/sketch", label: "Serbest Çizim / Plan", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/inspections", label: "Denetim Kayıtları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/deficiencies", label: "Saha Kusur & Eksiklikleri", icon: AlertTriangle, category: "YAPI DENETİM & KONTROL" },
 
-  // 5. KALİTE & KURULUŞ
-  {
-    title: "KALİTE & KURULUŞ",
-    items: [
-      { href: "/inspection/materials", label: "Kalite: Malzeme Onayları", icon: CheckSquare },
-      { href: "/inspection/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: AlertTriangle },
-    ],
-  },
-
-  // 6. KURULUŞ YÖNETİMİ & FİNANS (SADECE INSPECTION_ADMIN ve ADMIN görür, INSPECTOR'dan GİZLENİR!)
-  {
-    title: "KURULUŞ YÖNETİMİ & FİNANS",
-    adminOnly: true,
-    items: [
-      { href: "/admin/finance", label: "Kasa & Finans", icon: DollarSign },
-      { href: "/admin/finance/documents", label: "Çek / Senet & Teminat", icon: Landmark },
-      { href: "/admin/billing", label: "Muhasebe & Hakediş", icon: Wallet },
-      { href: "/admin/personnel", label: "Denetçi & Personel Takibi", icon: UserCheck },
-      { href: "/admin/contracts", label: "Hizmet Sözleşmeleri", icon: FileSignature },
-    ],
-  },
-];
+  // KALİTE & KURULUŞ
+  { href: "/inspection/materials", label: "Malzeme Onayları", icon: CheckSquare, category: "KALİTE & KURULUŞ" },
+  { href: "/inspection/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: XCircle, category: "KALİTE & KURULUŞ" },
+  { href: "/inspection/contracts", label: "Sözleşmeler", icon: FileSignature, category: "KALİTE & KURULUŞ" },
+]
 
 export default function InspectionSidebar({
   isCollapsed,
   setIsCollapsed,
 }: {
-  isCollapsed: boolean;
-  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  isCollapsed: boolean
+  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
-  const sessionContext = useSession();
-  const session = sessionContext?.data;
-  const { isInstallable, promptInstall } = usePwaInstall();
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  const pathname = usePathname()
+  const { isInstallable, promptInstall } = usePwaInstall()
+  const { data: session } = useSession()
 
-  const userRole = session?.user?.role as string;
-  const isInspectionAdmin =
-    userRole === "INSPECTION_ADMIN" || userRole === "ADMIN" || userRole === "SUPER_ADMIN";
+  useEffect(() => {
+    // 1. URL'den aktif proje ID'sini al
+    const match = pathname?.match(/\/inspection\/projects\/([^\/]+)/)
+    if (match && match[1] && match[1] !== "new") {
+      setActiveProjectId(match[1])
+      try {
+        localStorage.setItem("nexa_active_project_id", match[1])
+      } catch {}
+    } else {
+      // 2. LocalStorage'dan al
+      try {
+        const saved = localStorage.getItem("nexa_active_project_id")
+        if (saved) {
+          setActiveProjectId(saved)
+          return
+        }
+      } catch {}
+      // 3. API'den ilk projeyi çek
+      fetch("/api/admin/projects?limit=1")
+        .then((res) => res.json())
+        .then((data) => {
+          const list = Array.isArray(data) ? data : data?.projects
+          if (list && list.length > 0 && list[0]?.id) {
+            setActiveProjectId(list[0].id)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [pathname])
 
-  // RBAC İzolasyonu: Admin olmayan kullanıcılardan adminOnly kategorilerini filtrele
-  const visibleSections = navSections.filter(
-    (sec) => !sec.adminOnly || (sec.adminOnly && isInspectionAdmin)
-  );
+  const boqHref = activeProjectId ? `/inspection/projects/${activeProjectId}/boq` : "/inspection/projects"
+  const bimHref = activeProjectId ? `/inspection/projects/${activeProjectId}/bim` : "/inspection/projects"
 
-  const isItemActive = (href: string) => {
-    if (pathname === href) return true;
-    if (href === "/inspection/dashboard" && (pathname === "/dashboard" || pathname === "/inspection/dashboard")) {
-      return true;
+  const effectiveMenuItems = menuItems.map((item) => {
+    if (item.label === "Keşif & Metraj (BoQ)") {
+      return { ...item, href: boqHref }
     }
-    if (href === "/inspection/yibf" && (pathname === "/yibf" || pathname === "/inspection/yibf" || pathname.startsWith("/yibf/"))) {
-      return true;
+    if (item.label === "BIM & 3D Modeller") {
+      return { ...item, href: bimHref }
     }
-    if (href === "/inspection/map" && (pathname === "/map" || pathname === "/inspection/map")) {
-      return true;
+    return item
+  })
+
+  // Group items by category
+  const groupedMenuItems = effectiveMenuItems.reduce((acc, item) => {
+    const category = item.category
+    if (!acc[category]) {
+      acc[category] = []
     }
-    if (href === "/inspection/dispatch" && (pathname === "/dispatch" || pathname === "/inspection/dispatch")) {
-      return true;
+    acc[category].push(item)
+    return acc
+  }, {} as Record<string, MenuItem[]>)
+
+  // Filter items based on search
+  const filteredMenuItems = effectiveMenuItems.filter((item) => {
+    if (!searchQuery.trim()) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      item.label.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query)
+    )
+  })
+
+  // Group filtered items
+  const groupedFilteredItems = filteredMenuItems.reduce((acc, item) => {
+    const category = item.category
+    if (!acc[category]) {
+      acc[category] = []
     }
-    return pathname.startsWith(href + "/");
-  };
+    acc[category].push(item)
+    return acc
+  }, {} as Record<string, MenuItem[]>)
+
+  const categories = Object.keys(searchQuery.trim() ? groupedFilteredItems : groupedMenuItems)
 
   return (
     <>
-      {/* Mobil Üst Başlık */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 z-40 p-4">
+      {/* Mobile Header */}
+      <div className="fixed left-0 right-0 top-0 z-40 border-b border-slate-800 bg-slate-900 px-4 pb-safe pt-safe lg:hidden">
         <div className="flex items-center justify-between">
           <button
+            type="button"
             onClick={() => setIsOpen(true)}
-            className="text-white p-2 hover:bg-slate-800 rounded-lg"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-slate-800"
             aria-label="Menüyü aç"
           >
-            <Menu className="w-6 h-6" />
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-white font-semibold text-sm">Yapı Denetim Portalı</h1>
-          </div>
-          <div className="w-10" />
+          <h1 className="font-semibold text-white">Yapı Denetim Portalı</h1>
+          <div className="w-11" aria-hidden="true" />
         </div>
       </div>
 
-      {/* Mobil Arka Plan Karartması */}
+      {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/70 z-[9990]"
+          className="fixed inset-0 z-[9990] bg-black/50 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Sol Kenar Menüsü (Sidebar) */}
+      {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full z-[9999] transition-all duration-300 ${
-          isOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
-        } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-72 bg-slate-900 border-r border-slate-800 flex flex-col`}
+        className={`fixed left-0 top-0 z-[9999] h-full transition-all duration-300 ${
+          isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
+        } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-[85vw] max-w-[320px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900`}
       >
-        <div className={`flex h-full flex-col ${isCollapsed ? "p-3" : "p-4 sm:p-5"}`}>
-          {/* Üst Logo ve Başlık */}
-          <div className={`mb-3 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
-            {!isCollapsed && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-700 text-white shadow-sm">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
+        <div className={`flex h-full flex-col ${isCollapsed ? "p-3" : "p-4 sm:p-6"}`}>
+          {/* Header */}
+          <div className="mb-6">
+            <div className={`mb-4 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
+              {!isCollapsed && (
                 <div>
-                  <h1 className="text-sm font-bold text-white tracking-tight">Yapı Denetim OS</h1>
-                  <p className="text-[11px] text-slate-400 font-medium">Bakanlık e-YİBF Terminali</p>
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden h-8 w-8 items-center justify-center rounded-lg border border-slate-700/60 bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white lg:flex cursor-pointer"
-              title={isCollapsed ? "Genişlet" : "Daralt"}
-              aria-label={isCollapsed ? "Genişlet" : "Daralt"}
-            >
-              {isCollapsed ? <ChevronDown className="h-4 w-4 rotate-180" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
-          </div>
-
-          {/* Kullanıcı Yetki & Profil Kartı */}
-          {!isCollapsed && (
-            <div className="mb-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 border border-slate-700 text-blue-400 font-bold text-xs">
-                  {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "D"}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-white">
-                    {session?.user?.name || "Yapı Denetçisi"}
+                  <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">
+                    Yapı Denetim
+                  </h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Saha & Denetim Terminali
                   </p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                        isInspectionAdmin
-                          ? "bg-amber-950/40 text-amber-300 border-amber-800/60"
-                          : "bg-blue-950/40 text-blue-300 border-blue-800/60"
-                      }`}
-                    >
-                      {isInspectionAdmin ? "Patron / Yönetici" : "Saha Denetçisi"}
-                    </span>
-                  </div>
                 </div>
+              )}
+              <div className="flex items-center gap-3">
+                {!isCollapsed && <NotificationBell />}
+                <button
+                  type="button"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white lg:flex"
+                  title={isCollapsed ? "Genişlet" : "Daralt"}
+                >
+                  {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                </button>
               </div>
             </div>
-          )}
 
-          {/* Navigasyon Bağlantıları (Kategorik Gruplama) */}
-          <nav className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-            {visibleSections.map((section, sIndex) => (
-              <div key={section.title} className="space-y-1">
-                {/* Kategori Başlığı */}
-                {!isCollapsed ? (
-                  <div className="px-3 pt-1 pb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block border-t border-slate-800/80 pt-2">
-                      {section.title}
-                    </span>
-                  </div>
-                ) : (
-                  sIndex > 0 && <div className="border-t border-slate-800/80 my-2" />
-                )}
-
-                {/* Kategori Öğeleri */}
-                {section.items.map((item) => {
-                  const active = isItemActive(item.href);
-                  const Icon = item.icon;
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className={`flex min-h-[36px] items-center rounded-lg text-xs font-medium transition-colors ${
-                        active
-                          ? "bg-blue-700 text-white shadow-sm"
-                          : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
-                      } ${isCollapsed ? "justify-center px-0" : "justify-start gap-2.5 px-3 py-1.5"}`}
-                      title={isCollapsed ? item.label : undefined}
-                    >
-                      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-slate-400"}`} />
-                      {!isCollapsed && (
-                        <div className="flex items-center justify-between flex-1 min-w-0">
-                          <span className="truncate">{item.label}</span>
-                          {item.badge && (
-                            <span
-                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ml-1.5 shrink-0 ${
-                                item.badgeColor || "bg-blue-500/20 text-blue-300 border-blue-500/40"
-                              }`}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </Link>
-                  );
-                })}
+            {!isCollapsed && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Menü ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-slate-100 pl-10 pr-4 text-slate-900 transition-all placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-slate-400"
+                />
               </div>
-            ))}
+            )}
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden pr-2">
+            {categories.map((category) => {
+              const items = searchQuery.trim() ? groupedFilteredItems[category] : groupedMenuItems[category]
+              if (!items || items.length === 0) return null
+
+              return (
+                <div key={category}>
+                  {/* Category Header */}
+                  {!isCollapsed && (
+                    <div className="mt-6 mb-2 px-4 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">
+                      {category}
+                    </div>
+                  )}
+
+                  {/* Menu Items */}
+                  <div className="space-y-1">
+                    {items.map((item) => {
+                      const isActive =
+                        pathname === item.href ||
+                        (item.label === "Keşif & Metraj (BoQ)" && pathname?.includes("/boq")) ||
+                        (item.label === "BIM & 3D Modeller" && pathname?.includes("/bim")) ||
+                        (item.label === "Projeler" && pathname === "/inspection/projects")
+                      const Icon = item.icon
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setIsOpen(false)}
+                          className={`flex min-h-[40px] items-center rounded-lg transition-colors ${
+                            isActive
+                              ? "bg-blue-100 font-medium text-blue-600 dark:bg-slate-700 dark:text-blue-400"
+                              : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                          } gap-3 px-3 py-2`}
+                          title={isCollapsed ? item.label : undefined}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" />
+                          {!isCollapsed && <span className="text-sm">{item.label}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
           </nav>
 
-          {/* Alt Aksiyon Butonları */}
-          <div className="mt-3 border-t border-slate-800 pt-3 space-y-2">
+          {/* Footer */}
+          <div className="mt-4 border-t border-slate-200 pt-6 pb-safe dark:border-slate-800">
             {isInstallable && (
               <button
                 type="button"
                 onClick={() => void promptInstall()}
-                className={`flex min-h-[36px] w-full items-center justify-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/60 px-3 py-2 text-xs font-medium text-slate-200 transition-colors cursor-pointer ${
+                className={`mb-3 flex min-h-[44px] w-full items-center justify-center gap-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white shadow-lg shadow-blue-600/20 transition-colors hover:from-blue-500 hover:to-indigo-500 ${
                   isCollapsed ? "px-2" : "text-left"
                 }`}
                 title={isCollapsed ? "Uygulamayı Yükle" : undefined}
               >
-                <Download className="h-4 w-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>PWA Uygulamayı Yükle</span>}
+                <Download className="h-5 w-5 shrink-0" />
+                {!isCollapsed && <span>Uygulamayı Yükle</span>}
               </button>
             )}
-
             <button
+              type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className={`flex min-h-[36px] w-full items-center rounded-lg bg-slate-800 hover:bg-rose-900/60 border border-slate-700/60 hover:border-rose-700/60 px-3 py-2 text-xs font-medium text-slate-300 hover:text-rose-200 transition-colors cursor-pointer ${
-                isCollapsed ? "justify-center" : "gap-2.5 text-left"
+              className={`flex min-h-[44px] w-full items-center gap-3 rounded-lg bg-red-600 px-4 py-3 text-white transition-colors hover:bg-red-500 ${
+                isCollapsed ? "justify-center" : "text-left"
               }`}
               title={isCollapsed ? "Çıkış Yap" : undefined}
             >
-              <LogOut className="h-4 w-4 shrink-0" />
-              {!isCollapsed && <span>Güvenli Çıkış</span>}
+              <LogOut className="h-5 w-5 shrink-0" />
+              {!isCollapsed && <span>Çıkış Yap</span>}
             </button>
           </div>
 
-          {/* Mobil Kapatma Butonu */}
+          {/* Close Button (Mobile Only) */}
           <button
+            type="button"
             onClick={() => setIsOpen(false)}
-            className="lg:hidden absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg"
+            className="absolute right-4 top-4 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-slate-800 lg:hidden"
             aria-label="Menüyü kapat"
           >
-            <X className="w-5 h-5" />
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
       </aside>
     </>
-  );
+  )
 }

@@ -78,7 +78,7 @@ export async function syncOfflineQueue() {
   for (const item of queue) {
     try {
       // Import saveInspection action dynamically to avoid circular dependencies
-      const { saveInspection } = await import("@/app/(inspection)/field/actions");
+      const { saveInspection } = await import("@/app/actions/inspection-field");
       
       const result = await saveInspection({
         yibfId: item.yibfId,

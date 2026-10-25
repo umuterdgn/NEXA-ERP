@@ -15,7 +15,7 @@ export default function InspectionLayoutShell({ children }: { children: React.Re
     <>
       <InspectionSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       <main
-        className={`transition-all duration-300 pt-20 p-4 lg:pt-6 lg:p-8 min-h-screen ${
+        className={`transition-all duration-300 pt-20 p-6 lg:pt-6 lg:p-8 ${
           isCollapsed ? "lg:ml-20" : "lg:ml-64"
         }`}
       >

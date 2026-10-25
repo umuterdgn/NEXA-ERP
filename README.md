@@ -150,8 +150,6 @@ Tarayıcınızda `http://localhost:3000` adresini açın.
 
 ## 🔐 Varsayılan Admin Hesabı
 
-- **E-posta:** admin@mahirbakay.com
-- **Şifre:** admin123
 
 ⚠️ **Önemli:** Production ortamında bu şifreyi değiştirmeyi unutmayın!
 
