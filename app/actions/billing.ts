@@ -53,21 +53,86 @@ export async function getBillingStats() {
   }
 }
 
-export async function createBilling(formData: FormData) {
+export async function createProgressBilling(formData: FormData) {
   try {
-    const contractId = formData.get('contractId') as string
-    const billingNumber = parseInt(formData.get('billingNumber') as string)
-    const period = new Date(formData.get('period') as string)
-    const grossAmount = parseFloat(formData.get('grossAmount') as string)
+    const contractId = (formData.get('contractId') as string) || ''
+    let projectId = (formData.get('projectId') as string) || ''
+    let subcontractorId = (formData.get('subcontractorId') as string) || ''
+    const billingNumberInput = parseInt(formData.get('billingNumber') as string)
+    const periodInput = formData.get('period') as string
+    const period = periodInput ? new Date(periodInput) : new Date()
+
+    // 1. Resolve contract, project and subcontractor
+    let contract: any = null
+    if (contractId) {
+      contract = await prisma.contract.findUnique({
+        where: { id: contractId },
+        include: {
+          project: true,
+          subcontractor: true,
+        },
+      })
+      if (contract) {
+        projectId = projectId || contract.projectId
+        subcontractorId = subcontractorId || contract.subcontractorId
+      }
+    }
+
+    // 2. Find independent APPROVED WorkProofs for this project & subcontractor
+    // (status = "APPROVED", projectId & subcontractorId match, progressBillingId is null)
+    const whereProofs: any = {
+      status: 'APPROVED',
+      progressBillingId: null,
+    }
+    if (projectId) whereProofs.projectId = projectId
+    if (subcontractorId) whereProofs.subcontractorId = subcontractorId
+
+    const independentProofs = await prisma.workProof.findMany({
+      where: whereProofs,
+      include: {
+        boqItem: true,
+      },
+    })
+
+    // 3. Exact mathematical calculation: sum(approvedQuantity * unitPrice) to the exact cent
+    let calculatedGross = 0
+    for (const proof of independentProofs) {
+      const qty = proof.approvedQuantity ?? proof.claimedQuantity ?? 0
+      const unitPrice = proof.boqItem?.unitPrice ?? 0
+      const lineTotal = Math.round(qty * unitPrice * 100) / 100
+      calculatedGross += lineTotal
+    }
+    calculatedGross = Math.round(calculatedGross * 100) / 100
+
+    // Raw fallback if form provided a manual grossAmount and 0 proofs were found
+    const rawGross = parseFloat(formData.get('grossAmount') as string)
+    const grossAmount = independentProofs.length > 0 ? calculatedGross : (!isNaN(rawGross) ? rawGross : 0)
+
     const advanceDeduction = parseFloat(formData.get('advanceDeduction') as string) || 0
     const penaltyDeduction = parseFloat(formData.get('penaltyDeduction') as string) || 0
-    const retentionDeduction = parseFloat(formData.get('retentionDeduction') as string) || 0
 
-    const netPayable = grossAmount - advanceDeduction - penaltyDeduction - retentionDeduction
+    // Retention deduction: %5 or contract's retentionRate
+    let retentionDeduction = parseFloat(formData.get('retentionDeduction') as string)
+    if (isNaN(retentionDeduction) || retentionDeduction === 0) {
+      const rate = contract?.retentionRate ?? 0.05
+      retentionDeduction = Math.round(grossAmount * rate * 100) / 100
+    }
 
-    await prisma.progressBilling.create({
+    const netPayable = Math.round((grossAmount - advanceDeduction - penaltyDeduction - retentionDeduction) * 100) / 100
+
+    // Determine billing number
+    let billingNumber = billingNumberInput
+    if (!billingNumber || isNaN(billingNumber)) {
+      const existingCount = await prisma.progressBilling.count({
+        where: contractId ? { contractId } : undefined,
+      })
+      billingNumber = existingCount + 1
+    }
+
+    // 4. Create ProgressBilling
+    const billing = await prisma.progressBilling.create({
       data: {
-        contractId,
+        contractId: contractId || null,
         billingNumber,
         period,
         grossAmount,
@@ -75,16 +140,41 @@ export async function createBilling(formData: FormData) {
         penaltyDeduction,
         retentionDeduction,
         netPayable,
-        status: 'DRAFT' as const
-      }
+        status: 'DRAFT',
+      },
     })
 
+    // 5. Autonomously link all found independent proofs to this newly created ProgressBilling
+    if (independentProofs.length > 0) {
+      await prisma.workProof.updateMany({
+        where: {
+          id: { in: independentProofs.map((p) => p.id) },
+        },
+        data: {
+          progressBillingId: billing.id,
+        },
+      })
+    }
+
     revalidatePath('/admin/billings')
-    return { success: true }
+    revalidatePath('/admin/finance')
+    revalidatePath(`/admin/finance/progress-billing/${billing.id}`)
+
+    return {
+      success: true,
+      data: billing,
+      linkedProofCount: independentProofs.length,
+      grossAmount,
+      netPayable,
+    }
   } catch (error) {
-    console.error("Failed to create billing:", error)
-    return { success: false, error: "Failed to create billing" }
+    console.error('Failed to create progress billing:', error)
+    return { success: false, error: 'Failed to create progress billing' }
   }
+}
+
+export async function createBilling(formData: FormData) {
+  return createProgressBilling(formData)
 }
 
 export async function updateBillingStatus(billingId: string, status: 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'PAID') {

@@ -30,8 +30,18 @@ import {
   Check,
   Layers
 } from "lucide-react"
-import { getSubcontractorContracts, submitProofAction } from "./actions"
+import { getSubcontractorContracts, submitProofAction, getProjectBoqItems } from "./actions"
 import { toast } from "react-hot-toast"
+
+interface BoqOption {
+  id: string
+  pozNo: string
+  description: string
+  unit: string
+  unitPrice: number
+  plannedQuantity: number
+  actualQuantity?: number
+}
 
 interface ContractItem {
   id: string
@@ -86,6 +96,12 @@ export default function SubcontractorNewProofPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadingContracts, setLoadingContracts] = useState(true)
+
+  // BoQ (Metraj) & Miktar States (Adım 3)
+  const [boqItems, setBoqItems] = useState<BoqOption[]>([])
+  const [selectedBoqItemId, setSelectedBoqItemId] = useState<string>("")
+  const [claimedQuantity, setClaimedQuantity] = useState<string>("")
+  const [loadingBoq, setLoadingBoq] = useState(false)
 
   // GPS Geolocation States
   const [latitude, setLatitude] = useState<number | null>(null)
@@ -180,6 +196,30 @@ export default function SubcontractorNewProofPage() {
     return () => { isActive = false }
   }, [])
 
+  // Fetch BoQ Items for the selected project
+  useEffect(() => {
+    let isActive = true
+    const loadBoqs = async () => {
+      setLoadingBoq(true)
+      try {
+        const res = await getProjectBoqItems(selectedProjectId)
+        if (res.success && isActive) {
+          setBoqItems(res.items || [])
+          if (res.items && res.items.length > 0) {
+            setSelectedBoqItemId(res.items[0].id)
+          }
+        }
+      } catch (err) {
+        console.error("Load BoQs error:", err)
+      } finally {
+        if (isActive) setLoadingBoq(false)
+      }
+    }
+
+    void loadBoqs()
+    return () => { isActive = false }
+  }, [selectedProjectId])
+
   // Fetch Recent Proofs
   const fetchRecentProofs = async () => {
     setLoadingProofs(true)
@@ -240,6 +280,17 @@ export default function SubcontractorNewProofPage() {
       return
     }
 
+    if (!selectedBoqItemId) {
+      toast.error("Hangi imalat kalemine (BoQ) ait olduğunu seçmek zorunludur.")
+      return
+    }
+
+    const qty = parseFloat(claimedQuantity)
+    if (isNaN(qty) || qty <= 0) {
+      toast.error("Lütfen imalat miktarını (örn: 50 m³ veya 20 Ton) giriniz.")
+      return
+    }
+
     if (!selectedFile && !previewUrl) {
       toast.error("Lütfen yapılan işe ait bir kanıt fotoğrafı yükleyiniz.")
       return
@@ -251,6 +302,8 @@ export default function SubcontractorNewProofPage() {
       const formData = new FormData()
       formData.append("contractId", selectedContractId)
       formData.append("projectId", selectedProjectId)
+      formData.append("boqItemId", selectedBoqItemId)
+      formData.append("claimedQuantity", claimedQuantity)
       formData.append("title", title)
       formData.append("description", description)
 
@@ -270,6 +323,7 @@ export default function SubcontractorNewProofPage() {
         toast.success(result.message || "İş kanıtı başarıyla kaydedildi!")
         setTitle("")
         setDescription("")
+        setClaimedQuantity("")
         setBimElementId("")
         handleRemoveImage()
         fetchRecentProofs()
@@ -292,6 +346,9 @@ export default function SubcontractorNewProofPage() {
     "PERDE-P01 (Bodrum)",
     "RADYE-TEMEL-BÖLÜM-A"
   ]
+
+  const currentBoq = boqItems.find((b) => b.id === selectedBoqItemId)
+  const currentUnit = currentBoq?.unit || "m³"
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-16">
@@ -398,7 +455,79 @@ export default function SubcontractorNewProofPage() {
               </div>
             </div>
 
-            {/* 2. İş Başlığı ve Açıklama */}
+            {/* 2. Hangi İmalat Kalemi? (BoQ Pozu) & İmalat Miktarı - ZORUNLU (Adım 3) */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
+                  <Boxes className="w-4 h-4" />
+                  İmalat Kalemi (BoQ) & İmalat Miktarı *
+                </div>
+                {loadingBoq && (
+                  <span className="text-[11px] text-slate-400 animate-pulse">Pozlar yükleniyor...</span>
+                )}
+                {currentBoq && !loadingBoq && (
+                  <span className="text-[11px] text-emerald-400 font-mono font-medium">
+                    Birim Fiyat: {currentBoq.unitPrice.toLocaleString("tr-TR")} ₺ / {currentBoq.unit}
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Hangi İmalat Kalemi? (Select Box) */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Hangi İmalat Kalemi? (Poz No - BoQ) *
+                  </label>
+                  <select
+                    value={selectedBoqItemId}
+                    onChange={(e) => setSelectedBoqItemId(e.target.value)}
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
+                  >
+                    <option value="">İmalat Kalemi Seçiniz *</option>
+                    {boqItems.map((boq) => (
+                      <option key={boq.id} value={boq.id}>
+                        {boq.pozNo} - {boq.description} ({boq.unit})
+                      </option>
+                    ))}
+                  </select>
+                  {currentBoq && (
+                    <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+                      <span>Planlanan Toplam: <span className="text-slate-200 font-mono">{currentBoq.plannedQuantity?.toLocaleString("tr-TR") || "-"} {currentBoq.unit}</span></span>
+                      <span>Birim Fiyat: <span className="text-amber-400 font-mono">{currentBoq.unitPrice?.toLocaleString("tr-TR")} ₺</span></span>
+                    </div>
+                  )}
+                </div>
+
+                {/* İmalat Miktarı */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    İmalat Miktarı ({currentUnit}) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="any"
+                      value={claimedQuantity}
+                      onChange={(e) => setClaimedQuantity(e.target.value)}
+                      placeholder="Örn: 50"
+                      required
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 pr-12 font-mono font-medium"
+                    />
+                    <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-medium pointer-events-none">
+                      {currentUnit}
+                    </span>
+                  </div>
+                  {claimedQuantity && currentBoq && !isNaN(parseFloat(claimedQuantity)) && (
+                    <p className="text-[11px] text-emerald-400 mt-1 font-mono font-semibold">
+                      ≈ {(parseFloat(claimedQuantity) * currentBoq.unitPrice).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. İş Başlığı ve Açıklama */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
                 <FileText className="w-4 h-4" />

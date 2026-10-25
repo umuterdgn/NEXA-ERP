@@ -796,10 +796,15 @@ export default function FinancePage() {
                   </tr>
                 ) : (
                   (recentBillingMovements.length > 0 ? recentBillingMovements : progressPayments).slice(0, 6).map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                    <tr
+                      key={item.id}
+                      onClick={() => router.push(`/admin/finance/progress-billing/${item.id}`)}
+                      className="hover:bg-slate-800/60 cursor-pointer transition-colors group"
+                    >
                       <td className="px-4 py-3">
-                        <div className="font-medium text-white text-xs">
-                          {item.projectName || "Şantiye Projesi"}
+                        <div className="font-medium text-white text-xs group-hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                          <span>{item.projectName || "Şantiye Projesi"}</span>
+                          <span className="text-[10px] text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
                         </div>
                         <div className="text-[11px] text-blue-400 font-mono">
                           Hakediş #{item.billingNumber || 1}

@@ -73,24 +73,53 @@ export async function POST(request: Request) {
     }
 
     const subcontractorId = providedSubId || contract.subcontractorId
+    const projectId = contract.projectId
+
+    // Ensure valid boqItem
+    let boqItemId = body.boqItemId
+    if (!boqItemId) {
+      const firstBoq = await prisma.boqItem.findFirst({ where: { projectId } })
+      if (firstBoq) {
+        boqItemId = firstBoq.id
+      } else {
+        const newBoq = await prisma.boqItem.create({
+          data: {
+            projectId,
+            pozNo: "15.120.1001",
+            description: "C35/45 Hazır Beton Dökümü",
+            unit: "m³",
+            unitPrice: 2200,
+            plannedQuantity: 500,
+          },
+        })
+        boqItemId = newBoq.id
+      }
+    }
 
     const proof = await prisma.workProof.create({
       data: {
         contractId,
         subcontractorId,
+        projectId,
+        boqItemId,
+        claimedQuantity: typeof body.claimedQuantity === "number" ? body.claimedQuantity : 1,
         title: title.trim(),
-        description: description ? description.trim() : null,
+        description: description ? description.trim() : "",
         imageUrl,
-        status: "PENDING"
+        photoUrl: imageUrl,
+        bimElementId: body.bimElementId || null,
+        gpsLatitude: body.latitude || null,
+        gpsLongitude: body.longitude || null,
+        status: "PENDING",
       },
       include: {
         contract: {
-          select: { id: true, title: true }
+          select: { id: true, title: true },
         },
         subcontractor: {
-          select: { id: true, name: true }
-        }
-      }
+          select: { id: true, name: true },
+        },
+      },
     })
 
     return NextResponse.json({ success: true, proof }, { status: 201 })

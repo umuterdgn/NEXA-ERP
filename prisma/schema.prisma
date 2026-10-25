@@ -1077,6 +1077,7 @@ model ProgressBilling {
   contract              Contract?              @relation(fields: [contractId], references: [id])
   financialTransactions FinancialTransaction[]
   stageGates            StageGate[]
+  workProofs            WorkProof[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2654,31 +2655,42 @@ model FoodMenu {
 // ============================================================================
 
 model WorkProof {
-  id              String      @id @default(cuid())
-  contractId      String // Hangi sözleşmeye ait
-  subcontractorId String // Kim yükledi
-  title           String // Yapılan işin özeti (Örn: 1. Kat Kolon Kalıpları)
-  description     String?
-  imageUrl        String // Fotoğraf kanıtı (Upload URL)
-  status          ProofStatus @default(PENDING) // PENDING, APPROVED, REJECTED
-  engineerStatus  String      @default("PENDING") // PENDING, APPROVED, REJECTED
-  managerStatus   String      @default("PENDING") // PENDING, APPROVED, REJECTED
-  engineerId      String?     // İlk onayı veren saha mühendisi
-  managerId       String?     // İkinci onayı veren şantiye şefi
-  latitude        Float?      // Fotoğrafın GPS Enlemi
-  longitude       Float?      // Fotoğrafın GPS Boylamı
-  bimElementId    String?     // 3D BIM Eleman ID (kolon, kiriş, döşeme)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                String   @id @default(cuid())
+  subcontractorId   String
+  projectId         String
+  progressBillingId String?  // Bu kanıt hangi hakedişe bağlandı?
+  boqItemId         String   // Hangi metraj kalemine ait? (ZORUNLU)
+  bimElementId      String?  // 3D Modeldeki IFC eleman ID'si (Opsiyonel)
+  claimedQuantity   Float    @default(0) // Taşeronun bu kanıtla iddia ettiği imalat miktarı (Örn: 50 m3)
+  approvedQuantity  Float?   // Denetçi onaylarken miktarı kırpabilir
+  photoUrl          String   @default("")
+  imageUrl          String?  // Geriye dönük uyumluluk
+  gpsLatitude       Float?   // Fotoğrafın çekildiği konum
+  gpsLongitude      Float?
+  latitude          Float?   // Geriye dönük uyumluluk
+  longitude         Float?   // Geriye dönük uyumluluk
+  title             String?  // Yapılan işin özeti
+  description       String   @default("")
+  status            String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  engineerStatus    String   @default("PENDING")
+  managerStatus     String   @default("PENDING")
+  engineerId        String?
+  managerId         String?
+  contractId        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt @default(now())
 
-  contract      Contract      @relation(fields: [contractId], references: [id])
-  subcontractor Subcontractor @relation(fields: [subcontractorId], references: [id])
+  progressBilling ProgressBilling? @relation(fields: [progressBillingId], references: [id])
+  boqItem         BoqItem          @relation(fields: [boqItemId], references: [id])
+  contract        Contract?        @relation(fields: [contractId], references: [id])
+  subcontractor   Subcontractor    @relation(fields: [subcontractorId], references: [id])
 
-  @@index([contractId])
+  @@index([projectId])
   @@index([subcontractorId])
+  @@index([progressBillingId])
+  @@index([boqItemId])
+  @@index([contractId])
   @@index([status])
-  @@index([engineerStatus])
-  @@index([managerStatus])
   @@index([createdAt])
   @@index([bimElementId])
 }
@@ -4275,6 +4287,7 @@ model BoqItem {
   updatedAt       DateTime         @updatedAt @default(now())
 
   progressLogs    BoqProgressLog[]
+  workProofs      WorkProof[]
 
   @@index([projectId])
   @@index([pozNo])

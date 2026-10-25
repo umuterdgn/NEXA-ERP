@@ -277,12 +277,12 @@ export async function getTodaySummary(projectId?: string): Promise<{
 
     let completedWorks = approvedProofs.map((p) => ({
       id: p.id,
-      title: p.title,
+      title: p.title || "İş Kanıtı",
       subcontractorName:
         p.contract?.subcontractor?.name || p.subcontractor?.name || "Taşeron Ekip",
       quantityText: p.description?.slice(0, 80) || "Teknik kabul onaylandı",
       status: "ONAYLANDI",
-      photoUrl: p.imageUrl
+      photoUrl: p.imageUrl || p.photoUrl || undefined
     }))
 
     if (completedWorks.length === 0) {
