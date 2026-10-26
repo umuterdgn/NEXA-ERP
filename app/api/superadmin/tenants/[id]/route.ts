@@ -112,6 +112,7 @@ export async function PATCH(
     }
 
     const { id: tenantId } = await params
+    const body = await request.json()
     const { 
       extraStorageQuota, 
       maxStorageMB,
