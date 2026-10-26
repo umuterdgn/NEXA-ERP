@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import NotificationBell from "@/components/NotificationBell"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
+import { isMenuItemAllowed } from "@/lib/utils/module-permissions"
 import { 
   LayoutDashboard, 
   Archive, 
@@ -161,7 +162,14 @@ export default function InspectionSidebar({
     return true
   })
 
-  const effectiveMenuItems = roleFilteredMenuItems.map((item) => {
+  const sessionEnabledModules = (session?.user as any)?.enabledModules as string[] | undefined
+
+  // Multi-Tenant SaaS Modül İzinleri Filtresi (Kapalı modüller menüde tamamen gizlenir)
+  const moduleFilteredItems = roleFilteredMenuItems.filter((item) =>
+    isMenuItemAllowed(item, sessionEnabledModules, userRole)
+  )
+
+  const effectiveMenuItems = moduleFilteredItems.map((item) => {
     if (item.label === "Keşif & Metraj (BoQ)") {
       return { ...item, href: boqHref }
     }

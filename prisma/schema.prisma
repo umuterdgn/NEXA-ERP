@@ -118,6 +118,9 @@ model Tenant {
   iyzicoSubId      String?      // Ödeme gateway abonelik ID'si
   features          String[]     @default(["BIM_VIEWER", "AI_VISION", "OCR", "DRONE"]) // Modül aç/kapat (SaaS Upsell)
   extraStorageQuota Int          @default(0) // Ekstra GB hakkı (Override)
+  maxStorageMB      Int          @default(51200) // Varsayılan 50 GB (50 * 1024)
+  usedStorageMB     Float        @default(0) // Anlık kullanılan alan (MB)
+  enabledModules    String[]     @default(["DASHBOARD", "PROJECTS", "FINANCE", "DOCUMENTS"]) // Hangi menüler açık?
   paymentStatus     String       @default("PAID") // "PAID", "PAST_DUE", "FAILED"
   isActive          Boolean      @default(true)
   createdAt         DateTime     @default(now())
@@ -132,6 +135,7 @@ model Tenant {
   systemLogs     SystemLog[]
   users          User[]          @relation("UserTenant")
   supportTickets SupportTicket[]
+  errorLogs      SystemErrorLog[]
 
   @@index([isActive])
   @@index([status])
@@ -174,6 +178,28 @@ model SystemAnnouncement {
 
   @@index([isActive])
   @@index([target])
+}
+
+// ============================================================================
+// SYSTEM ERROR LOGS (Global Hata & Crash Telemetrisi)
+// ============================================================================
+
+model SystemErrorLog {
+  id           String   @id @default(cuid())
+  tenantId     String?  // Hata hangi firmada yaşandı?
+  userId       String?  // Hangi kullanıcı yaşadı?
+  module       String   // Hatanın yaşandığı yer (Örn: "INSPECTION_OCR", "BIM", "FINANCE")
+  errorMessage String   // Hata mesajı
+  errorStack   String?  @db.Text // Teknik detay
+  isResolved   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([isResolved])
+  @@index([createdAt])
+  @@index([module])
 }
 
 // ============================================================================
@@ -2363,18 +2389,25 @@ model CoreTest {
 // ============================================================================
 
 model DocumentArchive {
-  id         String    @id @default(cuid())
-  projectId  String?
-  project    Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  title      String // Örn: Yapı Ruhsatı, Zemin Etüdü
-  category   String // Örn: RUHSAT, PROJE_CIZIMI, TUTANAK
-  fileUrl    String // Cloudinary URL
-  expiryDate DateTime? // Varsa Geçerlilik Tarihi
-  createdAt  DateTime  @default(now())
+  id              String    @id @default(cuid())
+  tenantId        String?   // SaaS Firma ID
+  projectId       String?
+  project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  title           String // Örn: Yapı Ruhsatı, Zemin Etüdü
+  category        String // Örn: RUHSAT, PROJE_CIZIMI, TUTANAK, BIM, INSPECTION
+  fileUrl         String // Cloudinary / S3 / Uploadthing URL
+  expiryDate      DateTime? // Varsa Geçerlilik Tarihi
+  isGlobalArchive Boolean   @default(true) // Merkezi arşivde görünsün mü?
+  sourceModule    String?   // Örn: "BIM", "INSPECTION_FORM", "WORK_PROOF", "FINANCE"
+  fileSizeMB      Float     @default(0) // Dosya boyutu MB
+  createdAt       DateTime  @default(now())
 
+  @@index([tenantId])
   @@index([projectId])
   @@index([category])
   @@index([expiryDate])
+  @@index([isGlobalArchive])
+  @@index([sourceModule])
 }
 
 // ============================================================================
@@ -2842,6 +2875,9 @@ model Document {
   status            String             @default("ACTIVE") // ACTIVE, OBSOLETE, DELETED
   notes             String?            @db.Text
   tenantId          String? // SaaS: Kiracı ID
+  isGlobalArchive   Boolean            @default(true) // Merkezi arşivde görünsün mü?
+  sourceModule      String?            // Örn: "BIM", "INSPECTION_FORM", "WORK_PROOF"
+  fileSizeMB        Float              @default(0)
   revisions         DocumentRevision[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -2852,6 +2888,7 @@ model Document {
   @@index([uploadedById])
   @@index([status])
   @@index([tenantId])
+  @@index([isGlobalArchive])
 }
 
 // ============================================================================

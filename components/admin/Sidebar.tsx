@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import NotificationBell from "@/components/NotificationBell"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
+import { isMenuItemAllowed } from "@/lib/utils/module-permissions"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -379,7 +380,14 @@ export default function AdminSidebar({
     )
   }
 
-  const effectiveMenuItems = rawMenuItems.map((item) => {
+  const sessionEnabledModules = (session?.user as any)?.enabledModules as string[] | undefined
+
+  // Multi-Tenant SaaS Modül İzinleri Filtresi (Kapalı menüler Sidebar'da tamamen gizlenir)
+  const moduleFilteredItems = rawMenuItems.filter((item) =>
+    isMenuItemAllowed(item, sessionEnabledModules, userRole)
+  )
+
+  const effectiveMenuItems = moduleFilteredItems.map((item) => {
     if (item.label === "Keşif & Metraj (BoQ)") {
       return { ...item, href: boqHref }
     }

@@ -8,12 +8,14 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
-import { History, FileText, Clock, User, X, Download } from "lucide-react"
+import { History, FileText, Clock, User, X, Download, FolderArchive, Loader2 } from "lucide-react"
+import JSZip from "jszip"
 
 export default function AdminArchivePage() {
   const [archives, setArchives] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [isExportingZip, setIsExportingZip] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [dateRange, setDateRange] = useState({ start: "", end: "" })
   const [sortBy, setSortBy] = useState<"date-asc" | "date-desc">("date-desc")
@@ -154,11 +156,94 @@ export default function AdminArchivePage() {
         : dateB.getTime() - dateA.getTime()
     })
 
+  const handleExportZip = async () => {
+    if (filteredArchives.length === 0) {
+      toast.error("İndirilecek evrak bulunamadı")
+      return
+    }
+
+    setIsExportingZip(true)
+    const toastId = toast.loading("Evraklar ZIP olarak paketleniyor...")
+
+    try {
+      const zip = new JSZip()
+      let count = 0
+
+      for (const item of filteredArchives) {
+        const fileUrl = item.driveUrl || item.fileUrl
+        if (!fileUrl) continue
+
+        try {
+          const res = await fetch(fileUrl)
+          if (!res.ok) throw new Error("Dosya getirilemedi")
+          const blob = await res.blob()
+          const cleanName = (item.documentName || item.fileName || `arsiv_${item.id}`).replace(/[/\\?%*:|"<>]/g, '_')
+          const filename = cleanName.endsWith(".pdf") ? cleanName : `${cleanName}.pdf`
+          zip.file(filename, blob)
+          count++
+        } catch (fetchErr) {
+          console.warn(`Dosya indirilemedi: ${fileUrl}`, fetchErr)
+        }
+      }
+
+      if (count === 0) {
+        toast.error("İndirilebilir geçerli dosya bulunamadı", { id: toastId })
+        setIsExportingZip(false)
+        return
+      }
+
+      const content = await zip.generateAsync({ type: "blob" })
+      const downloadUrl = URL.createObjectURL(content)
+      const link = document.createElement("a")
+      link.href = downloadUrl
+      link.download = `NEXA_Merkezi_Arsiv_${new Date().toISOString().slice(0, 10)}.zip`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(downloadUrl)
+
+      toast.success(`${count} adet evrak ZIP olarak başarıyla indirildi`, { id: toastId })
+    } catch (zipError) {
+      console.error("ZIP paketi hatası:", zipError)
+      toast.error("ZIP paketi oluşturulurken bir hata oluştu", { id: toastId })
+    } finally {
+      setIsExportingZip(false)
+    }
+  }
+
   return (
     <div className="lg:mt-0 mt-16">
-      <h1 className="text-2xl lg:text-3xl font-bold text-white mb-8">
-        Arşiv Yönetimi
-      </h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-white">
+            Arşiv Yönetimi
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Merkezi Arşiv Senkronizasyonu & Toplu İndirme
+          </p>
+        </div>
+
+        <button
+          onClick={handleExportZip}
+          disabled={isExportingZip || filteredArchives.length === 0}
+          className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg shadow-blue-500/20 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {isExportingZip ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Paketleniyor...</span>
+            </>
+          ) : (
+            <>
+              <FolderArchive className="w-5 h-5" />
+              <span>Tümünü Dışa Aktar (ZIP)</span>
+              <span className="ml-1.5 px-2 py-0.5 text-xs bg-white/20 rounded-full">
+                {filteredArchives.length}
+              </span>
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Upload Section */}
       <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">

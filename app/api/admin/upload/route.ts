@@ -6,6 +6,8 @@
 
 import { NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
+import { auth } from '@/lib/auth'
+import { syncToGlobalArchive } from '@/lib/services/archive-sync'
 
 // Vercel'de timeout olmaması için süreyi uzatıyoruz (Opsiyonel ama hayat kurtarır)
 export const maxDuration = 60
@@ -21,6 +23,11 @@ export async function POST(request: Request) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     if (!file) return NextResponse.json({ error: 'Dosya bulunamadı' }, { status: 400 })
+
+    const session = await auth().catch(() => null)
+    const effectiveTenantId = (formData.get('tenantId') as string) || (session?.user as any)?.tenantId || null
+    const projectId = (formData.get('projectId') as string) || null
+    const sourceModule = (formData.get('sourceModule') as string) || "BIM"
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
@@ -48,7 +55,25 @@ export async function POST(request: Request) {
       uploadStream.end(buffer)
     })
 
-    return NextResponse.json({ url: (result as any).secure_url })
+    const fileUrl = (result as any).secure_url
+
+    // 🌟 Global Arşiv ve Kota Senkronizasyonu
+    const syncRes = await syncToGlobalArchive({
+      title: file.name,
+      fileUrl,
+      fileSizeBytes: file.size,
+      sourceModule: sourceModule,
+      category: isGLB ? "BIM_MODEL" : "IMAGE",
+      tenantId: effectiveTenantId,
+      projectId: projectId,
+      uploadedById: session?.user?.id || null
+    })
+
+    return NextResponse.json({ 
+      url: fileUrl,
+      fileSizeMB: syncRes?.fileSizeMB || Number((file.size / (1024 * 1024)).toFixed(3)),
+      archived: true
+    })
   } catch (error: any) {
     console.error("🚨 Cloudinary Yükleme Hatası:", error)
     return NextResponse.json({ 

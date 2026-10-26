@@ -36,8 +36,29 @@ import {
   Activity,
   Server,
   TrendingUp,
+  Radio,
+  Bug,
+  Check,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import toast from "react-hot-toast";
+
+interface ErrorRadarItem {
+  id: string;
+  tenantId?: string | null;
+  userId?: string | null;
+  module: string;
+  errorMessage: string;
+  errorStack?: string | null;
+  isResolved: boolean;
+  createdAt: string;
+  tenant?: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
+}
 
 interface TenantItem {
   id: string;
@@ -82,6 +103,12 @@ export default function SuperadminDashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [togglingTenantId, setTogglingTenantId] = useState<string | null>(null);
 
+  // Canlı Hata Radarı State
+  const [errorLogs, setErrorLogs] = useState<ErrorRadarItem[]>([]);
+  const [loadingErrors, setLoadingErrors] = useState(false);
+  const [expandedErrorId, setExpandedErrorId] = useState<string | null>(null);
+  const [resolvingErrorId, setResolvingErrorId] = useState<string | null>(null);
+
   // New Tenant Modal Form
   const [newTenantData, setNewTenantData] = useState({
     name: "",
@@ -96,7 +123,46 @@ export default function SuperadminDashboardPage() {
   useEffect(() => {
     fetchTenants();
     fetchMaintenanceStatus();
+    fetchErrorLogs();
   }, []);
+
+  const fetchErrorLogs = async () => {
+    setLoadingErrors(true);
+    try {
+      const res = await fetch("/api/telemetry/error");
+      const data = await res.json();
+      if (data.success) {
+        setErrorLogs(data.logs || []);
+      }
+    } catch (e) {
+      console.error("Hata radarı verisi alınamadı:", e);
+    } finally {
+      setLoadingErrors(false);
+    }
+  };
+
+  const handleResolveError = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setResolvingErrorId(id);
+    try {
+      const res = await fetch("/api/telemetry/error", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, isResolved: true }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Hata çözüldü olarak işaretlendi");
+        setErrorLogs((prev) =>
+          prev.map((log) => (log.id === id ? { ...log, isResolved: true } : log))
+        );
+      }
+    } catch {
+      toast.error("İşlem başarısız");
+    } finally {
+      setResolvingErrorId(null);
+    }
+  };
 
   const fetchTenants = async () => {
     setLoading(true);
@@ -370,6 +436,137 @@ export default function SuperadminDashboardPage() {
             <span>AWS Frankfurt (eu-central-1)</span>
           </div>
         </div>
+      </div>
+
+      {/* 🚨 CANLI HATA RADARI (Live Telemetry Crash Watch) */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3.5 w-3.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500"></span>
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Canlı Hata Radarı (Otonom Crash Telemetry)</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-950 text-rose-300 border border-rose-500/40">
+                  {errorLogs.filter((l) => !l.isResolved).length} Aktif Hata
+                </span>
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Sistem genelinde veya firma portallarında (Admin/Inspection) yakalanan anlık çökmeler ve API hataları.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchErrorLogs}
+            disabled={loadingErrors}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition cursor-pointer self-start sm:self-auto"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingErrors ? "animate-spin text-purple-400" : ""}`} />
+            <span>Radarı Yenile</span>
+          </button>
+        </div>
+
+        {loadingErrors && errorLogs.length === 0 ? (
+          <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+            <span>Hata telemetrisi taranıyor...</span>
+          </div>
+        ) : errorLogs.length === 0 ? (
+          <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 flex items-center gap-3 text-emerald-300 text-xs">
+            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+            <span>Radar Temiz: Sistemde aktif çökme veya hata kaydı bulunmuyor. Tüm servisler nominal hızda çalışıyor.</span>
+          </div>
+        ) : (
+          <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+            {errorLogs.map((log) => {
+              const isExpanded = expandedErrorId === log.id;
+              const isResolved = log.isResolved;
+
+              return (
+                <div
+                  key={log.id}
+                  className={`p-3.5 rounded-xl border transition-all ${
+                    isResolved
+                      ? "bg-slate-950/40 border-slate-800/80 opacity-60"
+                      : "bg-rose-950/20 border-rose-500/40 shadow-sm shadow-rose-950/50"
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-start sm:items-center gap-2.5">
+                      <span
+                        className={`h-2.5 w-2.5 rounded-full shrink-0 mt-1 sm:mt-0 ${
+                          isResolved ? "bg-slate-600" : "bg-rose-500 animate-pulse"
+                        }`}
+                      />
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 border border-slate-700 text-purple-300">
+                        {log.module}
+                      </span>
+                      <span className="text-xs font-semibold text-white">
+                        {log.tenant?.name || "Global / Anonim Tenant"}
+                      </span>
+                      {log.tenant?.type && (
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          ({log.tenant.type === "INSPECTION" ? "Yapı Denetim" : "Müteahhit"})
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {new Date(log.createdAt).toLocaleTimeString("tr-TR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </span>
+
+                      {!isResolved && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleResolveError(log.id, e)}
+                          disabled={resolvingErrorId === log.id}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>Çözüldü</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hata Mesajı */}
+                  <div className="mt-2 text-xs font-mono text-rose-300/90 pl-5 break-words">
+                    {log.errorMessage}
+                  </div>
+
+                  {/* Teknik Stack Detayı Toggle */}
+                  {log.errorStack && (
+                    <div className="mt-2 pl-5">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedErrorId(isExpanded ? null : log.id)}
+                        className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 font-mono transition cursor-pointer"
+                      >
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        <span>{isExpanded ? "Stack Trace Gizle" : "Teknik Detayı & Stack Trace Göster"}</span>
+                      </button>
+
+                      {isExpanded && (
+                        <pre className="mt-2 p-3 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-300 font-mono overflow-x-auto max-h-48 whitespace-pre-wrap">
+                          {log.errorStack}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Filter and Search Bar */}

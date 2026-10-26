@@ -68,33 +68,18 @@ export async function GET(
       return NextResponse.json({ error: "Tenant bulunamadı" }, { status: 404 })
     }
 
-    // Plan bazlı varsayılan depolama kotaları (GB cinsinden)
-    const BASE_STORAGE_LIMITS: Record<string, number> = {
-      STARTER: 50,
-      PROFESSIONAL: 250,
-      ENTERPRISE: 1000,
-    }
-
-    const baseQuota = BASE_STORAGE_LIMITS[tenant.subscriptionPlan] || 100
+    // Depolama Kotası ve Gerçek Kullanım
+    const baseQuota = Number(((tenant.maxStorageMB || 51200) / 1024).toFixed(1))
     const extraQuota = tenant.extraStorageQuota || 0
-    const totalStorageQuotaGb = baseQuota + extraQuota
+    const totalStorageQuotaGb = Number((baseQuota + extraQuota).toFixed(1))
+    const totalMaxMB = totalStorageQuotaGb * 1024
 
-    // Proje, doküman ve drone medyasına göre hesaplanan gerçekçi S3 kullanımı
-    const estimatedUsedGb = Math.min(
-      totalStorageQuotaGb,
-      Math.round(
-        (tenant._count.projects * 4.2 +
-          tenant._count.users * 0.8 +
-          tenant._count.droneMedia * 8.5 +
-          12) *
-          10
-      ) / 10
-    )
+    const actualUsedMB = tenant.usedStorageMB || 0
+    const actualUsedGb = Number((actualUsedMB / 1024).toFixed(2))
 
-    const usagePercentage = Math.min(
-      100,
-      Math.round((estimatedUsedGb / totalStorageQuotaGb) * 100)
-    )
+    const usagePercentage = totalMaxMB > 0 
+      ? Math.min(100, Math.round((actualUsedMB / totalMaxMB) * 100)) 
+      : 0
 
     return NextResponse.json({
       success: true,
@@ -104,7 +89,8 @@ export async function GET(
           baseQuotaGb: baseQuota,
           extraQuotaGb: extraQuota,
           totalQuotaGb: totalStorageQuotaGb,
-          usedGb: estimatedUsedGb,
+          usedGb: actualUsedGb,
+          usedMb: actualUsedMB,
           usagePercentage,
         },
       },
@@ -126,12 +112,24 @@ export async function PATCH(
     }
 
     const { id: tenantId } = await params
-    const body = await request.json()
-    const { extraStorageQuota, licenses, status, paymentStatus, subscriptionPlan, features } = body
+    const { 
+      extraStorageQuota, 
+      maxStorageMB,
+      usedStorageMB,
+      enabledModules,
+      licenses, 
+      status, 
+      paymentStatus, 
+      subscriptionPlan, 
+      features 
+    } = body
 
     const dataToUpdate: any = {}
 
     if (typeof extraStorageQuota === "number") dataToUpdate.extraStorageQuota = extraStorageQuota
+    if (typeof maxStorageMB === "number") dataToUpdate.maxStorageMB = maxStorageMB
+    if (typeof usedStorageMB === "number") dataToUpdate.usedStorageMB = usedStorageMB
+    if (Array.isArray(enabledModules)) dataToUpdate.enabledModules = enabledModules
     if (typeof licenses === "number") dataToUpdate.licenses = licenses
     if (status) dataToUpdate.status = status
     if (paymentStatus) dataToUpdate.paymentStatus = paymentStatus

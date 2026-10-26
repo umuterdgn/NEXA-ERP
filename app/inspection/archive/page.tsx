@@ -24,9 +24,12 @@ import {
   Calendar,
   Building2,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  FolderArchive,
+  Loader2
 } from "lucide-react"
 import StorageWidget from "@/components/StorageWidget"
+import JSZip from "jszip"
 
 interface Document {
   id: string
@@ -51,6 +54,7 @@ export default function DocumentsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [isExportingZip, setIsExportingZip] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   
   // Filters
@@ -280,6 +284,60 @@ export default function DocumentsPage() {
     return matchesProject && matchesCategory && matchesSearch
   })
 
+  const handleExportZip = async () => {
+    if (filteredDocuments.length === 0) {
+      toast.error("İndirilecek evrak bulunamadı")
+      return
+    }
+
+    setIsExportingZip(true)
+    const toastId = toast.loading("Evraklar ZIP olarak paketleniyor...")
+
+    try {
+      const zip = new JSZip()
+      let count = 0
+
+      for (const doc of filteredDocuments) {
+        if (!doc.fileUrl) continue
+
+        try {
+          const res = await fetch(doc.fileUrl)
+          if (!res.ok) throw new Error("Dosya getirilemedi")
+          const blob = await res.blob()
+          const cleanTitle = (doc.title || `evrak_${doc.id}`).replace(/[/\\?%*:|"<>]/g, '_')
+          const filename = cleanTitle.includes(".") ? cleanTitle : `${cleanTitle}.pdf`
+          zip.file(filename, blob)
+          count++
+        } catch (fetchErr) {
+          console.warn(`Dosya indirilemedi: ${doc.fileUrl}`, fetchErr)
+        }
+      }
+
+      if (count === 0) {
+        toast.error("İndirilebilir geçerli dosya bulunamadı", { id: toastId })
+        setIsExportingZip(false)
+        return
+      }
+
+      const content = await zip.generateAsync({ type: "blob" })
+      const downloadUrl = URL.createObjectURL(content)
+      const link = document.createElement("a")
+      link.href = downloadUrl
+      link.download = `Yapı_Denetim_Arsiv_${new Date().toISOString().slice(0, 10)}.zip`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(downloadUrl)
+
+      toast.success(`${count} adet evrak ZIP olarak başarıyla indirildi`, { id: toastId })
+    } catch (zipError) {
+      console.error("ZIP paketi hatası:", zipError)
+      toast.error("ZIP paketi oluşturulurken bir hata oluştu", { id: toastId })
+    } finally {
+      setIsExportingZip(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="lg:mt-0 mt-16">
@@ -298,13 +356,35 @@ export default function DocumentsPage() {
           </h1>
           <p className="text-slate-400 mt-1">Proje evrakları ve resmi belgeler</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium"
-        >
-          <Plus className="w-5 h-5" />
-          Yeni Evrak Yükle
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportZip}
+            disabled={isExportingZip || filteredDocuments.length === 0}
+            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-lg transition-all font-medium shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {isExportingZip ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Paketleniyor...</span>
+              </>
+            ) : (
+              <>
+                <FolderArchive className="w-5 h-5" />
+                <span>Tümünü Dışa Aktar (ZIP)</span>
+                <span className="ml-1 px-2 py-0.5 text-xs bg-white/20 rounded-full">
+                  {filteredDocuments.length}
+                </span>
+              </>
+            )}
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium shadow-lg shadow-blue-500/20 cursor-pointer"
+          >
+            <Plus className="w-5 h-5" />
+            Yeni Evrak Yükle
+          </button>
+        </div>
       </div>
 
       {/* Storage Widget */}

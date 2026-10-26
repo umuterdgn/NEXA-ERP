@@ -28,7 +28,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // First try to find user by email in User table (for admin users)
         let user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
-          include: { company: true }
+          include: { company: true, tenant: true }
         })
 
         if (!user) {
@@ -47,7 +47,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (personnel.userId) {
               user = await (prisma as any).user.findUnique({
                 where: { id: personnel.userId },
-                include: { company: true }
+                include: { company: true, tenant: true }
               })
             } else {
               // Personnel exists but no linked user account
@@ -99,6 +99,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           companyId: user.companyId || null,
           companyType: effectiveCompanyType,
           tenantId: user.tenantId || null,
+          enabledModules: (user as any).tenant?.enabledModules || null,
           permissions: (user as any).permissions || []
         }
       }
@@ -112,6 +113,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.companyId = (user as any).companyId
         token.companyType = (user as any).companyType
         token.tenantId = (user as any).tenantId || null
+        token.enabledModules = (user as any).enabledModules || null
         token.permissions = user.permissions
       }
       return token
@@ -123,6 +125,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.companyId = token.companyId as any
         session.user.companyType = token.companyType as any
         ;(session.user as any).tenantId = (token as any).tenantId || null
+        ;(session.user as any).enabledModules = (token as any).enabledModules || null
         session.user.permissions = token.permissions as any
       }
       return session
