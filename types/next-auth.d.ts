@@ -12,7 +12,8 @@ declare module "next-auth" {
     user: {
       id: string
       role: UserRole
-      permissions: string[]
+      tenantId?: string | null
+      permissions?: string[]
       companyId?: string | null
       companyType?: string | null
     } & DefaultSession["user"]
@@ -20,7 +21,8 @@ declare module "next-auth" {
 
   interface User {
     role: UserRole
-    permissions: string[]
+    tenantId?: string | null
+    permissions?: string[]
     companyId?: string | null
     companyType?: string | null
   }
@@ -28,8 +30,10 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    role: UserRole
-    permissions: string[]
+    id?: string
+    role?: UserRole
+    tenantId?: string | null
+    permissions?: string[]
     companyId?: string | null
     companyType?: string | null
   }

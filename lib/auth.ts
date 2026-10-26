@@ -96,14 +96,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
-          companyId: user.companyId || null,
-          companyType: effectiveCompanyType,
           tenantId: user.tenantId || null,
-          enabledModules: (user as any).tenant?.enabledModules || null,
-          logoUrl: (user as any).tenant?.logoUrl || null,
-          primaryColor: (user as any).tenant?.primaryColor || "#3B82F6",
-          isWhiteLabelActive: Boolean((user as any).tenant?.isWhiteLabelActive),
-          permissions: (user as any).permissions || []
         }
       }
     })
@@ -111,31 +104,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
+        // SADECE GEREKLİ OLAN KÜÇÜK VERİLERİ SAKLA
         token.id = user.id
-        token.companyId = (user as any).companyId
-        token.companyType = (user as any).companyType
+        token.role = user.role
         token.tenantId = (user as any).tenantId || null
-        token.enabledModules = (user as any).enabledModules || null
-        token.logoUrl = (user as any).logoUrl || null
-        token.primaryColor = (user as any).primaryColor || null
-        token.isWhiteLabelActive = (user as any).isWhiteLabelActive || false
-        token.permissions = user.permissions
       }
       return token
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.role = token.role as any
+      if (token && session.user) {
         session.user.id = token.id as string
-        session.user.companyId = token.companyId as any
-        session.user.companyType = token.companyType as any
-        ;(session.user as any).tenantId = (token as any).tenantId || null
-        ;(session.user as any).enabledModules = (token as any).enabledModules || null
-        ;(session.user as any).logoUrl = (token as any).logoUrl || null
-        ;(session.user as any).primaryColor = (token as any).primaryColor || null
-        ;(session.user as any).isWhiteLabelActive = Boolean((token as any).isWhiteLabelActive)
-        session.user.permissions = token.permissions as any
+        session.user.role = token.role as any
+        ;(session.user as any).tenantId = (token as any).tenantId as string || null
       }
       return session
     }

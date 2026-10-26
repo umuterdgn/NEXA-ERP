@@ -25,20 +25,17 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id
         token.role = user.role
-        token.companyId = (user as any).companyId
-        token.tenantId = (user as any).tenantId
-        token.permissions = user.permissions
+        token.tenantId = (user as any).tenantId || null
       }
       return token
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub!
+      if (token && session.user) {
+        session.user.id = (token.id as string) || token.sub!
         session.user.role = token.role as any
-        ;(session.user as any).companyId = token.companyId as any
-        ;(session.user as any).tenantId = token.tenantId as any
-        session.user.permissions = token.permissions as any[]
+        ;(session.user as any).tenantId = (token as any).tenantId as string || null
       }
       return session
     },
