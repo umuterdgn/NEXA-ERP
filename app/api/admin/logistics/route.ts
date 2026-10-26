@@ -125,6 +125,8 @@ export async function POST(request: Request) {
     const schedule = await prisma.logisticsSchedule.create({
       data: {
         title,
+        type: body.type || "MALZEME_TESLİMAT",
+        location: body.location || "Şantiye",
         scheduledAt: new Date(scheduledAt),
         timeSlot,
         vehiclePlate,

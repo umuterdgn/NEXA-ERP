@@ -27,7 +27,7 @@ export default async function ProcurementPage() {
     where: tenantFilter,
     include: {
       project: {
-        select: { name: true },
+        select: { title: true, name: true },
       },
       requester: {
         select: { name: true },
@@ -45,8 +45,7 @@ export default async function ProcurementPage() {
     createdAt: req.createdAt.toISOString(),
     updatedAt: req.updatedAt.toISOString(),
     project: {
-      ...req.project,
-      name: req.project.name || "İsimsiz Proje"
+      name: (req.project as any)?.title || (req.project as any)?.name || "İsimsiz Proje"
     },
     requester: {
       ...req.requester,
