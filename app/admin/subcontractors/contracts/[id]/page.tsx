@@ -5,6 +5,8 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { ArrowLeft, Calendar, Building2, User, FileText, AlertCircle, CheckCircle } from "lucide-react"
 import Link from "next/link"
 
@@ -12,9 +14,22 @@ export const dynamic = 'force-dynamic'
 
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const session = await auth()
+  const userRole = session?.user?.role
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const tenantId = (session?.user as any)?.tenantId as string | undefined
 
-  const contract = await prisma.contract.findUnique({
-    where: { id },
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login")
+  }
+
+  const tenantFilter = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
+  const contract = await prisma.contract.findFirst({
+    where: {
+      id,
+      ...tenantFilter
+    },
     include: {
       project: {
         select: { id: true, name: true, city: true, district: true }

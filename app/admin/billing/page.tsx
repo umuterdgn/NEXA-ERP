@@ -5,12 +5,26 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import BillingClient from "./BillingClient"
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminBillingPage() {
+  const session = await auth()
+  const userRole = session?.user?.role
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login")
+  }
+
+  const tenantFilter = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
   const billings = await prisma.progressBilling.findMany({
+    where: tenantFilter,
     include: {
       contract: {
         include: {
@@ -27,12 +41,18 @@ export default async function AdminBillingPage() {
   })
 
   const subcontractors = await prisma.company.findMany({
-    where: { type: "SUBCONTRACTOR" },
+    where: {
+      type: "SUBCONTRACTOR",
+      ...tenantFilter
+    },
     select: { id: true, name: true }
   })
 
   const projects = await prisma.project.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...tenantFilter
+    },
     select: { id: true, name: true, contractValue: true }
   })
 

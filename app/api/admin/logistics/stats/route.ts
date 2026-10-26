@@ -8,6 +8,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { liveLogisticsCache } from "@/lib/logistics-cache";
 
 export const dynamic = "force-dynamic";
@@ -34,9 +35,21 @@ function calculateHaversineDistance(
 
 export async function GET() {
   try {
+    const session = await auth();
+    const userRole = session?.user?.role as string;
+    const isSuperAdmin = userRole === "SUPER_ADMIN";
+    const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {};
+
     // 1. Aktif Sevkiyatları Çek
     const activeShipments = await prisma.shipmentTracking.findMany({
       where: {
+        ...tenantFilter,
         status: { in: ["PREPARING", "ON_THE_WAY", "ARRIVED"] },
       },
       include: {
@@ -112,6 +125,7 @@ export async function GET() {
     // 3. Veritabanındaki Aktif DRIVER Rolüne Sahip Kullanıcıları Çek
     const dbDrivers = await prisma.user.findMany({
       where: {
+        ...tenantFilter,
         role: "DRIVER",
       },
       select: {
@@ -130,6 +144,7 @@ export async function GET() {
     // Günlük sevkiyatları çek
     const todaySchedules = await prisma.logisticsSchedule.findMany({
       where: {
+        ...tenantFilter,
         scheduledAt: { gte: startOfToday },
       },
       select: {

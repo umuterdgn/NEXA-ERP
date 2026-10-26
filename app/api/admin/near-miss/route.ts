@@ -5,13 +5,24 @@
  */
 
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET() {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const reports = await prisma.nearMissReport.findMany({
+      where: tenantFilter,
       orderBy: {
         createdAt: 'desc'
       }
@@ -29,8 +40,17 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
-    const { isAnonymous, location, category, severity, description } = body
+    const { isAnonymous, location, category, severity, description, projectId } = body
 
     const report = await prisma.nearMissReport.create({
       data: {
@@ -39,7 +59,9 @@ export async function POST(request: Request) {
         category,
         severity,
         description,
-        status: "Beklemede"
+        status: "Beklemede",
+        projectId: projectId || null,
+        tenantId: tenantId || null,
       }
     })
 

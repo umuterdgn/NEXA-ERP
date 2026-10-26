@@ -6,15 +6,26 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const formId = searchParams.get("formId")
     const projectId = searchParams.get("projectId")
     const status = searchParams.get("status")
 
-    const whereClause: any = {}
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+    const whereClause: any = { ...tenantFilter }
     if (formId) whereClause.formId = formId
     if (projectId) whereClause.projectId = projectId
     if (status && status !== "ALL") whereClause.status = status
@@ -47,10 +58,28 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { id, status, notes } = await request.json()
 
     if (!id) {
       return NextResponse.json({ error: "Kayıt ID zorunludur." }, { status: 400 })
+    }
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.formSubmission.findFirst({
+        where: { id, tenantId }
+      })
+      if (!existing) {
+        return NextResponse.json({ error: "Kayıt bulunamadı veya yetkisiz erişim" }, { status: 404 })
+      }
     }
 
     const updated = await prisma.formSubmission.update({
@@ -73,11 +102,29 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
 
     if (!id) {
       return NextResponse.json({ error: "Kayıt ID zorunludur." }, { status: 400 })
+    }
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.formSubmission.findFirst({
+        where: { id, tenantId }
+      })
+      if (!existing) {
+        return NextResponse.json({ error: "Kayıt bulunamadı veya yetkisiz erişim" }, { status: 404 })
+      }
     }
 
     await prisma.formSubmission.delete({

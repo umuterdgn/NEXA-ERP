@@ -6,22 +6,29 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const companyId = searchParams.get("companyId")
 
-    if (!companyId) {
-      return NextResponse.json(
-        { error: "Company ID gereklidir" },
-        { status: 400 }
-      )
+    const whereClause: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+    if (companyId) {
+      whereClause.companyId = companyId
     }
 
-    // @ts-ignore - companyId field exists after schema update
     const personnel = await prisma.personel.findMany({
-      where: { companyId },
+      where: whereClause,
       orderBy: { createdAt: "desc" }
     })
 
@@ -37,14 +44,23 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { companyId, ...personnelData } = body
 
-    // @ts-ignore - companyId field exists after schema update
     const personnel = await prisma.personel.create({
       data: {
         ...personnelData,
-        companyId // Will be validated/forced by frontend
+        companyId,
+        tenantId: tenantId || null,
       }
     })
 

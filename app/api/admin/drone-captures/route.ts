@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 // GET /api/admin/drone-captures?projectId=...
 export async function GET(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
 
@@ -14,8 +24,13 @@ export async function GET(request: Request) {
       )
     }
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const captures = await prisma.droneCapture.findMany({
-      where: { projectId },
+      where: {
+        projectId,
+        ...tenantFilter,
+      },
       orderBy: { captureDate: "asc" }
     })
 
@@ -32,6 +47,15 @@ export async function GET(request: Request) {
 // POST /api/admin/drone-captures
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { projectId, stageName, modelUrl, captureDate, progressPct, aiAnalysis } = body
 
@@ -49,7 +73,8 @@ export async function POST(request: Request) {
         modelUrl,
         captureDate: captureDate ? new Date(captureDate) : new Date(),
         progressPct: typeof progressPct === "number" ? progressPct : parseInt(progressPct || "0", 10),
-        aiAnalysis: aiAnalysis || null
+        aiAnalysis: aiAnalysis || null,
+        tenantId: tenantId || null,
       }
     })
 

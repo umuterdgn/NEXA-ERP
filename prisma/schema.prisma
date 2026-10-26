@@ -108,28 +108,28 @@ enum CompanyType {
 // ============================================================================
 
 model Tenant {
-  id               String       @id @default(cuid())
-  slug             String?      @unique // URL için benzersiz kısa ad (Örn: "nexa-insaat")
-  name             String       // Şirket adı: Örn: "Demirtaş İnşaat Ltd."
-  domain           String?      // Özel domain (opsiyonel)
-  type             CompanyType  @default(MAIN_CONTRACTOR) // Firma türü: MAIN_CONTRACTOR veya INSPECTION
-  subscriptionPlan String       @default("STARTER") // "STARTER", "PROFESSIONAL", "ENTERPRISE"
-  status           String       @default("ACTIVE") // "ACTIVE", "SUSPENDED" (Ödeme yapmayanlar için)
-  licenses         Int          @default(50) // Kaç kullanıcı ekleyebilir? (Örn: 50 kişi)
-  maxUsers         Int          @default(10) // Lisans/Koltuk sayısı
-  iyzicoSubId      String?      // Ödeme gateway abonelik ID'si
-  features          String[]     @default(["BIM_VIEWER", "AI_VISION", "OCR", "DRONE"]) // Modül aç/kapat (SaaS Upsell)
-  extraStorageQuota Int          @default(0) // Ekstra GB hakkı (Override)
-  maxStorageMB      Int          @default(51200) // Varsayılan 50 GB (50 * 1024)
-  usedStorageMB     Float        @default(0) // Anlık kullanılan alan (MB)
-  enabledModules    String[]     @default(["DASHBOARD", "PROJECTS", "FINANCE", "DOCUMENTS"]) // Hangi menüler açık?
-  logoUrl           String?      // Firmanın yüklenecek olan logosunun S3/Cloudinary URL'si
-  primaryColor      String?      @default("#3B82F6") // Varsayılan Tailwind Blue-500 (HEX kodu)
+  id                 String      @id @default(cuid())
+  slug               String?     @unique // URL için benzersiz kısa ad (Örn: "nexa-insaat")
+  name               String // Şirket adı: Örn: "Demirtaş İnşaat Ltd."
+  domain             String? // Özel domain (opsiyonel)
+  type               CompanyType @default(MAIN_CONTRACTOR) // Firma türü: MAIN_CONTRACTOR veya INSPECTION
+  subscriptionPlan   String      @default("STARTER") // "STARTER", "PROFESSIONAL", "ENTERPRISE"
+  status             String      @default("ACTIVE") // "ACTIVE", "SUSPENDED" (Ödeme yapmayanlar için)
+  licenses           Int         @default(50) // Kaç kullanıcı ekleyebilir? (Örn: 50 kişi)
+  maxUsers           Int         @default(10) // Lisans/Koltuk sayısı
+  iyzicoSubId        String? // Ödeme gateway abonelik ID'si
+  features           String[]    @default(["BIM_VIEWER", "AI_VISION", "OCR", "DRONE"]) // Modül aç/kapat (SaaS Upsell)
+  extraStorageQuota  Int         @default(0) // Ekstra GB hakkı (Override)
+  maxStorageMB       Int         @default(51200) // Varsayılan 50 GB (50 * 1024)
+  usedStorageMB      Float       @default(0) // Anlık kullanılan alan (MB)
+  enabledModules     String[]    @default(["DASHBOARD", "PROJECTS", "FINANCE", "DOCUMENTS"]) // Hangi menüler açık?
+  logoUrl            String? // Firmanın yüklenecek olan logosunun S3/Cloudinary URL'si
+  primaryColor       String?     @default("#3B82F6") // Varsayılan Tailwind Blue-500 (HEX kodu)
   isWhiteLabelActive Boolean     @default(false) // Bu özellik sadece Premium paketlerde açık olabilir
-  paymentStatus     String       @default("PAID") // "PAID", "PAST_DUE", "FAILED"
-  isActive          Boolean      @default(true)
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  paymentStatus      String      @default("PAID") // "PAID", "PAST_DUE", "FAILED"
+  isActive           Boolean     @default(true)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   projects       Project[]
   yibfProjects   YibfProject[]
@@ -138,7 +138,7 @@ model Tenant {
   droneMedia     DroneMedia[]
   chatThreads    ChatThread[]
   systemLogs     SystemLog[]
-  users          User[]          @relation("UserTenant")
+  users          User[]           @relation("UserTenant")
   supportTickets SupportTicket[]
   errorLogs      SystemErrorLog[]
 
@@ -192,15 +192,15 @@ model SystemAnnouncement {
 
 model SystemErrorLog {
   id           String   @id @default(cuid())
-  tenantId     String?  // Hata hangi firmada yaşandı?
-  userId       String?  // Hangi kullanıcı yaşadı?
-  module       String   // Hatanın yaşandığı yer (Örn: "INSPECTION_OCR", "BIM", "FINANCE")
-  errorMessage String   // Hata mesajı
+  tenantId     String? // Hata hangi firmada yaşandı?
+  userId       String? // Hangi kullanıcı yaşadı?
+  module       String // Hatanın yaşandığı yer (Örn: "INSPECTION_OCR", "BIM", "FINANCE")
+  errorMessage String // Hata mesajı
   errorStack   String?  @db.Text // Teknik detay
   isResolved   Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  tenant       Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([isResolved])
@@ -298,8 +298,8 @@ model Project {
   shiftEnd                 String                    @default("17:00") // Mesai Bitiş Saati
   // Digital Twin / YİBF fields
   yibfNo                   String?                   @unique // Yapı İzleme Belgesi Numarası
-  maksAdaParsel            String?                   // MAKS Mekansal Adres Kayıt Sistemi Ada/Parsel
-  yambisId                 String?                   // YAMBİS Müteahhit Sicil / Yetki Belge No
+  maksAdaParsel            String? // MAKS Mekansal Adres Kayıt Sistemi Ada/Parsel
+  yambisId                 String? // YAMBİS Müteahhit Sicil / Yetki Belge No
   totalArea                Float? // Toplam inşaat alanı (m2)
   totalConstructionArea    Float? // Toplam inşaat alanı (YİBF)
   buildingClass            String? // Yapı Sınıfı (Örn: 3B, IV-A)
@@ -452,14 +452,14 @@ model GeofenceZone {
   id          String   @id @default(cuid())
   projectId   String
   tenantId    String
-  name        String   // Örn: "Ana Şantiye Sınırı", "Kule Vinç Altı (Tehlikeli)"
-  type        String   // "MAIN_SITE", "DANGER_ZONE", "REST_AREA"
-  coordinates Json     // Poligonun nokta koordinatları: [{lat, lng}, {lat, lng}, ...]
+  name        String // Örn: "Ana Şantiye Sınırı", "Kule Vinç Altı (Tehlikeli)"
+  type        String // "MAIN_SITE", "DANGER_ZONE", "REST_AREA"
+  coordinates Json // Poligonun nokta koordinatları: [{lat, lng}, {lat, lng}, ...]
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([tenantId])
@@ -472,27 +472,27 @@ model GeofenceZone {
 // ============================================================================
 
 model CoreSample {
-  id              String    @id @default(cuid())
-  qrCode          String    @unique // Fiziksel QR barkod numarası
-  ebisRfidTag     String?   @unique // EBİS Çipli Beton RFID Etiket No
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId       String
-  takenBy         User?     @relation(fields: [takenById], references: [id], onDelete: Cascade) // Numuneyi alan denetçi
-  takenById       String?
-  inspectorId     String?   // Alternatif denetçi ID (Yapı Denetim)
-  location        String?   // Örn: "A Blok, 3. Kat Kolon"
-  status          String    @default("WAITING_TEST") // WAITING_TEST, PASSED, FAILED, TAKEN, IN_LAB, TESTED
-  pourDate        DateTime? @default(now()) // Beton döküm tarihi
-  testDate        DateTime? // 7 veya 28 günlük kırım tarihi
-  strengthResult  Float?    // MPa cinsinden sonuç
-  takenAt         DateTime? @default(now())
-  testedAt        DateTime?
-  resultStrength  Float?    // Laboratuvar kırım sonucu (MPa vb.)
-  isPassed        Boolean?  // İstenilen dayanıma ulaştı mı?
-  reportFileUrl   String?   // Yüklenen OCR PDF/Resim dosyası (UploadThing)
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @default(now()) @updatedAt
+  id             String    @id @default(cuid())
+  qrCode         String    @unique // Fiziksel QR barkod numarası
+  ebisRfidTag    String?   @unique // EBİS Çipli Beton RFID Etiket No
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId      String
+  takenBy        User?     @relation(fields: [takenById], references: [id], onDelete: Cascade) // Numuneyi alan denetçi
+  takenById      String?
+  inspectorId    String? // Alternatif denetçi ID (Yapı Denetim)
+  location       String? // Örn: "A Blok, 3. Kat Kolon"
+  status         String    @default("WAITING_TEST") // WAITING_TEST, PASSED, FAILED, TAKEN, IN_LAB, TESTED
+  pourDate       DateTime? @default(now()) // Beton döküm tarihi
+  testDate       DateTime? // 7 veya 28 günlük kırım tarihi
+  strengthResult Float? // MPa cinsinden sonuç
+  takenAt        DateTime? @default(now())
+  testedAt       DateTime?
+  resultStrength Float? // Laboratuvar kırım sonucu (MPa vb.)
+  isPassed       Boolean? // İstenilen dayanıma ulaştı mı?
+  reportFileUrl  String? // Yüklenen OCR PDF/Resim dosyası (UploadThing)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
 
   @@index([projectId])
   @@index([takenById])
@@ -509,9 +509,9 @@ model YibfDocument {
   id           String   @id @default(cuid())
   project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId    String
-  documentType String   // Örn: "Seviye Tespit Tutanağı", "Beton Döküm Tutanağı"
+  documentType String // Örn: "Seviye Tespit Tutanağı", "Beton Döküm Tutanağı"
   documentDate DateTime
-  externalUrl  String?  // Bakanlık sistemindeki evrak indirme linki (varsa)
+  externalUrl  String? // Bakanlık sistemindeki evrak indirme linki (varsa)
   createdAt    DateTime @default(now())
 
   @@index([projectId])
@@ -542,6 +542,7 @@ model Archive {
 
 model SiteReport {
   id               String   @id @default(cuid())
+  tenantId         String? // SaaS: Kiracı ID
   date             DateTime @default(now())
   weather          String? // Örn: Güneşli, Yağmurlu 30°C
   workerCount      Int      @default(0)
@@ -561,6 +562,7 @@ model SiteReport {
 
   @@index([projectId])
   @@index([date])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -712,11 +714,11 @@ model Announcement {
 
 model Company {
   id                     String                  @id @default(cuid())
-  tenantId               String?                 // SaaS: Kiracı ID
+  tenantId               String? // SaaS: Kiracı ID
   name                   String
   slug                   String?                 @unique // URL için kısa ad (Örn: ronesans, zirveyapi)
-  logoUrl                String?                 // Firmanın kendi logosu
-  themeColor             String?                 // Firmanın kurumsal rengi (Örn: #1e3a8a)
+  logoUrl                String? // Firmanın kendi logosu
+  themeColor             String? // Firmanın kurumsal rengi (Örn: #1e3a8a)
   companyType            String?                 @default("CONTRACTOR") // "CONTRACTOR", "INSPECTION", "FRANCHISE"
   type                   CompanyType             @default(MAIN_CONTRACTOR)
   slaScore               Float?                  @default(100.0) // 100 üzerinden başarı puanı (Gecikme/RMA ile düşer)
@@ -818,6 +820,7 @@ model Payment {
 
 model Stock {
   id             String             @id @default(cuid())
+  tenantId       String? // SaaS: Kiracı ID
   code           String             @unique // Stok kodu (S001, S002, vb.)
   name           String // Stok adı
   category       String? // Kategori
@@ -840,6 +843,7 @@ model Stock {
   @@index([category])
   @@index([isActive])
   @@index([materialId])
+  @@index([tenantId])
 }
 
 enum StockUnit {
@@ -1032,11 +1036,11 @@ model Personel {
   ppeAssignments           PPEAssignment[]
   legalCertificates        LegalCertificate[]
   auditRecords             AuditRecord[]
-  lastKnownLat             Float?                    // Nexa Mobile canlı konum enlem
-  lastKnownLng             Float?                    // Nexa Mobile canlı konum boylam
-  lastLocationAt           DateTime?                 // Son koordinat alınma zamanı
+  lastKnownLat             Float? // Nexa Mobile canlı konum enlem
+  lastKnownLng             Float? // Nexa Mobile canlı konum boylam
+  lastLocationAt           DateTime? // Son koordinat alınma zamanı
   isOutOfSite              Boolean                   @default(false) // Ana şantiye dışında mı?
-  currentProjectId         String?                   // Aktif şantiye proje kimliği
+  currentProjectId         String? // Aktif şantiye proje kimliği
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
 
@@ -1087,6 +1091,7 @@ model Audit {
 
 model DailyProgress {
   id                   String   @id @default(cuid())
+  tenantId             String? // SaaS: Kiracı ID
   description          String   @db.Text
   completionPercentage Int // 0-100
   photos               String[] // Fotoğraf URL'leri
@@ -1102,6 +1107,7 @@ model DailyProgress {
   @@index([projectId])
   @@index([subcontractorId])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1167,6 +1173,7 @@ model BimFile {
 
 model ProgressBilling {
   id                 String        @id @default(cuid())
+  tenantId           String? // SaaS: Kiracı ID
   contractId         String?
   billingNumber      Int           @default(0)
   period             DateTime      @default(now())
@@ -1189,6 +1196,7 @@ model ProgressBilling {
   @@index([contractId])
   @@index([status])
   @@index([period])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1197,6 +1205,7 @@ model ProgressBilling {
 
 model Subcontractor {
   id                    String                 @id @default(cuid())
+  tenantId              String? // SaaS: Kiracı ID
   name                  String
   taxNumber             String?
   contactName           String?
@@ -1211,6 +1220,7 @@ model Subcontractor {
   createdAt             DateTime               @default(now())
 
   @@index([organizationId])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1219,6 +1229,7 @@ model Subcontractor {
 
 model Contract {
   id               String         @id @default(cuid())
+  tenantId         String? // SaaS: Kiracı ID
   projectId        String
   subcontractorId  String
   title            String
@@ -1243,6 +1254,7 @@ model Contract {
   @@index([projectId])
   @@index([subcontractorId])
   @@index([status])
+  @@index([tenantId])
 }
 
 enum ContractStatus {
@@ -1264,6 +1276,7 @@ enum BillingStatus {
 
 model SubcontractorContract {
   id           String    @id @default(cuid())
+  tenantId     String? // SaaS: Kiracı ID
   contractType String // UNIT_PRICE, LUMP_SUM
   totalValue   Float
   startDate    DateTime
@@ -1284,6 +1297,7 @@ model SubcontractorContract {
   @@index([subcontractorId])
   @@index([status])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1315,6 +1329,7 @@ model WorkerDocument {
 
 model Deduction {
   id                 String   @id @default(cuid())
+  tenantId           String? // SaaS: Kiracı ID
   amount             Float
   reason             String   @db.Text
   date               DateTime @default(now())
@@ -1335,6 +1350,7 @@ model Deduction {
   @@index([appliedToBillingId])
   @@index([date])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1415,6 +1431,7 @@ model PurchaseOrder {
 
 model Shift {
   id             String   @id @default(cuid())
+  tenantId       String? // SaaS: Kiracı ID
   name           String // Örn: "Sabah Vardiyası", "Gece Vardiyası"
   timeRange      String // Örn: "08:00 - 17:00"
   personnelCount Int      @default(0)
@@ -1426,6 +1443,7 @@ model Shift {
 
   @@index([projectId])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1434,6 +1452,7 @@ model Shift {
 
 model ProjectTask {
   id           String   @id @default(cuid())
+  tenantId     String? // SaaS: Kiracı ID
   name         String
   startDate    DateTime
   endDate      DateTime
@@ -1459,6 +1478,7 @@ model ProjectTask {
   @@index([startDate])
   @@index([endDate])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1562,6 +1582,7 @@ model InspectionRecord {
 
 model Deficiency {
   id          String    @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   floor       String // Kat
   element     String // Örn: Kolon C12
   category    String // Örn: Donatı, Beton, Duvar
@@ -1605,6 +1626,7 @@ model Deficiency {
   @@index([severity])
   @@index([dueDate])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1663,6 +1685,7 @@ model InspectionTask {
 
 model Notification {
   id        String   @id @default(cuid())
+  tenantId  String? // SaaS: Kiracı ID
   userId    String
   title     String
   message   String   @db.Text
@@ -1675,6 +1698,7 @@ model Notification {
   @@index([isRead])
   @@index([type])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1708,28 +1732,30 @@ enum Department {
 // ============================================================================
 
 model LeaveRequest {
-  id          String      @id @default(cuid())
-  userId      String?
-  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  personelId  String?
-  personel    Personel?   @relation(fields: [personelId], references: [id], onDelete: Cascade)
-  leaveType   String?     // "YILLIK", "MAZERET", "RAPORLU", "UCRETSIZ"
-  type        LeaveType?  @default(ANNUAL)
-  startDate   DateTime
-  endDate     DateTime
-  totalDays   Int?        // Sadece iş günleri (Hafta sonları ve resmi tatiller hariç hesaplanmalı)
-  days        Int?        // İzin gün sayısı
-  reason      String?     @db.Text
-  status      String      @default("PENDING") // PENDING, APPROVED, REJECTED
-  reviewedBy  String?     // Onaylayan kişi ID
-  reviewedAt  DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id         String     @id @default(cuid())
+  tenantId   String? // SaaS: Kiracı ID
+  userId     String?
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personelId String?
+  personel   Personel?  @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  leaveType  String? // "YILLIK", "MAZERET", "RAPORLU", "UCRETSIZ"
+  type       LeaveType? @default(ANNUAL)
+  startDate  DateTime
+  endDate    DateTime
+  totalDays  Int? // Sadece iş günleri (Hafta sonları ve resmi tatiller hariç hesaplanmalı)
+  days       Int? // İzin gün sayısı
+  reason     String?    @db.Text
+  status     String     @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedBy String? // Onaylayan kişi ID
+  reviewedAt DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@index([userId])
   @@index([personelId])
   @@index([status])
   @@index([startDate])
+  @@index([tenantId])
 }
 
 enum LeaveType {
@@ -1764,6 +1790,7 @@ model SiteHistory {
 
 model PersonelPayment {
   id          String        @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   personelId  String
   personel    Personel      @relation(fields: [personelId], references: [id], onDelete: Cascade)
   type        String // MAAS, SGK, PRIM, AVANS, ELDEN, SALARY, BONUS, etc.
@@ -1782,6 +1809,7 @@ model PersonelPayment {
   @@index([isPaid])
   @@index([period])
   @@index([status])
+  @@index([tenantId])
 }
 
 enum PaymentStatus {
@@ -1869,7 +1897,7 @@ model SystemSettings {
 
 model Transaction {
   id          String   @id @default(cuid())
-  tenantId    String?  // SaaS Firma ID
+  tenantId    String? // SaaS Firma ID
   type        String // GELIR veya GIDER
   amount      Float
   description String
@@ -1911,6 +1939,7 @@ model Transaction {
 
 model ActivityLog {
   id        String   @id @default(cuid())
+  tenantId  String? // SaaS: Kiracı ID
   action    String // Örn: "Proje Eklendi", "Stok Çıkışı Yapıldı"
   details   String?  @db.Text
   userId    String
@@ -1922,6 +1951,7 @@ model ActivityLog {
   @@index([userId])
   @@index([projectId])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -1974,27 +2004,29 @@ enum AssignmentStatus {
 }
 
 model Inventory {
-  id          String                @id @default(cuid())
-  name        String
-  type        String // IN veya OUT
-  quantity    Float
-  unit        String
-  category    String? // Kategori
-  location    String? // Konum/Depo
-  qrCode      String?               @unique // QR kod (opsiyonel ama unique)
-  projectId   String
-  project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  recordedBy  String
-  recorder    User                  @relation(fields: [recordedBy], references: [id])
-  assignments InventoryAssignment[]
-  createdAt   DateTime              @default(now())
-  history     InventoryHistory[]
-  minimumStockLevel     Float?
-  isAutoReorderEnabled  Boolean               @default(false)
+  id                   String                @id @default(cuid())
+  tenantId             String? // SaaS: Kiracı ID
+  name                 String
+  type                 String // IN veya OUT
+  quantity             Float
+  unit                 String
+  category             String? // Kategori
+  location             String? // Konum/Depo
+  qrCode               String?               @unique // QR kod (opsiyonel ama unique)
+  projectId            String
+  project              Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  recordedBy           String
+  recorder             User                  @relation(fields: [recordedBy], references: [id])
+  assignments          InventoryAssignment[]
+  createdAt            DateTime              @default(now())
+  history              InventoryHistory[]
+  minimumStockLevel    Float?
+  isAutoReorderEnabled Boolean               @default(false)
 
   @@index([projectId])
   @@index([type])
   @@index([qrCode])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2009,6 +2041,7 @@ model Inventory {
 
 model PersonnelContract {
   id         String            @id @default(cuid())
+  tenantId   String? // SaaS: Kiracı ID
   title      String
   content    String?           @db.Text // Rich Text (legacy)
   type       ContractType      @default(UPLOADED) // UPLOADED veya GENERATED
@@ -2028,6 +2061,7 @@ model PersonnelContract {
   @@index([type])
   @@index([personelId])
   @@index([templateId])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2059,6 +2093,7 @@ model SiteTask {
 
 model AttendanceRecord {
   id            String    @id @default(cuid())
+  tenantId      String? // SaaS: Kiracı ID
   personelId    String?
   personel      Personel? @relation(fields: [personelId], references: [id], onDelete: Cascade)
   projectId     String
@@ -2078,6 +2113,7 @@ model AttendanceRecord {
   @@index([projectId])
   @@index([date])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2086,6 +2122,7 @@ model AttendanceRecord {
 
 model DailyLog {
   id             String   @id @default(cuid())
+  tenantId       String? // SaaS: Kiracı ID
   date           DateTime @default(now())
   weather        String? // Örn: "Güneşli, 28°C" (Hava durumu çok kritiktir)
   machineryCount Int      @default(0) // Sahadaki aktif iş makinesi sayısı
@@ -2098,6 +2135,7 @@ model DailyLog {
 
   @@index([projectId])
   @@index([date])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2124,6 +2162,7 @@ model VisitorRecord {
 
 model Reminder {
   id          String   @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   title       String // Örn: "Beton Dökümü", "Yapı Denetim Kontrolü"
   date        DateTime // Hatırlatılacak Tarih
   isCompleted Boolean  @default(false)
@@ -2134,6 +2173,7 @@ model Reminder {
   @@index([projectId])
   @@index([date])
   @@index([isCompleted])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2196,6 +2236,7 @@ model AdminUser {
 
 model InspectionReport {
   id                 String   @id @default(cuid())
+  tenantId           String? // SaaS: Kiracı ID
   projectId          String
   project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title              String? // Rapor başlığı
@@ -2210,6 +2251,7 @@ model InspectionReport {
 
   @@index([projectId])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2218,6 +2260,7 @@ model InspectionReport {
 
 model Task {
   id            String       @id @default(cuid())
+  tenantId      String? // SaaS: Kiracı ID
   title         String
   description   String?      @db.Text
   status        String       @default("TODO") // TODO, IN_PROGRESS, IN_REVIEW, DONE
@@ -2238,6 +2281,7 @@ model Task {
   @@index([workPackageId])
   @@index([dueDate])
   @@index([taskType])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2312,6 +2356,7 @@ model ConversationParticipant {
 
 model IsgReport {
   id          String          @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   type        IsgReportType   @default(TEHLIKE) // TEHLIKE, KAZA_TUTANAGI, EKSIK_DOKUM
   status      IsgReportStatus @default(ACIL) // ACIL, INCELEMEDE, COZULDU
   description String          @db.Text
@@ -2328,6 +2373,7 @@ model IsgReport {
   @@index([projectId])
   @@index([status])
   @@index([type])
+  @@index([tenantId])
 }
 
 enum IsgReportType {
@@ -2348,6 +2394,8 @@ enum IsgReportStatus {
 
 model NearMissReport {
   id          String   @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
+  projectId   String?
   isAnonymous Boolean  @default(true)
   location    String
   category    String // Düşme Riski, Elektriksel Tehlike, Makine Arızası, Kimyasal Maruz Kalma, Yapısal Sorun, Diğer
@@ -2360,6 +2408,7 @@ model NearMissReport {
   @@index([status])
   @@index([severity])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2368,6 +2417,7 @@ model NearMissReport {
 
 model PPEDelivery {
   id         String   @id @default(cuid())
+  tenantId   String? // SaaS: Kiracı ID
   equipment  String // JSON array of equipment names or comma-separated list
   signature  String // Dijital imza metni/hash'i
   date       DateTime @default(now())
@@ -2380,6 +2430,7 @@ model PPEDelivery {
   @@index([personelId])
   @@index([date])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2428,7 +2479,7 @@ model CoreTest {
 
 model DocumentArchive {
   id              String    @id @default(cuid())
-  tenantId        String?   // SaaS Firma ID
+  tenantId        String? // SaaS Firma ID
   projectId       String?
   project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   title           String // Örn: Yapı Ruhsatı, Zemin Etüdü
@@ -2436,7 +2487,7 @@ model DocumentArchive {
   fileUrl         String // Cloudinary / S3 / Uploadthing URL
   expiryDate      DateTime? // Varsa Geçerlilik Tarihi
   isGlobalArchive Boolean   @default(true) // Merkezi arşivde görünsün mü?
-  sourceModule    String?   // Örn: "BIM", "INSPECTION_FORM", "WORK_PROOF", "FINANCE"
+  sourceModule    String? // Örn: "BIM", "INSPECTION_FORM", "WORK_PROOF", "FINANCE"
   fileSizeMB      Float     @default(0) // Dosya boyutu MB
   createdAt       DateTime  @default(now())
 
@@ -2453,21 +2504,23 @@ model DocumentArchive {
 // ============================================================================
 
 model ProjectBlueprint {
-  id         String   @id @default(cuid())
+  id         String              @id @default(cuid())
+  tenantId   String? // SaaS: Kiracı ID
   projectId  String
-  project    Project  @relation(fields: [projectId], references: [id])
+  project    Project             @relation(fields: [projectId], references: [id])
   title      String // Örn: A Blok Statik Aplikasyon Planı
   discipline String // MIMARI, STATIK, ELEKTRIK, MEKANIK
   revisionNo String // Örn: R0, R1, R2
   fileUrl    String // PDF / Görsel URL
-  isCurrent  Boolean  @default(true) // En güncel versiyon mu?
+  isCurrent  Boolean             @default(true) // En güncel versiyon mu?
   uploadedBy String?
   visas      ReinforcementVisa[]
-  createdAt  DateTime @default(now())
+  createdAt  DateTime            @default(now())
 
   @@index([projectId])
   @@index([discipline])
   @@index([isCurrent])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2476,6 +2529,7 @@ model ProjectBlueprint {
 
 model ReinforcementInspection {
   id             String   @id @default(cuid())
+  tenantId       String? // SaaS: Kiracı ID
   projectId      String
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   element        String // Dökülecek Eleman
@@ -2490,6 +2544,7 @@ model ReinforcementInspection {
   @@index([projectId])
   @@index([inspectionDate])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2519,6 +2574,7 @@ model AttachmentEvidence {
 
 model ProgressPayment {
   id               String   @id @default(cuid())
+  tenantId         String? // SaaS: Kiracı ID
   title            String // Örn: "B Blok 3. Kat Boya İşlemi"
   description      String?
   quantity         Float // Örn: 150 (Metraj)
@@ -2531,9 +2587,9 @@ model ProgressPayment {
   penaltyDeduction Float?   @default(0) // Ceza / Kusur kesintileri
   netAmount        Float?   @default(0) // Net ödenecek tutar
   retentionRate    Float?   @default(0.05) // %5 Teminat (Geçici Kabul) Kesintisi Oranı
-  retentionAmount  Float?   // Kesilen Teminat Tutarı
-  advanceDeduction Float?   // Varsa Taşerona verilen avansın mahsubu
-  netPayableAmount Float?   // Ödenecek Net Tutar (Toplam - Kusur Cezaları - Teminat - Avans)
+  retentionAmount  Float? // Kesilen Teminat Tutarı
+  advanceDeduction Float? // Varsa Taşerona verilen avansın mahsubu
+  netPayableAmount Float? // Ödenecek Net Tutar (Toplam - Kusur Cezaları - Teminat - Avans)
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -2567,6 +2623,7 @@ model ProgressPayment {
   @@index([subcontractorId])
   @@index([workPackageId])
   @@index([boqItemId])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2577,8 +2634,8 @@ model AdvanceRequest {
   id          String   @id @default(cuid())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  amount      Float    // Talep edilen avans tutarı
-  deductMonth String   // Hangi ayın bordrosundan kesileceği (Örn: "2026-11")
+  amount      Float // Talep edilen avans tutarı
+  deductMonth String // Hangi ayın bordrosundan kesileceği (Örn: "2026-11")
   status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
   reason      String?
   createdAt   DateTime @default(now())
@@ -2594,12 +2651,13 @@ model AdvanceRequest {
 
 model EInvoice {
   id          String   @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   invoiceNo   String   @unique // Fatura Numarası (Örn: GIB2026000000123)
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId   String
-  direction   String   // "INCOMING" (Gelen/Alış), "OUTGOING" (Giden/Satış)
-  totalAmount Float    // KDV Dahil Toplam
-  taxAmount   Float    // KDV Tutarı
+  direction   String // "INCOMING" (Gelen/Alış), "OUTGOING" (Giden/Satış)
+  totalAmount Float // KDV Dahil Toplam
+  taxAmount   Float // KDV Tutarı
   issueDate   DateTime
   status      String   @default("DRAFT") // DRAFT, SENT, RECEIVED, REJECTED
   createdAt   DateTime @default(now())
@@ -2608,6 +2666,7 @@ model EInvoice {
   @@index([companyId])
   @@index([direction])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2615,30 +2674,31 @@ model EInvoice {
 // ============================================================================
 
 model InventoryItem {
-  id             String    @id @default(cuid())
-  materialName   String    @default("") // Malzeme Adı (Örn: Çimento, Demir)
-  name           String?   // Alternatif / Eski ad
-  qrCode         String    @unique // Eşsiz QR Kod
-  quantity       Float
-  currentZone    String    @default("MAIN_WAREHOUSE") // Örn: MAIN_WAREHOUSE, A_BLOK_KAT_3
-  status         String    @default("IN_STOCK") // IN_STOCK, DISPATCHED, CONSUMED
-  assignedToId   String?   // Hangi ustaya/taşerona zimmetlendi
-  consumedAt     DateTime?
-  createdAt      DateTime  @default(now())
+  id           String    @id @default(cuid())
+  tenantId     String? // SaaS: Kiracı ID
+  materialName String    @default("") // Malzeme Adı (Örn: Çimento, Demir)
+  name         String? // Alternatif / Eski ad
+  qrCode       String    @unique // Eşsiz QR Kod
+  quantity     Float
+  currentZone  String    @default("MAIN_WAREHOUSE") // Örn: MAIN_WAREHOUSE, A_BLOK_KAT_3
+  status       String    @default("IN_STOCK") // IN_STOCK, DISPATCHED, CONSUMED
+  assignedToId String? // Hangi ustaya/taşerona zimmetlendi
+  consumedAt   DateTime?
+  createdAt    DateTime  @default(now())
 
   // Şantiye / Depo / BLE Ek Alanları
   projectId      String?
-  category       String?   // Malzeme Kategorisi
+  category       String? // Malzeme Kategorisi
   unit           String?   @default("Adet") // Birim (Adet, Ton, Paket)
   bleMacAddress  String?   @unique // BLE Sticker/Beacon MAC Adresi
   locationStatus String?   @default("DEPO") // DEPO, SAHADA, ZIMMETLI, KULLANILDI
-  assignedTo     String?   // Zimmetlenen Kalfa/Usta
-  lastSeenLat    Float?    // BLE / Son ping enlem
-  lastSeenLng    Float?    // BLE / Son ping boylam
+  assignedTo     String? // Zimmetlenen Kalfa/Usta
+  lastSeenLat    Float? // BLE / Son ping enlem
+  lastSeenLng    Float? // BLE / Son ping boylam
   lastSeenAt     DateTime? @default(now())
 
-  project        Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  boqItems       BoqItem[]
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  boqItems BoqItem[]
 
   @@index([projectId])
   @@index([qrCode])
@@ -2646,6 +2706,7 @@ model InventoryItem {
   @@index([status])
   @@index([locationStatus])
   @@index([bleMacAddress])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2670,6 +2731,7 @@ model MaterialSubmittal {
 
 model NonConformanceReport {
   id            String    @id @default(cuid())
+  tenantId      String? // SaaS: Kiracı ID
   location      String // Örn: A Blok, 3. Kat
   issueType     String // Örn: Paspayı Yetersiz, Donatı Hatası
   description   String
@@ -2683,6 +2745,7 @@ model NonConformanceReport {
   @@index([status])
   @@index([subcontractor])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2690,14 +2753,14 @@ model NonConformanceReport {
 // ============================================================================
 
 model ChatMessage {
-  id          String   @id @default(cuid())
-  senderId    String   // Gönderen User ID
-  sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId  String?  // Alıcı User ID (Birebir mesajsa)
-  projectId   String?  // Şantiye genel grubuna atılan mesajlar için
-  channelName String?  // Grup mesajıysa (Örn: "Şantiye Şefleri", "İSG Acil Durum")
-  content     String   @db.Text
-  photoUrl    String?  // Sahadan atılan anlık fotoğraflar
+  id          String  @id @default(cuid())
+  senderId    String // Gönderen User ID
+  sender      User    @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId  String? // Alıcı User ID (Birebir mesajsa)
+  projectId   String? // Şantiye genel grubuna atılan mesajlar için
+  channelName String? // Grup mesajıysa (Örn: "Şantiye Şefleri", "İSG Acil Durum")
+  content     String  @db.Text
+  photoUrl    String? // Sahadan atılan anlık fotoğraflar
 
   // Referans Mantığı (Veritabanını şişirmemek için)
   attachmentType  String? // "NCR_REPORT", "ISG_ALARM", "MATERIAL_DOC" vb.
@@ -2723,12 +2786,16 @@ enum LogisticsStatus {
 
 model LogisticsSchedule {
   id                    String          @id @default(cuid())
+  tenantId              String? // SaaS: Kiracı ID
   title                 String // Örn: "C30 Beton Dökümü - A Blok"
   type                  String // Örn: BETON, MALZEME_TESLİMAT, DENETİM
   location              String // Şantiye içi konum
   supplierName          String? // Tedarikçi/Firma Adı
   driverContact         String? // Şoför/İrtibat no
   status                LogisticsStatus @default(PLANNED)
+  timeSlot              String?
+  vehiclePlate          String?
+  driverName            String?
   scheduledAt           DateTime // Planlanan varış zamanı
   completedAt           DateTime?
   notes                 String?
@@ -2746,6 +2813,7 @@ model LogisticsSchedule {
   @@index([type])
   @@index([projectId])
   @@index([receivedById])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2754,6 +2822,7 @@ model LogisticsSchedule {
 
 model FoodMenu {
   id        String   @id @default(cuid())
+  tenantId  String? // SaaS: Kiracı ID
   date      DateTime
   items     String // Yemekler (Virgülle veya alt alta ayrılmış metin)
   projectId String
@@ -2764,6 +2833,7 @@ model FoodMenu {
   @@unique([projectId, date])
   @@index([projectId])
   @@index([date])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2772,20 +2842,21 @@ model FoodMenu {
 
 model WorkProof {
   id                String   @id @default(cuid())
+  tenantId          String? // SaaS: Kiracı ID
   subcontractorId   String
-  projectId         String?  // Zorunluluk (Required) kaldırıldı
-  progressBillingId String?  // Bu kanıt hangi hakedişe bağlandı?
-  boqItemId         String?  // Zorunluluk (Required) kaldırıldı
-  bimElementId      String?  // 3D Modeldeki IFC eleman ID'si (Opsiyonel)
+  projectId         String? // Zorunluluk (Required) kaldırıldı
+  progressBillingId String? // Bu kanıt hangi hakedişe bağlandı?
+  boqItemId         String? // Zorunluluk (Required) kaldırıldı
+  bimElementId      String? // 3D Modeldeki IFC eleman ID'si (Opsiyonel)
   claimedQuantity   Float    @default(0) // Taşeronun bu kanıtla iddia ettiği imalat miktarı (Örn: 50 m3)
-  approvedQuantity  Float?   // Denetçi onaylarken miktarı kırpabilir
+  approvedQuantity  Float? // Denetçi onaylarken miktarı kırpabilir
   photoUrl          String   @default("")
-  imageUrl          String?  // Geriye dönük uyumluluk
-  gpsLatitude       Float?   // Fotoğrafın çekildiği konum
+  imageUrl          String? // Geriye dönük uyumluluk
+  gpsLatitude       Float? // Fotoğrafın çekildiği konum
   gpsLongitude      Float?
-  latitude          Float?   // Geriye dönük uyumluluk
-  longitude         Float?   // Geriye dönük uyumluluk
-  title             String?  // Yapılan işin özeti
+  latitude          Float? // Geriye dönük uyumluluk
+  longitude         Float? // Geriye dönük uyumluluk
+  title             String? // Yapılan işin özeti
   description       String   @default("")
   status            String   @default("PENDING") // PENDING, APPROVED, REJECTED
   engineerStatus    String   @default("PENDING")
@@ -2794,7 +2865,7 @@ model WorkProof {
   managerId         String?
   contractId        String?
   createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
 
   progressBilling ProgressBilling? @relation(fields: [progressBillingId], references: [id])
   boqItem         BoqItem?         @relation(fields: [boqItemId], references: [id])
@@ -2809,6 +2880,7 @@ model WorkProof {
   @@index([status])
   @@index([createdAt])
   @@index([bimElementId])
+  @@index([tenantId])
 }
 
 enum ProofStatus {
@@ -2825,9 +2897,9 @@ model SiteInstruction {
   id              String   @id @default(cuid())
   projectId       String
   project         Project  @relation(fields: [projectId], references: [id])
-  createdById     String   // Talebi açan (Genelde Saha Mühendisi)
-  subcontractorId String?  // Kime atandığı (İlgili Taşeron)
-  title           String   // Örn: "Mimari Revizyon - A Blok Kapı Genişletmesi"
+  createdById     String // Talebi açan (Genelde Saha Mühendisi)
+  subcontractorId String? // Kime atandığı (İlgili Taşeron)
+  title           String // Örn: "Mimari Revizyon - A Blok Kapı Genişletmesi"
   description     String
   attachments     String[] // Çizim, pafta veya saha fotoğrafları
   priority        String   @default("NORMAL") // URGENT, NORMAL, LOW
@@ -2845,6 +2917,7 @@ model SiteInstruction {
 
 model WorkOrder {
   id          String       @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   title       String
   description String?      @db.Text
   status      TaskStatus   @default(TODO)
@@ -2866,6 +2939,7 @@ model WorkOrder {
   @@index([department])
   @@index([projectId])
   @@index([assignedToId])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2874,6 +2948,7 @@ model WorkOrder {
 
 model Inspection {
   id             String       @id @default(cuid())
+  tenantId       String? // SaaS: Kiracı ID
   projectId      String
   project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   inspectorId    String
@@ -2893,6 +2968,7 @@ model Inspection {
   @@index([type])
   @@index([status])
   @@index([inspectionDate])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2914,7 +2990,7 @@ model Document {
   notes             String?            @db.Text
   tenantId          String? // SaaS: Kiracı ID
   isGlobalArchive   Boolean            @default(true) // Merkezi arşivde görünsün mü?
-  sourceModule      String?            // Örn: "BIM", "INSPECTION_FORM", "WORK_PROOF"
+  sourceModule      String? // Örn: "BIM", "INSPECTION_FORM", "WORK_PROOF"
   fileSizeMB        Float              @default(0)
   revisions         DocumentRevision[]
   createdAt         DateTime           @default(now())
@@ -3135,6 +3211,7 @@ model LicenseArchive {
 
 model DigitalArchive {
   id          String  @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   title       String
   category    String // PROJE, RAPOR, SOZLESME, DIGER
   fileUrl     String
@@ -3154,6 +3231,7 @@ model DigitalArchive {
   @@index([projectId])
   @@index([category])
   @@index([uploadedById])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3162,6 +3240,7 @@ model DigitalArchive {
 
 model OCRDocument {
   id            String  @id @default(cuid())
+  tenantId      String? // SaaS: Kiracı ID
   title         String
   originalText  String  @db.Text
   extractedText String  @db.Text
@@ -3179,6 +3258,7 @@ model OCRDocument {
   @@index([projectId])
   @@index([status])
   @@index([confidence])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3212,6 +3292,7 @@ model AIImageAnalysis {
 
 model ProjectRevision {
   id          String  @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   version     String // v1.0, v1.1, v2.0
   title       String
   description String  @db.Text
@@ -3230,6 +3311,7 @@ model ProjectRevision {
   @@index([projectId])
   @@index([status])
   @@index([createdById])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3326,6 +3408,7 @@ model MaterialApproval {
 
 model NonconformityDOF {
   id               String    @id @default(cuid())
+  tenantId         String? // SaaS: Kiracı ID
   title            String
   type             String // QUALITY, SAFETY, DOCUMENT
   severity         String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
@@ -3349,6 +3432,7 @@ model NonconformityDOF {
   @@index([severity])
   @@index([status])
   @@index([reportedById])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3384,6 +3468,7 @@ model LegalCertificate {
 
 model NearMiss {
   id           String   @id @default(cuid())
+  tenantId     String? // SaaS: Kiracı ID
   title        String
   description  String   @db.Text
   severity     String   @default("LOW") // LOW, MEDIUM, HIGH
@@ -3406,6 +3491,7 @@ model NearMiss {
   @@index([status])
   @@index([incidentDate])
   @@index([reportedById])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3414,6 +3500,7 @@ model NearMiss {
 
 model PPEAssignment {
   id             String    @id @default(cuid())
+  tenantId       String? // SaaS: Kiracı ID
   itemName       String
   type           String // HELMET, VEST, BOOTS, GLOVES, OTHER
   serialNo       String?
@@ -3435,6 +3522,7 @@ model PPEAssignment {
   @@index([type])
   @@index([status])
   @@index([projectId])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3443,6 +3531,7 @@ model PPEAssignment {
 
 model LogisticsAppointment {
   id              String   @id @default(cuid())
+  tenantId        String? // SaaS: Kiracı ID
   title           String
   supplier        String
   type            String // DELIVERY, PICKUP, OTHER
@@ -3459,6 +3548,7 @@ model LogisticsAppointment {
   @@index([projectId])
   @@index([appointmentDate])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3467,6 +3557,7 @@ model LogisticsAppointment {
 
 model DynamicForm {
   id          String           @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   title       String // Örn: Yangın Tesisatı Denetim Formu
   description String?          @db.Text
   category    String?          @default("GENEL") // Yangın, İSG, Kalıp & Donatı, Elektrik, Genel
@@ -3477,10 +3568,12 @@ model DynamicForm {
 
   @@index([category])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 model FormSubmission {
   id        String      @id @default(cuid())
+  tenantId  String? // SaaS: Kiracı ID
   formId    String
   projectId String
   userId    String // Dolduran personel/denetçi
@@ -3498,6 +3591,7 @@ model FormSubmission {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3530,6 +3624,7 @@ model Organization {
 
 model WorkPackage {
   id                String    @id @default(cuid())
+  tenantId          String? // SaaS: Kiracı ID
   code              String? // Örn: "WP-101", "POZ-04.001"
   pozNo             String? // Örn: "15.150.1005"
   name              String // İş Paketi / İmalat Kalemi Adı
@@ -3546,19 +3641,19 @@ model WorkPackage {
   endDate           DateTime?
 
   // BoQ 2.0 İnovatif Alanlar (Delta, AI Fire, 6D Karbon)
-  theoreticalQuantity Float?   // BIM'den gelen saf teorik miktar
-  aiWasteMargin     Float?     // AI tarafından öngörülen fire yüzdesi (Örn: 0.04 -> %4)
-  actualOrderQty    Float?     // Fire dahil gerçek sipariş edilmesi gereken miktar
-  carbonEmission    Float?     // Birim başına CO2 Karbon Ayak İzi (kg)
-  totalCarbon       Float?     // Toplam CO2 salınımı
-  version           Int        @default(1) // Revizyon takibi için (Delta BoQ)
-  previousQuantity  Float?     // Mimari değişim öncesi miktar (Etki hesabı için)
+  theoreticalQuantity Float? // BIM'den gelen saf teorik miktar
+  aiWasteMargin       Float? // AI tarafından öngörülen fire yüzdesi (Örn: 0.04 -> %4)
+  actualOrderQty      Float? // Fire dahil gerçek sipariş edilmesi gereken miktar
+  carbonEmission      Float? // Birim başına CO2 Karbon Ayak İzi (kg)
+  totalCarbon         Float? // Toplam CO2 salınımı
+  version             Int    @default(1) // Revizyon takibi için (Delta BoQ)
+  previousQuantity    Float? // Mimari değişim öncesi miktar (Etki hesabı için)
 
   // Dinamik Fiyatlandırma & Enflasyon Simülatörü
-  baseCurrency      String?  @default("TRY") // Orijinal para birimi
-  exchangeRateAtBid Float?   // İhale tarihindeki kur
-  currentUnitPrice  Float?   // Güncel API'den çekilen birim fiyat
-  inflationImpact   Float?   // Enflasyon/Kur kaynaklı maliyet artışı
+  baseCurrency      String? @default("TRY") // Orijinal para birimi
+  exchangeRateAtBid Float? // İhale tarihindeki kur
+  currentUnitPrice  Float? // Güncel API'den çekilen birim fiyat
+  inflationImpact   Float? // Enflasyon/Kur kaynaklı maliyet artışı
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -3590,32 +3685,34 @@ model WorkPackage {
   @@index([code])
   @@index([pozNo])
   @@index([categoryKey])
+  @@index([tenantId])
 }
 
 model BoQItem {
-  id                String @id @default(cuid())
+  id                String  @id @default(cuid())
+  tenantId          String? // SaaS: Kiracı ID
   itemCode          String // Poz Numarası (Örn: "15.120.1001")
   description       String // Poz Açıklaması
   unit              String // m2, m3, ton, adet
-  unitPrice         Float  @default(0)
-  contractQuantity  Float  @default(0)
-  completedQuantity Float  @default(0)
-  totalAmount       Float  @default(0)
+  unitPrice         Float   @default(0)
+  contractQuantity  Float   @default(0)
+  completedQuantity Float   @default(0)
+  totalAmount       Float   @default(0)
 
   // BoQ 2.0 İnovatif Alanlar
-  theoreticalQuantity Float?   // BIM'den gelen saf teorik miktar
-  aiWasteMargin     Float?     // AI tarafından öngörülen fire yüzdesi (Örn: 0.04 -> %4)
-  actualOrderQty    Float?     // Fire dahil gerçek sipariş edilmesi gereken miktar
-  carbonEmission    Float?     // Birim başına CO2 Karbon Ayak İzi (kg)
-  totalCarbon       Float?     // Toplam CO2 salınımı
-  version           Int        @default(1) // Revizyon takibi için (Delta BoQ)
-  previousQuantity  Float?     // Mimari değişim öncesi miktar (Etki hesabı için)
+  theoreticalQuantity Float? // BIM'den gelen saf teorik miktar
+  aiWasteMargin       Float? // AI tarafından öngörülen fire yüzdesi (Örn: 0.04 -> %4)
+  actualOrderQty      Float? // Fire dahil gerçek sipariş edilmesi gereken miktar
+  carbonEmission      Float? // Birim başına CO2 Karbon Ayak İzi (kg)
+  totalCarbon         Float? // Toplam CO2 salınımı
+  version             Int    @default(1) // Revizyon takibi için (Delta BoQ)
+  previousQuantity    Float? // Mimari değişim öncesi miktar (Etki hesabı için)
 
   // Dinamik Fiyatlandırma & Enflasyon Simülatörü
-  baseCurrency      String?  @default("TRY") // Orijinal para birimi
-  exchangeRateAtBid Float?   // İhale tarihindeki kur
-  currentUnitPrice  Float?   // Güncel API'den çekilen birim fiyat
-  inflationImpact   Float?   // Enflasyon/Kur kaynaklı maliyet artışı
+  baseCurrency      String? @default("TRY") // Orijinal para birimi
+  exchangeRateAtBid Float? // İhale tarihindeki kur
+  currentUnitPrice  Float? // Güncel API'den çekilen birim fiyat
+  inflationImpact   Float? // Enflasyon/Kur kaynaklı maliyet artışı
 
   workPackageId String?
   workPackage   WorkPackage? @relation(fields: [workPackageId], references: [id], onDelete: SetNull)
@@ -3631,6 +3728,7 @@ model BoQItem {
   @@index([workPackageId])
   @@index([projectId])
   @@index([itemCode])
+  @@index([tenantId])
 }
 
 model Material {
@@ -3660,6 +3758,7 @@ model Material {
 
 model FinancialTransaction {
   id               String   @id @default(cuid())
+  tenantId         String? // SaaS: Kiracı ID
   type             String // ACCRUAL, PAYMENT, EXPENSE, INCOME, DEBT
   amount           Float
   netAmount        Float?
@@ -3695,6 +3794,7 @@ model FinancialTransaction {
   @@index([subcontractorId])
   @@index([status])
   @@index([date])
+  @@index([tenantId])
 }
 
 model DocumentRevision {
@@ -3819,6 +3919,7 @@ model BackgroundJob {
 
 model DroneCapture {
   id          String   @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   projectId   String
   stageName   String // Örn: "Zemin", "Karkas", "Kaba İnşaat"
   modelUrl    String // 3D Modelin (GLB/GLTF) URL'si
@@ -3828,6 +3929,7 @@ model DroneCapture {
   createdAt   DateTime @default(now())
 
   @@index([projectId, captureDate])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3852,16 +3954,19 @@ model BleDevice {
 
 model RiskZone {
   id          String   @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
   projectId   String
   zoneName    String // Örn: "A Blok İskele (Yüksekte Çalışma)", "Kule Vinç Altı"
   dangerLevel String // "HIGH", "CRITICAL"
   requiredPpe String[] // Örn: ["BARET", "EMNIYET_KEMERI"]
 
   @@index([projectId])
+  @@index([tenantId])
 }
 
 model IsgViolation {
   id         String   @id @default(cuid())
+  tenantId   String? // SaaS: Kiracı ID
   projectId  String
   workerName String
   violation  String // Örn: "Baret takılmadı", "Yetkisiz iskele girişi"
@@ -3872,10 +3977,12 @@ model IsgViolation {
   @@index([projectId])
   @@index([status])
   @@index([timestamp])
+  @@index([tenantId])
 }
 
 model DailyLogistics {
   id        String   @id @default(cuid())
+  tenantId  String? // SaaS: Kiracı ID
   projectId String
   date      DateTime @default(now())
   material  String // "Demir (Ton)", "Çimento (Torba)", "Hazır Beton (m3)"
@@ -3884,6 +3991,7 @@ model DailyLogistics {
 
   @@index([projectId])
   @@index([date])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -3923,12 +4031,12 @@ model CameraViolation {
 
 model BlogPost {
   id             String   @id @default(cuid())
-  title          String   // Başlık (H1)
+  title          String // Başlık (H1)
   slug           String   @unique // URL dostu başlık (Örn: finansal-kacaklarin-onlenmesi)
-  category       String   // Örn: "Case Study", "Haberler"
-  targetAudience String   // Persona (Örn: "Patronlar, CFO'lar")
-  content        String   // Zengin metin (HTML veya Markdown olarak saklanacak)
-  imageUrl       String?  // Kapak fotoğrafı (UploadThing URL)
+  category       String // Örn: "Case Study", "Haberler"
+  targetAudience String // Persona (Örn: "Patronlar, CFO'lar")
+  content        String // Zengin metin (HTML veya Markdown olarak saklanacak)
+  imageUrl       String? // Kapak fotoğrafı (UploadThing URL)
   author         String   @default("Nexa ERP")
   language       String   @default("tr") // "tr" veya "en"
   isPublished    Boolean  @default(false)
@@ -3947,15 +4055,17 @@ model BlogPost {
 
 model SubcontractorScore {
   id           String   @id @default(cuid())
+  tenantId     String? // SaaS: Kiracı ID
   companyId    String   @unique
   company      Company  @relation(fields: [companyId], references: [id])
-  speedScore   Float    // Hız puanı (1-10)
-  qualityScore Float    // Kusur (BIM) puanı (1-10)
-  isgRiskLevel String   // "LOW", "MEDIUM", "HIGH"
+  speedScore   Float // Hız puanı (1-10)
+  qualityScore Float // Kusur (BIM) puanı (1-10)
+  isgRiskLevel String // "LOW", "MEDIUM", "HIGH"
   lastUpdated  DateTime @default(now())
 
   @@index([companyId])
   @@index([isgRiskLevel])
+  @@index([tenantId])
 }
 
 model DailyAiReport {
@@ -3974,18 +4084,18 @@ model DailyAiReport {
 // 1. FİNANS: Çek, Senet ve Teminat Mektupları
 // ============================================================================
 model FinancialDocument {
-  id            String   @id @default(cuid())
-  documentType  String   // "CHECK" (Çek), "PROMISSORY_NOTE" (Senet), "GUARANTEE_LETTER" (Teminat Mektubu)
-  documentNo    String   @unique
-  amount        Float
-  currency      String   @default("TRY")
-  issueDate     DateTime
-  dueDate       DateTime // Vade veya Bitiş Tarihi
-  companyId     String   // Kime verildiği / Kimden alındığı
-  company       Company  @relation(fields: [companyId], references: [id])
-  status        String   @default("PORTFOLIO") // PORTFOLIO, CASHED, RETURNED, BOUNCED
-  documentUrl   String?  // Evrak görseli / PDF bağlantısı
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  documentType String // "CHECK" (Çek), "PROMISSORY_NOTE" (Senet), "GUARANTEE_LETTER" (Teminat Mektubu)
+  documentNo   String   @unique
+  amount       Float
+  currency     String   @default("TRY")
+  issueDate    DateTime
+  dueDate      DateTime // Vade veya Bitiş Tarihi
+  companyId    String // Kime verildiği / Kimden alındığı
+  company      Company  @relation(fields: [companyId], references: [id])
+  status       String   @default("PORTFOLIO") // PORTFOLIO, CASHED, RETURNED, BOUNCED
+  documentUrl  String? // Evrak görseli / PDF bağlantısı
+  createdAt    DateTime @default(now())
 
   @@index([companyId])
   @@index([documentType])
@@ -4004,8 +4114,8 @@ model PurchaseRequest {
   quantity             Float
   unit                 String
   status               String                   @default("OPEN_FOR_BID") // OPEN_FOR_BID, COMPLETED, CANCELLED
-  deadline             DateTime?                // İhale Bitiş Tarihi
-  paymentType          String?                  // Peşin, Vadeli
+  deadline             DateTime? // İhale Bitiş Tarihi
+  paymentType          String? // Peşin, Vadeli
   deliveryNotes        String?                  @db.Text // Teslimat koşulları ve şantiye notları
   bids                 SupplierBid[]
   deliveryAppointments DeliveryAppointment[]
@@ -4023,7 +4133,7 @@ model SupplierBid {
   id                String          @id @default(cuid())
   purchaseRequestId String
   purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
-  supplierId        String          // Company tablosundaki "SUPPLIER" ID'si
+  supplierId        String // Company tablosundaki "SUPPLIER" ID'si
   supplier          Company         @relation(fields: [supplierId], references: [id])
   unitPrice         Float
   totalPrice        Float
@@ -4040,12 +4150,12 @@ model SupplierBid {
 // 3. İKMAL: Makine Yakıt ve Bakım Takibi
 // ============================================================================
 model EquipmentFuelRecord {
-  id            String   @id @default(cuid())
-  equipmentId   String   // İlgili iş makinesi / araç
-  liters        Float
-  cost          Float
-  odometer      Int      // O anki Kilometre veya Çalışma Saati
-  date          DateTime @default(now())
+  id          String   @id @default(cuid())
+  equipmentId String // İlgili iş makinesi / araç
+  liters      Float
+  cost        Float
+  odometer    Int // O anki Kilometre veya Çalışma Saati
+  date        DateTime @default(now())
 
   @@index([equipmentId])
   @@index([date])
@@ -4054,7 +4164,7 @@ model EquipmentFuelRecord {
 model EquipmentMaintenance {
   id              String   @id @default(cuid())
   equipmentId     String
-  maintenanceType String   // "PERIODIC", "REPAIR", "INSPECTION" (Örn: MMO Vize)
+  maintenanceType String // "PERIODIC", "REPAIR", "INSPECTION" (Örn: MMO Vize)
   cost            Float
   nextDueDate     DateTime // Bir sonraki bakım tarihi (Risk Radarı İçin)
   isCompleted     Boolean  @default(false)
@@ -4068,13 +4178,13 @@ model EquipmentMaintenance {
 // 4. İK: Süreli Evrak ve İSG Alarmı (Personel modeline veya ayrı tabloya)
 // ============================================================================
 model PersonnelDocument {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  docType       String   // "MYK", "HEAVY_MACHINE_LICENSE", "HEALTH_REPORT"
-  issueDate     DateTime
-  expiryDate    DateTime // Bitiş Tarihi
-  isAlertSent   Boolean  @default(false)
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  docType     String // "MYK", "HEAVY_MACHINE_LICENSE", "HEALTH_REPORT"
+  issueDate   DateTime
+  expiryDate  DateTime // Bitiş Tarihi
+  isAlertSent Boolean  @default(false)
 
   @@index([userId])
   @@index([expiryDate])
@@ -4088,51 +4198,56 @@ model PersonnelDocument {
 // Şantiye Kapı Randevu Sistemi (Trafik Kontrolü)
 model DeliveryAppointment {
   id                String          @id @default(cuid())
+  tenantId          String? // SaaS: Kiracı ID
   purchaseRequestId String
   purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
   supplierId        String
-  vehiclePlate      String   // Tır/Kamyon Plakası
+  vehiclePlate      String // Tır/Kamyon Plakası
   driverName        String?
   scheduledDate     DateTime // Randevu Tarihi ve Saati
-  status            String   @default("SCHEDULED") // SCHEDULED, ARRIVED, UNLOADED, REJECTED
-  createdAt         DateTime @default(now())
+  status            String          @default("SCHEDULED") // SCHEDULED, ARRIVED, UNLOADED, REJECTED
+  createdAt         DateTime        @default(now())
 
   @@index([purchaseRequestId])
   @@index([scheduledDate])
   @@index([status])
+  @@index([tenantId])
 }
 
 // Ambar Kabul ve İrsaliye Eşleştirme
 model GoodsReceipt {
-  id                String   @id @default(cuid())
+  id                String          @id @default(cuid())
+  tenantId          String? // SaaS: Kiracı ID
   purchaseRequestId String
   orderedQuantity   Float
-  deliveredQuantity Float    // Gerçekte ambara inen miktar
-  waybillNo         String   // İrsaliye Numarası
-  receivedById      String   // Teslim alan personel (User ID)
-  receivedDate      DateTime @default(now())
+  deliveredQuantity Float // Gerçekte ambara inen miktar
+  waybillNo         String // İrsaliye Numarası
+  receivedById      String // Teslim alan personel (User ID)
+  receivedDate      DateTime        @default(now())
   issues            DeliveryIssue[]
-  createdAt         DateTime @default(now())
+  createdAt         DateTime        @default(now())
 
   @@index([purchaseRequestId])
   @@index([waybillNo])
   @@index([receivedById])
+  @@index([tenantId])
 }
 
 // Canlı Lojistik ve Sevkiyat Takibi
 model ShipmentTracking {
-  id                String          @id @default(cuid())
-  trackingCode      String          @unique // URL'de kullanılacak eşsiz kod (Örn: 8f7a9)
-  purchaseRequestId String
-  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
-  driverPhone       String          // SMS atılacak numara
-  vehiclePlate      String
-  status            String          @default("PREPARING") // PREPARING, ON_THE_WAY, ARRIVED, DELIVERED
-  lastLatitude           Float?          // Son ping (Enlem)
-  lastLongitude          Float?          // Son ping (Boylam)
-  estimatedTimeOfArrival DateTime?       // Yapay zeka/OSRM tahmini varış zamanı (ETA)
+  id                     String          @id @default(cuid())
+  tenantId               String? // SaaS: Kiracı ID
+  trackingCode           String          @unique // URL'de kullanılacak eşsiz kod (Örn: 8f7a9)
+  purchaseRequestId      String
+  purchaseRequest        PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
+  driverPhone            String // SMS atılacak numara
+  vehiclePlate           String
+  status                 String          @default("PREPARING") // PREPARING, ON_THE_WAY, ARRIVED, DELIVERED
+  lastLatitude           Float? // Son ping (Enlem)
+  lastLongitude          Float? // Son ping (Boylam)
+  estimatedTimeOfArrival DateTime? // Yapay zeka/OSRM tahmini varış zamanı (ETA)
   delayInMinutes         Int             @default(0) // Gecikme süresi
-  linkedTaskId           String?         // Bu lojistik hangi inşaat görevini (Task/Gantt) besliyor?
+  linkedTaskId           String? // Bu lojistik hangi inşaat görevini (Task/Gantt) besliyor?
   updatedAt              DateTime        @updatedAt
   createdAt              DateTime        @default(now())
 
@@ -4140,6 +4255,7 @@ model ShipmentTracking {
   @@index([purchaseRequestId])
   @@index([status])
   @@index([linkedTaskId])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -4148,32 +4264,32 @@ model ShipmentTracking {
 
 // Tip Mağaza Şablonları
 model StoreTemplate {
-  id              String    @id @default(cuid())
-  companyId       String
-  name            String    // Örn: "AVM Konsepti - 100m2"
-  estimatedDays   Int       // Standart kurulum süresi (Örn: 45 gün)
-  defaultBoQ      Json      // Standart malzeme ve metraj şablonu
-  defaultTasks    Json      // Standart iş planı (Gantt) şablonu
-  projects        Project[]
-  createdAt       DateTime  @default(now())
+  id            String    @id @default(cuid())
+  companyId     String
+  name          String // Örn: "AVM Konsepti - 100m2"
+  estimatedDays Int // Standart kurulum süresi (Örn: 45 gün)
+  defaultBoQ    Json // Standart malzeme ve metraj şablonu
+  defaultTasks  Json // Standart iş planı (Gantt) şablonu
+  projects      Project[]
+  createdAt     DateTime  @default(now())
 
   @@index([companyId])
 }
 
 // Proje (Mağaza) Aşamaları ve İdari Kilitler (Stage-Gate)
 model StageGate {
-  id              String    @id @default(cuid())
-  projectId       String
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  stageName         String           // "KİRALAMA", "AVM_ONAYI", "KABA_YAPI", "İTFAİYE_ONAYI"
+  id                String           @id @default(cuid())
+  projectId         String
+  project           Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stageName         String // "KİRALAMA", "AVM_ONAYI", "KABA_YAPI", "İTFAİYE_ONAYI"
   isRequired        Boolean          @default(true)
   isApproved        Boolean          @default(false)
-  documentUrl       String?          // İlgili ruhsat veya kontrat belgesi
-  approvedById      String?          // Onaylayan yöneticinin ID'si
+  documentUrl       String? // İlgili ruhsat veya kontrat belgesi
+  approvedById      String? // Onaylayan yöneticinin ID'si
   approvedAt        DateTime?
   progressBillingId String?
   progressBilling   ProgressBilling? @relation(fields: [progressBillingId], references: [id], onDelete: SetNull)
-  billingPercentage Float?           // Örn: Bu aşama bitince sözleşmenin %30'u ödenir
+  billingPercentage Float? // Örn: Bu aşama bitince sözleşmenin %30'u ödenir
   createdAt         DateTime         @default(now())
 
   @@index([projectId])
@@ -4184,16 +4300,16 @@ model StageGate {
 
 // Kurumsal Denetim ve Eksik Listesi (Punch List)
 model PunchList {
-  id              String    @id @default(cuid())
+  id              String   @id @default(cuid())
   projectId       String
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  inspectorId     String    // Denetleyen Bölge Müdürü
-  subcontractorId String    // Sorumlu taşeron
-  defectDesc      String    // Kusur açıklaması (Örn: "Tabela rengi yanlış")
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inspectorId     String // Denetleyen Bölge Müdürü
+  subcontractorId String // Sorumlu taşeron
+  defectDesc      String // Kusur açıklaması (Örn: "Tabela rengi yanlış")
   photoUrl        String?
-  deadline        DateTime  // Düzeltme için son tarih
-  status          String    @default("OPEN") // OPEN, FIXED, VERIFIED
-  createdAt       DateTime  @default(now())
+  deadline        DateTime // Düzeltme için son tarih
+  status          String   @default("OPEN") // OPEN, FIXED, VERIFIED
+  createdAt       DateTime @default(now())
 
   @@index([projectId])
   @@index([status])
@@ -4206,25 +4322,25 @@ model PunchList {
 
 // 2. KONSOLİDE SATINALMA: Farklı mağazaların taleplerini birleştiren üst model
 model ConsolidatedProcurement {
-  id              String            @id @default(cuid())
-  title           String            // Örn: "Kasım Ayı Yeni Açılışlar Mobilya Tedariği"
-  status          String            @default("OPEN")
-  requests        PurchaseRequest[] // Birden fazla şantiyenin talebini buraya bağla
-  createdAt       DateTime          @default(now())
+  id        String            @id @default(cuid())
+  title     String // Örn: "Kasım Ayı Yeni Açılışlar Mobilya Tedariği"
+  status    String            @default("OPEN")
+  requests  PurchaseRequest[] // Birden fazla şantiyenin talebini buraya bağla
+  createdAt DateTime          @default(now())
 
   @@index([status])
 }
 
 // 3. HASARLI TESLİMAT VE İADE (RMA)
 model DeliveryIssue {
-  id              String       @id @default(cuid())
-  goodsReceiptId  String
-  goodsReceipt    GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
-  issueType       String       // "DAMAGED", "WRONG_ITEM", "MISSING_PARTS"
-  description     String
-  photoUrls       String[]
-  status          String       @default("REPORTED") // REPORTED, REPLACEMENT_SENT, RESOLVED
-  createdAt       DateTime     @default(now())
+  id             String       @id @default(cuid())
+  goodsReceiptId String
+  goodsReceipt   GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  issueType      String // "DAMAGED", "WRONG_ITEM", "MISSING_PARTS"
+  description    String
+  photoUrls      String[]
+  status         String       @default("REPORTED") // REPORTED, REPLACEMENT_SENT, RESOLVED
+  createdAt      DateTime     @default(now())
 
   @@index([goodsReceiptId])
   @@index([status])
@@ -4232,13 +4348,13 @@ model DeliveryIssue {
 
 // 4. DİJİTAL DEVİR-TESLİM (STORE HANDOVER & AS-BUILT) BELGELERİ
 model HandoverDocument {
-  id              String   @id @default(cuid())
-  projectId       String
-  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  documentType    String   // "WARRANTY", "MANUAL", "AS_BUILT_DRAWING", "PANEL_PHOTO"
-  title           String   // Örn: "Mitsubishi Klima Garanti Belgesi"
-  fileUrl         String
-  uploadedAt      DateTime @default(now())
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  documentType String // "WARRANTY", "MANUAL", "AS_BUILT_DRAWING", "PANEL_PHOTO"
+  title        String // Örn: "Mitsubishi Klima Garanti Belgesi"
+  fileUrl      String
+  uploadedAt   DateTime @default(now())
 
   @@index([projectId])
   @@index([documentType])
@@ -4248,22 +4364,20 @@ model HandoverDocument {
 // SAHA İÇİ İLETİŞİM, İLERLEME KAMERASI, MASRAF VE SOS ALTYAPISI
 // ============================================================================
 
-
-
 // 2. ATAŞMAN & İLERLEME KAMERASI (Kanıt Fotoğrafları)
 model ProgressAttachment {
-  id            String   @id @default(cuid())
-  projectId     String
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  uploaderId    String
-  uploader      User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
-  photoUrl      String
-  description   String?  // Örn: "A Blok 3. Kat Beton Dökümü Bitti"
-  latitude      Float?   // Fotoğrafın GPS Enlemi (EXIF'ten veya tarayıcıdan alınacak)
-  longitude     Float?   // Fotoğrafın GPS Boylamı
-  bimElementId  String?  // Eğer 3D modeldeki bir kolon/kiriş ile eşleşiyorsa
-  stageGateId   String?  // Eğer bir franchise aşamasını (Stage-Gate) tamamlıyorsa
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploaderId   String
+  uploader     User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  photoUrl     String
+  description  String? // Örn: "A Blok 3. Kat Beton Dökümü Bitti"
+  latitude     Float? // Fotoğrafın GPS Enlemi (EXIF'ten veya tarayıcıdan alınacak)
+  longitude    Float? // Fotoğrafın GPS Boylamı
+  bimElementId String? // Eğer 3D modeldeki bir kolon/kiriş ile eşleşiyorsa
+  stageGateId  String? // Eğer bir franchise aşamasını (Stage-Gate) tamamlıyorsa
+  createdAt    DateTime @default(now())
 
   @@index([projectId])
   @@index([uploaderId])
@@ -4273,37 +4387,41 @@ model ProgressAttachment {
 
 // 3. MASRAF & YAKIT FİŞİ GİRİŞİ (Personel Harcamaları)
 model ExpenseClaim {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projectId     String?
-  expenseType   String   // "FUEL" (Yakıt), "MATERIAL" (Malzeme), "FOOD" (Yemek)
-  amount        Float
-  receiptUrl    String   // Fiş/Fatura fotoğrafı
-  description   String?
-  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
-  createdAt     DateTime @default(now())
+  id          String   @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String?
+  expenseType String // "FUEL" (Yakıt), "MATERIAL" (Malzeme), "FOOD" (Yemek)
+  amount      Float
+  receiptUrl  String // Fiş/Fatura fotoğrafı
+  description String?
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
+  createdAt   DateTime @default(now())
 
   @@index([userId])
   @@index([projectId])
   @@index([status])
+  @@index([tenantId])
 }
 
 // 4. ACİL DURUM (SOS ALARMI)
 model SosAlert {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projectId     String?
-  latitude      Float?
-  longitude     Float?
-  status        String   @default("ACTIVE") // ACTIVE (Kırmızı Alarm), RESOLVED (Çözüldü)
-  resolvedById  String?
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  tenantId     String? // SaaS: Kiracı ID
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId    String?
+  latitude     Float?
+  longitude    Float?
+  status       String   @default("ACTIVE") // ACTIVE (Kırmızı Alarm), RESOLVED (Çözüldü)
+  resolvedById String?
+  createdAt    DateTime @default(now())
 
   @@index([userId])
   @@index([projectId])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -4311,26 +4429,28 @@ model SosAlert {
 // ============================================================================
 
 model ReinforcementVisa {
-  id                   String   @id @default(cuid())
-  visaNo               String   @unique // Örn: VIZE-2026-041
+  id                   String            @id @default(cuid())
+  tenantId             String? // SaaS: Kiracı ID
+  visaNo               String            @unique // Örn: VIZE-2026-041
   projectId            String
-  project              Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project              Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   inspectorId          String
-  inspector            User     @relation(fields: [inspectorId], references: [id], onDelete: Cascade)
-  elementName          String   // Örn: "4. Kat Tabliye & Kiriş"
-  reinforcementDetails String   // Örn: "Ø14, Ø16 (B420C)"
-  coverSpace           Float    // Paspayı (cm)
-  formworkStatus       String   // "Şakülünde", "Kusurlu"
-  status               String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  inspector            User              @relation(fields: [inspectorId], references: [id], onDelete: Cascade)
+  elementName          String // Örn: "4. Kat Tabliye & Kiriş"
+  reinforcementDetails String // Örn: "Ø14, Ø16 (B420C)"
+  coverSpace           Float // Paspayı (cm)
+  formworkStatus       String // "Şakülünde", "Kusurlu"
+  status               String            @default("PENDING") // PENDING, APPROVED, REJECTED
   rejectionReason      String?
   blueprintId          String?
   blueprint            ProjectBlueprint? @relation(fields: [blueprintId], references: [id], onDelete: SetNull)
-  createdAt            DateTime @default(now())
+  createdAt            DateTime          @default(now())
 
   @@index([projectId])
   @@index([inspectorId])
   @@index([status])
   @@index([blueprintId])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -4338,23 +4458,25 @@ model ReinforcementVisa {
 // ============================================================================
 
 model NonConformance {
-  id              String    @id @default(cuid())
-  reportNo        String    @unique // Örn: NCR-2026-001
+  id              String   @id @default(cuid())
+  tenantId        String? // SaaS: Kiracı ID
+  reportNo        String   @unique // Örn: NCR-2026-001
   projectId       String
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creatorId       String
-  creator         User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator         User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   subcontractorId String?
-  description     String    @db.Text
+  description     String   @db.Text
   deadline        DateTime
-  status          String    @default("OPEN") // OPEN, RESOLVED, VERIFIED
-  severity        String?   @default("NORMAL") // LOW, MEDIUM, HIGH, CRITICAL
-  photos          String[]  @default([]) // Kusur fotoğrafları
-  createdAt       DateTime  @default(now())
+  status          String   @default("OPEN") // OPEN, RESOLVED, VERIFIED
+  severity        String?  @default("NORMAL") // LOW, MEDIUM, HIGH, CRITICAL
+  photos          String[] @default([]) // Kusur fotoğrafları
+  createdAt       DateTime @default(now())
 
   @@index([projectId])
   @@index([creatorId])
   @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -4362,19 +4484,21 @@ model NonConformance {
 // ============================================================================
 
 model InspectionForm {
-  id              String    @id @default(cuid())
-  formType        String    // "ISG", "KALITE", "CEVRE", "DEMIR_VIZE", "BETON_DOKUM"
-  projectId       String
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  inspectorId     String
-  inspector       User      @relation(fields: [inspectorId], references: [id], onDelete: Cascade)
-  formData        Json      // Dinamik form cevapları (Soru-Cevap JSON)
-  isPassed        Boolean
-  createdAt       DateTime  @default(now())
+  id          String   @id @default(cuid())
+  tenantId    String? // SaaS: Kiracı ID
+  formType    String // "ISG", "KALITE", "CEVRE", "DEMIR_VIZE", "BETON_DOKUM"
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inspectorId String
+  inspector   User     @relation(fields: [inspectorId], references: [id], onDelete: Cascade)
+  formData    Json // Dinamik form cevapları (Soru-Cevap JSON)
+  isPassed    Boolean
+  createdAt   DateTime @default(now())
 
   @@index([projectId])
   @@index([inspectorId])
   @@index([formType])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -4382,46 +4506,48 @@ model InspectionForm {
 // ============================================================================
 
 model BoqItem {
-  id              String           @id @default(cuid())
+  id              String    @id @default(cuid())
+  tenantId        String? // SaaS: Kiracı ID
   projectId       String
-  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  pozNo           String           // Örn: "15.120.1001" (Beton Dökümü)
-  description     String           // "C35/45 Hazır Beton"
-  unit            String           // "m3", "Ton", "m2"
-  plannedQuantity Float            // Toplam yapılması gereken
-  unitPrice       Float            // Birim fiyat
-  totalPrice      Float            @default(0) // plannedQuantity * unitPrice (Sistem hesaplar)
-  actualQuantity  Float            @default(0) // Sahada şu ana kadar yapılan (Onaylanmış)
-  startDate       DateTime?        // Planlanan başlangıç
-  endDate         DateTime?        // Planlanan bitiş
-  subcontractorId String?          // Bu işi yapan taşeron
-  currency        String?          @default("TRY") // TRY, USD, EUR
-  exchangeRate    Float?           @default(1.0)
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pozNo           String // Örn: "15.120.1001" (Beton Dökümü)
+  description     String // "C35/45 Hazır Beton"
+  unit            String // "m3", "Ton", "m2"
+  plannedQuantity Float // Toplam yapılması gereken
+  unitPrice       Float // Birim fiyat
+  totalPrice      Float     @default(0) // plannedQuantity * unitPrice (Sistem hesaplar)
+  actualQuantity  Float     @default(0) // Sahada şu ana kadar yapılan (Onaylanmış)
+  startDate       DateTime? // Planlanan başlangıç
+  endDate         DateTime? // Planlanan bitiş
+  subcontractorId String? // Bu işi yapan taşeron
+  currency        String?   @default("TRY") // TRY, USD, EUR
+  exchangeRate    Float?    @default(1.0)
   originalAmount  Float?
-  
-  // BÜTÜNLEŞİK YAPI: Bu imalat için hangi malzeme gerekiyor?
-  requiredMaterialId String?       // InventoryItem tablosuna referans (Opsiyonel)
-  requiredMaterial   InventoryItem? @relation(fields: [requiredMaterialId], references: [id], onDelete: SetNull)
-  
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt @default(now())
 
-  progressLogs    BoqProgressLog[]
-  workProofs      WorkProof[]
+  // BÜTÜNLEŞİK YAPI: Bu imalat için hangi malzeme gerekiyor?
+  requiredMaterialId String? // InventoryItem tablosuna referans (Opsiyonel)
+  requiredMaterial   InventoryItem? @relation(fields: [requiredMaterialId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  progressLogs BoqProgressLog[]
+  workProofs   WorkProof[]
 
   @@index([projectId])
   @@index([pozNo])
   @@index([requiredMaterialId])
+  @@index([tenantId])
 }
 
 model BoqProgressLog {
   id            String   @id @default(cuid())
   boqItemId     String
   boqItem       BoqItem  @relation(fields: [boqItemId], references: [id], onDelete: Cascade)
-  quantityAdded Float    // Eklenen miktar (Örn: 50)
+  quantityAdded Float // Eklenen miktar (Örn: 50)
   notes         String?  @db.Text
-  attachmentUrl String?  // Fotoğraf / Ataşman
-  createdByName String?  // Kaydeden personel
+  attachmentUrl String? // Fotoğraf / Ataşman
+  createdByName String? // Kaydeden personel
   createdAt     DateTime @default(now())
 
   @@index([boqItemId])
@@ -4433,21 +4559,22 @@ model BoqProgressLog {
 // ============================================================================
 
 model DailyJournal {
-  id              String   @id @default(cuid())
-  projectId       String
-  engineerId      String   // Raporu onaylayan mühendis
-  date            DateTime @default(now())
-  weather         Json?    // Otonom çekilen hava durumu (Sıcaklık, Rüzgar)
-  workerCount     Int      // Sistemden otomatik hesaplanan
-  consumedItems   Json     // O gün tüketilen (QR) malzemelerin özeti
-  completedWorks  Json     // O gün onaylanan taşeron hakediş/kanıtları
-  ncrReports      Json     // O gün açılan kusur/DÖF kayıtları
-  engineerNotes   String?  // Mühendisin eklemek istediği manuel yorum
-  status          String   @default("SUBMITTED") // Merkez ofise iletildi
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  tenantId       String? // SaaS: Kiracı ID
+  projectId      String
+  engineerId     String // Raporu onaylayan mühendis
+  date           DateTime @default(now())
+  weather        Json? // Otonom çekilen hava durumu (Sıcaklık, Rüzgar)
+  workerCount    Int // Sistemden otomatik hesaplanan
+  consumedItems  Json // O gün tüketilen (QR) malzemelerin özeti
+  completedWorks Json // O gün onaylanan taşeron hakediş/kanıtları
+  ncrReports     Json // O gün açılan kusur/DÖF kayıtları
+  engineerNotes  String? // Mühendisin eklemek istediği manuel yorum
+  status         String   @default("SUBMITTED") // Merkez ofise iletildi
+  createdAt      DateTime @default(now())
 
   @@index([projectId])
   @@index([engineerId])
   @@index([date])
+  @@index([tenantId])
 }
-

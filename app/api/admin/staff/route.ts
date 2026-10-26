@@ -11,7 +11,11 @@ import { auth } from "@/lib/auth"
 export async function GET(request: Request) {
   try {
     const session = await auth()
-    if (!session) {
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -19,7 +23,10 @@ export async function GET(request: Request) {
     const search = searchParams.get("search")
     const filter = searchParams.get("filter")
 
+    const whereClause: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     let staff = await prisma.personel.findMany({
+      where: whereClause,
       include: {
         siteHistory: {
           orderBy: { startDate: "desc" }
@@ -61,15 +68,21 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await auth()
-    if (!session) {
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
     const { name, age, birthDate, department, currentSite } = body
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     // Generate personnel number
-    const personnelCount = await prisma.personel.count()
+    const personnelCount = await prisma.personel.count({ where: tenantFilter })
     const personnelNo = `P${String(personnelCount + 1).padStart(3, '0')}`
 
     const newStaff = await prisma.personel.create({
@@ -80,7 +93,8 @@ export async function POST(request: Request) {
         birthDate: new Date(birthDate),
         department,
         currentSite,
-        hireDate: new Date()
+        hireDate: new Date(),
+        tenantId: tenantId || null,
       },
       include: {
         siteHistory: true,

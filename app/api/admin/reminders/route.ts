@@ -6,9 +6,19 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
 
@@ -19,8 +29,13 @@ export async function GET(request: Request) {
       )
     }
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const reminders = await prisma.reminder.findMany({
-      where: { projectId },
+      where: {
+        projectId,
+        ...tenantFilter,
+      },
       orderBy: { date: 'asc' }
     })
 
@@ -36,6 +51,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { title, date, projectId } = body
 
@@ -51,7 +75,8 @@ export async function POST(request: Request) {
         title,
         date: new Date(date),
         projectId,
-        isCompleted: false
+        isCompleted: false,
+        tenantId: tenantId || null,
       }
     })
 

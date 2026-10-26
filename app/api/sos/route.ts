@@ -13,15 +13,25 @@ export const dynamic = "force-dynamic"
 export async function GET(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status") || "ACTIVE"
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+    const where: any = {
+      ...tenantFilter,
+      ...(status === "ALL" ? {} : { status })
+    }
+
     const alerts = await prisma.sosAlert.findMany({
-      where: status === "ALL" ? {} : { status },
+      where,
       include: {
         user: {
           select: {
@@ -46,7 +56,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
@@ -60,6 +74,7 @@ export async function POST(request: Request) {
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
         status: "ACTIVE",
+        tenantId: tenantId || null,
       },
       include: {
         user: {
@@ -83,7 +98,11 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
@@ -92,6 +111,15 @@ export async function PATCH(request: Request) {
 
     if (!alertId) {
       return NextResponse.json({ error: "alertId zorunludur" }, { status: 400 })
+    }
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.sosAlert.findFirst({
+        where: { id: alertId, tenantId }
+      })
+      if (!existing) {
+        return NextResponse.json({ error: "Alarm bulunamadı veya yetkisiz erişim" }, { status: 404 })
+      }
     }
 
     const updated = await prisma.sosAlert.update({

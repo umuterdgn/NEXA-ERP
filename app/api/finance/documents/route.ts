@@ -10,12 +10,21 @@ import { auth } from "@/lib/auth"
 
 export async function GET(req: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
     const type = searchParams.get("type")
     const status = searchParams.get("status")
     const search = searchParams.get("search")
 
-    const where: any = {}
+    const where: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
     if (type && type !== "ALL") {
       where.documentType = type
     }
@@ -58,20 +67,18 @@ export async function GET(req: Request) {
 
       if (diffDays < 0) {
         urgency = "RED"
-        urgencyText = `Vadesi ${Math.abs(diffDays)} gün geçti!`
+        urgencyText = `${Math.abs(diffDays)} gün gecikti`
       } else if (diffDays <= 7) {
         urgency = "RED"
-        urgencyText = `${diffDays} gün kaldı (Kritik)`
-      } else if (diffDays <= 15) {
+      } else if (diffDays <= 30) {
         urgency = "YELLOW"
-        urgencyText = `${diffDays} gün kaldı (Yaklaşıyor)`
       }
 
       return {
         ...doc,
-        diffDays,
         urgency,
         urgencyText,
+        daysRemaining: diffDays,
       }
     })
 
@@ -84,6 +91,15 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { documentType, documentNo, amount, currency, issueDate, dueDate, companyId, status } = body
 
@@ -102,6 +118,7 @@ export async function POST(req: Request) {
         companyId,
         status: status || "PORTFOLIO",
         documentUrl: body.documentUrl || null,
+        tenantId: tenantId || null,
       },
       include: {
         company: true,
@@ -117,11 +134,29 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { id, status, amount, dueDate, notes } = body
 
     if (!id) {
       return NextResponse.json({ error: "ID gerekli" }, { status: 400 })
+    }
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.financialDocument.findFirst({
+        where: { id, tenantId }
+      })
+      if (!existing) {
+        return NextResponse.json({ error: "Belge bulunamadı veya yetkisiz erişim" }, { status: 404 })
+      }
     }
 
     const updateData: any = {}
@@ -146,11 +181,29 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
 
     if (!id) {
       return NextResponse.json({ error: "ID gerekli" }, { status: 400 })
+    }
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.financialDocument.findFirst({
+        where: { id, tenantId }
+      })
+      if (!existing) {
+        return NextResponse.json({ error: "Belge bulunamadı veya yetkisiz erişim" }, { status: 404 })
+      }
     }
 
     await prisma.financialDocument.delete({

@@ -13,7 +13,11 @@ export const dynamic = "force-dynamic"
 export async function GET(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
@@ -22,10 +26,9 @@ export async function GET(request: Request) {
     const projectId = searchParams.get("projectId")
     const onlyMine = searchParams.get("onlyMine") === "true"
 
-    const whereClause: any = {}
+    const whereClause: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
 
     // Saha personeli sadece kendi masraflarını görebilir; Muhasebe/Admin ise tümünü görebilir
-    const userRole = session.user.role as string
     const isManager = ["ADMIN", "SUPER_ADMIN", "MUHASEBE", "FINANCE_MANAGER"].includes(userRole)
 
     if (onlyMine || !isManager) {
@@ -60,7 +63,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
@@ -83,6 +90,7 @@ export async function POST(request: Request) {
         receiptUrl,
         description: description || null,
         status: "PENDING",
+        tenantId: tenantId || null,
       },
       include: {
         user: {
@@ -101,11 +109,14 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
-    const userRole = session.user.role as string
     const isManager = ["ADMIN", "SUPER_ADMIN", "MUHASEBE", "FINANCE_MANAGER"].includes(userRole)
     if (!isManager) {
       return NextResponse.json({ error: "Bu işlem için finans yetkisi gerekir" }, { status: 403 })
@@ -116,6 +127,15 @@ export async function PATCH(request: Request) {
 
     if (!claimId || !status) {
       return NextResponse.json({ error: "claimId ve status zorunludur" }, { status: 400 })
+    }
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.expenseClaim.findFirst({
+        where: { id: claimId, tenantId }
+      })
+      if (!existing) {
+        return NextResponse.json({ error: "Masraf kaydı bulunamadı veya yetkisiz erişim" }, { status: 404 })
+      }
     }
 
     const updated = await prisma.expenseClaim.update({

@@ -6,6 +6,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,26 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    const userRole = session?.user?.role;
+    const isSuperAdmin = userRole === "SUPER_ADMIN";
+    const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.deduction.findFirst({
+        where: { id, tenantId }
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Deduction not found or access denied" }, { status: 404 });
+      }
+    }
+
     const body = await request.json();
     const { subcontractorId, projectId, amount, reason, notes } = body;
 
@@ -48,7 +68,26 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    const userRole = session?.user?.role;
+    const isSuperAdmin = userRole === "SUPER_ADMIN";
+    const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.deduction.findFirst({
+        where: { id, tenantId }
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Deduction not found or access denied" }, { status: 404 });
+      }
+    }
+
     await prisma.deduction.delete({
       where: { id },
     });

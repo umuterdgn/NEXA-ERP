@@ -5,7 +5,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import ProjectDetailClient from "@/components/ProjectDetailClient"
 import ProjectDetailTabs from "@/components/ProjectDetailTabs"
@@ -23,6 +23,15 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>
 }) {
   const resolvedParams = await params
+
+  const session = await auth()
+  const userRole = session?.user?.role
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login")
+  }
 
   type ProjectTransaction = {
     id: string
@@ -66,8 +75,11 @@ export default async function ProjectDetailPage({
   
   let project: ProjectRecord | null = null
   try {
-    project = (await prisma.project.findUnique({
-      where: { id: resolvedParams.id },
+    project = (await prisma.project.findFirst({
+      where: {
+        id: resolvedParams.id,
+        ...(!isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {})
+      },
       include: {
         company: true,
         archives: true,
@@ -165,14 +177,16 @@ export default async function ProjectDetailPage({
 
   // Multi-Tenant Güvenlik ve İzolasyon Bariyeri:
   // Superadmin hariç, A firmasının mühendisi B firmasının projesine erişmeye çalışırsa 404 Not Found döner.
-  const session = await auth()
   enforceTenantBarrier((project as any).tenantId, session)
 
   // Ensure BIM models are always populated and passed to the component
   if (!project.bimFiles || (project.bimFiles as any[]).length === 0) {
     try {
       const directBimFiles = await prisma.bimFile.findMany({
-        where: { projectId: resolvedParams.id },
+        where: {
+          projectId: resolvedParams.id,
+          ...(!isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {})
+        },
         orderBy: { uploadedAt: "desc" },
       })
       project.bimFiles = directBimFiles

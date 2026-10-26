@@ -15,11 +15,24 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    const userRole = session?.user?.role as string;
+    const isSuperAdmin = userRole === "SUPER_ADMIN";
+    const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.inspectionReport.findFirst({
+        where: { id, tenantId }
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Rapor bulunamadı veya yetkisiz erişim" }, { status: 404 });
+      }
+    }
     
     await prisma.inspectionReport.delete({
       where: { id },
@@ -39,14 +52,26 @@ export async function PATCH(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    const userRole = session?.user?.role as string;
+    const isSuperAdmin = userRole === "SUPER_ADMIN";
+    const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.inspectionReport.findFirst({
+        where: { id, tenantId }
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Rapor bulunamadı veya yetkisiz erişim" }, { status: 404 });
+      }
+    }
+
     const body = await req.json();
-    
-    // Gelen veri içinden güncellenebilecek alanları seç
     const { title, description } = body;
     
     const updatedReport = await prisma.inspectionReport.update({

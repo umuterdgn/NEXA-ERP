@@ -8,6 +8,8 @@
 import React from "react";
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { liveLogisticsCache } from "@/lib/logistics-cache";
 import { ShipmentLiveItem } from "./_components/LogisticsLiveMap";
 import MapWrapper from "./_components/MapWrapper";
@@ -18,13 +20,34 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminLogisticsMapPage() {
+  const session = await auth();
+  const userRole = session?.user?.role;
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login");
+  }
+
+  const tenantFilter = !isSuperAdmin
+    ? tenantId
+      ? {
+          OR: [
+            { tenantId },
+            { purchaseRequest: { project: { tenantId } } }
+          ]
+        }
+      : { id: "non-existent" }
+    : {};
+
   try {
-    // DB'deki aktif sevkiyatları çek
+    // DB'deki aktif sevkiyatları çek (Tenant izolasyonlu)
     const dbShipments = await prisma.shipmentTracking.findMany({
       where: {
         status: {
           in: ["PREPARING", "ON_THE_WAY", "ARRIVED"],
         },
+        ...tenantFilter,
       },
       include: {
         purchaseRequest: {

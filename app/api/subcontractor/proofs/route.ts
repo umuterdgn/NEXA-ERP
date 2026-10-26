@@ -6,16 +6,26 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const contractId = searchParams.get("contractId")
     const subcontractorId = searchParams.get("subcontractorId")
 
-    const where: any = {}
+    const where: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
     if (contractId) where.contractId = contractId
     if (subcontractorId) where.subcontractorId = subcontractorId
 
@@ -53,6 +63,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { contractId, title, description, imageUrl, subcontractorId: providedSubId } = body
 
@@ -90,6 +109,7 @@ export async function POST(request: Request) {
             unit: "m³",
             unitPrice: 2200,
             plannedQuantity: 500,
+            tenantId: tenantId || null,
           },
         })
         boqItemId = newBoq.id
@@ -111,6 +131,7 @@ export async function POST(request: Request) {
         gpsLatitude: body.latitude || null,
         gpsLongitude: body.longitude || null,
         status: "PENDING",
+        tenantId: tenantId || null,
       },
       include: {
         contract: {

@@ -5,9 +5,8 @@
  */
 
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 // Safe JSON parse function
 function safeParseJSON(val: any) {
@@ -20,7 +19,19 @@ function safeParseJSON(val: any) {
 
 export async function GET() {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
+    const whereClause: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const deliveries = await prisma.pPEDelivery.findMany({
+      where: whereClause,
       include: {
         personel: {
           select: {
@@ -54,6 +65,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { equipment, signature, personelId } = body
     const normalizedEquipment = Array.isArray(equipment)
@@ -66,7 +86,8 @@ export async function POST(request: Request) {
       data: {
         equipment: JSON.stringify(normalizedEquipment),
         signature,
-        personelId
+        personelId,
+        tenantId: tenantId || null,
       },
       include: {
         personel: {

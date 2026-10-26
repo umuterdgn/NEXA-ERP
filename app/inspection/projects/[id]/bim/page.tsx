@@ -4,8 +4,9 @@
  * Müteahhit 3D BIM Görüntüleyici Sayfası (/inspection/projects/[id]/bim)
  */
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import AdminBimClient from "./AdminBimClient";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +17,20 @@ export default async function AdminBimPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = await params;
-  const project = await prisma.project.findUnique({
-    where: { id: resolvedParams.id },
+  const session = await auth();
+  const userRole = session?.user?.role;
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login");
+  }
+
+  const project = await prisma.project.findFirst({
+    where: {
+      id: resolvedParams.id,
+      ...(!isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {})
+    },
     select: {
       id: true,
       title: true,

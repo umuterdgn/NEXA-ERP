@@ -11,11 +11,18 @@ import { auth } from "@/lib/auth"
 export async function GET() {
   try {
     const session = await auth()
-    if (!session) {
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const whereClause: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const billings = await prisma.progressBilling.findMany({
+      where: whereClause,
       orderBy: { createdAt: "desc" },
       include: {
         contract: {
@@ -50,7 +57,11 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await auth()
-    if (!session) {
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -67,6 +78,7 @@ export async function POST(req: Request) {
         retentionDeduction: retentionDeduction ? parseFloat(retentionDeduction) : 0,
         netPayable: netPayable ? parseFloat(netPayable) : (parseFloat(grossAmount || "0")),
         status: status || "DRAFT",
+        tenantId: tenantId || null,
       },
       include: {
         contract: {

@@ -6,14 +6,30 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const discipline = searchParams.get('discipline')
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+    const where: any = {
+      ...tenantFilter,
+      ...(discipline ? { discipline } : {})
+    }
+
     const blueprints = await prisma.projectBlueprint.findMany({
-      where: discipline ? { discipline } : undefined,
+      where,
       include: {
         project: {
           select: {
@@ -38,6 +54,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { projectId, title, discipline, revisionNo, fileUrl } = body
 
@@ -48,9 +73,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     // If this is a revision of an existing blueprint, mark old versions as not current
     const existingBlueprints = await prisma.projectBlueprint.findMany({
       where: {
+        ...tenantFilter,
         projectId,
         title,
         discipline
@@ -60,6 +88,7 @@ export async function POST(request: NextRequest) {
     if (existingBlueprints.length > 0) {
       await prisma.projectBlueprint.updateMany({
         where: {
+          ...tenantFilter,
           projectId,
           title,
           discipline
@@ -78,7 +107,8 @@ export async function POST(request: NextRequest) {
         discipline,
         revisionNo,
         fileUrl,
-        isCurrent: true
+        isCurrent: true,
+        tenantId: tenantId || null,
       }
     })
 

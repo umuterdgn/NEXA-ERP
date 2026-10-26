@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import SiteInstructionsBoard from "./_components/SiteInstructionsBoard"
@@ -21,9 +21,21 @@ export default async function ProjectInstructionsPage({
 }) {
   const { id } = await params
   const session = await auth()
+  const userRole = session?.user?.role
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const tenantId = (session?.user as any)?.tenantId as string | undefined
 
-  const project = await prisma.project.findUnique({
-    where: { id },
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login")
+  }
+
+  const tenantFilter = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
+  const project = await prisma.project.findFirst({
+    where: {
+      id,
+      ...tenantFilter,
+    },
     select: {
       id: true,
       title: true,
@@ -46,14 +58,20 @@ export default async function ProjectInstructionsPage({
 
   // Fetch initial instructions for the project
   const instructions = await prisma.siteInstruction.findMany({
-    where: { projectId: id },
+    where: {
+      projectId: id,
+      ...tenantFilter,
+    },
     orderBy: { createdAt: "desc" },
   })
 
   // Fetch users (creators)
   const creatorIds = Array.from(new Set(instructions.map((i) => i.createdById).filter(Boolean)))
   const creators = await prisma.user.findMany({
-    where: { id: { in: creatorIds } },
+    where: {
+      id: { in: creatorIds },
+      ...tenantFilter,
+    },
     select: { id: true, name: true, role: true },
   })
   const creatorMap = new Map(creators.map((c) => [c.id, c]))

@@ -6,10 +6,23 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET() {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
+    const whereClause: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const records = await prisma.attendanceRecord.findMany({
+      where: whereClause,
       include: {
         personel: true,
         project: true
@@ -30,6 +43,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { personelId, projectId, date, checkIn, checkOut, dayMultiplier, overtimeHours } = body
 
@@ -60,7 +82,8 @@ export async function POST(request: Request) {
         checkIn: checkIn ? new Date(checkIn) : null,
         checkOut: checkOut ? new Date(checkOut) : null,
         dayMultiplier: calculatedDayMultiplier,
-        overtimeHours: calculatedOvertimeHours
+        overtimeHours: calculatedOvertimeHours,
+        tenantId: tenantId || null,
       }
     })
 

@@ -12,28 +12,31 @@ export async function GET() {
   try {
     const session = await auth()
     const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
     const userId = session?.user?.id
 
-    console.log(" Deficiencies API - Session:", { userRole, userId })
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+    let whereClause: any = { ...tenantFilter }
 
     // Admin olmayan kullanıcılar sadece kendi projelerindeki eksiklikleri görebilir
-    const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN"
-    
-    let whereClause = {}
+    const isAdmin = userRole === "ADMIN" || isSuperAdmin
     
     if (!isAdmin && userId) {
       // Önce kullanıcının yönettiği projeleri bul
       const userProjects = await prisma.project.findMany({
-        where: { managerId: userId },
+        where: { managerId: userId, ...tenantFilter },
         select: { id: true }
       })
       
       const projectIds = userProjects.map(p => p.id)
       
       // Sadece bu projelerdeki eksiklikleri getir
-      whereClause = {
-        projectId: { in: projectIds }
-      }
+      whereClause.projectId = { in: projectIds }
     }
 
     const deficiencies = await prisma.deficiency.findMany({

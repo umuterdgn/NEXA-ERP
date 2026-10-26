@@ -8,6 +8,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import ApprovalsConsole from "./_components/ApprovalsConsole"
 import { CheckSquare, ShieldCheck } from "lucide-react"
 
@@ -15,6 +16,16 @@ export const dynamic = "force-dynamic"
 
 export default async function ApprovalsPage() {
   const session = await auth()
+  const userRole = session?.user?.role
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login")
+  }
+
+  const tenantFilter = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+  const projectTenantFilter = !isSuperAdmin ? (tenantId ? { project: { tenantId } } : { project: { tenantId: "non-existent" } }) : {}
 
   const currentUser = {
     id: session?.user?.id || "",
@@ -28,6 +39,7 @@ export default async function ApprovalsPage() {
     workProofs = await prisma.workProof.findMany({
       where: {
         status: "PENDING",
+        ...tenantFilter,
       },
       include: {
         contract: {
@@ -88,7 +100,10 @@ export default async function ApprovalsPage() {
   let pendingLeaves: any[] = []
   try {
     pendingLeaves = await prisma.leaveRequest.findMany({
-      where: { status: "PENDING" },
+      where: {
+        status: "PENDING",
+        ...tenantFilter,
+      },
       include: {
         personel: {
           select: {
@@ -116,7 +131,10 @@ export default async function ApprovalsPage() {
   let pendingExpenses: any[] = []
   try {
     pendingExpenses = await prisma.expenseClaim.findMany({
-      where: { status: "PENDING" },
+      where: {
+        status: "PENDING",
+        ...tenantFilter,
+      },
       include: {
         user: {
           select: {
@@ -138,6 +156,7 @@ export default async function ApprovalsPage() {
     pendingBillings = await prisma.progressBilling.findMany({
       where: {
         status: { in: ["PENDING_APPROVAL", "DRAFT"] },
+        ...tenantFilter,
       },
       include: {
         contract: {
@@ -168,7 +187,10 @@ export default async function ApprovalsPage() {
   let pendingApprovals: any[] = []
   try {
     pendingApprovals = await prisma.approvalRequest.findMany({
-      where: { status: "PENDING" },
+      where: {
+        status: "PENDING",
+        ...projectTenantFilter,
+      },
       include: {
         project: {
           select: { id: true, name: true, title: true },

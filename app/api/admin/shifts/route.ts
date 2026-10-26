@@ -14,11 +14,19 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
     const status = searchParams.get('status')
 
-    const whereClause: any = {}
+    const whereClause: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
     if (projectId) whereClause.projectId = projectId
     if (status) whereClause.status = status
 
@@ -41,6 +49,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { name, timeRange, personnelCount, projectId, status } = body
 
@@ -50,7 +67,8 @@ export async function POST(request: Request) {
         timeRange,
         personnelCount: parseInt(personnelCount) || 0,
         projectId: projectId || null,
-        status: status || "Active"
+        status: status || "Active",
+        tenantId: tenantId || null,
       },
       include: {
         project: {

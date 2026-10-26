@@ -5,15 +5,28 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
+import { auth } from "@/lib/auth"
 import Link from "next/link"
 
 export const dynamic = 'force-dynamic'
 
 export default async function BillingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  const userRole = session?.user?.role
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login")
+  }
+
   const resolvedParams = await params
-  const billing = await prisma.progressBilling.findUnique({
-    where: { id: resolvedParams.id },
+  const billing = await prisma.progressBilling.findFirst({
+    where: {
+      id: resolvedParams.id,
+      ...(!isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {})
+    },
     include: {
       contract: {
         include: {

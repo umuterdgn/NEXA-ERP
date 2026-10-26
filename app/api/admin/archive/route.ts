@@ -12,7 +12,11 @@ import { uploadPDFToDrive } from "@/lib/google-drive"
 export async function GET(request: Request) {
   try {
     const session = await auth()
-    if (!session) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -22,7 +26,10 @@ export async function GET(request: Request) {
     const endDate = searchParams.get("endDate")
     const sortBy = searchParams.get("sortBy") || "date-desc"
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     let archives = await prisma.archive.findMany({
+      where: tenantFilter,
       orderBy: { uploadedAt: sortBy === "date-asc" ? "asc" : "desc" },
       include: {
         project: {
@@ -37,7 +44,7 @@ export async function GET(request: Request) {
 
     if (search) {
       archives = archives.filter(a => 
-        a.projectName.toLowerCase().includes(search.toLowerCase())
+        (a.projectName || "").toLowerCase().includes(search.toLowerCase())
       )
     }
 
@@ -59,7 +66,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await auth()
-    if (!session) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -79,11 +90,13 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const driveUrl = await uploadPDFToDrive(buffer, file.name)
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     // Get project name if projectId is provided
     let projectName = "Genel"
     if (projectId) {
-      const project = await prisma.project.findUnique({
-        where: { id: projectId }
+      const project = await prisma.project.findFirst({
+        where: { id: projectId, ...tenantFilter }
       })
       if (project) {
         projectName = project.title
@@ -96,7 +109,8 @@ export async function POST(request: Request) {
         fileName: file.name,
         documentName: documentName || null,
         driveUrl,
-        projectId: projectId || null
+        projectId: projectId || null,
+        tenantId: tenantId || null,
       }
     })
 

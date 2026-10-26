@@ -5,12 +5,26 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import ContractsClient from "./ContractsClient"
 
 export const dynamic = 'force-dynamic'
 
 export default async function SubcontractorContractsPage() {
+  const session = await auth()
+  const userRole = session?.user?.role
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login")
+  }
+
+  const tenantFilter = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
   const contracts = await prisma.contract.findMany({
+    where: tenantFilter,
     include: {
       subcontractor: {
         select: { id: true, name: true }
@@ -23,11 +37,15 @@ export default async function SubcontractorContractsPage() {
   })
 
   const subcontractors = await prisma.subcontractor.findMany({
+    where: tenantFilter,
     select: { id: true, name: true }
   })
 
   const projects = await prisma.project.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...tenantFilter,
+    },
     select: { id: true, name: true }
   })
 

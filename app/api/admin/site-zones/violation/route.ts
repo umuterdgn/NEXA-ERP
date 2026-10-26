@@ -6,9 +6,19 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { projectId, workerId, workerName, zoneName, violation, status = "OPEN" } = body
 
@@ -19,10 +29,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     // Rate-limit / de-duplicate: If an OPEN violation for the same worker & zone was created in the last 2 minutes, don't spam
     const recentThreshold = new Date(Date.now() - 2 * 60 * 1000)
     const existing = await prisma.isgViolation.findFirst({
       where: {
+        ...tenantFilter,
         projectId,
         workerName,
         status: "OPEN",
@@ -44,7 +57,8 @@ export async function POST(request: NextRequest) {
         workerName,
         zoneName: zoneName || "Tehlikeli Alan (DANGER_ZONE)",
         violation: violation || "DANGER_ZONE (Kırmızı Alan) Alan İhlali: Baret / KKD Eksik",
-        status
+        status,
+        tenantId: tenantId || null,
       }
     })
 
@@ -58,7 +72,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Failed to log ISG violation:", error)
     return NextResponse.json(
-      { error: "İSG İhlali kaydedilirken hata oluştu" },
+      { error: "İhlal kaydedilirken hata oluştu" },
       { status: 500 }
     )
   }

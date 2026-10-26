@@ -6,11 +6,21 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
-    const { imageUrl, description, type, personelId } = body
+    const { imageUrl, description, type, personelId, projectId } = body
 
     if (!imageUrl || !description || !type || !personelId) {
       return NextResponse.json(
@@ -26,7 +36,9 @@ export async function POST(request: NextRequest) {
         description,
         type,
         personelId,
-        status: "ACIL"
+        projectId: projectId || null,
+        status: "ACIL",
+        tenantId: tenantId || null,
       }
     })
 
@@ -42,7 +54,19 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const isgReports = await prisma.isgReport.findMany({
+      where: tenantFilter,
       include: {
         personel: {
           select: {

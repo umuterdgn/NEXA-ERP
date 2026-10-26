@@ -5,6 +5,7 @@
  */
 
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import ChatClient from "./components/ChatClient"
 
@@ -12,13 +13,12 @@ export const dynamic = 'force-dynamic'
 
 export default async function ChatPage() {
   const session = await auth()
+  const userRole = session?.user?.role
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const tenantId = (session?.user as any)?.tenantId as string | undefined
 
-  if (!session?.user) {
-    return (
-      <div className="lg:mt-0 mt-16">
-        <div className="text-white">Giriş yapmalısınız</div>
-      </div>
-    )
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login")
   }
 
   // Fetch conversations for the current user

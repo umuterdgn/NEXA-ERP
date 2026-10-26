@@ -5,12 +5,26 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import ProcurementClient from "./ProcurementClient";
 
 export const dynamic = 'force-dynamic'
 
 export default async function ProcurementPage() {
+  const session = await auth();
+  const userRole = session?.user?.role;
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+  if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    redirect("/login");
+  }
+
+  const tenantFilter = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {};
+
   const requests = await prisma.materialRequest.findMany({
+    where: tenantFilter,
     include: {
       project: {
         select: { name: true },

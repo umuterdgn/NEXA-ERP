@@ -8,15 +8,28 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { liveLogisticsCache } from "@/lib/logistics-cache";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const session = await auth();
+    const userRole = session?.user?.role as string;
+    const isSuperAdmin = userRole === "SUPER_ADMIN";
+    const tenantId = (session?.user as any)?.tenantId as string | undefined;
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json([]);
+    }
+
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {};
+
     // 1. Prisma üzerinden aktif sevkiyatları (PREPARING, ON_THE_WAY, ARRIVED) çek
     const activeShipments = await prisma.shipmentTracking.findMany({
       where: {
+        ...tenantFilter,
         status: {
           in: ["PREPARING", "ON_THE_WAY", "ARRIVED"],
         },

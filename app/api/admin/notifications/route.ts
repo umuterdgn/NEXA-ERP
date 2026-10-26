@@ -11,13 +11,20 @@ import { auth } from "@/lib/auth"
 export async function GET() {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const notifications = await prisma.notification.findMany({
       where: {
-        userId: session.user.id
+        userId: session.user.id,
+        ...tenantFilter,
       },
       orderBy: {
         createdAt: 'desc'
@@ -35,19 +42,26 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
     const { notificationId, markAll } = body
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     if (markAll) {
       // Mark all notifications as read for the user
       await prisma.notification.updateMany({
         where: {
           userId: session.user.id,
-          isRead: false
+          isRead: false,
+          ...tenantFilter,
         },
         data: {
           isRead: true
@@ -76,7 +90,11 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user?.id || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

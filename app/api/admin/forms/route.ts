@@ -6,9 +6,21 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
     const search = searchParams.get("search")
@@ -16,8 +28,8 @@ export async function GET(request: NextRequest) {
 
     // If fetching single form
     if (id) {
-      const form = await prisma.dynamicForm.findUnique({
-        where: { id },
+      const form = await prisma.dynamicForm.findFirst({
+        where: { id, ...tenantFilter },
         include: {
           submissions: {
             take: 10,
@@ -41,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter conditions
-    const whereClause: any = {}
+    const whereClause: any = { ...tenantFilter }
     if (category && category !== "ALL") {
       whereClause.category = category
     }
@@ -59,18 +71,21 @@ export async function GET(request: NextRequest) {
           select: { submissions: true }
         },
         submissions: {
-          take: 3,
+          take: 1,
           orderBy: { createdAt: "desc" },
-          include: {
-            user: { select: { id: true, name: true } },
-            project: { select: { id: true, title: true } }
-          }
+          select: { createdAt: true }
         }
       },
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json({ forms })
+    const formattedForms = forms.map(f => ({
+      ...f,
+      submissionCount: f._count.submissions,
+      lastSubmissionAt: f.submissions[0]?.createdAt || null
+    }))
+
+    return NextResponse.json({ forms: formattedForms })
   } catch (error: any) {
     console.error("GET Dynamic Forms Error:", error)
     return NextResponse.json(
@@ -82,6 +97,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { title, description, category, fields } = body
 
@@ -104,7 +128,8 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         description: description?.trim() || null,
         category: category?.trim() || "GENEL",
-        fields: fields
+        fields: fields,
+        tenantId: tenantId || null,
       }
     })
 
@@ -124,6 +149,15 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { id, title, description, category, fields } = body
 
@@ -132,6 +166,15 @@ export async function PUT(request: NextRequest) {
         { error: "Güncellenecek Form ID'si gereklidir." },
         { status: 400 }
       )
+    }
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.dynamicForm.findFirst({
+        where: { id, tenantId }
+      })
+      if (!existing) {
+        return NextResponse.json({ error: "Form bulunamadı veya yetkisiz erişim" }, { status: 404 })
+      }
     }
 
     if (!title || typeof title !== "string" || !title.trim()) {
@@ -174,6 +217,15 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
 
@@ -182,6 +234,15 @@ export async function DELETE(request: NextRequest) {
         { error: "Silinecek Form ID'si gereklidir." },
         { status: 400 }
       )
+    }
+
+    if (!isSuperAdmin) {
+      const existing = await prisma.dynamicForm.findFirst({
+        where: { id, tenantId }
+      })
+      if (!existing) {
+        return NextResponse.json({ error: "Form bulunamadı veya yetkisiz erişim" }, { status: 404 })
+      }
     }
 
     await prisma.dynamicForm.delete({

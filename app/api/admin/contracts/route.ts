@@ -6,15 +6,26 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
     const subcontractorId = searchParams.get("subcontractorId")
 
     const contracts = await prisma.contract.findMany({
       where: {
+        ...(!isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}),
         ...(projectId && { projectId }),
         ...(subcontractorId && { subcontractorId })
       },
@@ -48,6 +59,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { projectId, subcontractorId, title, totalAmount, startDate, endDate, status } = body
 
@@ -59,7 +79,8 @@ export async function POST(request: Request) {
         totalAmount: parseFloat(totalAmount),
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        status: status || 'ACTIVE'
+        status: status || 'ACTIVE',
+        tenantId: tenantId || null,
       },
       include: {
         project: {

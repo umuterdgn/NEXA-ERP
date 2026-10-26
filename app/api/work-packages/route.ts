@@ -6,10 +6,20 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 import { recordAuditLog } from "@/lib/enterprise-core"
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
 
@@ -17,8 +27,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Project ID is required" }, { status: 400 })
     }
 
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        ...tenantFilter,
+      }
+    })
+
+    if (!project) {
+      return NextResponse.json({ error: "Project not found or access denied" }, { status: 404 })
+    }
+
     let workPackages = await prisma.workPackage.findMany({
-      where: { projectId },
+      where: {
+        projectId,
+        ...tenantFilter,
+      },
       include: {
         elements: true,
       },
@@ -26,11 +52,11 @@ export async function GET(request: NextRequest) {
     })
 
     // Eğer projede henüz Poz yoksa otomatik 4 varsayılan Poz oluştur:
-    // 15.150.1005 C30 Betonarme, 15.270.1002 Tuğla Duvar, 25.100.1001 Mekanik Borulama, 35.100.1001 Elektrik Tava
     if (workPackages.length === 0) {
       const defaultPozlar = [
         {
           projectId,
+          tenantId: tenantId || null,
           pozNo: "15.150.1005",
           name: "C30/37 Betonarme Kolon ve Döşeme İmalatı",
           categoryKey: "statik",
@@ -42,6 +68,7 @@ export async function GET(request: NextRequest) {
         },
         {
           projectId,
+          tenantId: tenantId || null,
           pozNo: "15.270.1002",
           name: "Tuğla Duvar ve Bölme İmalatı",
           categoryKey: "mimari",
@@ -53,6 +80,7 @@ export async function GET(request: NextRequest) {
         },
         {
           projectId,
+          tenantId: tenantId || null,
           pozNo: "25.100.1001",
           name: "Mekanik Borulama ve Havalandırma Tesisatı",
           categoryKey: "mekanik",
@@ -64,6 +92,7 @@ export async function GET(request: NextRequest) {
         },
         {
           projectId,
+          tenantId: tenantId || null,
           pozNo: "35.100.1001",
           name: "Elektrik Tava ve Kablolama Tesisatı",
           categoryKey: "elektrik",
@@ -89,7 +118,10 @@ export async function GET(request: NextRequest) {
       })
 
       workPackages = await prisma.workPackage.findMany({
-        where: { projectId },
+        where: {
+          projectId,
+          ...tenantFilter,
+        },
         include: {
           elements: true,
         },

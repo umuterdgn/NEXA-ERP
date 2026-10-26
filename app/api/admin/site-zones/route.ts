@@ -6,13 +6,27 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
 
-    const where = projectId ? { projectId } : {}
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+    const where: any = {
+      ...tenantFilter,
+      ...(projectId ? { projectId } : {})
+    }
 
     let siteZones = await prisma.siteZone.findMany({
       where,
@@ -21,8 +35,8 @@ export async function GET(request: NextRequest) {
 
     // If no zones exist yet for this project, auto-seed realistic polygon geofences
     if (siteZones.length === 0 && projectId) {
-      const project = await prisma.project.findUnique({
-        where: { id: projectId },
+      const project = await prisma.project.findFirst({
+        where: { id: projectId, ...tenantFilter },
         select: { latitude: true, longitude: true, title: true, name: true }
       })
 
@@ -33,6 +47,7 @@ export async function GET(request: NextRequest) {
         const initialZonesData = [
           {
             projectId,
+            tenantId: tenantId || null,
             title: "Ana Şantiye Çevreleme Sınırı",
             zoneType: "MAIN_SITE",
             category: "BUILDING",
@@ -48,6 +63,7 @@ export async function GET(request: NextRequest) {
           },
           {
             projectId,
+            tenantId: tenantId || null,
             title: "A Blok - Kule Vinç & Ağır Yük Riski",
             zoneType: "DANGER_ZONE",
             category: "RISK",
@@ -59,22 +75,23 @@ export async function GET(request: NextRequest) {
               { lat: lat + 0.00010, lng: lng + 0.00075 },
               { lat: lat - 0.00010, lng: lng + 0.00020 }
             ],
-            supervisor: "Caner Aydın (İSG Uzmanı)"
+            supervisor: "Ali Öztürk (İSG Uzmanı)"
           },
           {
             projectId,
-            title: "Personel Dinlenme & Toplanma Alanı",
+            tenantId: tenantId || null,
+            title: "İdari Bina & Dinlenme Alanı",
             zoneType: "REST_AREA",
             category: "REST_AREA",
             latitude: lat - 0.0005,
-            longitude: lng - 0.0005,
+            longitude: lng - 0.0006,
             polygonCoordinates: [
-              { lat: lat - 0.00035, lng: lng - 0.00085 },
-              { lat: lat - 0.00030, lng: lng - 0.00035 },
-              { lat: lat - 0.00070, lng: lng - 0.00030 },
-              { lat: lat - 0.00075, lng: lng - 0.00080 }
+              { lat: lat - 0.0003, lng: lng - 0.0008 },
+              { lat: lat - 0.0003, lng: lng - 0.0004 },
+              { lat: lat - 0.0007, lng: lng - 0.0004 },
+              { lat: lat - 0.0007, lng: lng - 0.0008 }
             ],
-            supervisor: "Sevgi Kaya (İdari İşler)"
+            supervisor: "Mehmet Demir (Saha Mühendisi)"
           }
         ]
 
@@ -93,7 +110,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Failed to fetch site zones:", error)
     return NextResponse.json(
-      { error: "Alanlar getirilirken hata oluştu" },
+      { error: "Alanlar yüklenirken hata oluştu" },
       { status: 500 }
     )
   }
@@ -101,12 +118,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { 
       projectId, 
       title, 
+      zoneType: inputZoneType,
       category, 
-      zoneType: inputZoneType, 
       latitude, 
       longitude, 
       radius, 
@@ -163,7 +189,8 @@ export async function POST(request: NextRequest) {
         latitude: finalLat ?? null,
         longitude: finalLng ?? null,
         radius: radius !== undefined ? Number(radius) : null,
-        polygonCoordinates: polygonCoordinates || null
+        polygonCoordinates: polygonCoordinates || null,
+        tenantId: tenantId || null,
       }
     })
 

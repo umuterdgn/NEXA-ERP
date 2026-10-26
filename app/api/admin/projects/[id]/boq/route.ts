@@ -113,17 +113,38 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
     const resolvedParams = await params
     const projectId = resolvedParams.id
 
-    const rawWorkPackages = await prisma.workPackage.findMany({
-      where: { projectId },
-      orderBy: [{ categoryKey: "asc" }, { pozNo: "asc" }]
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        ...tenantFilter,
+      },
+      select: { id: true, name: true, title: true }
     })
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { id: true, name: true, title: true }
+    if (!project) {
+      return NextResponse.json({ error: "Proje bulunamadı veya yetkisiz erişim" }, { status: 404 })
+    }
+
+    const rawWorkPackages = await prisma.workPackage.findMany({
+      where: {
+        projectId,
+        ...tenantFilter,
+      },
+      orderBy: [{ categoryKey: "asc" }, { pozNo: "asc" }]
     })
 
     // BoQ 2.0 zenginleştirmesi
@@ -168,9 +189,15 @@ export async function POST(
 ) {
   try {
     const session = await auth()
-    if (!session?.user) {
+    const userRole = session?.user?.role as string
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantId = (session?.user as any)?.tenantId as string | undefined
+
+    if (!session?.user || (!tenantId && !isSuperAdmin)) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
+
+    const tenantFilter: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
 
     const resolvedParams = await params
     const projectId = resolvedParams.id
@@ -186,13 +213,16 @@ export async function POST(
     }
 
     // Projeyi doğrula
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        ...tenantFilter,
+      },
       select: { id: true, name: true, title: true }
     })
 
     if (!project) {
-      return NextResponse.json({ error: "Proje bulunamadı" }, { status: 404 })
+      return NextResponse.json({ error: "Proje bulunamadı veya yetkisiz erişim" }, { status: 404 })
     }
 
     // Poz verilerini hazırla (BoQ 2.0 alanları dahil)
@@ -224,6 +254,7 @@ export async function POST(
 
       return {
         projectId,
+        tenantId: tenantId || null,
         pozNo: item.pozNo ? String(item.pozNo).trim() : null,
         code: item.pozNo ? String(item.pozNo).trim() : null,
         name,
