@@ -121,7 +121,10 @@ export async function PATCH(
       status, 
       paymentStatus, 
       subscriptionPlan, 
-      features 
+      features,
+      logoUrl,
+      primaryColor,
+      isWhiteLabelActive
     } = body
 
     const dataToUpdate: any = {}
@@ -135,6 +138,9 @@ export async function PATCH(
     if (paymentStatus) dataToUpdate.paymentStatus = paymentStatus
     if (subscriptionPlan) dataToUpdate.subscriptionPlan = subscriptionPlan
     if (Array.isArray(features)) dataToUpdate.features = features
+    if (typeof logoUrl !== "undefined") dataToUpdate.logoUrl = logoUrl ? String(logoUrl).trim() : null
+    if (typeof primaryColor !== "undefined") dataToUpdate.primaryColor = primaryColor ? String(primaryColor).trim() : "#3B82F6"
+    if (typeof isWhiteLabelActive !== "undefined") dataToUpdate.isWhiteLabelActive = Boolean(isWhiteLabelActive)
 
     const updated = await prisma.tenant.update({
       where: { id: tenantId },

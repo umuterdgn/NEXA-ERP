@@ -37,9 +37,30 @@ export default async function InspectionLayout({
     }
   }
 
+  const sessionUser = session.user as any
+  let primaryColor = "#3B82F6"
+
+  if (sessionUser?.isWhiteLabelActive && sessionUser?.primaryColor) {
+    primaryColor = sessionUser.primaryColor
+  } else if (sessionUser?.tenantId) {
+    const { prisma } = await import("@/lib/prisma")
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: sessionUser.tenantId },
+      select: { primaryColor: true, isWhiteLabelActive: true }
+    }).catch(() => null)
+    if (tenant?.isWhiteLabelActive && tenant?.primaryColor) {
+      primaryColor = tenant.primaryColor
+    }
+  }
+
   return (
     <NextAuthSessionProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col">
+      <div 
+        className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col"
+        style={{
+          '--tenant-primary': primaryColor,
+        } as React.CSSProperties}
+      >
         <InspectionLayoutShell>{children}</InspectionLayoutShell>
         <Toaster position="bottom-right" />
       </div>

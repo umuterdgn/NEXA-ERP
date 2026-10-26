@@ -100,6 +100,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           companyType: effectiveCompanyType,
           tenantId: user.tenantId || null,
           enabledModules: (user as any).tenant?.enabledModules || null,
+          logoUrl: (user as any).tenant?.logoUrl || null,
+          primaryColor: (user as any).tenant?.primaryColor || "#3B82F6",
+          isWhiteLabelActive: Boolean((user as any).tenant?.isWhiteLabelActive),
           permissions: (user as any).permissions || []
         }
       }
@@ -114,6 +117,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.companyType = (user as any).companyType
         token.tenantId = (user as any).tenantId || null
         token.enabledModules = (user as any).enabledModules || null
+        token.logoUrl = (user as any).logoUrl || null
+        token.primaryColor = (user as any).primaryColor || null
+        token.isWhiteLabelActive = (user as any).isWhiteLabelActive || false
         token.permissions = user.permissions
       }
       return token
@@ -126,6 +132,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.companyType = token.companyType as any
         ;(session.user as any).tenantId = (token as any).tenantId || null
         ;(session.user as any).enabledModules = (token as any).enabledModules || null
+        ;(session.user as any).logoUrl = (token as any).logoUrl || null
+        ;(session.user as any).primaryColor = (token as any).primaryColor || null
+        ;(session.user as any).isWhiteLabelActive = Boolean((token as any).isWhiteLabelActive)
         session.user.permissions = token.permissions as any
       }
       return session

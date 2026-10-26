@@ -121,6 +121,9 @@ model Tenant {
   maxStorageMB      Int          @default(51200) // Varsayılan 50 GB (50 * 1024)
   usedStorageMB     Float        @default(0) // Anlık kullanılan alan (MB)
   enabledModules    String[]     @default(["DASHBOARD", "PROJECTS", "FINANCE", "DOCUMENTS"]) // Hangi menüler açık?
+  logoUrl           String?      // Firmanın yüklenecek olan logosunun S3/Cloudinary URL'si
+  primaryColor      String?      @default("#3B82F6") // Varsayılan Tailwind Blue-500 (HEX kodu)
+  isWhiteLabelActive Boolean     @default(false) // Bu özellik sadece Premium paketlerde açık olabilir
   paymentStatus     String       @default("PAID") // "PAID", "PAST_DUE", "FAILED"
   isActive          Boolean      @default(true)
   createdAt         DateTime     @default(now())

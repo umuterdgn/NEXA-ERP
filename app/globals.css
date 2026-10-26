@@ -10,11 +10,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --tenant-primary: #3B82F6;
 }
 
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --tenant-primary: #3B82F6;
 }
 
 @theme inline {
@@ -24,6 +26,7 @@
   --font-mono: var(--font-geist-mono);
   --color-dark-background: #0f172a;
   --color-dark-foreground: #f8fafc;
+  --color-tenant: var(--tenant-primary);
 }
 
 @media (prefers-color-scheme: dark) {

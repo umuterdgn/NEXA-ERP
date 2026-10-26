@@ -40,6 +40,9 @@ import {
   Calculator,
   Activity,
   Layers,
+  Palette,
+  Image as ImageIcon,
+  Upload,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -56,6 +59,9 @@ interface TenantDetailData {
   maxStorageMB?: number
   usedStorageMB?: number
   enabledModules?: string[]
+  logoUrl?: string | null
+  primaryColor?: string | null
+  isWhiteLabelActive?: boolean
   features: string[]
   createdAt: string
   storage: {
@@ -122,6 +128,12 @@ export default function TenantDetailPage({
     "DASHBOARD", "PROJECTS", "FINANCE", "DOCUMENTS", "BIM", "AI_VISION", "BOQ_METRAJ", "INSPECTION"
   ])
 
+  // White-Label & Kurumsal Kimlik State
+  const [logoUrlInput, setLogoUrlInput] = useState<string>("")
+  const [primaryColorInput, setPrimaryColorInput] = useState<string>("#3B82F6")
+  const [isWhiteLabelInput, setIsWhiteLabelInput] = useState<boolean>(false)
+  const [isUploadingLogo, setIsUploadingLogo] = useState<boolean>(false)
+
   useEffect(() => {
     fetchTenantDetail()
   }, [id])
@@ -143,6 +155,9 @@ export default function TenantDetailPage({
             ? result.data.enabledModules
             : ["DASHBOARD", "PROJECTS", "FINANCE", "DOCUMENTS", "BIM", "AI_VISION", "BOQ_METRAJ", "INSPECTION"]
         )
+        setLogoUrlInput(result.data.logoUrl || "")
+        setPrimaryColorInput(result.data.primaryColor || "#3B82F6")
+        setIsWhiteLabelInput(Boolean(result.data.isWhiteLabelActive))
       } else {
         toast.error("Firma bilgileri alınamadı")
       }
@@ -153,7 +168,40 @@ export default function TenantDetailPage({
     }
   }
 
-  // Limit ve Özellik Güncelleme (Save)
+  // Logo Yükleme Servisi
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingLogo(true)
+    const toastId = toast.loading("Firma logosu yükleniyor...")
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("sourceModule", "BRANDING")
+      formData.append("tenantId", id)
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (res.ok && data.url) {
+        setLogoUrlInput(data.url)
+        toast.success("Logo başarıyla yüklendi", { id: toastId })
+      } else {
+        toast.error(data.error || "Logo yüklenemedi", { id: toastId })
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("Logo yükleme hatası", { id: toastId })
+    } finally {
+      setIsUploadingLogo(false)
+    }
+  }
+
+  // Limit, Modül ve Marka Güncelleme (Save)
   const handleSaveLimits = async () => {
     setSaving(true)
     try {
@@ -167,11 +215,14 @@ export default function TenantDetailPage({
           licenses: Number(licensesInput),
           subscriptionPlan: selectedPlan,
           features: selectedFeatures,
+          logoUrl: logoUrlInput ? logoUrlInput.trim() : null,
+          primaryColor: primaryColorInput || "#3B82F6",
+          isWhiteLabelActive: isWhiteLabelInput,
         }),
       })
       const result = await res.json()
       if (result.success) {
-        toast.success("Depolama kotaları ve modül izinleri başarıyla güncellendi!")
+        toast.success("Kotalar, modül izinleri ve White-Label marka ayarları başarıyla güncellendi!")
         fetchTenantDetail()
       } else {
         toast.error(result.error || "Güncelleme başarısız")
@@ -566,6 +617,203 @@ export default function TenantDetailPage({
                 <Save className="h-4 w-4" />
               )}
               Depolama & Modül İzinlerini Kaydet
+            </button>
+          </div>
+
+          {/* Kurumsal Kimlik & Marka (White-Label) Kartı */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Palette className="h-4 w-4 text-purple-400" />
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Kurumsal Kimlik & Marka (White-Label)
+                </span>
+              </div>
+              <span
+                className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full border ${
+                  isWhiteLabelInput
+                    ? "bg-purple-950 text-purple-300 border-purple-500/40"
+                    : "bg-slate-950 text-slate-500 border-slate-800"
+                }`}
+              >
+                {isWhiteLabelInput ? "● White-Label Aktif" : "Varsayılan Tema"}
+              </span>
+            </div>
+
+            {/* White-Label Aç/Kapat Toggle */}
+            <div
+              onClick={() => setIsWhiteLabelInput(!isWhiteLabelInput)}
+              className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between ${
+                isWhiteLabelInput
+                  ? "bg-purple-950/30 border-purple-500/50"
+                  : "bg-slate-950 border-slate-800 opacity-70"
+              }`}
+            >
+              <div>
+                <p className="text-xs font-bold text-white">White-Label Özelliği</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Açıldığında firmanın logosu ve seçilen renk paleti Sidebar ile butonlarda aktif olur.
+                </p>
+              </div>
+              <div
+                className={`w-11 h-6 rounded-full transition p-0.5 shrink-0 ${
+                  isWhiteLabelInput ? "bg-purple-600" : "bg-slate-800"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                    isWhiteLabelInput ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Firma Logosu Yükleme & Önizleme */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300">
+                Firma Logosu (PNG, SVG, WEBP)
+              </label>
+
+              {logoUrlInput ? (
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-10 rounded-lg bg-slate-900 border border-slate-700 p-1 flex items-center justify-center overflow-hidden">
+                      <img src={logoUrlInput} alt="Logo" className="max-h-full max-w-full object-contain" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono text-slate-200 truncate max-w-[180px]">
+                        {logoUrlInput.split("/").pop() || "Firma Logosu"}
+                      </p>
+                      <p className="text-[10px] text-emerald-400">Yüklendi & Aktif</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setLogoUrlInput("")}
+                    className="text-xs text-rose-400 hover:text-rose-300 font-medium cursor-pointer"
+                  >
+                    Kaldır
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={isUploadingLogo}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="p-4 rounded-2xl border-2 border-dashed border-slate-700 hover:border-purple-500/60 bg-slate-950/60 transition text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer">
+                    <Upload className="w-5 h-5 text-purple-400" />
+                    <span className="text-xs font-semibold text-slate-300">
+                      {isUploadingLogo ? "Logo Yükleniyor..." : "Dosya Seç veya Buraya Bırak"}
+                    </span>
+                    <span className="text-[10px] text-slate-500">Maksimum 5 MB • Şeffaf PNG önerilir</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Manuel Logo URL alternatifi */}
+              <input
+                type="text"
+                value={logoUrlInput}
+                onChange={(e) => setLogoUrlInput(e.target.value)}
+                placeholder="Veya doğrudan Logo URL yapıştırın (https://...)"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 font-mono"
+              />
+            </div>
+
+            {/* Ana Renk (Primary Color) Seçici */}
+            <div className="space-y-2 pt-2 border-t border-slate-800">
+              <label className="block text-xs font-semibold text-slate-300">
+                Ana Kurumsal Renk (Primary Color)
+              </label>
+
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={primaryColorInput}
+                    onChange={(e) => setPrimaryColorInput(e.target.value)}
+                    className="w-10 h-10 rounded-xl border border-slate-700 bg-transparent cursor-pointer p-0.5"
+                  />
+                </div>
+
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={primaryColorInput}
+                    onChange={(e) => setPrimaryColorInput(e.target.value)}
+                    placeholder="#3B82F6"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-white uppercase focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                {/* Renk Önizleme Kutusu */}
+                <div
+                  className="w-10 h-10 rounded-xl border border-white/20 shadow-inner flex items-center justify-center text-white text-xs font-bold"
+                  style={{ backgroundColor: primaryColorInput }}
+                />
+              </div>
+
+              {/* Hızlı Renk Paletleri */}
+              <div className="flex items-center gap-1.5 pt-1">
+                {[
+                  { hex: "#3B82F6", name: "Mavi" },
+                  { hex: "#6366F1", name: "İndigo" },
+                  { hex: "#8B5CF6", name: "Mor" },
+                  { hex: "#10B981", name: "Zümrüt" },
+                  { hex: "#F59E0B", name: "Kehribar" },
+                  { hex: "#EF4444", name: "Kırmızı" },
+                  { hex: "#0F172A", name: "Lacivert" },
+                ].map((color) => (
+                  <button
+                    key={color.hex}
+                    type="button"
+                    onClick={() => setPrimaryColorInput(color.hex)}
+                    title={color.name}
+                    className="w-6 h-6 rounded-lg border border-slate-700 hover:scale-110 transition shrink-0 cursor-pointer"
+                    style={{ backgroundColor: color.hex }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Canlı Arayüz & Buton Önizlemesi */}
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Arayüz Canlı Önizlemesi
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition"
+                  style={{ backgroundColor: primaryColorInput }}
+                >
+                  Örnek Buton
+                </button>
+                <span
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium border"
+                  style={{
+                    color: primaryColorInput,
+                    borderColor: `${primaryColorInput}55`,
+                    backgroundColor: `${primaryColorInput}15`,
+                  }}
+                >
+                  Aktif Rozet
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveLimits}
+              disabled={saving}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Kurumsal Marka Ayarlarını Kaydet
             </button>
           </div>
         </div>
