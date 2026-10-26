@@ -231,9 +231,120 @@ export async function seedDatabase() {
     },
   })
 
+  // 1. Şantiye Şefi (sefi@nexa.com)
+  const siteManagerUser = await prisma.user.upsert({
+    where: { email: "sefi@nexa.com" },
+    update: {
+      password: defaultPassword,
+      name: "İnş. Müh. Barış Demir (Şantiye Şefi)",
+      role: UserRole.SITE_MANAGER,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS", "BOQ_METRAJ", "HR", "QUALITY_CONTROL", "SUBCONTRACTOR"],
+    },
+    create: {
+      email: "sefi@nexa.com",
+      password: defaultPassword,
+      name: "İnş. Müh. Barış Demir (Şantiye Şefi)",
+      role: UserRole.SITE_MANAGER,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS", "BOQ_METRAJ", "HR", "QUALITY_CONTROL", "SUBCONTRACTOR"],
+    },
+  })
+
+  // 2. Saha Mühendisi (muhendis@nexa.com)
+  const engineerUser = await prisma.user.upsert({
+    where: { email: "muhendis@nexa.com" },
+    update: {
+      password: defaultPassword,
+      name: "Ece Korkmaz (Statik & Saha Mühendisi)",
+      role: UserRole.ENGINEER,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS", "BOQ_METRAJ", "DOCUMENTS", "QUALITY_CONTROL"],
+    },
+    create: {
+      email: "muhendis@nexa.com",
+      password: defaultPassword,
+      name: "Ece Korkmaz (Statik & Saha Mühendisi)",
+      role: UserRole.ENGINEER,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS", "BOQ_METRAJ", "DOCUMENTS", "QUALITY_CONTROL"],
+    },
+  })
+
+  // 3. Ağır Vasıta Şoförü (sofor@nexa.com)
+  const driverUser = await prisma.user.upsert({
+    where: { email: "sofor@nexa.com" },
+    update: {
+      password: defaultPassword,
+      name: "Ali Rıza Kamyoncu (Lojistik & Ağır Vasıta)",
+      role: UserRole.DRIVER,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS"],
+    },
+    create: {
+      email: "sofor@nexa.com",
+      password: defaultPassword,
+      name: "Ali Rıza Kamyoncu (Lojistik & Ağır Vasıta)",
+      role: UserRole.DRIVER,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS"],
+    },
+  })
+
+  // 4. Taşeron Temsilcisi (taseron@nexa.com)
+  const subcontractorUser = await prisma.user.upsert({
+    where: { email: "taseron@nexa.com" },
+    update: {
+      password: defaultPassword,
+      name: "Hasan Kardeş (Kardeşler Kalıp Taşeronu)",
+      role: UserRole.SUBCONTRACTOR,
+      companyType: CompanyType.SUBCONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS", "SUBCONTRACTOR"],
+    },
+    create: {
+      email: "taseron@nexa.com",
+      password: defaultPassword,
+      name: "Hasan Kardeş (Kardeşler Kalıp Taşeronu)",
+      role: UserRole.SUBCONTRACTOR,
+      companyType: CompanyType.SUBCONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS", "SUBCONTRACTOR"],
+    },
+  })
+
+  // 5. İSG Uzmanı (isg@nexa.com)
+  const isgUser = await prisma.user.upsert({
+    where: { email: "isg@nexa.com" },
+    update: {
+      password: defaultPassword,
+      name: "Kutay Erdoğan (A Sınıfı İSG Uzmanı)",
+      role: UserRole.ISG_EXPERT,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS", "QUALITY_CONTROL", "DOCUMENTS"],
+    },
+    create: {
+      email: "isg@nexa.com",
+      password: defaultPassword,
+      name: "Kutay Erdoğan (A Sınıfı İSG Uzmanı)",
+      role: UserRole.ISG_EXPERT,
+      companyType: CompanyType.MAIN_CONTRACTOR,
+      tenantId: contractorTenant.id,
+      permissions: ["PROJECTS", "QUALITY_CONTROL", "DOCUMENTS"],
+    },
+  })
+
   console.log(`✅ Müteahhit Admin: ${contractorAdmin.email}`)
   console.log(`✅ Denetim Admin: ${inspectionAdmin.email}`)
   console.log(`✅ Superadmin: ${superAdmin.email}`)
+  console.log(`✅ 5 Rol Kullanıcısı Eklendi: ${siteManagerUser.email}, ${engineerUser.email}, ${driverUser.email}, ${subcontractorUser.email}, ${isgUser.email}`)
 
   // ============================================================================
   // 3. TEDARİKÇİ & CRM FİRMALARI (COMPANIES)
@@ -906,7 +1017,39 @@ export async function seedDatabase() {
     },
   })
 
-  console.log("✅ 4 Nexa İnşaat + 2 Balkan Yapı Denetim personeli tanımlandı.")
+  // Nexa İnşaat Ağır Vasıta Şoförü: Ali Rıza Kamyoncu
+  const driverPersonnel = await prisma.personel.upsert({
+    where: { personnelNo: "P-NEXA-005" },
+    update: {
+      name: "Ali Rıza Kamyoncu",
+      position: "Ağır Vasıta Şoförü",
+      department: "Lojistik & Nakliye",
+      currentSite: "Vadi Evleri A Blok",
+      phone: "+90 532 999 8877",
+      email: "sofor@nexa.com",
+      salary: 52000,
+      status: PersonelStatus.ACTIVE,
+      tenantId: contractorTenant.id,
+    },
+    create: {
+      personnelNo: "P-NEXA-005",
+      name: "Ali Rıza Kamyoncu",
+      position: "Ağır Vasıta Şoförü",
+      department: "Lojistik & Nakliye",
+      currentSite: "Vadi Evleri A Blok",
+      age: 46,
+      birthDate: new Date("1980-05-14"),
+      hireDate: new Date("2021-06-01"),
+      salary: 52000,
+      salaryStatus: "Paid",
+      phone: "+90 532 999 8877",
+      email: "sofor@nexa.com",
+      status: PersonelStatus.ACTIVE,
+      tenantId: contractorTenant.id,
+    },
+  })
+
+  console.log("✅ 5 Nexa İnşaat (Şoför dahil) + 2 Balkan Yapı Denetim personeli tanımlandı.")
 
   // ============================================================================
   // 9. TAŞERONLAR, SÖZLEŞMELER & HAKEDİŞLER (SUBCONTRACTORS & BILLINGS)
@@ -1618,6 +1761,272 @@ export async function seedDatabase() {
   })
 
   console.log("✅ Çözülmemiş OCR PDF hata logu kaydedildi.")
+
+  // ============================================================================
+  // 16. İNSAN KAYNAKLARI: PUANTAJ & MESAİ (TIMESHEET)
+  // ============================================================================
+  console.log("⏱️ 16. Son 7 Günlük 08:00-17:00 Tam Gün Puantaj (Timesheet) Kayıtları Giriliyor...")
+
+  const personnelList = await prisma.personel.findMany({
+    where: { tenantId: contractorTenant.id },
+    take: 5,
+  })
+
+  for (let i = 1; i <= 7; i++) {
+    const shiftDate = daysAgo(i)
+    for (const p of personnelList) {
+      const checkInTime = new Date(shiftDate)
+      checkInTime.setHours(8, 0, 0, 0)
+      const checkOutTime = new Date(shiftDate)
+      checkOutTime.setHours(17, 0, 0, 0)
+
+      await prisma.attendanceRecord.create({
+        data: {
+          personelId: p.id,
+          projectId: project1.id,
+          date: shiftDate,
+          checkIn: checkInTime,
+          checkOut: checkOutTime,
+          status: "PRESENT",
+          dayMultiplier: 1.0,
+          overtimeHours: i === 2 ? 2.0 : 0,
+          workerName: p.name,
+          latitude: 40.9912,
+          longitude: 29.0278,
+        },
+      })
+    }
+  }
+
+  // ============================================================================
+  // 17. VARDİYA PLANLAMASI (SHIFT)
+  // ============================================================================
+  console.log("🌙 17. Gündüz ve Gece Vardiyaları Oluşturuluyor...")
+
+  await prisma.shift.createMany({
+    data: [
+      {
+        name: "Gündüz Vardiyası (Normal Mesai)",
+        timeRange: "08:00 - 17:00",
+        personnelCount: 45,
+        projectId: project1.id,
+        status: "Active",
+      },
+      {
+        name: "Gece Vardiyası (Tünel Kalıp & Beton Dökümü)",
+        timeRange: "20:00 - 05:00",
+        personnelCount: 16,
+        projectId: project1.id,
+        status: "Active",
+      },
+    ],
+    skipDuplicates: true,
+  })
+
+  // ============================================================================
+  // 18. TAŞERON YÖNETİMİ: KESİNTİLER, CEZALAR VE GÜNÜ GEÇMİŞ BELGELER
+  // ============================================================================
+  console.log("🛑 18. Taşeron İSG Cezası (2.500 TL) ve Günü Geçmiş Belge Ekleniyor...")
+
+  await prisma.deduction.create({
+    data: {
+      amount: 2500,
+      reason: "İSG İhlali - Baret Takmama (2.500 TL)",
+      notes: "Saha İSG uzmanı denetiminde 2. kat kolon kalıbı montajında baretsiz çalışan tespit edildi. İlgili tutanak taşerona tebliğ edildi.",
+      date: daysAgo(3),
+      projectId: project1.id,
+      subcontractorId: kardeslerSubcontractor.id,
+      appliedToBillingId: billingApproved.id,
+    },
+  })
+
+  // Günü geçmiş Mesleki Yeterlilik Belgesi uyarısı simülasyonu
+  if (personnelList.length > 0) {
+    await prisma.certificate.create({
+      data: {
+        name: "Mesleki Yeterlilik Belgesi (MYK Ahşap Kalıpçı ve İskele Kurulumu)",
+        type: "BELGE",
+        expiryDate: daysAgo(15), // 15 gün önce süresi dolmuş (Kritik İSG Uyarısı!)
+        documentUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600",
+        personelId: personnelList[0].id,
+      },
+    })
+  }
+
+  // ============================================================================
+  // 19. AMBAR & KAREKOD (INVENTORY) & SATINALMA TALEPLERİ (PR)
+  // ============================================================================
+  console.log("📦 19. Ambar Stokları (500 Ton Çimento, 200 Baret) & Acil Satınalma Talebi Ekleniyor...")
+
+  await prisma.inventory.upsert({
+    where: { qrCode: "QR-STK-C35-500" },
+    update: {
+      quantity: 500,
+    },
+    create: {
+      name: "C35 Hazır Çimento (Dökme Torba)",
+      type: "IN",
+      quantity: 500,
+      unit: "Ton",
+      category: "MALZEME",
+      location: "Vadi Evleri Ana Ambarı",
+      qrCode: "QR-STK-C35-500",
+      projectId: project1.id,
+      recordedBy: contractorAdmin.id,
+      minimumStockLevel: 50,
+      isAutoReorderEnabled: true,
+    },
+  })
+
+  await prisma.inventory.upsert({
+    where: { qrCode: "QR-STK-BRT-200" },
+    update: {
+      quantity: 200,
+    },
+    create: {
+      name: "Mühendis & İşçi Tipi Emniyet Bareti (Beyaz/Sarı)",
+      type: "IN",
+      quantity: 200,
+      unit: "Adet",
+      category: "KKD",
+      location: "Vadi Evleri İSG Malzeme Deposu",
+      qrCode: "QR-STK-BRT-200",
+      projectId: project1.id,
+      recordedBy: contractorAdmin.id,
+      minimumStockLevel: 30,
+    },
+  })
+
+  // Satınalma Talebi (PR)
+  await prisma.purchaseRequest.create({
+    data: {
+      projectId: project1.id,
+      materialName: "Acil 14'lük Nervürlü İnşaat Demiri (B420C)",
+      quantity: 80,
+      unit: "Ton",
+      status: "OPEN_FOR_BID",
+      deadline: new Date(now.getTime() + 48 * 60 * 60 * 1000),
+      paymentType: "30 Gün Vadeli Çek",
+      deliveryNotes: "Şantiye şefinin açtığı acil 14'lük demir talebi. A Blok 3. kat döşeme donatısı için 48 saat içinde sahaya teslim gereklidir.",
+    },
+  })
+
+  // ============================================================================
+  // 20. İSG & RİSK YÖNETİMİ: RAMAK KALA VE KKD ZİMMET
+  // ============================================================================
+  console.log("🦺 20. Ramak Kala Vakası & KKD Zimmet Formu Oluşturuluyor...")
+
+  await prisma.nearMissReport.create({
+    data: {
+      isAnonymous: false,
+      location: "Vadi Evleri A Blok - Kule Vinç Sahası",
+      category: "Makine Arızası / Yük Salınımı",
+      severity: "Yüksek",
+      description: "Vinç yükü salınım yaptı, malzeme düşme tehlikesi atlatıldı. Kanca güvenlik mandalı ve sapanlar kontrol edilip yenilendi.",
+      status: "Beklemede",
+    },
+  })
+
+  if (personnelList.length > 0) {
+    await prisma.pPEDelivery.create({
+      data: {
+        equipment: "Baret, Yelek ve Çelik Burunlu Ayakkabı (S3 Standartlarında)",
+        signature: `${personnelList[0].name} (Dijital Islak İmza Onaylı)`,
+        status: "Onaylandı",
+        personelId: personnelList[0].id,
+      },
+    })
+  }
+
+  // ============================================================================
+  // 21. ROLLOUT KANBAN & PUNCH LIST (QA)
+  // ============================================================================
+  console.log("📋 21. Rollout Kanban Görevleri & Kusurlu Teslimat (Punch List)...")
+
+  await prisma.task.createMany({
+    data: [
+      {
+        title: "Yeni Şantiye Kurulumu - Şantiye Mobilizasyonu ve Konteyner Yerleşimi",
+        description: "Yemekhane, yatakhane ve şantiye yönetim konteynerlerinin saha planına göre vinçle konumlandırılması.",
+        status: "TODO",
+        projectId: project1.id,
+        taskType: "KURULUM",
+        dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+      },
+      {
+        title: "Yeni Şantiye Kurulumu - Şantiye Elektrik & Su Abonelikleri",
+        description: "BEDAŞ ve İSKİ şantiye geçici abonelik sözleşmelerinin imzalanması ve panoların enerjilendirilmesi.",
+        status: "IN_PROGRESS",
+        projectId: project1.id,
+        taskType: "ABONELİK",
+        dueDate: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
+      },
+      {
+        title: "Yeni Şantiye Kurulumu - Çevre Güvenlik Çiti ve Güvenlik Kulübesi",
+        description: "2 metre yüksekliğinde trapez saç çevre çiti ve giriş turnike güvenlik sistemi tamamlandı.",
+        status: "DONE",
+        projectId: project1.id,
+        taskType: "İSG_GÜVENLİK",
+      },
+    ],
+  })
+
+  await prisma.punchList.create({
+    data: {
+      projectId: project1.id,
+      inspectorId: inspectionAdmin.id,
+      subcontractorId: kardeslerSubcontractor.id,
+      defectDesc: "Pencere doğraması çizik ve fitil montajı eksik.",
+      status: "OPEN",
+      deadline: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000),
+    },
+  })
+
+  // ============================================================================
+  // 22. SİSTEM LOGLARI & DENETİM İZİ (AUDIT LOGS - SON 24 SAAT)
+  // ============================================================================
+  console.log("📜 22. Son 24 Saatin 10 Adet İşlem (Audit) Logu Yazılıyor...")
+
+  const logEntries = [
+    { action: "USER_LOGIN", details: "Kemal Demirtaş (Yönetici) sisteme başarılı giriş yaptı.", user: "Kemal Demirtaş" },
+    { action: "INVOICE_CREATED", details: "Oyak Çimento - 1200 m3 C35 Hazır Beton Faturası (3.420.000 TL) sisteme girildi.", user: "Elif Korkmaz" },
+    { action: "PROGRESS_PAYMENT_APPROVED", details: "Kardeşler Kalıp 1. Hakediş (3.490.000 TL Net) şantiye şefi tarafından onaylandı.", user: "Kemal Demirtaş" },
+    { action: "DOCUMENT_UPLOADED", details: "A_Blok_Statik_Proje.dwg mimari ve statik arşive revize olarak yüklendi.", user: "Ece Korkmaz" },
+    { action: "NCR_CREATED", details: "C35 Beton Mukavemet Düşüklüğü nedeniyle NCR-2026-001 DÖF raporu açıldı.", user: "Mimar Selim Balkan" },
+    { action: "WORK_PROOF_APPROVED", details: "2. Kat Kolon Beton Dökümü saha GPS iş kanıtı onaylandı.", user: "Barış Demir" },
+    { action: "LOGISTICS_SCHEDULED", details: "Oyak Çimento transmikser şantiye giriş randevusu ve WhatsApp konum bildirimi oluşturuldu.", user: "Kemal Demirtaş" },
+    { action: "SAFETY_PENALTY_ISSUED", details: "Kardeşler Kalıp personeline İSG baret ihlali cezası (2.500 TL) kesildi.", user: "Kutay Erdoğan" },
+    { action: "TIMESHEET_VERIFIED", details: "Vadi Evleri A Blok 7 günlük saha işçi puantaj listesi onaylandı.", user: "Barış Demir" },
+    { action: "PURCHASE_REQUEST_OPENED", details: "Acil 14'lük Nervürlü Demir (80 Ton) satınalma ihale talebi açıldı.", user: "Ahmet Yılmaz" },
+  ]
+
+  for (let idx = 0; idx < logEntries.length; idx++) {
+    const entry = logEntries[idx]
+    const logTime = new Date(now.getTime() - (idx * 2 + 1) * 3600 * 1000)
+
+    await prisma.systemLog.create({
+      data: {
+        action: entry.action,
+        details: entry.details,
+        user: entry.user,
+        errorType: "INFO",
+        tenantId: contractorTenant.id,
+        createdAt: logTime,
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        projectId: project1.id,
+        userId: contractorAdmin.id,
+        userName: entry.user,
+        action: entry.action,
+        entityType: "SystemModule",
+        summary: entry.details,
+        createdAt: logTime,
+      },
+    })
+  }
 
   return {
     success: true,

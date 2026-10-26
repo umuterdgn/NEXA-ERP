@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   ArrowRight,
   RefreshCw,
+  MessageSquare,
   FileText,
   User,
   MapPin,
@@ -578,6 +579,26 @@ export default function LogisticsCalendarPage() {
                               Yeniden Aç
                             </button>
                           )}
+
+                          {/* WhatsApp ile Şoföre Canlı Konum Linki Gönder */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const raw = (app as any).driverPhone || (app as any).driverContact || "05321112233"
+                              let clean = raw.replace(/[^0-9]/g, "")
+                              if (clean.startsWith("0")) clean = "9" + clean
+                              else if (!clean.startsWith("90") && clean.length === 10) clean = "90" + clean
+                              const driverName = app.driverName || "Şoför"
+                              const project = (app as any).project?.title || (app as any).projectTitle || (app as any).projectName || "Şantiye Sahası"
+                              const text = `Nexa ERP: Sayın ${driverName}, ${project} şantiyesine teslimatınız oluşturulmuştur. Teslimat fişini görmek ve canlı konum takibini (GPS) aktifleştirmek için lütfen aşağıdaki linke tıklayın: https://nxerp.com.tr/track/${app.id}`
+                              window.open(`https://wa.me/${clean}?text=${encodeURIComponent(text)}`, "_blank")
+                            }}
+                            className="p-1 px-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold flex items-center gap-1 transition-all"
+                            title="Şoföre WhatsApp Canlı Konum Linki Gönder"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            <span>WhatsApp</span>
+                          </button>
                         </div>
                       </td>
                     </tr>

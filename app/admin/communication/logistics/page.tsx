@@ -7,7 +7,7 @@
 
 
 import { useState, useEffect } from "react"
-import { Truck, Clock, MapPin, Phone, CheckCircle, AlertCircle, Plus, Calendar, X, Route, Users, Zap, RefreshCw } from "lucide-react"
+import { Truck, Clock, MapPin, Phone, CheckCircle, AlertCircle, Plus, Calendar, X, Route, Users, Zap, RefreshCw, MessageSquare } from "lucide-react"
 import toast from "react-hot-toast"
 
 interface LogisticsItem {
@@ -78,10 +78,56 @@ export default function LogisticsPage() {
     status: "PLANNED"
   })
 
+  // İç / Dış Şoför Yönetimi ve WhatsApp
+  const [driverTab, setDriverTab] = useState<"INTERNAL" | "EXTERNAL">("INTERNAL")
+  const [internalDrivers, setInternalDrivers] = useState<Array<{ id: string; name: string; phone?: string | null; position?: string | null }>>([])
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("")
+  const [externalDriverName, setExternalDriverName] = useState<string>("")
+  const [externalDriverPhone, setExternalDriverPhone] = useState<string>("")
+
   useEffect(() => {
     fetchItems()
     fetchStats()
+    fetchInternalDrivers()
   }, [])
+
+  const fetchInternalDrivers = async () => {
+    try {
+      const res = await fetch("/api/admin/drivers")
+      if (res.ok) {
+        const data = await res.json()
+        setInternalDrivers(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error("Failed to load internal drivers:", err)
+    }
+  }
+
+  // WhatsApp Bildirimi ve Canlı Konum Linki Gönderme
+  const handleWhatsAppNotify = (item: LogisticsItem) => {
+    const rawPhone = item.driverContact || ""
+    let cleanPhone = rawPhone.replace(/[^0-9]/g, "")
+    if (cleanPhone.startsWith("0")) {
+      cleanPhone = "9" + cleanPhone
+    } else if (!cleanPhone.startsWith("90") && cleanPhone.length === 10) {
+      cleanPhone = "90" + cleanPhone
+    }
+
+    if (!cleanPhone) {
+      toast.error("Bu sevkiyata atanmış şoför telefon numarası bulunamadı.")
+      return
+    }
+
+    const driverName = item.supplierName || "Şoför"
+    const projectName = item.location || "Şantiye Sahası"
+    const deliveryId = item.id
+
+    const message = `Nexa ERP: Sayın ${driverName}, ${projectName} şantiyesine teslimatınız oluşturulmuştur. Teslimat fişini görmek ve canlı konum takibini (GPS) aktifleştirmek için lütfen aşağıdaki linke tıklayın: https://nxerp.com.tr/track/${deliveryId}`
+
+    const encoded = encodeURIComponent(message)
+    window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, "_blank")
+    toast.success(`${driverName} için WhatsApp yönlendirmesi açıldı.`)
+  }
 
   const fetchStats = async () => {
     try {
@@ -569,6 +615,17 @@ export default function LogisticsPage() {
                     <option value="DELIVERED">Teslim Alındı</option>
                     <option value="ISSUE_REPORTED">Sorunlu / Eksik</option>
                   </select>
+
+                  {/* WhatsApp ile Bildir & Canlı Konum Linki Butonu */}
+                  <button
+                    type="button"
+                    onClick={() => handleWhatsAppNotify(item)}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm shadow-emerald-950/40 hover:scale-105 active:scale-95"
+                    title="Şoföre WhatsApp Canlı Konum ve Takip Linki Gönder"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>WhatsApp ile Bildir</span>
+                  </button>
                 </div>
               </div>
 
@@ -679,25 +736,118 @@ export default function LogisticsPage() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Tedarikçi</label>
-                <input
-                  type="text"
-                  value={formData.supplierName}
-                  onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                  placeholder="Örn: Çimşa"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">İletişim</label>
-                <input
-                  type="text"
-                  value={formData.driverContact}
-                  onChange={(e) => setFormData({ ...formData, driverContact: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                  placeholder="Örn: 0555 123 4567"
-                />
+              {/* Şoför Atama (İç Şoför / Dış Şoför İki Sekmeli Yapı) */}
+              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <Truck className="w-4 h-4 text-blue-400" />
+                    <span>Şoför ve Sürücü Ataması *</span>
+                  </label>
+                  <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDriverTab("INTERNAL")
+                        if (selectedDriverId) {
+                          const d = internalDrivers.find((x) => x.id === selectedDriverId)
+                          if (d) setFormData((p) => ({ ...p, supplierName: d.name, driverContact: d.phone || "" }))
+                        }
+                      }}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                        driverTab === "INTERNAL"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      İç Şoför (Kayıtlı)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDriverTab("EXTERNAL")
+                        setFormData((p) => ({ ...p, supplierName: externalDriverName, driverContact: externalDriverPhone }))
+                      }}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                        driverTab === "EXTERNAL"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Dış Şoför (Misafir)
+                    </button>
+                  </div>
+                </div>
+
+                {driverTab === "INTERNAL" ? (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      Personnel Tablosundaki Kayıtlı Şoförü Seçin
+                    </label>
+                    <select
+                      value={selectedDriverId}
+                      onChange={(e) => {
+                        const dId = e.target.value
+                        setSelectedDriverId(dId)
+                        const d = internalDrivers.find((x) => x.id === dId)
+                        if (d) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            supplierName: d.name,
+                            driverContact: d.phone || "",
+                          }))
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500 font-medium"
+                    >
+                      <option value="">-- Kayıtlı Şoför Seçiniz --</option>
+                      {internalDrivers.map((drv) => (
+                        <option key={drv.id} value={drv.id}>
+                          {drv.name} ({drv.position || "Şoför"}) {drv.phone ? `• ${drv.phone}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedDriverId && (
+                      <p className="text-[11px] text-emerald-400 font-mono mt-1.5">
+                        Atanan Şoför: {formData.supplierName} • İletişim: {formData.driverContact || "Telefon belirtilmemiş"}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1">
+                        Dış Şoför Adı Soyadı *
+                      </label>
+                      <input
+                        type="text"
+                        value={externalDriverName}
+                        onChange={(e) => {
+                          setExternalDriverName(e.target.value)
+                          setFormData((prev) => ({ ...prev, supplierName: e.target.value }))
+                        }}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                        placeholder="Örn: Hasan Yılmaz"
+                        required={driverTab === "EXTERNAL"}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1">
+                        Telefon Numarası *
+                      </label>
+                      <input
+                        type="tel"
+                        value={externalDriverPhone}
+                        onChange={(e) => {
+                          setExternalDriverPhone(e.target.value)
+                          setFormData((prev) => ({ ...prev, driverContact: e.target.value }))
+                        }}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500 font-mono"
+                        placeholder="+90 532 XXX XX XX"
+                        required={driverTab === "EXTERNAL"}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Tarih/Saat</label>
