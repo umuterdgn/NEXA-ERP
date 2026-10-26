@@ -7,10 +7,42 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+
+async function getUserTenantId() {
+  try {
+    const session = await auth()
+    if (!session?.user) return null
+    if (session.user.role === "SUPER_ADMIN") return "SUPER_ADMIN"
+    let userTenantId = (session.user as any)?.tenantId as string | null | undefined
+    if (!userTenantId && session.user.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
+    return userTenantId || null
+  } catch {
+    return null
+  }
+}
 
 export async function getProgressBillingsData() {
   try {
+    const tenantId = await getUserTenantId()
+    const isSuperAdmin = tenantId === "SUPER_ADMIN"
+    const whereClause: any = {}
+    if (!isSuperAdmin) {
+      whereClause.contract = {
+        project: {
+          tenantId: tenantId || "non-existent"
+        }
+      }
+    }
+
     const billings = await prisma.progressBilling.findMany({
+      where: whereClause,
       take: 20,
       orderBy: { createdAt: "desc" },
       include: {
@@ -45,7 +77,19 @@ export async function getProgressBillingsData() {
 
 export async function getRecentBillingMovements() {
   try {
+    const tenantId = await getUserTenantId()
+    const isSuperAdmin = tenantId === "SUPER_ADMIN"
+    const whereClause: any = {}
+    if (!isSuperAdmin) {
+      whereClause.contract = {
+        project: {
+          tenantId: tenantId || "non-existent"
+        }
+      }
+    }
+
     const billings = await prisma.progressBilling.findMany({
+      where: whereClause,
       take: 8,
       orderBy: { createdAt: "desc" },
       include: {
@@ -75,8 +119,19 @@ export async function getRecentBillingMovements() {
 
 export async function getProgressBillingDetail(id: string) {
   try {
-    const billing = await prisma.progressBilling.findUnique({
-      where: { id },
+    const tenantId = await getUserTenantId()
+    const isSuperAdmin = tenantId === "SUPER_ADMIN"
+    const whereClause: any = { id }
+    if (!isSuperAdmin && tenantId) {
+      whereClause.contract = {
+        project: {
+          tenantId: tenantId
+        }
+      }
+    }
+
+    const billing = await prisma.progressBilling.findFirst({
+      where: whereClause,
       include: {
         contract: {
           include: {

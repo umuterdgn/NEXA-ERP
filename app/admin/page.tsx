@@ -50,6 +50,22 @@ export default async function AdminDashboard() {
   const userId = session?.user?.id
   const userName = session?.user?.name || "Taşeron Yetkilisi"
 
+  // Multi-Tenant Veri İzolasyonu: Kullanıcının tenantId'si
+  let userTenantId = (session?.user as any)?.tenantId as string | null | undefined
+  if (!userTenantId && userId) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { tenantId: true }
+    })
+    userTenantId = dbUser?.tenantId || null
+  }
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const projectTenantWhere = !isSuperAdmin
+    ? userTenantId
+      ? { tenantId: userTenantId }
+      : { tenantId: "non-existent-tenant" }
+    : {}
+
   // 1. Taşeron Rolü (SUBCONTRACTOR) Korumalı ve Kısıtlı Portal Görünümü
   // Ciro, genel şirket gideri gösterilmez; sadece iş paketleri, 3D BIM cezaları ve hakediş durumu render edilir
   if ((userRole as string) === "SUBCONTRACTOR") {
@@ -60,6 +76,7 @@ export default async function AdminDashboard() {
     try {
       subWorkPackages = await prisma.workPackage.findMany({
         where: {
+          ...(!isSuperAdmin ? { project: projectTenantWhere } : {}),
           OR: [
             { subcontractorName: { contains: userName, mode: "insensitive" } },
             { subcontractorName: { not: null } }
@@ -71,6 +88,7 @@ export default async function AdminDashboard() {
 
       if (subWorkPackages.length === 0) {
         subWorkPackages = await prisma.workPackage.findMany({
+          where: !isSuperAdmin ? { project: projectTenantWhere } : {},
           take: 5,
           orderBy: { createdAt: "desc" }
         })
@@ -78,6 +96,7 @@ export default async function AdminDashboard() {
 
       subBimIssues = await prisma.bimIssue.findMany({
         where: {
+          ...(!isSuperAdmin ? { project: projectTenantWhere } : {}),
           OR: [
             { subcontractorId: userId },
             { subcontractorName: { contains: userName, mode: "insensitive" } },
@@ -90,6 +109,7 @@ export default async function AdminDashboard() {
 
       if (subBimIssues.length === 0) {
         subBimIssues = await prisma.bimIssue.findMany({
+          where: !isSuperAdmin ? { project: projectTenantWhere } : {},
           take: 3,
           orderBy: { createdAt: "desc" }
         })
@@ -97,7 +117,8 @@ export default async function AdminDashboard() {
 
       subApprovals = await prisma.approvalRequest.findMany({
         where: {
-          requestType: "HAKEDIS"
+          requestType: "HAKEDIS",
+          ...(!isSuperAdmin ? { project: projectTenantWhere } : {})
         },
         take: 5,
         orderBy: { createdAt: "desc" }
@@ -140,9 +161,12 @@ export default async function AdminDashboard() {
 
   if (isClientPortal && userId) {
     try {
-      // Fetch contractor's managed projects
+      // Fetch contractor's managed projects (tenant scoped)
       contractorProjects = await prisma.project.findMany({
-        where: { managerId: userId },
+        where: {
+          managerId: userId,
+          ...projectTenantWhere
+        },
         select: {
           id: true,
           name: true,
@@ -187,12 +211,15 @@ export default async function AdminDashboard() {
         stockCount,
         projects
       ] = await Promise.all([
-        prisma.project.count().catch(() => 0),
+        prisma.project.count({
+          where: projectTenantWhere
+        }).catch(() => 0),
         prisma.attendanceRecord.count({
           where: {
             date: {
               gte: new Date(new Date().setHours(0, 0, 0, 0))
-            }
+            },
+            ...(!isSuperAdmin ? { project: projectTenantWhere } : {})
           }
         }).catch(() => 0),
         prisma.reminder.findMany({
@@ -201,7 +228,8 @@ export default async function AdminDashboard() {
               gte: new Date(),
               lte: reminderWindowEnd
             },
-            isCompleted: false
+            isCompleted: false,
+            ...(!isSuperAdmin ? { project: projectTenantWhere } : {})
           },
           include: {
             project: true
@@ -213,29 +241,33 @@ export default async function AdminDashboard() {
           orderBy: { createdAt: 'desc' },
           take: 5
         }).catch(() => []),
-        // Financial summary
+        // Financial summary (Tenant filtrelenmiş personel ödemeleri)
         prisma.personelPayment.aggregate({
           _sum: { amount: true },
           where: {
-            type: 'PRIM' // Consider payments as revenue
+            type: 'PRIM', // Consider payments as revenue
+            ...(!isSuperAdmin && userTenantId ? { personel: { tenantId: userTenantId } } : {})
           }
         }).catch(() => ({ _sum: { amount: 0 } })),
         prisma.personelPayment.aggregate({
           _sum: { amount: true },
           where: {
-            type: { in: ['AVANS', 'ELDEN'] } // Consider advances as expenses
+            type: { in: ['AVANS', 'ELDEN'] }, // Consider advances as expenses
+            ...(!isSuperAdmin && userTenantId ? { personel: { tenantId: userTenantId } } : {})
           }
         }).catch(() => ({ _sum: { amount: 0 } })),
-        // Low stock count
+        // Low stock count (Tenant filtrelenmiş envanter)
         prisma.inventory.count({
           where: {
             quantity: {
               lt: 10 // Items with quantity less than 10
-            }
+            },
+            ...(!isSuperAdmin ? { project: projectTenantWhere } : {})
           }
         }).catch(() => 0),
-        // Projects for YİBF Risk Radar
+        // Projects for YİBF Risk Radar (Tenant filtrelenmiş projeler)
         prisma.project.findMany({
+          where: projectTenantWhere,
           select: {
             id: true,
             yibfNo: true,

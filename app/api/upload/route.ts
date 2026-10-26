@@ -40,11 +40,12 @@ export async function POST(request: Request) {
     let finalUrl: string | null = null
     let driveId: string | undefined = undefined
 
+    // Pre-read buffer once
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+
     // 1. Try Cloudinary upload first
     try {
-      const bytes = await file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-
       const uploadResult = await new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
           {
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
 
           const media = {
             mimeType: file.type,
-            body: Buffer.from(await file.arrayBuffer()),
+            body: buffer,
           }
 
           const response = await drive.files.create({
@@ -124,9 +125,6 @@ export async function POST(request: Request) {
           const fileExtension = file.name.split(".").pop()
           const filename = `${timestamp}-${customName || file.name}.${fileExtension}`
 
-          const bytes = await file.arrayBuffer()
-          const buffer = Buffer.from(bytes)
-
           const command = new PutObjectCommand({
             Bucket: storjBucket,
             Key: filename,
@@ -142,39 +140,48 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Fallback: Local upload
+    // 4. Fallback: Local upload or Data URL for serverless/read-only environments
     if (!finalUrl) {
-      const uploadsDir = path.join(process.cwd(), "public", "uploads")
-      if (!existsSync(uploadsDir)) {
-        await mkdir(uploadsDir, { recursive: true })
+      try {
+        const uploadsDir = path.join(process.cwd(), "public", "uploads")
+        if (!existsSync(uploadsDir)) {
+          await mkdir(uploadsDir, { recursive: true })
+        }
+
+        const timestamp = Date.now()
+        const randomString = Math.random().toString(36).substring(2, 8)
+        const fileExtension = file.name.split(".").pop() || "png"
+        const filename = customName 
+          ? `${customName}.${fileExtension}`
+          : `${timestamp}-${randomString}.${fileExtension}`
+        const filepath = path.join(uploadsDir, filename)
+
+        await writeFile(filepath, buffer)
+        finalUrl = `/uploads/${filename}`
+      } catch (localFsError) {
+        console.warn("Local filesystem write failed (likely read-only environment like Vercel):", localFsError)
+        // Ultimate fallback: Base64 Data URL (instant preview & zero disk dependency)
+        const mimeType = file.type || "image/png"
+        finalUrl = `data:${mimeType};base64,${buffer.toString("base64")}`
       }
-
-      const timestamp = Date.now()
-      const randomString = Math.random().toString(36).substring(2, 8)
-      const fileExtension = file.name.split(".").pop()
-      const filename = customName 
-        ? `${customName}.${fileExtension}`
-        : `${timestamp}-${randomString}.${fileExtension}`
-      const filepath = path.join(uploadsDir, filename)
-
-      const bytes = await file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-      await writeFile(filepath, buffer)
-
-      finalUrl = `/uploads/${filename}`
     }
 
     // 🌟 MERKEZİ ARŞİV SENKRONİZASYONU & KOTA GÜNCELLEMESİ (Single Source of Truth)
-    const syncRes = await syncToGlobalArchive({
-      title: customName || file.name,
-      fileUrl: finalUrl,
-      fileSizeBytes: file.size,
-      sourceModule: sourceModule,
-      category: category,
-      tenantId: effectiveTenantId,
-      projectId: projectId,
-      uploadedById: userId,
-    })
+    let syncRes: any = null
+    try {
+      syncRes = await syncToGlobalArchive({
+        title: customName || file.name,
+        fileUrl: finalUrl,
+        fileSizeBytes: file.size,
+        sourceModule: sourceModule,
+        category: category,
+        tenantId: effectiveTenantId,
+        projectId: projectId,
+        uploadedById: userId,
+      })
+    } catch (archiveError) {
+      console.warn("Centralized archive sync failed, continuing upload response:", archiveError)
+    }
 
     return NextResponse.json(
       { 

@@ -34,8 +34,13 @@ export async function GET(request: Request) {
     console.log("📋 Projects API - Session:", { userRole, userId, userTenantId })
 
     const isSuperAdmin = userRole === "SUPER_ADMIN"
-    const tenantWhereClause = !isSuperAdmin && userTenantId ? { tenantId: userTenantId } : {}
-    const roleWhereClause = !isSuperAdmin && !userTenantId && userId ? { managerId: userId } : {}
+    const tenantWhereClause = !isSuperAdmin
+      ? userTenantId
+        ? { tenantId: userTenantId }
+        : userId
+          ? { managerId: userId }
+          : { tenantId: "non-existent-tenant" }
+      : {}
 
     const searchWhereClause = search
       ? {
@@ -53,7 +58,6 @@ export async function GET(request: Request) {
 
     const whereClause = {
       ...tenantWhereClause,
-      ...roleWhereClause,
       ...searchWhereClause
     }
 

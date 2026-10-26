@@ -11,7 +11,32 @@ import { logEquipmentAction } from "@/lib/logger"
 
 export async function GET() {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    let userTenantId = (session?.user as any)?.tenantId as string | null | undefined
+
+    if (!userTenantId && session?.user?.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
+
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const whereClause: any = !isSuperAdmin
+      ? userTenantId
+        ? {
+            OR: [
+              { project: { tenantId: userTenantId } },
+              { assignedTo: { tenantId: userTenantId } }
+            ]
+          }
+        : { projectId: "non-existent-tenant" }
+      : {}
+
     const equipments = await prisma.equipment.findMany({
+      where: whereClause,
       include: {
         project: true,
         assignedTo: {

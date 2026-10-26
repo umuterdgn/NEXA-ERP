@@ -6,27 +6,65 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET() {
   try {
-    // 1. İstatistikler
+    const session = await auth()
+    const userRole = session?.user?.role
+    let userTenantId = (session?.user as any)?.tenantId as string | null | undefined
+
+    if (!userTenantId && session?.user?.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
+
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantFilter: any = !isSuperAdmin
+      ? userTenantId
+        ? { tenantId: userTenantId }
+        : { tenantId: "non-existent-tenant" }
+      : {}
+
+    const projectTenantFilter: any = !isSuperAdmin
+      ? userTenantId
+        ? { project: { tenantId: userTenantId } }
+        : { project: { tenantId: "non-existent-tenant" } }
+      : {}
+
+    // 1. İstatistikler (Tenant İzolasyonlu)
     const [totalProjects, totalPersonnel, totalCompanies, totalArchives] = await Promise.all([
-      prisma.project.count(),
-      prisma.personel.count(),
-      prisma.company.count(),
-      prisma.archive.count()
+      prisma.project.count({ where: tenantFilter }),
+      prisma.personel.count({ where: tenantFilter }),
+      prisma.company.count({ where: tenantFilter }),
+      prisma.documentArchive.count({ where: tenantFilter }).catch(() => 0)
     ])
 
-    // 2. Finans (Son 6 ay)
+    // 2. Finans (Son 6 ay - Tenant İzolasyonlu)
     const sixMonthsAgo = new Date()
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        date: {
-          gte: sixMonthsAgo
-        }
+    const transactionWhere: any = {
+      date: {
+        gte: sixMonthsAgo
       },
+      ...(!isSuperAdmin
+        ? userTenantId
+          ? {
+              OR: [
+                { tenantId: userTenantId },
+                { project: { tenantId: userTenantId } }
+              ]
+            }
+          : { tenantId: "non-existent-tenant" }
+        : {})
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: transactionWhere,
       orderBy: { date: 'asc' }
     })
 
@@ -44,8 +82,9 @@ export async function GET() {
       return acc
     }, {})
 
-    // 3. Şantiye Dağılımı
+    // 3. Şantiye Dağılımı (Tenant İzolasyonlu)
     const personnel = await prisma.personel.findMany({
+      where: tenantFilter,
       select: { currentSite: true }
     })
 
@@ -55,12 +94,13 @@ export async function GET() {
       return acc
     }, {})
 
-    // 4. Kritik Stoklar (quantity <= 10)
+    // 4. Kritik Stoklar (Tenant İzolasyonlu)
     const criticalStocks = await prisma.stock.findMany({
       where: {
         quantity: {
           lte: 10
-        }
+        },
+        ...projectTenantFilter
       },
       orderBy: { quantity: 'asc' },
       take: 5,
@@ -70,14 +110,15 @@ export async function GET() {
         quantity: true,
         unit: true
       }
-    })
+    }).catch(() => [])
 
-    // 5. Yaklaşan Ödemler
+    // 5. Yaklaşan Ödemeler (Tenant İzolasyonlu)
     const today = new Date()
     const currentDay = today.getDate()
 
     const upcomingPayments = await prisma.personel.findMany({
       where: {
+        ...tenantFilter,
         OR: [
           {
             salaryPayDay: {
@@ -115,7 +156,7 @@ export async function GET() {
       const sgkPayment = p.sgkPayDay ? {
         type: "SGK",
         day: p.sgkPayDay,
-        amount: p.salary * 0.14, // Yaklaşık SGK oranı
+        amount: p.salary * 0.14,
         isLate: currentDay > p.sgkPayDay
       } : null
 

@@ -17,19 +17,35 @@ export async function GET() {
     }
 
     const userRole = session.user.role
+    let userTenantId = (session.user as any)?.tenantId as string | null | undefined
+
+    if (!userTenantId && session.user.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
+
+    const isSuperAdmin = userRole === 'SUPER_ADMIN'
+    const tenantFilter: any = !isSuperAdmin
+      ? userTenantId
+        ? { tenantId: userTenantId }
+        : { tenantId: "non-existent-tenant" }
+      : {}
+
     let users: any[] = []
     let personnel: any[] = []
 
-    // Fetch users based on role hierarchy
+    // Fetch users based on role hierarchy & tenant isolation
     if (userRole === 'STAFF') {
-      // Personel sadece ADMIN (Şef) rolündekileri görebilir
       users = await prisma.user.findMany({
-        where: { role: 'ADMIN' },
+        where: { role: 'ADMIN', ...tenantFilter },
         orderBy: { name: "asc" }
       })
     } else if (userRole === 'ADMIN') {
-      // Adminler STAFF (personel) ve SUPER_ADMIN rollerini görebilir
       personnel = await prisma.personel.findMany({
+        where: tenantFilter,
         include: {
           profession: true
         },
@@ -37,21 +53,26 @@ export async function GET() {
       })
 
       users = await prisma.user.findMany({
-        where: { role: 'SUPER_ADMIN' },
+        where: {
+          OR: [
+            { role: 'SUPER_ADMIN' },
+            { ...tenantFilter }
+          ]
+        },
         orderBy: { name: "asc" }
       })
     } else if (userRole === 'SUPER_ADMIN') {
-      // Süper adminler sadece ADMIN rollerini görebilir
       users = await prisma.user.findMany({
         where: { role: 'ADMIN' },
         orderBy: { name: "asc" }
       })
     } else {
-      // Diğer roller için tüm kullanıcıları
       users = await prisma.user.findMany({
+        where: tenantFilter,
         orderBy: { name: "asc" }
       })
       personnel = await prisma.personel.findMany({
+        where: tenantFilter,
         include: {
           profession: true
         },
@@ -78,7 +99,6 @@ export async function GET() {
       }))
     ]
 
-    // Filter out any null entries that might have slipped through
     const finalCombined = combined.filter(item => item !== null && item.id !== null)
 
     return NextResponse.json(finalCombined)
@@ -95,6 +115,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    let userTenantId = (session.user as any)?.tenantId as string | null | undefined
+    if (!userTenantId && session.user.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
+
     const body = await request.json()
     const { name, email, password, role, permissions } = body
 
@@ -106,6 +135,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         role,
+        tenantId: userTenantId || null,
         permissions: permissions || []
       }
     })

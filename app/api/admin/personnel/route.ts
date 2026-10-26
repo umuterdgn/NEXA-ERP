@@ -11,11 +11,31 @@ import { logPersonnelAction } from "@/lib/logger"
 
 export async function GET() {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    let userTenantId = (session?.user as any)?.tenantId as string | null | undefined
+
+    if (!userTenantId && session?.user?.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
+
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const tenantFilter = !isSuperAdmin
+      ? userTenantId
+        ? { tenantId: userTenantId }
+        : { tenantId: "non-existent-tenant" }
+      : {}
+
     const personnel = await prisma.personel.findMany({
       where: {
         role: {
           notIn: ['ADMIN', 'MUTEAHHIT']
-        }
+        },
+        ...tenantFilter
       },
       include: {
         profession: true
@@ -33,11 +53,21 @@ export async function POST(request: Request) {
   try {
     const session = await auth()
     const userName = session?.user?.name || "Bilinmeyen Kullanıcı"
+    let userTenantId = (session?.user as any)?.tenantId as string | null | undefined
+
+    if (!userTenantId && session?.user?.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
     
     const body = await request.json()
     
     const personnel = await prisma.personel.create({
       data: {
+        tenantId: userTenantId || null,
         personnelNo: body.personnelNo,
         name: body.name,
         tcNo: body.tcNo || null,

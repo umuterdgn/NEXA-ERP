@@ -12,12 +12,37 @@ import { logFinancialAction } from "@/lib/logger"
 export async function GET() {
   try {
     const session = await auth()
-    if (!session) {
+    if (!session?.user) {
       console.error("Finance GET: No session found")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userRole = session.user.role
+    const userId = session.user.id
+    let userTenantId = (session.user as any)?.tenantId as string | null | undefined
+
+    if (!userTenantId && userId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
+    }
+
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const whereClause: any = !isSuperAdmin
+      ? userTenantId
+        ? {
+            OR: [
+              { tenantId: userTenantId },
+              { project: { tenantId: userTenantId } }
+            ]
+          }
+        : { tenantId: "non-existent-tenant" }
+      : {}
+
     const transactions = await prisma.transaction.findMany({
+      where: whereClause,
       include: {
         project: true,
         company: true,
@@ -40,9 +65,18 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await auth()
-    if (!session) {
+    if (!session?.user) {
       console.error("Finance POST: No session found")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    let userTenantId = (session.user as any)?.tenantId as string | null | undefined
+    if (!userTenantId && session.user.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      userTenantId = dbUser?.tenantId || null
     }
 
     const data = await request.json()
@@ -54,6 +88,7 @@ export async function POST(request: Request) {
         amount: parseFloat(data.amount.toString()),
         description: data.description,
         category: data.category,
+        tenantId: userTenantId || null,
         personnelId: data.personnelId || null,
         projectId: data.projectId || null,
         companyId: data.companyId || null

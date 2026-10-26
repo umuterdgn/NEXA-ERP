@@ -99,6 +99,12 @@ export async function GET(request: NextRequest) {
     const isGlobalOnly = searchParams.get("globalOnly") === "true"
 
     const sessionTenantId = (session?.user as any)?.tenantId
+    const isSuperAdmin = session?.user?.role === "SUPER_ADMIN"
+    const tenantFilter: any = !isSuperAdmin
+      ? sessionTenantId
+        ? { tenantId: sessionTenantId }
+        : { tenantId: "non-existent-tenant" }
+      : {}
 
     const documents = await prisma.documentArchive.findMany({
       where: {
@@ -106,12 +112,7 @@ export async function GET(request: NextRequest) {
         ...(category && { category }),
         ...(sourceModule && { sourceModule }),
         ...(isGlobalOnly && { isGlobalArchive: true }),
-        ...(sessionTenantId && {
-          OR: [
-            { tenantId: sessionTenantId },
-            { tenantId: null }
-          ]
-        })
+        ...tenantFilter
       },
       include: {
         project: {
