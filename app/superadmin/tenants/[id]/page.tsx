@@ -43,11 +43,16 @@ import {
   Palette,
   Image as ImageIcon,
   Upload,
+  Copy,
+  Check,
+  Globe,
+  ExternalLink,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
 interface TenantDetailData {
   id: string
+  slug?: string | null
   name: string
   domain?: string | null
   type: string
@@ -128,6 +133,10 @@ export default function TenantDetailPage({
     "DASHBOARD", "PROJECTS", "FINANCE", "DOCUMENTS", "BIM", "AI_VISION", "BOQ_METRAJ", "INSPECTION"
   ])
 
+  // Slug ve URL State
+  const [slugInput, setSlugInput] = useState<string>("")
+  const [copied, setCopied] = useState<boolean>(false)
+
   // White-Label & Kurumsal Kimlik State
   const [logoUrlInput, setLogoUrlInput] = useState<string>("")
   const [primaryColorInput, setPrimaryColorInput] = useState<string>("#3B82F6")
@@ -145,6 +154,7 @@ export default function TenantDetailPage({
       const result = await res.json()
       if (result.success) {
         setTenant(result.data)
+        setSlugInput(result.data.slug || "")
         setExtraQuotaInput(result.data.extraStorageQuota || 0)
         setMaxStorageGbInput(Math.round((result.data.maxStorageMB || 51200) / 1024))
         setLicensesInput(result.data.licenses || 50)
@@ -215,6 +225,7 @@ export default function TenantDetailPage({
           licenses: Number(licensesInput),
           subscriptionPlan: selectedPlan,
           features: selectedFeatures,
+          slug: slugInput?.trim()?.toLowerCase() || null,
           logoUrl: logoUrlInput ? logoUrlInput.trim() : null,
           primaryColor: primaryColorInput || "#3B82F6",
           isWhiteLabelActive: isWhiteLabelInput,
@@ -360,6 +371,70 @@ export default function TenantDetailPage({
           </button>
         </div>
       </div>
+
+      {/* Müşteri Giriş URL'si Bilgi Kartı */}
+      {(() => {
+        const clientLoginUrl = `https://nxerp.com.tr/login?tenant=${tenant.slug || tenant.id}`
+        const handleCopyUrl = () => {
+          navigator.clipboard.writeText(clientLoginUrl)
+          setCopied(true)
+          toast.success("Müşteri Giriş URL'si panoya kopyalandı!", { icon: "📋" })
+          setTimeout(() => setCopied(false), 2500)
+        }
+
+        return (
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-950/60 via-indigo-950/40 to-slate-900 border border-purple-500/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  Müşteri Giriş URL'si
+                </span>
+                <span className="text-xs text-slate-500">•</span>
+                <span className="text-xs text-slate-400">Firma personeli ve yöneticileri bu adres üzerinden sisteme bağlanır</span>
+              </div>
+              <div className="flex items-center gap-2 font-mono text-xs sm:text-sm font-bold text-white tracking-wide">
+                <Globe className="w-4 h-4 text-purple-400 shrink-0" />
+                <span className="text-purple-300 select-all">{clientLoginUrl}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyUrl}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-lg ${
+                  copied
+                    ? "bg-emerald-600 text-white shadow-emerald-500/20"
+                    : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-500/20"
+                }`}
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{copied ? "Kopyalandı!" : "Panoya Kopyala"}</span>
+              </button>
+
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Merhaba, Nexa ERP kurumsal yönetim paneline giriş adresiniz: ${clientLoginUrl}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center gap-1.5"
+                title="Müşteriye WhatsApp'tan İlet"
+              >
+                <span>WhatsApp</span>
+              </a>
+
+              <a
+                href={clientLoginUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+                title="Bağlantıyı Yeni Sekmede Aç"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Grid: 2 Kolon Yapısı */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

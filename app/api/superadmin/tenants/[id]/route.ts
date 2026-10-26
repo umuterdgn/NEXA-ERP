@@ -123,6 +123,7 @@ export async function PATCH(
       paymentStatus, 
       subscriptionPlan, 
       features,
+      slug,
       logoUrl,
       primaryColor,
       isWhiteLabelActive
@@ -130,6 +131,9 @@ export async function PATCH(
 
     const dataToUpdate: any = {}
 
+    if (typeof slug === "string" && slug.trim()) {
+      dataToUpdate.slug = slug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "").replace(/(^-|-$)+/g, "")
+    }
     if (typeof extraStorageQuota === "number") dataToUpdate.extraStorageQuota = extraStorageQuota
     if (typeof maxStorageMB === "number") dataToUpdate.maxStorageMB = maxStorageMB
     if (typeof usedStorageMB === "number") dataToUpdate.usedStorageMB = usedStorageMB

@@ -8,9 +8,9 @@
  * Minimalist, dikkat dağıtmayan, güven veren kurumsal kimlik.
  */
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Building2,
@@ -27,6 +27,19 @@ import {
   Briefcase,
   Users,
 } from "lucide-react";
+
+function TenantHeaderBadge() {
+  const searchParams = useSearchParams();
+  const tenantSlug = searchParams.get("tenant");
+  if (!tenantSlug) return null;
+
+  return (
+    <div className="mb-4 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-medium flex items-center justify-center gap-2">
+      <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+      <span>Kurumsal Giriş Portalı: <strong className="font-mono text-white uppercase">{tenantSlug}</strong></span>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -193,6 +206,11 @@ export default function LoginPage() {
             </div>
           </Link>
         </div>
+
+        {/* Tenant URL Badge */}
+        <Suspense fallback={null}>
+          <TenantHeaderBadge />
+        </Suspense>
 
         {/* Portal Modu Seçici (Kurumsal Segmented Control) */}
         <div className="grid grid-cols-2 p-1 bg-slate-900 rounded-xl border border-slate-800 mb-5">

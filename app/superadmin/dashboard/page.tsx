@@ -43,6 +43,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import CreateTenantModal from "@/components/superadmin/CreateTenantModal";
 
 interface ErrorRadarItem {
   id: string;
@@ -792,114 +793,12 @@ export default function SuperadminDashboardPage() {
         </table>
       </div>
 
-      {/* New Tenant Creation Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-950 p-6 max-w-lg w-full space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                <Building2 className="w-4 h-4 text-purple-400" />
-                <span>Yeni Firma (Tenant) Kaydı</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateTenant} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Firma Ticari Unvanı *</label>
-                <input
-                  type="text"
-                  required
-                  value={newTenantData.name}
-                  onChange={(e) => setNewTenantData({ ...newTenantData, name: e.target.value })}
-                  placeholder="Örn: Demirtaş İnşaat Taahhüt San. Ltd."
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Firma Türü</label>
-                  <select
-                    value={newTenantData.type}
-                    onChange={(e) => setNewTenantData({ ...newTenantData, type: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500"
-                  >
-                    <option value="MAIN_CONTRACTOR">Ana Yüklenici (Müteahhit)</option>
-                    <option value="INSPECTION">Yapı Denetim Kuruluşu</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Abonelik Paketi</label>
-                  <select
-                    value={newTenantData.subscriptionPlan}
-                    onChange={(e) =>
-                      setNewTenantData({ ...newTenantData, subscriptionPlan: e.target.value as any })
-                    }
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500"
-                  >
-                    <option value="STARTER">Starter (15.000 ₺/ay)</option>
-                    <option value="PROFESSIONAL">Professional (35.000 ₺/ay)</option>
-                    <option value="ENTERPRISE">Enterprise (75.000 ₺/ay)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Kullanıcı Lisans Sayısı</label>
-                  <input
-                    type="number"
-                    min={5}
-                    max={500}
-                    value={newTenantData.licenses}
-                    onChange={(e) =>
-                      setNewTenantData({ ...newTenantData, licenses: Number(e.target.value) })
-                    }
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-purple-500 font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Özel Alan Adı (Opsiyonel)</label>
-                  <input
-                    type="text"
-                    value={newTenantData.domain}
-                    onChange={(e) => setNewTenantData({ ...newTenantData, domain: e.target.value })}
-                    placeholder="demirtasinsaat.com.tr"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold flex items-center gap-1.5"
-                >
-                  {creating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Kiracı Oluştur</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Comprehensive Tenant Onboarding Modal */}
+      <CreateTenantModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => fetchTenants()}
+      />
     </div>
   );
 }

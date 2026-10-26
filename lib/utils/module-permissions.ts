@@ -18,31 +18,30 @@ export function isMenuItemAllowed(
 
   // 1. 3D BIM & Modeller
   if (href.includes("/bim") || label.includes("bim") || label.includes("3d model")) {
-    return enabledModules.includes("BIM")
+    return enabledModules.includes("BIM") || enabledModules.includes("BIM_VIEWER")
   }
 
-  // 2. AI Görsel Analiz & OCR
-  if (
-    href.includes("/ai-vision") ||
-    href.includes("/smart-documents") ||
-    href.includes("/ocr") ||
-    label.includes("ai görsel") ||
-    label.includes("ocr")
-  ) {
+  // 2. OCR Evrak Denetimi
+  if (href.includes("/smart-documents") || href.includes("/ocr") || label.includes("ocr")) {
+    return enabledModules.includes("OCR") || enabledModules.includes("AI_VISION") || enabledModules.includes("DOCUMENTS")
+  }
+
+  // 3. AI Görsel Analiz
+  if (href.includes("/ai-vision") || label.includes("ai görsel")) {
     return enabledModules.includes("AI_VISION")
   }
 
-  // 3. Keşif & Metraj (BoQ)
+  // 4. Keşif & Metraj (BoQ)
   if (
     href.includes("/boq") ||
     href.includes("/progress-payments") ||
     label.includes("metraj") ||
     label.includes("keşif")
   ) {
-    return enabledModules.includes("BOQ_METRAJ")
+    return enabledModules.includes("BOQ_METRAJ") || enabledModules.includes("PROJECTS")
   }
 
-  // 4. İHA & Drone Harita
+  // 5. İHA & Drone Harita
   if (
     href.includes("/drone") ||
     href.includes("/drone-maps") ||
@@ -53,7 +52,7 @@ export function isMenuItemAllowed(
     return enabledModules.includes("DRONE")
   }
 
-  // 5. Kasa, Finans & Tedarik
+  // 6. Kasa, Finans & Tedarik
   if (
     cat.includes("FİNANS") ||
     href.includes("/finance") ||
@@ -64,7 +63,7 @@ export function isMenuItemAllowed(
     return enabledModules.includes("FINANCE")
   }
 
-  // 6. Merkezi Evrak Arşivi
+  // 7. Merkezi Evrak Arşivi
   if (
     href.includes("/archive") ||
     href.includes("/documents") ||
@@ -75,7 +74,7 @@ export function isMenuItemAllowed(
     return enabledModules.includes("DOCUMENTS")
   }
 
-  // 7. Personel & Puantaj
+  // 8. Personel & Puantaj
   if (
     cat.includes("İNSAN KAYNAKLARI") ||
     cat.includes("PERSONEL") ||
@@ -83,7 +82,7 @@ export function isMenuItemAllowed(
     href.includes("/personnel") ||
     href.includes("/attendance")
   ) {
-    return enabledModules.includes("PERSONNEL")
+    return enabledModules.includes("HR") || enabledModules.includes("PERSONNEL")
   }
 
   // 8. Kalite Güvence (QA/QC)
