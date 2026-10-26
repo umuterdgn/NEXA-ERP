@@ -8,7 +8,7 @@
 
 import React, { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -50,6 +50,8 @@ function getInitials(name: string) {
 
 export default function LoginForm({ tenant }: LoginFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tenantParam = searchParams ? searchParams.get("tenant") : null;
 
   // Tenant tipine göre giriş modunu belirle
   const isInspectionTenant =
@@ -183,31 +185,31 @@ export default function LoginForm({ tenant }: LoginFormProps) {
     if (demoType === "admin") {
       setLoginMode("contractor");
       setEmail("admin@nexa.com");
-      setPassword("demo123");
+      setPassword("nexa2026");
     } else if (demoType === "site_manager") {
       setLoginMode("contractor");
-      setEmail("sef@nexa.com");
-      setPassword("demo123");
+      setEmail("sefi@nexa.com");
+      setPassword("nexa2026");
     } else if (demoType === "engineer") {
       setLoginMode("contractor");
       setEmail("muhendis@nexa.com");
-      setPassword("demo123");
+      setPassword("nexa2026");
     } else if (demoType === "subcontractor") {
       setLoginMode("contractor");
       setEmail("taseron@nexa.com");
-      setPassword("demo123");
+      setPassword("nexa2026");
     } else if (demoType === "worker") {
       setLoginMode("contractor");
-      setEmail("personel@nexa.com");
-      setPassword("demo123");
+      setEmail("sofor@nexa.com");
+      setPassword("nexa2026");
     } else if (demoType === "inspector") {
       setLoginMode("inspection");
-      setEmail("denetci@nexa.com");
-      setPassword("demo123");
+      setEmail("denetim@nexa.com");
+      setPassword("nexa2026");
     } else if (demoType === "inspection_admin") {
       setLoginMode("inspection");
       setEmail("denetim@nexa.com");
-      setPassword("demo123");
+      setPassword("nexa2026");
     }
   };
 
@@ -430,95 +432,97 @@ export default function LoginForm({ tenant }: LoginFormProps) {
             </button>
           </form>
 
-          {/* Hızlı Demo Hesapları */}
-          <div className="mt-6 pt-4 border-t border-slate-800">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-2.5 text-center">
-              Kurumsal Test Hesapları
-            </span>
+          {/* Hızlı Demo Hesapları - Tenant parametresi içeren sayfalarda tamamen gizlenir */}
+          {!tenantParam && !tenant && (
+            <div className="mt-6 pt-4 border-t border-slate-800 kurumsal-test-hesaplari">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-2.5 text-center">
+                Kurumsal Test Hesapları
+              </span>
 
-            {loginMode === "contractor" ? (
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo("admin")}
-                  className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
-                >
-                  <Building2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span className="truncate">Yönetici (Admin)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo("engineer")}
-                  className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
-                >
-                  <HardHat className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                  <span className="truncate">Saha Mühendisi</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo("site_manager")}
-                  className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
-                >
-                  <HardHat className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="truncate">Şantiye Şefi</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo("subcontractor")}
-                  className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
-                >
-                  <Briefcase className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span className="truncate">Taşeron Portalı</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo("worker")}
-                  className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2 col-span-2 sm:col-span-1"
-                >
-                  <Users className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span className="truncate">Saha Personeli</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo("inspection_admin")}
-                  className="p-2.5 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-200 hover:text-white transition-colors flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
-                    <div>
-                      <span className="font-semibold block">Yapı Denetim Patronu</span>
-                      <span className="text-[10px] text-slate-400">
-                        denetim.patron@nexa.com
-                      </span>
+              {loginMode === "contractor" ? (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemo("admin")}
+                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <span className="truncate">Yönetici (Admin)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemo("engineer")}
+                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
+                  >
+                    <HardHat className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                    <span className="truncate">Saha Mühendisi</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemo("site_manager")}
+                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
+                  >
+                    <HardHat className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="truncate">Şantiye Şefi</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemo("subcontractor")}
+                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
+                  >
+                    <Briefcase className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <span className="truncate">Taşeron Portalı</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemo("worker")}
+                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2 col-span-2 sm:col-span-1"
+                  >
+                    <Users className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">Saha Personeli</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemo("inspection_admin")}
+                    className="p-2.5 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-200 hover:text-white transition-colors flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
+                      <div>
+                        <span className="font-semibold block">Yapı Denetim Patronu</span>
+                        <span className="text-[10px] text-slate-400">
+                          denetim@nexa.com
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono border border-slate-700/50">
-                    123456
-                  </span>
-                </button>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono border border-slate-700/50">
+                      nexa2026
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo("inspector")}
-                  className="p-2.5 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-200 hover:text-white transition-colors flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
-                    <div>
-                      <span className="font-semibold block">Saha Denetçisi</span>
-                      <span className="text-[10px] text-slate-400">denetim@nexa.com</span>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemo("inspector")}
+                    className="p-2.5 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-200 hover:text-white transition-colors flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
+                      <div>
+                        <span className="font-semibold block">Saha Denetçisi</span>
+                        <span className="text-[10px] text-slate-400">denetim@nexa.com</span>
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono border border-slate-700/50">
-                    123456
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono border border-slate-700/50">
+                      nexa2026
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Kurumsal Alt Bilgi */}

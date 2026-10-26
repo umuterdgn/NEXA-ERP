@@ -4,6 +4,7 @@
  * Nexa ERP - Kurumsal B2B Giriş Terminali (White-Label Server Component)
  */
 
+import { Suspense } from "react"
 import { prisma } from "@/lib/prisma"
 import LoginForm, { TenantData } from "./LoginForm"
 
@@ -56,5 +57,9 @@ export default async function LoginPage({
     }
   }
 
-  return <LoginForm tenant={tenant} />
+  return (
+    <Suspense fallback={null}>
+      <LoginForm tenant={tenant} />
+    </Suspense>
+  )
 }
