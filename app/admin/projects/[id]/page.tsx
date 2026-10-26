@@ -73,6 +73,7 @@ export default async function ProjectDetailPage({
         archives: true,
         transactions: true,
         siteZones: true,
+        geofenceZones: true,
         bimFiles: {
           orderBy: {
             uploadedAt: 'desc',

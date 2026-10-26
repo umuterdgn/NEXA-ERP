@@ -99,17 +99,17 @@ const ZONE_STYLE_CONFIG: Record<ZoneType, {
     fillColor: '#3b82f6',
     fillOpacity: 0.25,
     weight: 2,
-    label: 'Ana Şantiye Sınırı',
+    label: 'Ana Şantiye (Mavi)',
     badgeBg: 'bg-blue-500/20',
     badgeText: 'text-blue-400'
   },
   DANGER_ZONE: {
     color: '#dc2626',
-    fillColor: '#ef4444',
+    fillColor: 'red',
     fillOpacity: 0.35,
     weight: 2.5,
     dashArray: '6, 6',
-    label: 'Riskli Alan (Vinç/İskele)',
+    label: 'Riskli Alan (Kırmızı)',
     badgeBg: 'bg-red-500/20',
     badgeText: 'text-red-400'
   },
@@ -118,7 +118,7 @@ const ZONE_STYLE_CONFIG: Record<ZoneType, {
     fillColor: '#10b981',
     fillOpacity: 0.25,
     weight: 2,
-    label: 'Dinlenme / Toplanma Alanı',
+    label: 'Dinlenme Alanı (Yeşil)',
     badgeBg: 'bg-emerald-500/20',
     badgeText: 'text-emerald-400'
   }
@@ -206,21 +206,31 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
   const fetchZones = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/site-zones?projectId=${projectId}`);
+      let response = await fetch(`/api/admin/geofences?projectId=${projectId}`);
+      let data: any[] = [];
       if (response.ok) {
-        const data = await response.json();
+        data = await response.json();
+      }
+      if (!Array.isArray(data) || data.length === 0) {
+        response = await fetch(`/api/admin/site-zones?projectId=${projectId}`);
+        if (response.ok) {
+          data = await response.json();
+        }
+      }
+
+      if (Array.isArray(data)) {
         const formattedZones: SiteZone[] = data.map((z: any) => {
-          // Normalize zoneType
           let zType: ZoneType = 'MAIN_SITE';
-          if (z.zoneType === 'DANGER_ZONE' || z.category === 'RISK') {
+          const typeStr = z.type || z.zoneType || z.category;
+          if (typeStr === 'DANGER_ZONE' || typeStr === 'RISK') {
             zType = 'DANGER_ZONE';
-          } else if (z.zoneType === 'REST_AREA' || z.category === 'REST_AREA') {
+          } else if (typeStr === 'REST_AREA') {
             zType = 'REST_AREA';
           } else {
             zType = 'MAIN_SITE';
           }
 
-          let polygonCoords = z.polygonCoordinates;
+          let polygonCoords = z.coordinates || z.polygonCoordinates;
           if (typeof polygonCoords === 'string') {
             try {
               polygonCoords = JSON.parse(polygonCoords);
@@ -229,7 +239,7 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
 
           return {
             id: z.id,
-            title: z.title,
+            title: z.name || z.title || 'Sanal Çit',
             zoneType: zType,
             category: z.category,
             lat: z.latitude,
@@ -254,6 +264,16 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
     useMapEvents({
       click(e) {
         if (!isDrawing) return;
+        // Eğer 3 veya daha fazla nokta varsa ve kullanıcı başlangıç noktasına yakın bir yere tıkladıysa şekli kapat
+        if (drawingPoints.length >= 3) {
+          const first = drawingPoints[0];
+          const dLat = Math.abs(e.latlng.lat - first.lat);
+          const dLng = Math.abs(e.latlng.lng - first.lng);
+          if (dLat < 0.00025 && dLng < 0.00025) {
+            setSaveModalOpen(true);
+            return;
+          }
+        }
         const newPoint = { lat: e.latlng.lat, lng: e.latlng.lng };
         setDrawingPoints((prev) => [...prev, newPoint]);
       }
@@ -273,13 +293,16 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
     }
 
     try {
-      const response = await fetch('/api/admin/site-zones', {
+      const response = await fetch('/api/admin/geofences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId,
+          name: modalForm.title,
           title: modalForm.title,
+          type: drawZoneType,
           zoneType: drawZoneType,
+          coordinates: drawingPoints,
           polygonCoordinates: drawingPoints,
           supervisor: modalForm.supervisor || undefined
         })
@@ -297,7 +320,7 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
             supervisor: modalForm.supervisor
           }
         ]);
-        toast.success(`"${modalForm.title}" poligon sanal çiti başarıyla kaydedildi!`);
+        toast.success(`"${modalForm.title}" poligon sanal çiti GeofenceZone tablosuna kaydedildi!`);
         // Reset states
         setDrawingPoints([]);
         setIsDrawing(false);
@@ -317,7 +340,7 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
     if (!deleteModal.isOpen || !deleteModal.zoneId) return;
 
     try {
-      const response = await fetch(`/api/admin/site-zones/${deleteModal.zoneId}`, {
+      const response = await fetch(`/api/admin/geofences/${deleteModal.zoneId}`, {
         method: 'DELETE'
       });
 
@@ -743,12 +766,20 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
                   <CircleMarker
                     key={idx}
                     center={[pt.lat, pt.lng]}
-                    radius={idx === 0 ? 8 : 5}
+                    radius={idx === 0 ? 10 : 5}
+                    eventHandlers={{
+                      click: (e) => {
+                        L.DomEvent.stopPropagation(e as any);
+                        if (idx === 0 && drawingPoints.length >= 3) {
+                          setSaveModalOpen(true);
+                        }
+                      }
+                    }}
                     pathOptions={{
                       color: idx === 0 ? '#10b981' : '#ffffff',
                       fillColor: idx === 0 ? '#10b981' : ZONE_STYLE_CONFIG[drawZoneType].color,
                       fillOpacity: 1,
-                      weight: 2
+                      weight: idx === 0 ? 3 : 2
                     }}
                   />
                 ))}
@@ -930,37 +961,56 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
 
             <div className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Alan / Bölge Türü</label>
+                <label className="block text-slate-300 font-medium mb-1">Alan Tipi *</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {(Object.keys(ZONE_STYLE_CONFIG) as ZoneType[]).map((type) => {
-                    const cfg = ZONE_STYLE_CONFIG[type];
-                    const isSelected = drawZoneType === type;
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setDrawZoneType(type)}
-                        className={`p-2.5 rounded-xl border text-center transition ${
-                          isSelected
-                            ? 'bg-slate-800 border-cyan-500 text-white ring-1 ring-cyan-500 shadow'
-                            : 'bg-slate-800/40 border-slate-700 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        <span className="block text-sm mb-0.5" style={{ color: cfg.color }}>●</span>
-                        <span className="text-[11px] font-semibold block">{cfg.label.split(' ')[0]}</span>
-                      </button>
-                    );
-                  })}
+                  <button
+                    type="button"
+                    onClick={() => setDrawZoneType('MAIN_SITE')}
+                    className={`p-2.5 rounded-xl border text-center transition ${
+                      drawZoneType === 'MAIN_SITE'
+                        ? 'bg-blue-600/25 border-blue-500 text-white ring-1 ring-blue-500 shadow'
+                        : 'bg-slate-800/40 border-slate-700 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="block text-sm mb-0.5 text-blue-400">●</span>
+                    <span className="text-[11px] font-semibold block">Ana Şantiye (Mavi)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDrawZoneType('DANGER_ZONE')}
+                    className={`p-2.5 rounded-xl border text-center transition ${
+                      drawZoneType === 'DANGER_ZONE'
+                        ? 'bg-red-600/25 border-red-500 text-white ring-1 ring-red-500 shadow'
+                        : 'bg-slate-800/40 border-slate-700 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="block text-sm mb-0.5 text-red-500">●</span>
+                    <span className="text-[11px] font-semibold block">Riskli Alan (Kırmızı)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDrawZoneType('REST_AREA')}
+                    className={`p-2.5 rounded-xl border text-center transition ${
+                      drawZoneType === 'REST_AREA'
+                        ? 'bg-emerald-600/25 border-emerald-500 text-white ring-1 ring-emerald-500 shadow'
+                        : 'bg-slate-800/40 border-slate-700 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="block text-sm mb-0.5 text-emerald-400">●</span>
+                    <span className="text-[11px] font-semibold block">Dinlenme Alanı (Yeşil)</span>
+                  </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Poligon Adı *</label>
+                <label className="block text-slate-300 font-medium mb-1">Alan Adı *</label>
                 <input
                   type="text"
                   value={modalForm.title}
                   onChange={(e) => setModalForm({ ...modalForm, title: e.target.value })}
-                  placeholder="Örn: Kule Vinç Düşme Alanı, A Blok Temeli"
+                  placeholder="Örn: Ana Şantiye Sınırı, Kule Vinç Altı (Tehlikeli)"
                   className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
                 />
               </div>

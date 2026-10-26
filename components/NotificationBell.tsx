@@ -25,17 +25,38 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const prevUrgentIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchNotifications = async () => {
     try {
       const response = await fetch("/api/admin/notifications");
       if (response.ok) {
-        const data = await response.json();
+        const data: Notification[] = await response.json();
         setNotifications(data);
+
+        // Kırmızı İSG ve Acil Durum Toast Alarmı
+        if (Array.isArray(data)) {
+          for (const item of data) {
+            if (!item.isRead && (item.type === "URGENT" || item.type === "ERROR")) {
+              if (!prevUrgentIds.current.has(item.id)) {
+                prevUrgentIds.current.add(item.id);
+                try {
+                  const { toast } = await import("react-hot-toast");
+                  toast.error(`🚨 ${item.title}\n${item.message}`, {
+                    duration: 8000,
+                    id: `urgent-${item.id}`
+                  });
+                } catch {}
+              }
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -44,6 +65,7 @@ export default function NotificationBell() {
     }
   };
 
+  const hasUrgent = notifications.some((n) => !n.isRead && (n.type === "URGENT" || n.type === "ERROR"));
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   useEffect(() => {
@@ -134,11 +156,19 @@ export default function NotificationBell() {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Bildirimler"
-        className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+        className={`relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-all ${
+          hasUrgent
+            ? "bg-red-500/20 text-red-400 border border-red-500/40 shadow-lg shadow-red-500/20 animate-pulse"
+            : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+        }`}
       >
-        <Bell className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+        <Bell className={`h-5 w-5 ${hasUrgent ? "text-red-400 animate-bounce" : ""}`} />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+          <span
+            className={`absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white shadow ${
+              hasUrgent ? "bg-red-600 ring-2 ring-red-400 animate-ping" : "bg-red-500"
+            }`}
+          >
             {unreadCount}
           </span>
         )}

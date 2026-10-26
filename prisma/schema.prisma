@@ -406,6 +406,7 @@ model Project {
   nonConformances          NonConformance[]
   inspectionForms          InspectionForm[]
   boqProgressItems         BoqItem[]
+  geofenceZones            GeofenceZone[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -441,6 +442,29 @@ model SiteZone {
   @@index([projectId])
   @@index([zoneType])
   @@index([category])
+}
+
+// ============================================================================
+// GEOFENCE ZONES (Sanal Poligon Çitler & İSG Risk Alanları)
+// ============================================================================
+
+model GeofenceZone {
+  id          String   @id @default(cuid())
+  projectId   String
+  tenantId    String
+  name        String   // Örn: "Ana Şantiye Sınırı", "Kule Vinç Altı (Tehlikeli)"
+  type        String   // "MAIN_SITE", "DANGER_ZONE", "REST_AREA"
+  coordinates Json     // Poligonun nokta koordinatları: [{lat, lng}, {lat, lng}, ...]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([tenantId])
+  @@index([type])
+  @@index([isActive])
 }
 
 // ============================================================================
@@ -1007,6 +1031,11 @@ model Personel {
   ppeAssignments           PPEAssignment[]
   legalCertificates        LegalCertificate[]
   auditRecords             AuditRecord[]
+  lastKnownLat             Float?                    // Nexa Mobile canlı konum enlem
+  lastKnownLng             Float?                    // Nexa Mobile canlı konum boylam
+  lastLocationAt           DateTime?                 // Son koordinat alınma zamanı
+  isOutOfSite              Boolean                   @default(false) // Ana şantiye dışında mı?
+  currentProjectId         String?                   // Aktif şantiye proje kimliği
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
 
