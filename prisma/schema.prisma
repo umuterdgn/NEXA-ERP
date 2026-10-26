@@ -116,24 +116,64 @@ model Tenant {
   status           String       @default("ACTIVE") // "ACTIVE", "SUSPENDED" (Ödeme yapmayanlar için)
   licenses         Int          @default(50) // Kaç kullanıcı ekleyebilir? (Örn: 50 kişi)
   iyzicoSubId      String?      // Ödeme gateway abonelik ID'si
-  features         String[]     @default(["BIM_VIEWER", "AI_VISION", "OCR", "DRONE"]) // Modül aç/kapat (SaaS Upsell)
-  isActive         Boolean      @default(true)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  features          String[]     @default(["BIM_VIEWER", "AI_VISION", "OCR", "DRONE"]) // Modül aç/kapat (SaaS Upsell)
+  extraStorageQuota Int          @default(0) // Ekstra GB hakkı (Override)
+  paymentStatus     String       @default("PAID") // "PAID", "PAST_DUE", "FAILED"
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
-  projects     Project[]
-  yibfProjects YibfProject[]
-  personnel    Personel[]
-  equipment    Equipment[]
-  droneMedia   DroneMedia[]
-  chatThreads  ChatThread[]
-  systemLogs   SystemLog[]
-  users        User[]       @relation("UserTenant")
+  projects       Project[]
+  yibfProjects   YibfProject[]
+  personnel      Personel[]
+  equipment      Equipment[]
+  droneMedia     DroneMedia[]
+  chatThreads    ChatThread[]
+  systemLogs     SystemLog[]
+  users          User[]          @relation("UserTenant")
+  supportTickets SupportTicket[]
 
   @@index([isActive])
   @@index([status])
   @@index([subscriptionPlan])
   @@index([type])
+  @@index([paymentStatus])
+}
+
+// ============================================================================
+// SAAS SUPPORT TICKETING & GLOBAL ANNOUNCEMENTS
+// ============================================================================
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String // Talebi açan kişi
+  subject   String
+  message   String   @db.Text
+  status    String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  priority  String   @default("MEDIUM")
+  response  String?  @db.Text // Superadmin çözüm yanıtı
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([priority])
+}
+
+model SystemAnnouncement {
+  id        String   @id @default(cuid())
+  title     String
+  message   String   @db.Text
+  type      String // "INFO", "WARNING", "MAINTENANCE"
+  target    String   @default("ALL") // "ALL", "CONTRACTORS", "INSPECTORS"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([target])
 }
 
 // ============================================================================

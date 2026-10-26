@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Building2,
   Users,
@@ -71,6 +72,7 @@ const FEATURE_CONFIG = [
 ];
 
 export default function SuperadminDashboardPage() {
+  const router = useRouter();
   const [tenants, setTenants] = useState<TenantItem[]>([]);
   const [kpis, setKpis] = useState<KPIStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -441,8 +443,9 @@ export default function SuperadminDashboardPage() {
                 return (
                   <tr
                     key={t.id}
-                    className={`transition ${
-                      isSuspended ? "bg-rose-950/10 hover:bg-rose-950/20" : "hover:bg-slate-850/50"
+                    onClick={() => router.push(`/superadmin/tenants/${t.id}`)}
+                    className={`transition cursor-pointer group ${
+                      isSuspended ? "bg-rose-950/10 hover:bg-rose-950/30" : "hover:bg-slate-800/60"
                     }`}
                   >
                     {/* Firma Adı & Türü */}
@@ -502,7 +505,7 @@ export default function SuperadminDashboardPage() {
                     </td>
 
                     {/* Feature Toggles (Modül Aç/Kapat) */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {FEATURE_CONFIG.map((feat) => {
                           const isEnabled = (t.features || []).includes(feat.key);
@@ -512,7 +515,10 @@ export default function SuperadminDashboardPage() {
                             <button
                               key={feat.key}
                               type="button"
-                              onClick={() => handleToggleFeature(t, feat.key)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleFeature(t, feat.key);
+                              }}
                               className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border transition cursor-pointer ${
                                 isEnabled
                                   ? "bg-slate-800 text-white border-slate-700 hover:border-slate-600"
@@ -552,11 +558,14 @@ export default function SuperadminDashboardPage() {
                     </td>
 
                     {/* Aksiyon Butonu (Şalter) */}
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         disabled={isToggling}
-                        onClick={() => handleToggleStatus(t)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleStatus(t);
+                        }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                           t.status === "ACTIVE"
                             ? "bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30"
