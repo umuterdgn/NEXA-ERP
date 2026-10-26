@@ -244,6 +244,19 @@ export default function MaterialsPage() {
       <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl border border-slate-700 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-slate-400">Yükleniyor...</div>
+        ) : filteredMaterials.length === 0 ? (
+          <div className="text-center py-16 text-slate-400">
+            <FileText className="w-16 h-16 mx-auto mb-4 text-slate-600" />
+            <h3 className="text-lg font-semibold text-white mb-1">Henüz Kayıt Bulunmuyor</h3>
+            <p className="text-sm text-slate-400 mb-6">Bu firmaya ait onay bekleyen veya onaylanmış bir malzeme kaydı bulunamadı.</p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm font-medium shadow-lg shadow-blue-600/20"
+            >
+              <Plus className="w-4 h-4" />
+              Yeni Malzeme Sun
+            </button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -291,12 +304,6 @@ export default function MaterialsPage() {
             </tbody>
           </table>
         </div>
-        )}
-        {filteredMaterials.length === 0 && !loading && (
-          <div className="text-center py-12 text-slate-400">
-            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Malzeme bulunamadı</p>
-          </div>
         )}
       </div>
 

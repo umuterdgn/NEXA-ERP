@@ -17,7 +17,16 @@ export async function GET() {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    const where: any = {}
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
+
     const templates = await prisma.storeTemplate.findMany({
+      where,
       include: {
         _count: {
           select: { projects: true },
@@ -40,6 +49,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const tenantId = (session.user as any)?.tenantId
     const body = await request.json()
     const { name, estimatedDays, defaultBoQ, defaultTasks, companyId } = body
 
@@ -56,6 +66,7 @@ export async function POST(request: Request) {
         defaultBoQ: defaultBoQ || [],
         defaultTasks: defaultTasks || [],
         companyId: targetCompanyId,
+        tenantId: tenantId || null,
       },
     })
 

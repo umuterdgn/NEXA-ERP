@@ -445,6 +445,23 @@ export default function TasksPage() {
         </div>
       )}
 
+      {tasks.length === 0 && !isLoading && (
+        <div className="bg-slate-900/60 rounded-2xl border border-dashed border-slate-700/60 p-12 text-center my-6">
+          <ListTodo className="w-16 h-16 mx-auto mb-4 text-slate-600" />
+          <h3 className="text-lg font-semibold text-white mb-1">Henüz Görev Bulunmuyor</h3>
+          <p className="text-sm text-slate-400 mb-6">Şantiyeleriniz veya personeliniz için tanımlanmış herhangi bir aktif görev kaydı bulunamadı.</p>
+          <button
+            onClick={openModal}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm font-medium shadow-lg shadow-blue-600/20"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            İlk Görevi Oluştur
+          </button>
+        </div>
+      )}
+
       {/* Kanban Board */}
       {viewMode === "kanban" && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

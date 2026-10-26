@@ -74,44 +74,13 @@ export default function AuditsPage() {
       const response = await fetch("/api/admin/audits")
       if (response.ok) {
         const data = await response.json()
-        setAudits(data)
+        setAudits(Array.isArray(data) ? data : [])
       } else {
-        // Mock data for now
-        setAudits([
-          {
-            id: "1",
-            title: "A Blok 3. Kat Kalıp Denetimi",
-            type: "QUALITY",
-            score: 85,
-            status: "PASSED",
-            notes: "Kalıp işçiliği genel olarak iyi, bazı düzeltmeler gerekiyor.",
-            createdAt: new Date().toISOString(),
-            projectId: "1",
-            subcontractorId: "1",
-            inspectorId: "1",
-            project: { id: "1", name: "Merkez Plaza Projesi" },
-            subcontractor: { id: "1", name: "Yıldız İnşaat Ltd." },
-            inspector: { id: "1", name: "Ahmet Yılmaz" }
-          },
-          {
-            id: "2",
-            title: "İSG Ekipman Kontrolü",
-            type: "OHS",
-            score: 45,
-            status: "FAILED",
-            notes: "KKD eksikleri tespit edildi, derhal düzeltilmeli.",
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            projectId: "1",
-            subcontractorId: "2",
-            inspectorId: "2",
-            project: { id: "1", name: "Merkez Plaza Projesi" },
-            subcontractor: { id: "2", name: "Demir Yapı A.Ş." },
-            inspector: { id: "2", name: "Mehmet Kaya" }
-          }
-        ])
+        setAudits([])
       }
     } catch (error) {
       console.error("Failed to fetch audits:", error)
+      setAudits([])
     } finally {
       setLoading(false)
     }

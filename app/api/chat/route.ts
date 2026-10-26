@@ -17,6 +17,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
     const channelName = searchParams.get("channelName")
@@ -27,6 +30,9 @@ export async function GET(request: Request) {
     }
     if (channelName) {
       whereClause.channelName = channelName
+    }
+    if (!isSuperAdmin) {
+      whereClause.tenantId = tenantId || "non-existent"
     }
 
     const messages = await prisma.chatMessage.findMany({
@@ -60,6 +66,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const tenantId = (session.user as any)?.tenantId
     const body = await request.json()
     const { content, photoUrl, projectId, receiverId, channelName } = body
 
@@ -75,6 +82,7 @@ export async function POST(request: Request) {
         projectId: projectId || null,
         receiverId: receiverId || null,
         channelName: channelName || "Genel Şantiye Grubu",
+        tenantId: tenantId || null,
       },
       include: {
         sender: {

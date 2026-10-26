@@ -1,7 +1,7 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * This code is the property of NXA Software.
+ * Progress Payments Server Actions with strict tenant isolation
  */
 
 "use server"
@@ -13,9 +13,11 @@ import { auth } from "@/lib/auth"
 export async function createProgressPayment(formData: FormData) {
   try {
     const session = await auth()
-    if (!session) {
+    if (!session?.user) {
       return { success: false, error: "Oturum bulunamadı" }
     }
+
+    const tenantId = (session.user as any)?.tenantId
 
     const title = formData.get("title") as string
     const description = formData.get("description") as string
@@ -38,8 +40,12 @@ export async function createProgressPayment(formData: FormData) {
         unit,
         unitPrice,
         totalPrice,
-        date: date ? new Date(date) : new Date()
-      }
+        amount: totalPrice || 0,
+        netAmount: totalPrice || 0,
+        netPayableAmount: totalPrice || 0,
+        date: date ? new Date(date) : new Date(),
+        tenantId: tenantId || null,
+      },
     })
 
     revalidatePath("/admin/progress-payments")
@@ -53,13 +59,25 @@ export async function createProgressPayment(formData: FormData) {
 export async function updateProgressPaymentStatus(id: string, newStatus: string) {
   try {
     const session = await auth()
-    if (!session) {
+    if (!session?.user) {
       return { success: false, error: "Oturum bulunamadı" }
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    const existing = await prisma.progressPayment.findUnique({ where: { id } })
+    if (!existing) {
+      return { success: false, error: "Hakediş bulunamadı" }
+    }
+
+    if (!isSuperAdmin && existing.tenantId !== tenantId) {
+      return { success: false, error: "Yetkisiz işlem" }
     }
 
     const progressPayment = await prisma.progressPayment.update({
       where: { id },
-      data: { status: newStatus }
+      data: { status: newStatus },
     })
 
     revalidatePath("/admin/progress-payments")
@@ -72,12 +90,26 @@ export async function updateProgressPaymentStatus(id: string, newStatus: string)
 
 export async function getProgressPayments() {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return { success: false, error: "Yetkisiz erişim", progressPayments: [] }
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    const where: any = {}
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
+
     const progressPayments = await prisma.progressPayment.findMany({
-      orderBy: { date: "desc" }
+      where,
+      orderBy: { date: "desc" },
     })
     return { success: true, progressPayments }
   } catch (error) {
     console.error("Get progress payments error:", error)
-    return { success: false, error: "Hakedişler getirilemedi" }
+    return { success: false, error: "Hakedişler getirilemedi", progressPayments: [] }
   }
 }

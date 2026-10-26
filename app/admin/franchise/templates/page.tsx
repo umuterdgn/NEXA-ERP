@@ -136,8 +136,29 @@ export default function FranchiseTemplatesPage() {
         </div>
       </div>
 
-      {/* Main Grid: Template Cards + Detail */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Empty State */}
+      {!loading && templates.length === 0 ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto text-slate-400 shadow-inner">
+            <Box className="w-8 h-8 text-blue-400" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-white">Henüz Konsept Şablonu Tanımlanmadı</h3>
+            <p className="text-sm text-slate-400">
+              Mağazalarınız için standart BoQ (metraj) ve iş planı şablonlarını oluşturarak rollout süreçlerinizi hızlandırın.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
+          >
+            <Plus className="w-4 h-4" />
+            <span>İlk Şablonu Oluştur</span>
+          </button>
+        </div>
+      ) : (
+        /* Main Grid: Template Cards + Detail */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Templates List */}
         <div className="space-y-3 lg:col-span-1">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -288,6 +309,7 @@ export default function FranchiseTemplatesPage() {
           )}
         </div>
       </div>
+    )}
 
       {/* New Template Modal */}
       {isModalOpen && (

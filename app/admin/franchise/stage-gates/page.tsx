@@ -69,58 +69,79 @@ export default function StageGatesIndexPage() {
         </button>
       </div>
 
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {projects.map((p) => {
-          const totalGates = p.stageGates?.length || 5
-          const approvedGates = p.stageGates?.filter((g: any) => g.isApproved)?.length || 0
-          const percent = Math.round((approvedGates / totalGates) * 100)
+      {/* Projects Grid or Empty State */}
+      {!loading && projects.length === 0 ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto text-slate-400 shadow-inner">
+            <ShieldCheck className="w-8 h-8 text-blue-400" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-white">Kayıtlı Mağaza Projesi Bulunamadı</h3>
+            <p className="text-sm text-slate-400">
+              Stage-gate idari onaylarını yönetebilmek için sisteme en az bir franchise mağaza projesi eklenmiş olmalıdır.
+            </p>
+          </div>
+          <Link
+            href="/admin/franchise/rollout"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
+          >
+            <span>Rollout Sayfasına Git</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {projects.map((p) => {
+            const totalGates = p.stageGates?.length || 5
+            const approvedGates = p.stageGates?.filter((g: any) => g.isApproved)?.length || 0
+            const percent = Math.round((approvedGates / totalGates) * 100)
 
-          return (
-            <Link
-              key={p.id}
-              href={`/admin/franchise/stage-gates/${p.id}`}
-              className="group bg-slate-900/80 border border-slate-800 hover:border-blue-700/60 rounded-xl p-5 transition-all hover:shadow-xl space-y-4"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
-                    {p.storeTemplate?.name || "Tip Konsept"}
-                  </span>
-                  <h3 className="text-base font-bold text-white group-hover:text-blue-400 transition-colors mt-0.5">
-                    {p.name || p.title}
-                  </h3>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                    <span>{p.city} • {p.district || p.location}</span>
+            return (
+              <Link
+                key={p.id}
+                href={`/admin/franchise/stage-gates/${p.id}`}
+                className="group bg-slate-900/80 border border-slate-800 hover:border-blue-700/60 rounded-xl p-5 transition-all hover:shadow-xl space-y-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                      {p.storeTemplate?.name || "Tip Konsept"}
+                    </span>
+                    <h3 className="text-base font-bold text-white group-hover:text-blue-400 transition-colors mt-0.5">
+                      {p.name || p.title}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{p.city} • {p.district || p.location}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 group-hover:text-blue-400 group-hover:border-blue-800/50 transition-colors">
+                    <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
 
-                <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 group-hover:text-blue-400 group-hover:border-blue-800/50 transition-colors">
-                  <ChevronRight className="w-4 h-4" />
+                {/* Approval status */}
+                <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                      İdari Onay: {approvedGates} / {totalGates} Faz
+                    </span>
+                    <span className="font-semibold text-white">%{percent}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all"
+                      style={{ width: `${percent}%` }}
+                    ></div>
+                  </div>
                 </div>
-              </div>
-
-              {/* Approval status */}
-              <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                    İdari Onay: {approvedGates} / {totalGates} Faz
-                  </span>
-                  <span className="font-semibold text-white">%{percent}</span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all"
-                    style={{ width: `${percent}%` }}
-                  ></div>
-                </div>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

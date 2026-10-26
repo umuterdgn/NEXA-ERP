@@ -138,13 +138,14 @@ export async function getUsers() {
 
     const adminUser = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { companyId: true },
+      select: { companyId: true, tenantId: true },
     })
 
     const whereClause: any = {}
-    // If not super admin, filter by company
-    if (currentRole !== "SUPER_ADMIN" && adminUser?.companyId) {
-      whereClause.companyId = adminUser.companyId
+    // If not super admin, filter by tenantId
+    if (currentRole !== "SUPER_ADMIN") {
+      const tenantId = (session.user as any)?.tenantId || adminUser?.tenantId
+      whereClause.tenantId = tenantId || "non-existent"
     }
 
     const users = await prisma.user.findMany({
@@ -184,6 +185,20 @@ export async function deleteUser(userId: string) {
 
     if (userId === session.user.id) {
       return { success: false, error: "Kendi hesabınızı silemezsiniz." }
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, tenantId: true },
+    })
+
+    if (!targetUser) {
+      return { success: false, error: "Kullanıcı bulunamadı." }
+    }
+
+    const sessionTenantId = (session.user as any)?.tenantId
+    if (currentRole !== "SUPER_ADMIN" && targetUser.tenantId !== sessionTenantId) {
+      return { success: false, error: "Yetkisiz işlem: Bu kullanıcı farklı bir kiracıya ait." }
     }
 
     await prisma.user.delete({

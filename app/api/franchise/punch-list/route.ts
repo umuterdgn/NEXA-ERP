@@ -17,11 +17,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
     const status = searchParams.get("status")
 
     const where: any = {}
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
     if (projectId) where.projectId = projectId
     if (status && status !== "ALL") where.status = status
 
@@ -55,6 +61,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const tenantId = (session.user as any)?.tenantId
     const body = await request.json()
     const { projectId, inspectorId, subcontractorId, defectDesc, photoUrl, deadline } = body
 
@@ -68,6 +75,7 @@ export async function POST(request: Request) {
     const item = await prisma.punchList.create({
       data: {
         projectId,
+        tenantId: tenantId || null,
         inspectorId: inspectorId || session.user.id,
         subcontractorId: subcontractorId || "Genel Taşeron",
         defectDesc,

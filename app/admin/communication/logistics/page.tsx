@@ -456,58 +456,9 @@ export default function LogisticsPage() {
                 );
               })
             ) : (
-              <>
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                        <span className="text-green-400 text-sm font-medium">A</span>
-                      </div>
-                      <span className="text-white font-medium">Ahmet</span>
-                    </div>
-                    <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">Optimum</span>
-                  </div>
-                  <p className="text-slate-400 text-sm">09:00 Yapı A, 11:30 Yapı B</p>
-                </div>
-
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
-                        <span className="text-red-400 text-sm font-medium">M</span>
-                      </div>
-                      <span className="text-white font-medium">Mehmet</span>
-                    </div>
-                    <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-medium">Kritik</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-slate-700 rounded-full h-2">
-                      <div className="bg-red-500 h-2 rounded-full" style={{ width: '85%' }} />
-                    </div>
-                    <span className="text-red-400 text-sm font-medium">%85</span>
-                  </div>
-                  <p className="text-slate-400 text-sm mt-2">Yoğunluk yüksek - görev dağıtımı önerilir</p>
-                </div>
-
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                        <span className="text-blue-400 text-sm font-medium">A</span>
-                      </div>
-                      <span className="text-white font-medium">Ayşe</span>
-                    </div>
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-medium">Normal</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-slate-700 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }} />
-                    </div>
-                    <span className="text-blue-400 text-sm font-medium">%60</span>
-                  </div>
-                  <p className="text-slate-400 text-sm mt-2">10:00 Yapı C, 14:00 Yapı D</p>
-                </div>
-              </>
+              <div className="text-center py-6 text-slate-500 text-sm">
+                Aktif şoför iş yükü verisi bulunamadı.
+              </div>
             )}
           </div>
         </div>
@@ -679,9 +630,17 @@ export default function LogisticsPage() {
           ))}
 
           {items.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
-              <Truck className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Randevu bulunamadı</p>
+            <div className="text-center py-16 bg-slate-800/40 rounded-2xl border border-dashed border-slate-700/60 p-8 text-slate-400">
+              <Truck className="w-16 h-16 mx-auto mb-4 text-slate-600" />
+              <h3 className="text-lg font-semibold text-white mb-1">Henüz Sevkiyat Randevusu Yok</h3>
+              <p className="text-sm text-slate-400 mb-6">Şantiyeleriniz için planlanan aktif bir beton dökümü veya lojistik sevkiyat kaydı bulunamadı.</p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm font-medium shadow-lg shadow-blue-600/20"
+              >
+                <Plus className="w-4 h-4" />
+                Yeni Randevu Oluştur
+              </button>
             </div>
           )}
           </div>

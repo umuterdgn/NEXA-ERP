@@ -18,35 +18,49 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    const projectWhere: any = {}
+    if (!isSuperAdmin) {
+      projectWhere.tenantId = tenantId || "non-existent"
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
 
     if (projectId) {
+      const project = await prisma.project.findFirst({
+        where: { id: projectId, ...projectWhere },
+      })
+
+      if (!project && !isSuperAdmin) {
+        return NextResponse.json({ stages: [] })
+      }
+
       let stages = await prisma.stageGate.findMany({
         where: { projectId },
         orderBy: { createdAt: "asc" },
       })
 
       // Eğer projeye ait stage-gate henüz oluşturulmamışsa varsayılan fazları oluştur
-      if (stages.length === 0) {
-        const project = await prisma.project.findUnique({ where: { id: projectId } })
-        if (project) {
-          for (const item of DEFAULT_STAGE_GATES) {
-            await prisma.stageGate.create({
-              data: {
-                projectId,
-                stageName: item.stageName,
-                isRequired: item.isRequired,
-                billingPercentage: item.billingPercentage,
-                isApproved: false,
-              },
-            })
-          }
-          stages = await prisma.stageGate.findMany({
-            where: { projectId },
-            orderBy: { createdAt: "asc" },
+      if (stages.length === 0 && project) {
+        for (const item of DEFAULT_STAGE_GATES) {
+          await prisma.stageGate.create({
+            data: {
+              projectId,
+              tenantId: project.tenantId || tenantId || null,
+              stageName: item.stageName,
+              isRequired: item.isRequired,
+              billingPercentage: item.billingPercentage,
+              isApproved: false,
+            },
           })
         }
+        stages = await prisma.stageGate.findMany({
+          where: { projectId },
+          orderBy: { createdAt: "asc" },
+        })
       }
 
       return NextResponse.json({ stages })
@@ -54,6 +68,7 @@ export async function GET(request: Request) {
 
     // Tüm projelerin Stage-Gate özet durumları
     const projectsWithStages = await prisma.project.findMany({
+      where: projectWhere,
       include: {
         stageGates: true,
         storeTemplate: true,
@@ -75,6 +90,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const tenantId = (session.user as any)?.tenantId
     const body = await request.json()
     const { projectId, stageName, isRequired, documentUrl } = body
 
@@ -85,6 +101,7 @@ export async function POST(request: Request) {
     const newGate = await prisma.stageGate.create({
       data: {
         projectId,
+        tenantId: tenantId || null,
         stageName,
         isRequired: isRequired ?? true,
         documentUrl: documentUrl || null,

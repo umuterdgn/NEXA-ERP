@@ -17,10 +17,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
 
     const where: any = {}
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
     if (status && status !== "ALL") {
       where.status = status
     }
@@ -96,9 +102,11 @@ export async function POST(request: Request) {
       )
     }
 
+    const tenantId = (session.user as any)?.tenantId
     const issue = await prisma.deliveryIssue.create({
       data: {
         goodsReceiptId,
+        tenantId: tenantId || null,
         issueType: issueType || "DAMAGED",
         description,
         photoUrls: photoUrls || [],

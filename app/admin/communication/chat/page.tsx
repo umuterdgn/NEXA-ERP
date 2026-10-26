@@ -47,158 +47,77 @@ export default function ChatPage() {
   const [isRecording, setIsRecording] = useState(false)
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null)
   const [isAIResponding, setIsAIResponding] = useState(false)
-  const [channels, setChannels] = useState<Channel[]>([
-    { 
-      id: "1", 
-      name: "Genel", 
-      type: "channel", 
-      lastMessage: "Beton dökümü saat 14:00'te başlayacak", 
-      lastMessageTime: new Date(), 
-      unreadCount: 3,
-      messages: [
-        {
-          id: "1",
-          senderId: "user1",
-          senderName: "Ahmet Yılmaz",
-          content: "Beton dökümü saat 14:00'te başlayacak",
-          isRead: true,
-          createdAt: new Date(Date.now() - 1800000)
-        },
-        {
-          id: "2",
-          senderId: "user2",
-          senderName: "Mehmet Demir",
-          content: "Pompa hazır mı?",
-          isRead: true,
-          createdAt: new Date(Date.now() - 1200000)
-        },
-        {
-          id: "3",
-          senderId: "user1",
-          senderName: "Ahmet Yılmaz",
-          content: "Evet, pompa sahada",
-          isRead: true,
-          createdAt: new Date(Date.now() - 600000)
-        }
-      ]
-    },
-    { 
-      id: "2", 
-      name: "İSG Acil Durum", 
-      type: "channel", 
-      lastMessage: "A Blok 3. katta güvenlik ihbarı", 
-      lastMessageTime: new Date(Date.now() - 3600000), 
-      unreadCount: 1,
-      messages: [
-        {
-          id: "4",
-          senderId: "user3",
-          senderName: "İSG Uzmanı",
-          content: "A Blok 3. katta güvenlik ihbarı var",
-          attachmentType: "NCR_REPORT",
-          attachmentRefId: "ncr-123",
-          attachmentUrl: "/admin/qa-qc/ncr/123",
-          isRead: false,
-          createdAt: new Date()
-        }
-      ]
-    },
-    { 
-      id: "3", 
-      name: "Şantiye Şefleri", 
-      type: "channel", 
-      lastMessage: "Toplantı saat 10:00", 
-      lastMessageTime: new Date(Date.now() - 7200000), 
-      unreadCount: 0,
-      messages: [
-        {
-          id: "5",
-          senderId: "user4",
-          senderName: "Şantiye Şefi",
-          content: "Toplantı saat 10:00'da",
-          isRead: true,
-          createdAt: new Date(Date.now() - 7200000)
-        }
-      ]
-    },
-    { 
-      id: "4", 
-      name: "Ahmet Yılmaz", 
-      type: "direct", 
-      lastMessage: "Malzeme listesini kontrol ettim", 
-      lastMessageTime: new Date(Date.now() - 86400000), 
-      unreadCount: 0,
-      messages: [
-        {
-          id: "6",
-          senderId: "user1",
-          senderName: "Ahmet Yılmaz",
-          content: "Malzeme listesini kontrol ettim",
-          isRead: true,
-          createdAt: new Date(Date.now() - 86400000)
-        }
-      ]
-    },
-    { 
-      id: "5", 
-      name: "Mehmet Demir", 
-      type: "direct", 
-      lastMessage: "Demir teslimatı yarın", 
-      lastMessageTime: new Date(Date.now() - 172800000), 
-      unreadCount: 0,
-      messages: [
-        {
-          id: "7",
-          senderId: "user2",
-          senderName: "Mehmet Demir",
-          content: "Demir teslimatı yarın",
-          isRead: true,
-          createdAt: new Date(Date.now() - 172800000)
-        }
-      ]
-    },
-  ])
+  const [channels, setChannels] = useState<Channel[]>([])
 
   const filteredChannels = channels.filter(channel =>
     channel.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Fetch and poll live messages from database
+  // Fetch threads and live messages from database
   useEffect(() => {
-    const syncLiveMessages = async () => {
+    const fetchThreadsAndMessages = async () => {
       try {
-        const res = await fetch("/api/chat")
-        const data = await res.json()
-        if (data.messages && data.messages.length > 0) {
-          const formatted: ChatMessage[] = data.messages.map((m: any) => ({
-            id: m.id,
-            senderId: m.senderId,
-            senderName: m.sender?.name || "Saha Personeli",
-            content: m.content,
-            attachmentUrl: m.photoUrl,
-            isRead: m.isRead,
-            createdAt: new Date(m.createdAt),
+        const [threadsRes, msgsRes] = await Promise.all([
+          fetch("/api/admin/chat-threads"),
+          fetch("/api/chat")
+        ])
+
+        const threadsData = threadsRes.ok ? await threadsRes.json() : []
+        const msgsData = msgsRes.ok ? await msgsRes.json() : { messages: [] }
+
+        const liveMsgs: ChatMessage[] = (msgsData.messages || []).map((m: any) => ({
+          id: m.id,
+          senderId: m.senderId,
+          senderName: m.sender?.name || "Saha Personeli",
+          content: m.content,
+          attachmentUrl: m.photoUrl,
+          isRead: m.isRead || true,
+          createdAt: new Date(m.createdAt),
+        }))
+
+        if (Array.isArray(threadsData) && threadsData.length > 0) {
+          const loadedChannels: Channel[] = threadsData.map((t: any) => ({
+            id: t.id,
+            name: t.title,
+            type: "channel",
+            lastMessage: t.messages?.[0]?.content || "",
+            lastMessageTime: t.messages?.[0]?.createdAt ? new Date(t.messages[0].createdAt) : new Date(t.createdAt),
+            unreadCount: 0,
+            messages: liveMsgs.filter((m: any) => m.channelName === t.title)
           }))
-          setChannels((prev) =>
-            prev.map((c) =>
-              c.id === "1"
-                ? {
-                    ...c,
-                    messages: [
-                      ...c.messages.filter((old) => !formatted.some((nw) => nw.id === old.id)),
-                      ...formatted,
-                    ],
-                  }
-                : c
-            )
-          )
+          setChannels(loadedChannels)
+          if (!selectedChannel && loadedChannels.length > 0) {
+            setSelectedChannel(loadedChannels[0])
+          }
+        } else if (liveMsgs.length > 0) {
+          // Fallback if messages exist with channelName
+          const channelNames = Array.from(new Set(liveMsgs.map((m: any) => m.channelName || "Genel Şantiye Grubu")))
+          const generatedChannels: Channel[] = channelNames.map((name, idx) => {
+            const chMsgs = liveMsgs.filter((m: any) => (m.channelName || "Genel Şantiye Grubu") === name)
+            return {
+              id: String(idx + 1),
+              name,
+              type: "channel",
+              lastMessage: chMsgs[chMsgs.length - 1]?.content || "",
+              lastMessageTime: chMsgs[chMsgs.length - 1]?.createdAt || new Date(),
+              unreadCount: 0,
+              messages: chMsgs
+            }
+          })
+          setChannels(generatedChannels)
+          if (!selectedChannel && generatedChannels.length > 0) {
+            setSelectedChannel(generatedChannels[0])
+          }
+        } else {
+          setChannels([])
         }
       } catch (e) {
-        console.error(e)
+        console.error("Chat sync error:", e)
       }
     }
-    syncLiveMessages()
-    const timer = setInterval(syncLiveMessages, 5000)
+
+    fetchThreadsAndMessages()
+    const timer = setInterval(fetchThreadsAndMessages, 5000)
     return () => clearInterval(timer)
   }, [])
 
@@ -665,11 +584,18 @@ export default function ChatPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center max-w-md">
               <MessageSquare className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Bir kanal seçin</h3>
-              <p className="text-slate-400">Sohbet başlamak için sol taraftan bir kanal veya kişi seçin</p>
+              <h3 className="text-xl font-semibold text-white mb-2">Henüz Aktif Sohbet Yok</h3>
+              <p className="text-slate-400 text-sm mb-6">Şantiyeleriniz veya departmanlarınız için kapalı devre bir iletişim kanalı açabilirsiniz.</p>
+              <button
+                onClick={() => setIsNewChatModalOpen(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm font-medium shadow-lg shadow-blue-600/20"
+              >
+                <Plus className="w-4 h-4" />
+                Yeni Sohbet Kanalı Başlat
+              </button>
             </div>
           </div>
         )}

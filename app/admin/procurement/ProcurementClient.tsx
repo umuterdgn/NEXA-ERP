@@ -344,7 +344,27 @@ export default function ProcurementClient({ initialRequests }: ProcurementClient
       {/* Bidding Matrix Tab */}
       {activeTab === "BIDDING" ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {purchaseRequests.length === 0 ? (
+            <div className="p-12 text-center bg-slate-900 border border-slate-800 rounded-2xl max-w-xl mx-auto space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto text-slate-500">
+                <Gavel className="w-8 h-8 text-blue-400" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white">Aktif İhale / Teklif Talebi Bulunamadı</h3>
+                <p className="text-xs text-slate-400">
+                  Tedarikçilerden kapalı teklif toplamak için yeni bir satınalma ihale talebi oluşturun.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsNewBiddingModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Yeni İhale Talebi Aç</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {purchaseRequests.map((pr) => {
               const bidsCount = pr.bids?.length || 0;
               const lowestBid = bidsCount > 0 ? pr.bids![0] : null;
@@ -432,6 +452,7 @@ export default function ProcurementClient({ initialRequests }: ProcurementClient
               );
             })}
           </div>
+          )}
         </div>
       ) : (
         /* Requests Table */

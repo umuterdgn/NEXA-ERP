@@ -10,12 +10,23 @@ import { auth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+    const tenantId = (session.user as any)?.tenantId;
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
     const status = searchParams.get("status");
     const projectId = searchParams.get("projectId");
 
     const where: any = {};
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent";
+    }
 
     if (projectId) {
       where.projectId = projectId;
@@ -122,6 +133,8 @@ export async function POST(request: NextRequest) {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const generatedQr = customQrCode || `SMP-${yibfClean}-${locClean}-${randomSuffix}`;
 
+    const tenantId = (session?.user as any)?.tenantId;
+
     const newSample = await prisma.coreSample.create({
       data: {
         qrCode: generatedQr,
@@ -130,6 +143,7 @@ export async function POST(request: NextRequest) {
         location,
         status: "TAKEN",
         notes: notes || null,
+        tenantId: tenantId || null,
       },
       include: {
         project: {

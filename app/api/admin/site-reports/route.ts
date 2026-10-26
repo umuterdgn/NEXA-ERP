@@ -11,11 +11,20 @@ import { auth } from "@/lib/auth"
 export async function GET() {
   try {
     const session = await auth()
-    if (!session) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    const where: any = {}
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
+
     const reports = await prisma.siteReport.findMany({
+      where,
       include: {
         project: true
       },
@@ -124,6 +133,8 @@ export async function POST(request: Request) {
       combinedNotes = `${combinedNotes}\n\nGünlük Olaylar & Bağlı Kayıtlar:\n${dailyEvents}`.trim()
     }
 
+    const tenantId = (session.user as any)?.tenantId
+
     const report = await prisma.siteReport.create({
       data: {
         date: date ? new Date(date) : new Date(),
@@ -136,7 +147,8 @@ export async function POST(request: Request) {
         notes: combinedNotes,
         images: imageUrls.length > 0 ? imageUrls.join(',') : null,
         projectId: projectId,
-        createdBy: createdBy || null
+        createdBy: createdBy || null,
+        tenantId: tenantId || null,
       },
       include: {
         project: true

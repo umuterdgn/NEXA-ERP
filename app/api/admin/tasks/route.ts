@@ -6,18 +6,33 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
     const status = searchParams.get("status")
 
+    const where: any = {
+      ...(projectId && { projectId }),
+      ...(status && { status })
+    }
+
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
+
     const tasks = await prisma.task.findMany({
-      where: {
-        ...(projectId && { projectId }),
-        ...(status && { status })
-      },
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         project: {
@@ -38,10 +53,13 @@ export async function GET(request: Request) {
     const personnelMap = new Map<string, any>()
     
     if (personnelIds.length > 0) {
+      const personnelWhere: any = { id: { in: personnelIds } }
+      if (!isSuperAdmin) {
+        personnelWhere.tenantId = tenantId || "non-existent"
+      }
+
       const personnel = await prisma.personel.findMany({
-        where: {
-          id: { in: personnelIds }
-        },
+        where: personnelWhere,
         select: {
           id: true,
           name: true
@@ -66,6 +84,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const tenantId = (session.user as any)?.tenantId
     const body = await request.json()
     const { title, description, status, projectId, assignedTo, dueDate, taskType } = body
 
@@ -77,7 +101,8 @@ export async function POST(request: Request) {
         projectId,
         assignedTo,
         dueDate: dueDate ? new Date(dueDate) : null,
-        taskType
+        taskType,
+        tenantId: tenantId || null
       }
     })
 

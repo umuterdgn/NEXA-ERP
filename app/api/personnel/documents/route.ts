@@ -1,20 +1,34 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Personnel Documents API (Süreli Evrak & İSG Alarm Takibi)
+ * Personnel Documents API with strict tenant isolation
  */
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+
+export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
     const { searchParams } = new URL(req.url)
     const urgentOnly = searchParams.get("urgentOnly") === "true"
     const docType = searchParams.get("docType")
     const userId = searchParams.get("userId")
 
     const where: any = {}
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
     if (docType && docType !== "ALL") {
       where.docType = docType
     }
@@ -77,7 +91,6 @@ export async function GET(req: Request) {
       }
     })
 
-    // If urgentOnly, filter diffDays <= 15
     const filtered = urgentOnly
       ? enriched.filter((doc) => doc.diffDays <= 15)
       : enriched
@@ -91,6 +104,12 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
+    const tenantId = (session.user as any)?.tenantId
     const body = await req.json()
     const { userId, docType, issueDate, expiryDate } = body
 
@@ -101,6 +120,7 @@ export async function POST(req: Request) {
     const doc = await prisma.personnelDocument.create({
       data: {
         userId,
+        tenantId: tenantId || null,
         docType,
         issueDate: new Date(issueDate),
         expiryDate: new Date(expiryDate),
@@ -120,6 +140,11 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { id, isAlertSent, expiryDate, docType } = body
 
@@ -149,11 +174,27 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
 
     if (!id) {
       return NextResponse.json({ error: "ID gerekli" }, { status: 400 })
+    }
+
+    const existing = await prisma.personnelDocument.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: "Belge bulunamadı" }, { status: 404 })
+    }
+
+    if (!isSuperAdmin && existing.tenantId !== tenantId) {
+      return NextResponse.json({ error: "Yetkisiz işlem" }, { status: 403 })
     }
 
     await prisma.personnelDocument.delete({

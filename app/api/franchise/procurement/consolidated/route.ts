@@ -17,8 +17,17 @@ export async function GET() {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    const tenantWhere: any = {}
+    if (!isSuperAdmin) {
+      tenantWhere.tenantId = tenantId || "non-existent"
+    }
+
     // 1. Mevcut Konsolide Paketler
     const consolidatedList = await prisma.consolidatedProcurement.findMany({
+      where: tenantWhere,
       include: {
         requests: {
           include: {
@@ -38,6 +47,7 @@ export async function GET() {
     const openRequests = await prisma.purchaseRequest.findMany({
       where: {
         consolidatedId: null,
+        ...tenantWhere,
       },
       include: {
         project: {
@@ -64,6 +74,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const tenantId = (session.user as any)?.tenantId
     const body = await request.json()
     const { title, requestIds } = body
 
@@ -79,6 +90,7 @@ export async function POST(request: Request) {
       data: {
         title,
         status: "TENDER_ACTIVE", // Toplu ihale açıldı
+        tenantId: tenantId || null,
         requests: {
           connect: requestIds.map((id: string) => ({ id })),
         },

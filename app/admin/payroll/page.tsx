@@ -2,99 +2,61 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * This code is the property of NXA Software.
+ * Payroll & Puantaj Management connected to Prisma database with strict tenant isolation
  */
 
-import { useState } from "react"
-import { CalendarDays, Calculator, FileText, X, CheckCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { CalendarDays, Calculator, FileText, X, CheckCircle, RefreshCw, Users } from "lucide-react"
 import { toast } from "react-hot-toast"
+
+interface ProjectItem {
+  id: string
+  name: string
+}
 
 interface Personnel {
   id: string
   name: string
   role: string
   dailyRate: number
-  attendance: Record<number, "X" | "İ" | "R" | "">
+  attendance: Record<number, string>
   advancePayment: number
 }
 
 export default function PayrollPage() {
-  const [selectedMonth, setSelectedMonth] = useState("2026-08")
+  const currentMonthStr = new Date().toISOString().slice(0, 7)
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr)
   const [selectedProject, setSelectedProject] = useState("")
+  const [projects, setProjects] = useState<ProjectItem[]>([])
+  const [personnel, setPersonnel] = useState<Personnel[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null)
   const [showPayrollModal, setShowPayrollModal] = useState(false)
 
-  const projects = [
-    { id: "1", name: "İskenderun TOKİ Projesi" },
-    { id: "2", name: "Arsuz Konutları" },
-    { id: "3", name: "Dörtyol Sitesi" },
-    { id: "4", name: "Erzin Proje" }
-  ]
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const query = new URLSearchParams()
+      if (selectedMonth) query.set("month", selectedMonth)
+      if (selectedProject) query.set("projectId", selectedProject)
 
-  const personnel: Personnel[] = [
-    {
-      id: "1",
-      name: "Ahmet Usta",
-      role: "Demirci",
-      dailyRate: 2000,
-      advancePayment: 10000,
-      attendance: {
-        1: "X", 2: "X", 3: "X", 4: "X", 5: "X", 6: "", 7: "",
-        8: "X", 9: "X", 10: "X", 11: "X", 12: "X", 13: "", 14: "",
-        15: "X", 16: "X", 17: "X", 18: "İ", 19: "X", 20: "", 21: "",
-        22: "X", 23: "X", 24: "X", 25: "X", 26: "X", 27: "", 28: "",
-        29: "X", 30: "X", 31: "X"
-      }
-    },
-    {
-      id: "2",
-      name: "Mehmet Demir",
-      role: "Betoncu",
-      dailyRate: 1800,
-      advancePayment: 5000,
-      attendance: {
-        1: "X", 2: "X", 3: "X", 4: "X", 5: "X", 6: "", 7: "",
-        8: "X", 9: "X", 10: "R", 11: "X", 12: "X", 13: "", 14: "",
-        15: "X", 16: "X", 17: "X", 18: "X", 19: "X", 20: "", 21: "",
-        22: "X", 23: "X", 24: "X", 25: "X", 26: "X", 27: "", 28: "",
-        29: "X", 30: "X", 31: "X"
-      }
-    },
-    {
-      id: "3",
-      name: "Ali Kaya",
-      role: "Kalıpçı",
-      dailyRate: 1900,
-      advancePayment: 8000,
-      attendance: {
-        1: "X", 2: "X", 3: "X", 4: "X", 5: "X", 6: "", 7: "",
-        8: "X", 9: "X", 10: "X", 11: "X", 12: "X", 13: "", 14: "",
-        15: "X", 16: "X", 17: "X", 18: "X", 19: "X", 20: "", 21: "",
-        22: "X", 23: "X", 24: "X", 25: "X", 26: "X", 27: "", 28: "",
-        29: "X", 30: "X", 31: "X"
-      }
-    },
-    {
-      id: "4",
-      name: "Hasan Öztürk",
-      role: "Duvarcı",
-      dailyRate: 1700,
-      advancePayment: 3000,
-      attendance: {
-        1: "X", 2: "X", 3: "X", 4: "X", 5: "X", 6: "", 7: "",
-        8: "X", 9: "X", 10: "X", 11: "X", 12: "X", 13: "", 14: "",
-        15: "X", 16: "X", 17: "X", 18: "X", 19: "X", 20: "", 21: "",
-        22: "X", 23: "X", 24: "X", 25: "X", 26: "X", 27: "", 28: "",
-        29: "X", 30: "X", 31: "X"
-      }
+      const res = await fetch(`/api/admin/payroll?${query.toString()}`)
+      const data = await res.json()
+      if (data.projects) setProjects(data.projects)
+      if (data.personnel) setPersonnel(data.personnel)
+    } catch (err) {
+      console.error("Bordro verileri alınamadı:", err)
+      toast.error("Bordro verileri yüklenirken bir hata oluştu")
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [selectedMonth, selectedProject])
 
   const handlePayrollCalculation = (person: Personnel) => {
-    const totalDays = Object.values(person.attendance).filter(status => status === "X").length
-    const grossSalary = totalDays * person.dailyRate
-    void grossSalary
-
     setSelectedPersonnel(person)
     setShowPayrollModal(true)
   }
@@ -118,46 +80,58 @@ export default function PayrollPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: 'TRY',
-      minimumFractionDigits: 0
+    return new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: "TRY",
+      minimumFractionDigits: 0,
     }).format(amount)
   }
 
   return (
-    <div className="lg:mt-0 mt-16">
-      <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
-          <CalendarDays className="w-8 h-8 text-blue-400" />
-          Puantaj & Bordro
-        </h1>
-        <p className="text-slate-400 mt-1">Personel devam takibi ve maaş hesaplama</p>
+    <div className="lg:mt-0 mt-16 space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-400 mb-1">
+            <CalendarDays className="w-4 h-4" />
+            <span>İnsan Kaynakları & Hakediş</span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-white">
+            Puantaj & Bordro
+          </h1>
+          <p className="text-slate-400 text-sm mt-0.5">Personel devam takibi ve maaş hesaplama</p>
+        </div>
+
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors self-start sm:self-center"
+          title="Yenile"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-6">
-        <div className="mobile-form-row md:grid md:grid-cols-2">
+      <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-300">Ay ve Yıl</label>
-            <select
+            <label className="mb-2 block text-xs font-medium text-slate-400">Ay ve Yıl</label>
+            <input
+              type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="2026-08">Ağustos 2026</option>
-              <option value="2026-09">Eylül 2026</option>
-              <option value="2026-10">Ekim 2026</option>
-            </select>
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Proje Seçin</label>
+            <label className="block text-xs font-medium text-slate-400 mb-2">Proje Filtresi</label>
             <select
               value={selectedProject}
               onChange={(e) => setSelectedProject(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs text-white"
             >
-              <option value="">Proje seçin...</option>
+              <option value="">Tüm Şantiyeler</option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name}
@@ -168,149 +142,187 @@ export default function PayrollPage() {
         </div>
       </div>
 
-      {/* Timesheet Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <div className="mobile-table-shell">
-          <table className="w-full min-w-[2000px]">
-            <thead>
-              <tr className="border-b border-slate-700">
-                <th className="text-left py-3 px-4 text-slate-300 font-medium sticky left-0 bg-slate-900 z-10 w-48">
-                  Personel Adı
-                </th>
-                <th className="text-left py-3 px-4 text-slate-300 font-medium sticky left-48 bg-slate-900 z-10 w-32">
-                  Görevi
-                </th>
-                {Array.from({ length: 31 }, (_, i) => (
-                  <th key={i + 1} className="text-center py-3 px-2 text-slate-300 font-medium w-10">
-                    {i + 1}
+      {/* Timesheet Table or Empty State */}
+      {!loading && personnel.length === 0 ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto text-slate-400 shadow-inner">
+            <Users className="w-8 h-8 text-blue-400" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-white">Kayıtlı Personel Bulunamadı</h3>
+            <p className="text-sm text-slate-400">
+              Puantaj ve bordro hesaplaması yapabilmek için önce Personel Yönetimi modülünden firma personellerinizi sisteme tanımlayın.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1400px]">
+              <thead>
+                <tr className="border-b border-slate-800 text-xs">
+                  <th className="text-left py-3 px-4 text-slate-400 font-semibold sticky left-0 bg-slate-900 z-10 w-48">
+                    Personel Adı
                   </th>
-                ))}
-                <th className="text-center py-3 px-4 text-slate-300 font-medium w-32">
-                  Net Hakediş
-                </th>
-                <th className="text-center py-3 px-4 text-slate-300 font-medium w-24">
-                  Bordro
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {personnel.map((person) => {
-                const totalDays = Object.values(person.attendance).filter(status => status === "X").length
-                const netHakediş = totalDays * person.dailyRate - person.advancePayment
+                  <th className="text-left py-3 px-4 text-slate-400 font-semibold sticky left-48 bg-slate-900 z-10 w-32">
+                    Görevi
+                  </th>
+                  {Array.from({ length: 31 }, (_, i) => (
+                    <th key={i + 1} className="text-center py-3 px-1 text-slate-400 font-medium w-9">
+                      {i + 1}
+                    </th>
+                  ))}
+                  <th className="text-center py-3 px-4 text-slate-400 font-semibold w-32">
+                    Net Hakediş
+                  </th>
+                  <th className="text-center py-3 px-4 text-slate-400 font-semibold w-24">
+                    Bordro
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 text-xs">
+                {personnel.map((person) => {
+                  const totalDays = Object.values(person.attendance).filter((s) => s === "X").length
+                  const netHakediş = totalDays * person.dailyRate - person.advancePayment
 
-                return (
-                  <tr key={person.id} className="border-b border-slate-800 hover:bg-slate-800/50">
-                    <td className="py-3 px-4 text-white font-medium sticky left-0 bg-slate-900 z-10">
-                      {person.name}
-                    </td>
-                    <td className="py-3 px-4 text-slate-300 sticky left-48 bg-slate-900 z-10">
-                      {person.role}
-                    </td>
-                    {Array.from({ length: 31 }, (_, i) => {
-                      const status = person.attendance[i + 1] || ""
-                      return (
-                        <td key={i + 1} className="py-2 px-1">
-                          <div className={`w-8 h-8 mx-auto rounded border flex items-center justify-center text-xs font-bold ${getAttendanceStyle(status)}`}>
-                            {status}
-                          </div>
-                        </td>
-                      )
-                    })}
-                    <td className="py-3 px-4 text-center text-green-400 font-semibold">
-                      {formatCurrency(netHakediş)}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handlePayrollCalculation(person)}
-                        className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors flex items-center gap-2 mx-auto"
-                      >
-                        <Calculator className="w-4 h-4" />
-                        Bordro
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                  return (
+                    <tr key={person.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3 px-4 text-white font-medium sticky left-0 bg-slate-900 z-10">
+                        {person.name}
+                      </td>
+                      <td className="py-3 px-4 text-slate-300 sticky left-48 bg-slate-900 z-10">
+                        {person.role}
+                      </td>
+                      {Array.from({ length: 31 }, (_, i) => {
+                        const status = person.attendance[i + 1] || ""
+                        return (
+                          <td key={i + 1} className="py-2 px-1">
+                            <div
+                              className={`w-7 h-7 mx-auto rounded border flex items-center justify-center text-[10px] font-bold ${getAttendanceStyle(
+                                status
+                              )}`}
+                            >
+                              {status}
+                            </div>
+                          </td>
+                        )
+                      })}
+                      <td className="py-3 px-4 text-center text-emerald-400 font-semibold">
+                        {formatCurrency(netHakediş)}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => handlePayrollCalculation(person)}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 mx-auto"
+                        >
+                          <Calculator className="w-3.5 h-3.5" />
+                          <span>Bordro</span>
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-6 mt-6 pt-4 border-t border-slate-700">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-green-500/20 border border-green-500/30 flex items-center justify-center text-xs font-bold text-green-400">X</div>
-            <span className="text-slate-400 text-sm">Çalıştı</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-400">İ</div>
-            <span className="text-slate-400 text-sm">İzinli</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-red-500/20 border border-red-500/30 flex items-center justify-center text-xs font-bold text-red-400">R</div>
-            <span className="text-slate-400 text-sm">Raporlu</span>
+          {/* Legend */}
+          <div className="flex items-center gap-6 mt-6 pt-4 border-t border-slate-800 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-green-500/20 border border-green-500/30 flex items-center justify-center font-bold text-green-400 text-[10px]">
+                X
+              </div>
+              <span className="text-slate-400">Çalıştı</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-blue-500/20 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-[10px]">
+                İ
+              </div>
+              <span className="text-slate-400">İzinli</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-red-500/20 border border-red-500/30 flex items-center justify-center font-bold text-red-400 text-[10px]">
+                R
+              </div>
+              <span className="text-slate-400">Raporlu</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Payroll Modal */}
       {showPayrollModal && selectedPersonnel && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-xl p-6 max-w-md w-full border border-slate-800">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-400" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-xl p-6 max-w-md w-full border border-slate-800 shadow-2xl">
+            <div className="flex items-center justify-between mb-5 border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-400" />
                 Bordro Hesaplaması
               </h3>
               <button
                 onClick={() => setShowPayrollModal(false)}
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"
               >
-                <X className="w-5 h-5 text-slate-400" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-4 mb-6">
-              <div className="flex items-center justify-between py-3 border-b border-slate-700">
+            <div className="space-y-3 mb-6 text-xs">
+              <div className="flex items-center justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400">Personel</span>
                 <span className="text-white font-medium">{selectedPersonnel.name}</span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-700">
+              <div className="flex items-center justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400">Görev</span>
                 <span className="text-white font-medium">{selectedPersonnel.role}</span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-700">
+              <div className="flex items-center justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400">Toplam Çalışma</span>
                 <span className="text-white font-medium">
-                  {Object.values(selectedPersonnel.attendance).filter(status => status === "X").length} Gün
+                  {Object.values(selectedPersonnel.attendance).filter((s) => s === "X").length} Gün
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-700">
+              <div className="flex items-center justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400">Günlük Yevmiye</span>
                 <span className="text-white font-medium">{formatCurrency(selectedPersonnel.dailyRate)}</span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-700">
-                <span className="text-slate-400">Brüt Maaş</span>
+              <div className="flex items-center justify-between py-2 border-b border-slate-800">
+                <span className="text-slate-400">Brüt Hakediş</span>
                 <span className="text-white font-medium">
-                  {formatCurrency(Object.values(selectedPersonnel.attendance).filter(status => status === "X").length * selectedPersonnel.dailyRate)}
+                  {formatCurrency(
+                    Object.values(selectedPersonnel.attendance).filter((s) => s === "X").length *
+                      selectedPersonnel.dailyRate
+                  )}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-700">
+              <div className="flex items-center justify-between py-2 border-b border-slate-800">
                 <span className="text-slate-400">Kullanılan Avans</span>
                 <span className="text-red-400 font-medium">-{formatCurrency(selectedPersonnel.advancePayment)}</span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-700">
-                <span className="text-slate-400">SGK/Kesintiler</span>
+              <div className="flex items-center justify-between py-2 border-b border-slate-800">
+                <span className="text-slate-400">SGK / Yasal Kesintiler</span>
                 <span className="text-red-400 font-medium">
-                  -{formatCurrency(Math.round((Object.values(selectedPersonnel.attendance).filter(status => status === "X").length * selectedPersonnel.dailyRate) * 0.09375))}
+                  -{formatCurrency(
+                    Math.round(
+                      Object.values(selectedPersonnel.attendance).filter((s) => s === "X").length *
+                        selectedPersonnel.dailyRate *
+                        0.09375
+                    )
+                  )}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-4 bg-green-500/10 rounded-lg px-4">
-                <span className="text-green-400 font-semibold">Net Ödenecek</span>
-                <span className="text-green-400 font-bold text-xl">
+              <div className="flex items-center justify-between py-3 bg-emerald-950/40 border border-emerald-800/60 rounded-lg px-4 mt-2">
+                <span className="text-emerald-400 font-semibold">Net Ödenecek</span>
+                <span className="text-emerald-400 font-bold text-lg">
                   {formatCurrency(
-                    (Object.values(selectedPersonnel.attendance).filter(status => status === "X").length * selectedPersonnel.dailyRate) - 
-                    selectedPersonnel.advancePayment - 
-                    Math.round((Object.values(selectedPersonnel.attendance).filter(status => status === "X").length * selectedPersonnel.dailyRate) * 0.09375)
+                    Object.values(selectedPersonnel.attendance).filter((s) => s === "X").length *
+                      selectedPersonnel.dailyRate -
+                      selectedPersonnel.advancePayment -
+                      Math.round(
+                        Object.values(selectedPersonnel.attendance).filter((s) => s === "X").length *
+                          selectedPersonnel.dailyRate *
+                          0.09375
+                      )
                   )}
                 </span>
               </div>
@@ -318,9 +330,9 @@ export default function PayrollPage() {
 
             <button
               onClick={handleFinalizePayroll}
-              className="w-full px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
-              <CheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-4 h-4" />
               Bordroyu Kesinleştir ve Kasaya Yansıt
             </button>
           </div>

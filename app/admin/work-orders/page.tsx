@@ -161,6 +161,21 @@ export default function WorkOrdersPage() {
         </button>
       </div>
 
+      {workOrders.length === 0 && (
+        <div className="bg-slate-800/40 rounded-2xl border border-dashed border-slate-700/60 p-12 text-center mb-6">
+          <Building2 className="w-16 h-16 mx-auto mb-4 text-slate-600" />
+          <h3 className="text-lg font-semibold text-white mb-1">Henüz İş Emri Bulunmuyor</h3>
+          <p className="text-sm text-slate-400 mb-6">Şantiyeleriniz için oluşturulmuş herhangi bir iş emri kaydı bulunamadı.</p>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm font-medium shadow-lg shadow-blue-600/20"
+          >
+            <Plus className="w-4 h-4" />
+            İlk İş Emrini Oluştur
+          </button>
+        </div>
+      )}
+
       {/* Kanban Board */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {(Object.keys(STATUS_LABELS) as TaskStatus[]).map((status) => (

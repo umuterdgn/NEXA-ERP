@@ -17,7 +17,16 @@ export async function GET() {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    const where: any = {}
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
+
     const projects = await prisma.project.findMany({
+      where,
       include: {
         storeTemplate: true,
         stageGates: {

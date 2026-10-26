@@ -17,6 +17,8 @@ export async function createWorkOrder(formData: FormData) {
       return { success: false, error: "Oturum bulunamadı" }
     }
 
+    const tenantId = (session.user as any)?.tenantId
+
     const title = formData.get("title") as string
     const description = formData.get("description") as string
     const projectId = formData.get("projectId") as string
@@ -37,7 +39,8 @@ export async function createWorkOrder(formData: FormData) {
         assignedToId: assignedToId || null,
         department: (department || "GENEL") as any,
         priority: (priority || "MEDIUM") as any,
-        dueDate: dueDate ? new Date(dueDate) : null
+        dueDate: dueDate ? new Date(dueDate) : null,
+        tenantId: tenantId || null
       },
       include: {
         project: true,
@@ -60,6 +63,23 @@ export async function updateWorkOrderStatus(id: string, newStatus: string) {
       return { success: false, error: "Oturum bulunamadı" }
     }
 
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    // Verify ownership
+    const existing = await prisma.workOrder.findUnique({
+      where: { id },
+      select: { tenantId: true }
+    })
+
+    if (!existing) {
+      return { success: false, error: "İş emri bulunamadı" }
+    }
+
+    if (!isSuperAdmin && existing.tenantId && existing.tenantId !== tenantId) {
+      return { success: false, error: "Yetkisiz işlem" }
+    }
+
     const workOrder = await prisma.workOrder.update({
       where: { id },
       data: { status: newStatus as any }
@@ -76,7 +96,21 @@ export async function updateWorkOrderStatus(id: string, newStatus: string) {
 
 export async function getWorkOrders() {
   try {
+    const session = await auth()
+    if (!session) {
+      return { success: false, error: "Oturum bulunamadı", workOrders: [] }
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+    const tenantId = (session.user as any)?.tenantId
+
+    const where: any = {}
+    if (!isSuperAdmin) {
+      where.tenantId = tenantId || "non-existent"
+    }
+
     const workOrders = await prisma.workOrder.findMany({
+      where,
       include: {
         project: true,
         assignedTo: true
@@ -86,6 +120,6 @@ export async function getWorkOrders() {
     return { success: true, workOrders }
   } catch (error) {
     console.error("Get work orders error:", error)
-    return { success: false, error: "İş emirleri getirilemedi" }
+    return { success: false, error: "İş emirleri getirilemedi", workOrders: [] }
   }
 }

@@ -1,21 +1,36 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * QR Mikro Tüketim Döngüsü API
- * Ambar ve şantiye içi malzeme lokasyonu ve tüketim durumunu yönetir.
+ * QR Mikro Tüketim Döngüsü API with strict tenant isolation
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+    const tenantId = (session.user as any)?.tenantId;
+
+    const tenantWhere: any = {};
+    if (!isSuperAdmin) {
+      tenantWhere.tenantId = tenantId || "non-existent";
+    }
+
     const { searchParams } = new URL(req.url);
     const qrCode = searchParams.get("qrCode");
 
     if (qrCode) {
-      const item = await prisma.inventoryItem.findUnique({
-        where: { qrCode },
+      const item = await prisma.inventoryItem.findFirst({
+        where: { qrCode, ...tenantWhere },
         include: {
           project: {
             select: { id: true, name: true },
@@ -35,6 +50,7 @@ export async function GET(req: NextRequest) {
 
     // Tümü veya son tarananlar
     const items = await prisma.inventoryItem.findMany({
+      where: tenantWhere,
       orderBy: { createdAt: "desc" },
       take: 50,
       include: {
@@ -56,6 +72,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
+    }
+
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+    const tenantId = (session.user as any)?.tenantId;
+
     const body = await req.json();
     const {
       qrCode,
@@ -76,8 +100,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Önce var olan malzemeyi ara
-    const existing = await prisma.inventoryItem.findUnique({
-      where: { qrCode },
+    const existing = await prisma.inventoryItem.findFirst({
+      where: { qrCode, ...(isSuperAdmin ? {} : { tenantId: tenantId || "non-existent" }) },
     });
 
     let updatedItem;
@@ -86,7 +110,7 @@ export async function POST(req: NextRequest) {
       // Güncelleme işlemi
       const isConsumed = (status || existing.status) === "CONSUMED";
       updatedItem = await prisma.inventoryItem.update({
-        where: { qrCode },
+        where: { id: existing.id },
         data: {
           currentZone: currentZone || existing.currentZone,
           status: status || existing.status,
@@ -116,6 +140,7 @@ export async function POST(req: NextRequest) {
           assignedToId: assignedToId || null,
           consumedAt: status === "CONSUMED" ? new Date() : null,
           projectId: projectId || null,
+          tenantId: tenantId || null,
         },
         include: {
           project: {
