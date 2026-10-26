@@ -183,6 +183,12 @@ export default function TenantDetailPage({
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Sadece görsel (Image) kısıtlaması
+    if (!file.type.startsWith("image/")) {
+      toast.error("Lütfen sadece resim dosyası seçiniz (PNG, JPG, WEBP). PDF kabul edilmez.")
+      return
+    }
+
     setIsUploadingLogo(true)
     const toastId = toast.loading("Firma logosu yükleniyor...")
     try {
@@ -208,6 +214,7 @@ export default function TenantDetailPage({
       toast.error("Logo yükleme hatası", { id: toastId })
     } finally {
       setIsUploadingLogo(false)
+      e.target.value = ""
     }
   }
 
@@ -745,8 +752,11 @@ export default function TenantDetailPage({
 
             {/* Firma Logosu Yükleme & Önizleme */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-300">
-                Firma Logosu (PNG, SVG, WEBP)
+              <label className="block text-xs font-semibold text-slate-300 flex items-center justify-between">
+                <span>Firma Logosu Seç (PNG/JPG)</span>
+                {logoUrlInput && (
+                  <span className="text-[10px] text-emerald-400 font-medium">Yüklendi</span>
+                )}
               </label>
 
               {logoUrlInput ? (
@@ -775,7 +785,7 @@ export default function TenantDetailPage({
                 <div className="relative">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
                     onChange={handleLogoUpload}
                     disabled={isUploadingLogo}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -783,21 +793,12 @@ export default function TenantDetailPage({
                   <div className="p-4 rounded-2xl border-2 border-dashed border-slate-700 hover:border-purple-500/60 bg-slate-950/60 transition text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer">
                     <Upload className="w-5 h-5 text-purple-400" />
                     <span className="text-xs font-semibold text-slate-300">
-                      {isUploadingLogo ? "Logo Yükleniyor..." : "Dosya Seç veya Buraya Bırak"}
+                      {isUploadingLogo ? "Logo Yükleniyor..." : "Firma Logosu Seç (PNG/JPG)"}
                     </span>
-                    <span className="text-[10px] text-slate-500">Maksimum 5 MB • Şeffaf PNG önerilir</span>
+                    <span className="text-[10px] text-slate-500">Maksimum 5 MB • PNG, JPG veya WEBP</span>
                   </div>
                 </div>
               )}
-
-              {/* Manuel Logo URL alternatifi */}
-              <input
-                type="text"
-                value={logoUrlInput}
-                onChange={(e) => setLogoUrlInput(e.target.value)}
-                placeholder="Veya doğrudan Logo URL yapıştırın (https://...)"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 font-mono"
-              />
             </div>
 
             {/* Ana Renk (Primary Color) Seçici */}

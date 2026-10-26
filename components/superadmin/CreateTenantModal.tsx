@@ -72,9 +72,49 @@ export default function CreateTenantModal({
   ])
   const [primaryColor, setPrimaryColor] = useState("#3B82F6")
   const [logoUrl, setLogoUrl] = useState("")
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [isWhiteLabelActive, setIsWhiteLabelActive] = useState(true)
 
   const [loading, setLoading] = useState(false)
+
+  // Firma Logosu Dosya Yükleme (Direct File Upload)
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Sadece görsel (Image) kısıtlaması
+    if (!file.type.startsWith("image/")) {
+      toast.error("Lütfen sadece resim dosyası seçiniz (PNG, JPG, WEBP). PDF kabul edilmez.")
+      return
+    }
+
+    setIsUploadingLogo(true)
+    const toastId = toast.loading("Firma logosu yükleniyor...")
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("sourceModule", "BRANDING")
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (res.ok && data.url) {
+        setLogoUrl(data.url)
+        toast.success("Logo başarıyla yüklendi", { id: toastId })
+      } else {
+        toast.error(data.error || "Logo yüklenemedi", { id: toastId })
+      }
+    } catch (err) {
+      console.error("Logo upload error:", err)
+      toast.error("Logo yüklenirken bir hata oluştu", { id: toastId })
+    } finally {
+      setIsUploadingLogo(false)
+      e.target.value = ""
+    }
+  }
 
   // Otomatik Slug üretici
   const handleNameChange = (val: string) => {
@@ -441,16 +481,61 @@ export default function CreateTenantModal({
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold text-xs mb-1">
-                    Firma Logo URL
+                  <label className="block text-slate-300 font-semibold text-xs mb-1 flex items-center justify-between">
+                    <span>Firma Logosu Seç (PNG/JPG)</span>
+                    {logoUrl && (
+                      <span className="text-[10px] text-emerald-400 font-medium">Yüklendi</span>
+                    )}
                   </label>
-                  <input
-                    type="text"
-                    value={logoUrl}
-                    onChange={(e) => setLogoUrl(e.target.value)}
-                    placeholder="https://.../logo.png"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500 transition-colors"
-                  />
+
+                  {logoUrl ? (
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-8 rounded-lg bg-slate-900 border border-slate-700/80 p-0.5 flex items-center justify-center overflow-hidden shrink-0">
+                          <img
+                            src={logoUrl}
+                            alt="Logo Önizleme"
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-mono text-slate-200 truncate">
+                            {logoUrl.split("/").pop() || "firma-logo.png"}
+                          </p>
+                          <p className="text-[9px] text-emerald-400">Önizleme Aktif</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl("")}
+                        className="text-[11px] text-rose-400 hover:text-rose-300 font-medium px-2 py-1 rounded hover:bg-rose-500/10 transition cursor-pointer shrink-0"
+                      >
+                        Kaldır
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        onChange={handleLogoUpload}
+                        disabled={isUploadingLogo}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+                      />
+                      <div className="px-3 py-2 rounded-xl border border-dashed border-slate-700 group-hover:border-cyan-500/60 bg-slate-950 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                        {isUploadingLogo ? (
+                          <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                        ) : (
+                          <Upload className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                        )}
+                        <span className="text-xs text-slate-300">
+                          {isUploadingLogo ? "Yükleniyor..." : "Firma Logosu Seç (PNG/JPG)"}
+                        </span>
+                        <span className="text-[10px] text-slate-500">(PNG, JPG)</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
