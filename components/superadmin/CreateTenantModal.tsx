@@ -51,6 +51,7 @@ export default function CreateTenantModal({
   const [type, setType] = useState<"MAIN_CONTRACTOR" | "INSPECTION">("MAIN_CONTRACTOR")
   const [domain, setDomain] = useState("")
   const [subscriptionPlan, setSubscriptionPlan] = useState("PROFESSIONAL")
+  const [isTrial, setIsTrial] = useState(false)
 
   // 2. İlk Yönetici (Admin) Hesabı
   const [adminName, setAdminName] = useState("")
@@ -176,6 +177,7 @@ export default function CreateTenantModal({
           domain: domain.trim() || null,
           type,
           subscriptionPlan,
+          isTrial,
           licenses: maxUsers,
           maxUsers,
           maxStorageMB: storageGb * 1024,
@@ -298,6 +300,37 @@ export default function CreateTenantModal({
                     <option value="ENTERPRISE">Enterprise (75.000 ₺/ay)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* 14 Günlük Ücretsiz Demo (Trial) Seçeneği */}
+              <div className="p-3 rounded-xl bg-purple-950/20 border border-purple-800/40 flex items-center justify-between transition-colors hover:border-purple-700/60">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-2">
+                      <span>14 Günlük Ücretsiz Demo (Trial) Başlat</span>
+                      {isTrial && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          14 Gün Aktif
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      İşaretlenirse firma 14 gün demo modunda açılır, süre dolduğunda lisans bariyeri kilitler.
+                    </div>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer ml-3 shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={isTrial}
+                    onChange={(e) => setIsTrial(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
               </div>
 
               <div>

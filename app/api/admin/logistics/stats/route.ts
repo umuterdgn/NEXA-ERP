@@ -122,26 +122,29 @@ export async function GET() {
         ? Math.round((savingsKm / originalDistance) * 100)
         : 36;
 
-    // 3. Veritabanındaki Aktif DRIVER Rolüne Sahip Kullanıcıları Çek
-    const dbDrivers = await prisma.user.findMany({
+    // 3. Veritabanındaki Aktif DRIVER Rolüne Sahip Personelleri Çek
+    const dbDrivers = await prisma.personel.findMany({
       where: {
         ...tenantFilter,
-        role: "DRIVER",
+        OR: [
+          { role: "DRIVER" },
+          { position: { contains: "şoför", mode: "insensitive" } },
+          { position: { contains: "driver", mode: "insensitive" } },
+        ],
       },
       select: {
         id: true,
         name: true,
-        email: true,
+        phone: true,
+        currentSite: true,
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { name: "asc" },
     });
 
-    // 4. Personel İş Yükü Otomatik Hesaplama (Ahmet, Mehmet, Ayşe)
-    // Bugünün başlangıcı
+    // 4. Günlük Sevkiyatlar ve Şoför Kapasitesi (100% Gerçek DB Verisi)
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // Günlük sevkiyatları çek
     const todaySchedules = await prisma.logisticsSchedule.findMany({
       where: {
         ...tenantFilter,
@@ -151,90 +154,40 @@ export async function GET() {
         id: true,
         title: true,
         location: true,
+        driverName: true,
         driverContact: true,
         status: true,
         scheduledAt: true,
       },
     });
 
-    // Varsayılan sürücü profilleri (Veritabanındaki DRIVER'lar ile harmanlanır)
-    const baseDriverProfiles = [
-      {
-        defaultName: "Ahmet",
-        fullName: "Ahmet Yılmaz",
-        initial: "A",
-        baseRemainingKm: 28,
-        defaultStops: "09:00 Yapı A, 11:30 Yapı B",
-      },
-      {
-        defaultName: "Mehmet",
-        fullName: "Mehmet Demir",
-        initial: "M",
-        baseRemainingKm: 94,
-        defaultStops: "08:30 Merkez Depo, 13:00 C Blok, 16:30 Vadi Evleri",
-      },
-      {
-        defaultName: "Ayşe",
-        fullName: "Ayşe Kaya",
-        initial: "A",
-        baseRemainingKm: 52,
-        defaultStops: "10:00 Yapı C, 14:00 Yapı D",
-      },
-    ];
-
-    const personnelWorkload = baseDriverProfiles.map((profile, index) => {
-      // Eşleşen DB kullanıcısı varsa adını al
-      const matchedUser = dbDrivers[index];
-      const displayName = matchedUser
-        ? matchedUser.name.split(" ")[0]
-        : profile.defaultName;
-      const fullDriverName = matchedUser?.name || profile.fullName;
-
-      // Sürücünün bugünkü sevkiyatlarını bul
+    const personnelWorkload = dbDrivers.map((driver) => {
       const driverSchedules = todaySchedules.filter((s) =>
-        s.driverContact?.toLowerCase().includes(displayName.toLowerCase()) ||
-        s.driverContact?.toLowerCase().includes(profile.defaultName.toLowerCase())
+        (s.driverName && s.driverName.toLowerCase().includes(driver.name.toLowerCase())) ||
+        (s.driverContact && driver.phone && s.driverContact.includes(driver.phone)) ||
+        (s.driverContact && s.driverContact.toLowerCase().includes(driver.name.toLowerCase()))
       );
 
-      const shipmentCount = Math.max(driverSchedules.length, index === 1 ? 3 : index === 2 ? 2 : 1);
-      
-      // Kalan yol kilometreleri: OSRM rotasından veya sürücünün görev yükünden
-      let remainingKm = profile.baseRemainingKm;
-      if (validRoutesCount > 0) {
-        remainingKm = Math.round(
-          (aiDistance * (index === 1 ? 0.5 : index === 2 ? 0.3 : 0.2))
-        );
-      }
+      const shipmentCount = driverSchedules.length;
+      const workloadPercent = Math.min(100, shipmentCount * 20); // 5 teslimat = %100 kapasite
+      const remainingKm = Math.round(shipmentCount * 18);
 
-      // Kapasite / İş Yükü % Hesaplama
-      // 100km veya 3+ sevkiyat = Kritik (%80-%95)
-      // 50-80km veya 2 sevkiyat = Normal (%55-%75)
-      // <50km veya 1 sevkiyat = Optimum (%35-%50)
-      let workloadPercent = 50;
       let status: "Optimum" | "Normal" | "Kritik" = "Normal";
-      let statusText = "";
-
-      if (remainingKm >= 75 || shipmentCount >= 3) {
-        workloadPercent = Math.min(95, 75 + shipmentCount * 5);
+      if (workloadPercent >= 80) {
         status = "Kritik";
-        statusText = "Yoğunluk yüksek - görev dağıtımı önerilir";
-      } else if (remainingKm <= 35 && shipmentCount <= 1) {
-        workloadPercent = Math.max(30, shipmentCount * 35);
+      } else if (workloadPercent <= 20) {
         status = "Optimum";
-        statusText = driverSchedules[0]
-          ? `${new Date(driverSchedules[0].scheduledAt).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} ${driverSchedules[0].location}`
-          : profile.defaultStops;
-      } else {
-        workloadPercent = 60;
-        status = "Normal";
-        statusText = profile.defaultStops;
       }
+
+      const statusText = driverSchedules[0]
+        ? `${driver.name}: ${shipmentCount} Teslimat (%${workloadPercent} Dolu) - Son Durak: ${driverSchedules[0].location}`
+        : `${driver.name}: ${shipmentCount} Teslimat (%${workloadPercent} Dolu)`;
 
       return {
-        id: matchedUser?.id || `driver-${index + 1}`,
-        name: displayName,
-        fullName: fullDriverName,
-        initial: displayName.charAt(0).toUpperCase(),
+        id: driver.id,
+        name: driver.name.split(" ")[0],
+        fullName: driver.name,
+        initial: driver.name.charAt(0).toUpperCase(),
         shipmentCount,
         remainingKm,
         workloadPercent,
@@ -263,55 +216,14 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error("[LOGISTICS_STATS_ERROR]", error);
-    // Hata durumunda dahi UI'ın çökmesini engellemek için güvenli fallback döndür
-    return NextResponse.json({
-      success: true,
-      routeOptimization: {
-        originalDistanceKm: 118,
-        aiDistanceKm: 76,
-        durationMinutes: 85,
-        durationFormatted: "1 sa 25 dk",
-        savingsKm: 42,
-        savingsPercent: 36,
-        activeShipmentsCount: 1,
-        recommendation: "Görevleri yeniden sıralayarak toplam mesafeyi düşürebilirim",
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Lojistik istatistikleri alınamadı.",
+        personnelWorkload: [],
+        routeOptimization: null,
       },
-      personnelWorkload: [
-        {
-          id: "1",
-          name: "Ahmet",
-          fullName: "Ahmet Yılmaz",
-          initial: "A",
-          shipmentCount: 1,
-          remainingKm: 28,
-          workloadPercent: 40,
-          status: "Optimum",
-          statusText: "09:00 Yapı A, 11:30 Yapı B",
-        },
-        {
-          id: "2",
-          name: "Mehmet",
-          fullName: "Mehmet Demir",
-          initial: "M",
-          shipmentCount: 3,
-          remainingKm: 94,
-          workloadPercent: 85,
-          status: "Kritik",
-          statusText: "Yoğunluk yüksek - görev dağıtımı önerilir",
-        },
-        {
-          id: "3",
-          name: "Ayşe",
-          fullName: "Ayşe Kaya",
-          initial: "A",
-          shipmentCount: 2,
-          remainingKm: 52,
-          workloadPercent: 60,
-          status: "Normal",
-          statusText: "10:00 Yapı C, 14:00 Yapı D",
-        },
-      ],
-      activeShipmentsCount: 1,
-    });
+      { status: 500 }
+    );
   }
 }

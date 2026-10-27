@@ -209,8 +209,6 @@ const menuItems: MenuItem[] = [
   { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", icon: UserCheck, category: "İSG & RİSK YÖNETİMİ" },
   
   // İLETİŞİM & OPERASYON
-  { href: "/admin/content-management", label: "Blog & Vaka Yönetimi", icon: Newspaper, category: "İLETİŞİM & OPERASYON" },
-  { href: "/admin/cms", label: "Statik Sayfa Metinleri", icon: FileText, category: "İLETİŞİM & OPERASYON" },
   { href: "/admin/tasks", label: "Görevler & Takvim", icon: Calendar, category: "İLETİŞİM & OPERASYON" },
   { href: "/admin/work-orders", label: "İş Emirleri (Kanban)", icon: ClipboardList, category: "İLETİŞİM & OPERASYON" },
   { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "İLETİŞİM & OPERASYON" },

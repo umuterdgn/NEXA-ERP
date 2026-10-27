@@ -653,34 +653,57 @@ export default function FinancePage() {
         </div>
       </div>
 
-      {/* Financial Chart */}
-      <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white">Aylık Gelir-Gider Grafiği</h3>
-          <span className="text-sm text-slate-400">Son 6 ay</span>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={[
-            { month: 'Ocak', gelir: 150000, gider: 120000 },
-            { month: 'Şubat', gelir: 180000, gider: 140000 },
-            { month: 'Mart', gelir: 200000, gider: 150000 },
-            { month: 'Nisan', gelir: 220000, gider: 160000 },
-            { month: 'Mayıs', gelir: 190000, gider: 145000 },
-            { month: 'Haziran', gelir: 250000, gider: 180000 },
-          ]}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis dataKey="month" stroke="#94a3b8" />
-            <YAxis stroke="#94a3b8" />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-              itemStyle={{ color: '#e2e8f0' }}
-            />
-            <Legend />
-            <Bar dataKey="gelir" fill="#22c55e" name="Gelir" />
-            <Bar dataKey="gider" fill="#ef4444" name="Gider" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Financial Chart (Gerçek Veritabanı Agregasyonu) */}
+      {(() => {
+        const monthsMap: Record<string, { month: string; gelir: number; gider: number; sortKey: string }> = {}
+        const now = new Date()
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+          const monthLabel = d.toLocaleString("tr-TR", { month: "long" })
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+          monthsMap[key] = { month: monthLabel, gelir: 0, gider: 0, sortKey: key }
+        }
+
+        transactions.forEach((t) => {
+          if (!t.date) return
+          const tDate = new Date(t.date)
+          const key = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, "0")}`
+          if (monthsMap[key]) {
+            const amt = Number(t.amount) || 0
+            if (t.type === "GELIR") {
+              monthsMap[key].gelir += amt
+            } else if (t.type === "GIDER") {
+              monthsMap[key].gider += amt
+            }
+          }
+        })
+
+        const realMonthlyData = Object.values(monthsMap).sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+
+        return (
+          <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-white">Aylık Gelir-Gider Grafiği</h3>
+              <span className="text-sm text-slate-400">Son 6 ay (Gerçek Finans Verisi)</span>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={realMonthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="month" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                  itemStyle={{ color: '#e2e8f0' }}
+                  formatter={(val: any) => [`₺${Number(val).toLocaleString('tr-TR')}`, '']}
+                />
+                <Legend />
+                <Bar dataKey="gelir" fill="#22c55e" name="Gelir" />
+                <Bar dataKey="gider" fill="#ef4444" name="Gider" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )
+      })()}
 
       {/* Progress Payments Section (Gerçek Prisma Veritabanı Sorguları) */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">

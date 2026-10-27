@@ -115,6 +115,9 @@ model Tenant {
   domain             String? // Özel domain (opsiyonel)
   type               CompanyType @default(MAIN_CONTRACTOR) // Firma türü: MAIN_CONTRACTOR veya INSPECTION
   subscriptionPlan   String      @default("STARTER") // "STARTER", "PROFESSIONAL", "ENTERPRISE"
+  isTrial            Boolean     @default(false)
+  trialEndsAt        DateTime?
+  subscriptionStatus String      @default("ACTIVE") // "ACTIVE", "TRIAL", "EXPIRED", "SUSPENDED"
   status             String      @default("ACTIVE") // "ACTIVE", "SUSPENDED" (Ödeme yapmayanlar için)
   licenses           Int         @default(50) // Kaç kullanıcı ekleyebilir? (Örn: 50 kişi)
   maxUsers           Int         @default(10) // Lisans/Koltuk sayısı

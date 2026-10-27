@@ -38,19 +38,47 @@ export default async function InspectionLayout({
   }
 
   const sessionUser = session.user as any
+  const isSuperAdmin = sessionUser?.role === "SUPER_ADMIN"
   let primaryColor = "#3B82F6"
 
-  if (sessionUser?.isWhiteLabelActive && sessionUser?.primaryColor) {
-    primaryColor = sessionUser.primaryColor
-  } else if (sessionUser?.tenantId) {
+  // ============================================================================
+  // LİSANS VE 14 GÜNLÜK DEMO KONTROLCÜSÜ (SAAS BILLING GATEWAY)
+  // ============================================================================
+  if (!isSuperAdmin && sessionUser?.tenantId) {
     const { prisma } = await import("@/lib/prisma")
     const tenant = await prisma.tenant.findUnique({
       where: { id: sessionUser.tenantId },
-      select: { primaryColor: true, isWhiteLabelActive: true }
+      select: {
+        id: true,
+        primaryColor: true,
+        isWhiteLabelActive: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        isTrial: true,
+        status: true,
+        isActive: true,
+      }
     }).catch(() => null)
-    if (tenant?.isWhiteLabelActive && tenant?.primaryColor) {
-      primaryColor = tenant.primaryColor
+
+    if (tenant) {
+      const isTrialExpired = Boolean(
+        tenant.isTrial && tenant.trialEndsAt && new Date(tenant.trialEndsAt) < new Date()
+      )
+      const isSubscriptionExpired = 
+        tenant.subscriptionStatus === "EXPIRED" || 
+        tenant.status === "SUSPENDED" ||
+        tenant.isActive === false
+
+      if (isTrialExpired || isSubscriptionExpired) {
+        redirect("/expired")
+      }
+
+      if (tenant.isWhiteLabelActive && tenant.primaryColor) {
+        primaryColor = tenant.primaryColor
+      }
     }
+  } else if (sessionUser?.isWhiteLabelActive && sessionUser?.primaryColor) {
+    primaryColor = sessionUser.primaryColor
   }
 
   return (

@@ -70,43 +70,13 @@ export default function RoutesPage() {
 
   const fetchProjectStops = async () => {
     try {
-      const response = await fetch('/api/admin/projects')
+      const response = await fetch(`/api/admin/routes/stops?personnelId=${encodeURIComponent(selectedPersonnel)}`)
       if (response.ok) {
-        const projects = await response.json()
-        
-        // Filter active projects with coordinates
-        const activeProjects = projects.filter((p: any) => 
-          p.isActive && p.latitude && p.longitude
-        )
-
-        if (activeProjects.length === 0) {
-          setStops([])
-          return
-        }
-
-        // Create stops from project data
-        const projectStops: Stop[] = activeProjects.map((p: any, index: number) => ({
-          id: p.id,
-          name: p.name || p.title,
-          address: `${p.district || ''}, ${p.city || ''}`,
-          order: index + 1,
-          lat: parseFloat(p.latitude),
-          lng: parseFloat(p.longitude),
-          isStart: false
-        }))
-
-        // Add starting point (office)
-        const startStop: Stop = {
-          id: "start",
-          name: "Nexa Merkez Ofis",
-          address: "Merkez, İskenderun",
-          order: 0,
-          lat: 36.58718,
-          lng: 36.17347,
-          isStart: true
-        }
-
-        setStops([startStop, ...projectStops])
+        const data = await response.json()
+        const realStops = Array.isArray(data.stops) ? data.stops : []
+        setStops(realStops)
+      } else {
+        setStops([])
       }
     } catch (error) {
       console.error('Failed to fetch project stops:', error)
@@ -243,39 +213,52 @@ export default function RoutesPage() {
               Günlük Görevler / Duraklar
             </h3>
             
-            <div className="space-y-3 mb-6">
-              {stops.map((stop, index) => (
-                <div
-                  key={stop.id}
-                  className={`p-4 rounded-lg border ${
-                    stop.isStart
-                      ? "bg-blue-500/10 border-blue-500/30"
-                      : "bg-slate-800 border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      stop.isStart ? "bg-blue-500" : "bg-slate-700"
-                    }`}>
-                      {stop.isStart ? (
-                        <Building2 className="w-4 h-4 text-white" />
-                      ) : (
-                        <span className="text-white font-medium text-sm">{index + 1}</span>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium">{stop.name}</h4>
-                      <p className="text-slate-400 text-sm">{stop.address}</p>
+            {stops.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl my-4 text-slate-400">
+                <MapPin className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+                <p className="text-sm font-medium">Bu personel için bugün planlanmış teslimat veya saha görevi bulunmuyor.</p>
+                <p className="text-xs text-slate-500 mt-1">Lojistik veya görev modülünden randevu oluşturulduğunda haritaya yansır.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 mb-6">
+                {stops.map((stop, index) => (
+                  <div
+                    key={stop.id}
+                    className={`p-4 rounded-lg border ${
+                      stop.isStart
+                        ? "bg-blue-500/10 border-blue-500/30"
+                        : "bg-slate-800 border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                            stop.isStart
+                              ? "bg-blue-500 text-white"
+                              : "bg-slate-700 text-slate-300"
+                          }`}
+                        >
+                          {stop.order}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-white">{stop.name}</h4>
+                          <p className="text-sm text-slate-400">{stop.address}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs px-2 py-1 bg-slate-700 text-slate-300 rounded">
+                        {stop.isStart ? "Başlangıç" : `Durak ${index + 1}`}
+                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Optimize Button */}
             <button
               onClick={handleOptimize}
-              disabled={isOptimizing || isOptimized}
+              disabled={isOptimizing || isOptimized || stops.length < 2}
               className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl transition-colors flex items-center justify-center gap-3 font-medium disabled:opacity-50"
             >
               {isOptimizing ? (
@@ -306,17 +289,24 @@ export default function RoutesPage() {
           <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-blue-400" />
-              Harita
+              Harita & AI Rota Önizlemesi
             </h3>
             
-            <div className="h-[500px] rounded-lg overflow-hidden">
-              <MapContainer
-                center={[36.58718, 36.17347]}
-                zoom={11}
-                maxZoom={19}
-                style={{ height: "100%", width: "100%" }}
-                className="z-0"
-              >
+            {stops.length === 0 ? (
+              <div className="h-[500px] rounded-lg border border-dashed border-slate-800 bg-slate-950/40 flex flex-col items-center justify-center text-slate-500 p-6 text-center">
+                <MapPin className="w-10 h-10 mb-3 text-slate-600" />
+                <p className="font-semibold text-slate-300">Haritada Çizilecek Görev Noktası Yok</p>
+                <p className="text-xs text-slate-500 mt-1">Seçilen personele ait aktif teslimat veya saha görevi eklendiğinde koordinatlar burada çizilir.</p>
+              </div>
+            ) : (
+              <div className="h-[500px] rounded-lg overflow-hidden">
+                <MapContainer
+                  center={[stops[0].lat, stops[0].lng]}
+                  zoom={12}
+                  maxZoom={19}
+                  style={{ height: "100%", width: "100%" }}
+                  className="z-0"
+                >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -355,6 +345,7 @@ export default function RoutesPage() {
                 )}
               </MapContainer>
             </div>
+          )}
 
             {/* Google Maps Launch Navigation Button */}
             {stops.length > 1 && (

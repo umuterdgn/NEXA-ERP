@@ -21,6 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Newspaper,
+  FileText,
 } from "lucide-react"
 
 export default function SuperAdminSidebar({
@@ -43,6 +45,16 @@ export default function SuperAdminSidebar({
       href: "/superadmin/billing",
       label: "Tahsilat & Faturalar",
       icon: CreditCard,
+    },
+    {
+      href: "/superadmin/blog",
+      label: "Blog & Vaka Yönetimi",
+      icon: Newspaper,
+    },
+    {
+      href: "/superadmin/static-pages",
+      label: "Statik Sayfa Metinleri",
+      icon: FileText,
     },
     {
       href: "/superadmin/tickets",

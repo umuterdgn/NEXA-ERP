@@ -8,6 +8,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import FinancialChart from "../../components/admin/FinancialChart"
+import PersonnelWorkloadChart, { WorkloadItem } from "@/components/admin/PersonnelWorkloadChart"
+import DriverCapacityWidget, { DriverCapacityItem } from "@/components/admin/DriverCapacityWidget"
 import WeatherWidget from "@/components/ui/WeatherWidget"
 import AIReportGenerator from "@/components/AIReportGenerator"
 import DigitalizationScore from "@/components/DigitalizationScore"
@@ -150,6 +152,19 @@ export default async function AdminDashboard() {
   let totalRevenue = { _sum: { amount: 0 as number | null } }
   let totalExpenses = { _sum: { amount: 0 as number | null } }
   let lowStockCount = 0
+
+  // Real Analytics & Charts Data
+  let monthlyFinancialData: { month: string; gelir: number; gider: number }[] = []
+  let topWorkloadPersonnel: WorkloadItem[] = []
+  let driverCapacityList: DriverCapacityItem[] = []
+  let timeLossStats = {
+    totalLostHours: 0,
+    evrakHours: 0,
+    ulasimHours: 0,
+    raporlamaHours: 0,
+    sahaHours: 0,
+    estimatedAiSavingsHours: 0
+  }
 
   // Contractor-specific data
   let contractorProjects: ContractorProject[] = []
@@ -300,6 +315,232 @@ export default async function AdminDashboard() {
       totalRevenue = revenue
       totalExpenses = expenses
       lowStockCount = stockCount
+
+      // ============================================================================
+      // 1. GERÇEK FİNANSAL AKIŞ (SON 6 AY GELİR / GİDER AGREGASYONU)
+      // ============================================================================
+      const sixMonthsAgo = new Date()
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5)
+      sixMonthsAgo.setDate(1)
+      sixMonthsAgo.setHours(0, 0, 0, 0)
+
+      const transactionWhere: any = {
+        date: { gte: sixMonthsAgo },
+        ...(!isSuperAdmin
+          ? userTenantId
+            ? {
+                OR: [
+                  { tenantId: userTenantId },
+                  { project: { tenantId: userTenantId } }
+                ]
+              }
+            : { tenantId: "non-existent-tenant" }
+          : {})
+      }
+
+      const sixMonthsTransactions = await prisma.transaction.findMany({
+        where: transactionWhere,
+        select: {
+          date: true,
+          type: true,
+          amount: true
+        },
+        orderBy: { date: 'asc' }
+      }).catch(() => [])
+
+      const monthsMap: Record<string, { month: string; gelir: number; gider: number; sortKey: string }> = {}
+      const now = new Date()
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const monthLabel = d.toLocaleString("tr-TR", { month: "long" })
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+        monthsMap[key] = { month: monthLabel, gelir: 0, gider: 0, sortKey: key }
+      }
+
+      sixMonthsTransactions.forEach((t) => {
+        if (!t.date) return
+        const tDate = new Date(t.date)
+        const key = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, "0")}`
+        if (monthsMap[key]) {
+          const amt = Number(t.amount) || 0
+          if (t.type === "GELIR") {
+            monthsMap[key].gelir += amt
+          } else {
+            monthsMap[key].gider += amt
+          }
+        }
+      })
+      monthlyFinancialData = Object.values(monthsMap).sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+
+      // ============================================================================
+      // 2. GERÇEK PERSONEL İŞ YÜKÜ (EN ÇOK AÇIK GÖREVİ OLAN 5 PERSONEL)
+      // ============================================================================
+      const personnelWithTasks = await prisma.personel.findMany({
+        where: !isSuperAdmin
+          ? (userTenantId ? { tenantId: userTenantId } : { tenantId: "non-existent" })
+          : {},
+        select: {
+          id: true,
+          name: true,
+          position: true,
+          assignedTasks: {
+            where: {
+              status: { in: ["TODO", "IN_PROGRESS"] }
+            },
+            select: { id: true, status: true }
+          }
+        },
+        take: 50
+      }).catch(() => [])
+
+      topWorkloadPersonnel = personnelWithTasks
+        .map(p => ({
+          name: p.name,
+          taskCount: p.assignedTasks.length,
+          position: p.position || "Saha Ekibi"
+        }))
+        .sort((a, b) => b.taskCount - a.taskCount)
+        .slice(0, 5)
+
+      // ============================================================================
+      // 3. AKTİF DRIVER (ŞOFÖR) KAPASİTE ANALİZİ
+      // ============================================================================
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0)
+      const endOfToday = new Date()
+      endOfToday.setHours(23, 59, 59, 999)
+
+      const activeDrivers = await prisma.personel.findMany({
+        where: {
+          ...(!isSuperAdmin ? (userTenantId ? { tenantId: userTenantId } : { tenantId: "non-existent" }) : {}),
+          OR: [
+            { role: "DRIVER" },
+            { position: { contains: "şoför", mode: "insensitive" } },
+            { position: { contains: "driver", mode: "insensitive" } }
+          ]
+        },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          currentSite: true,
+        }
+      }).catch(() => [])
+
+      const todayLogistics = await prisma.logisticsSchedule.findMany({
+        where: {
+          ...(!isSuperAdmin ? (userTenantId ? { tenantId: userTenantId } : { tenantId: "non-existent" }) : {}),
+          scheduledAt: { gte: startOfToday, lte: endOfToday }
+        },
+        select: {
+          id: true,
+          title: true,
+          driverName: true,
+          driverContact: true,
+          location: true,
+          status: true,
+        }
+      }).catch(() => [])
+
+      driverCapacityList = activeDrivers.map(driver => {
+        const assignedCount = todayLogistics.filter(l => 
+          (l.driverName && l.driverName.toLowerCase().includes(driver.name.toLowerCase())) ||
+          (l.driverContact && driver.phone && l.driverContact.includes(driver.phone)) ||
+          (l.driverContact && l.driverContact.toLowerCase().includes(driver.name.toLowerCase()))
+        ).length
+
+        const capacityPercent = Math.min(100, assignedCount * 20)
+        return {
+          id: driver.id,
+          name: driver.name,
+          deliveryCount: assignedCount,
+          capacityPercent,
+          capacityText: `${driver.name}: ${assignedCount} Teslimat (%${capacityPercent} Dolu)`,
+          currentSite: driver.currentSite
+        }
+      })
+
+      // ============================================================================
+      // 4. ZAMAN KAYBI ANALİZİ (GECİKEN GÖREV VE İŞ EMİRLERİNDEN HESAPLANAN KAYIP)
+      // ============================================================================
+      const startOfMonth = new Date()
+      startOfMonth.setDate(1)
+      startOfMonth.setHours(0, 0, 0, 0)
+
+      const overdueWorkOrders = await prisma.workOrder.findMany({
+        where: {
+          ...(!isSuperAdmin ? (userTenantId ? { tenantId: userTenantId } : { tenantId: "non-existent" }) : {}),
+          dueDate: { lt: new Date(), gte: startOfMonth },
+          status: { in: ["TODO", "IN_PROGRESS"] }
+        },
+        select: {
+          id: true,
+          title: true,
+          dueDate: true,
+          department: true,
+          updatedAt: true
+        }
+      }).catch(() => [])
+
+      const overdueTasks = await prisma.task.findMany({
+        where: {
+          ...(!isSuperAdmin ? (userTenantId ? { tenantId: userTenantId } : { tenantId: "non-existent" }) : {}),
+          dueDate: { lt: new Date(), gte: startOfMonth },
+          status: { in: ["TODO", "IN_PROGRESS"] }
+        },
+        select: {
+          id: true,
+          title: true,
+          dueDate: true,
+          taskType: true,
+          createdAt: true
+        }
+      }).catch(() => [])
+
+      let calcTotalHours = 0
+      let calcEvrak = 0
+      let calcUlasim = 0
+      let calcRapor = 0
+      let calcSaha = 0
+
+      const nowMs = Date.now()
+      for (const wo of overdueWorkOrders) {
+        if (wo.dueDate) {
+          const diffMs = nowMs - new Date(wo.dueDate).getTime()
+          const hours = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)))
+          calcTotalHours += hours
+          const deptStr = String(wo.department)
+          if (deptStr === "MEKANIK" || deptStr === "ELEKTRIK") {
+            calcUlasim += hours
+          } else if (deptStr === "MIMARI") {
+            calcEvrak += hours
+          } else {
+            calcSaha += hours
+          }
+        }
+      }
+
+      for (const t of overdueTasks) {
+        if (t.dueDate) {
+          const diffMs = nowMs - new Date(t.dueDate).getTime()
+          const hours = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)))
+          calcTotalHours += hours
+          if (t.taskType?.includes("Evrak") || t.taskType?.includes("Rapor")) {
+            calcRapor += hours
+          } else {
+            calcSaha += hours
+          }
+        }
+      }
+
+      timeLossStats = {
+        totalLostHours: calcTotalHours,
+        evrakHours: calcEvrak,
+        ulasimHours: calcUlasim,
+        raporlamaHours: calcRapor,
+        sahaHours: calcSaha,
+        estimatedAiSavingsHours: Math.round(calcTotalHours * 0.4)
+      }
     } catch (error) {
       console.error('Database connection error, using fallback values:', error)
       // Fallback values when database is unreachable
@@ -545,27 +786,45 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* Financial Chart */}
+        {/* Financial Chart (Gerçek Prisma Agregasyon Verisi) */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 mb-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Finansal Akış Grafiği</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Finansal Akış Grafiği</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Son 6 ayın gerçek gelir ve gider toplamları (Prisma Transaction)</p>
+            </div>
             <Link href="/admin/finance" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 text-sm">
               Detaylı Finans →
             </Link>
           </div>
-          <FinancialChart 
-            data={[
-              { month: 'Ocak', gelir: 150000, gider: 120000 },
-              { month: 'Şubat', gelir: 180000, gider: 140000 },
-              { month: 'Mart', gelir: 200000, gider: 150000 },
-              { month: 'Nisan', gelir: 220000, gider: 160000 },
-              { month: 'Mayıs', gelir: 190000, gider: 145000 },
-              { month: 'Haziran', gelir: 250000, gider: 180000 },
-            ]}
-          />
+          <FinancialChart data={monthlyFinancialData} />
         </div>
 
-        {/* Efficiency / Time Loss Analysis */}
+        {/* 2-Column Analytics Grid: Personel İş Yükü & Aktif DRIVER Kapasite Analizi */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Personel İş Yükü (Personnel Workload) Bar Chart */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Personel İş Yükü</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Üzerinde en çok açık/devam eden görev olan 5 personel</p>
+                </div>
+                <Link href="/admin/personnel" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 text-sm">
+                  Tüm Personeller →
+                </Link>
+              </div>
+              <PersonnelWorkloadChart data={topWorkloadPersonnel} />
+            </div>
+          </div>
+
+          {/* Aktif DRIVER (Şoför) Kapasite Analizi */}
+          <div>
+            <DriverCapacityWidget drivers={driverCapacityList} />
+          </div>
+        </div>
+
+        {/* Efficiency / Time Loss Analysis (Gerçek Zaman Kaybı Analizi) */}
         <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 border border-orange-200 dark:border-orange-800 mb-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
@@ -574,58 +833,94 @@ export default async function AdminDashboard() {
               </svg>
               Zaman Kaybı Analizi
             </h2>
-            <span className="text-sm text-slate-600 dark:text-slate-400">Bu ay</span>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+              Gerçek Gecikme Verisi (Bu Ay)
+            </span>
           </div>
 
           <div className="mb-6">
-            <p className="text-slate-700 dark:text-slate-300 mb-4">Nerede zaman kaybediyorsunuz?</p>
+            <p className="text-slate-800 dark:text-slate-200 font-semibold mb-1">
+              Bu ay gecikmelerden dolayı kaybedilen toplam tahmini süre:{" "}
+              <span className="text-orange-600 dark:text-orange-400 font-black text-lg">
+                {timeLossStats.totalLostHours} Saat
+              </span>
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              Bitiş tarihi geçmiş (Overdue) görev ve iş emirlerinin planlanan ile gerçekleşen arasındaki farkından hesaplandı.
+            </p>
             
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-slate-900 dark:text-white font-medium">Evrak Girişi</span>
-                  <span className="text-orange-600 dark:text-orange-400 font-bold">42 saat</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                  <div className="bg-orange-500 h-3 rounded-full" style={{ width: `${Math.min(42, 100)}%` }} />
-                </div>
+            {timeLossStats.totalLostHours === 0 ? (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
+                <span>🎉 Harika! Bu ay vadesi geçmiş hiçbir görev veya iş emri bulunmuyor. Tüm işler planlanan zamanda ilerliyor.</span>
               </div>
+            ) : (
+              <div className="space-y-4">
+                {timeLossStats.evrakHours > 0 && (
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5 text-sm">
+                      <span className="text-slate-900 dark:text-white font-medium">Evrak Girişi & İdari İşler</span>
+                      <span className="text-orange-600 dark:text-orange-400 font-bold">{timeLossStats.evrakHours} saat</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                      <div className="bg-orange-500 h-3 rounded-full transition-all" style={{ width: `${Math.min(100, Math.round((timeLossStats.evrakHours / timeLossStats.totalLostHours) * 100))}%` }} />
+                    </div>
+                  </div>
+                )}
 
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-slate-900 dark:text-white font-medium">Ulaşım</span>
-                  <span className="text-red-600 dark:text-red-400 font-bold">118 saat</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                  <div className="bg-red-500 h-3 rounded-full" style={{ width: `${Math.min(118, 100)}%` }} />
-                </div>
+                {timeLossStats.ulasimHours > 0 && (
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5 text-sm">
+                      <span className="text-slate-900 dark:text-white font-medium">Lojistik & Ulaşım</span>
+                      <span className="text-red-600 dark:text-red-400 font-bold">{timeLossStats.ulasimHours} saat</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                      <div className="bg-red-500 h-3 rounded-full transition-all" style={{ width: `${Math.min(100, Math.round((timeLossStats.ulasimHours / timeLossStats.totalLostHours) * 100))}%` }} />
+                    </div>
+                  </div>
+                )}
+
+                {timeLossStats.sahaHours > 0 && (
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5 text-sm">
+                      <span className="text-slate-900 dark:text-white font-medium">Saha & İmalat Süreçleri</span>
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">{timeLossStats.sahaHours} saat</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                      <div className="bg-amber-500 h-3 rounded-full transition-all" style={{ width: `${Math.min(100, Math.round((timeLossStats.sahaHours / timeLossStats.totalLostHours) * 100))}%` }} />
+                    </div>
+                  </div>
+                )}
+
+                {timeLossStats.raporlamaHours > 0 && (
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5 text-sm">
+                      <span className="text-slate-900 dark:text-white font-medium">Raporlama & Denetim</span>
+                      <span className="text-yellow-600 dark:text-yellow-400 font-bold">{timeLossStats.raporlamaHours} saat</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                      <div className="bg-yellow-500 h-3 rounded-full transition-all" style={{ width: `${Math.min(100, Math.round((timeLossStats.raporlamaHours / timeLossStats.totalLostHours) * 100))}%` }} />
+                    </div>
+                  </div>
+                )}
               </div>
+            )}
+          </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-slate-900 dark:text-white font-medium">Raporlama</span>
-                  <span className="text-yellow-600 dark:text-yellow-400 font-bold">28 saat</span>
+          {timeLossStats.totalLostHours > 0 && (
+            <div className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl p-4 border border-green-300 dark:border-green-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                  <div className="bg-yellow-500 h-3 rounded-full" style={{ width: `${Math.min(28, 100)}%` }} />
+                <div>
+                  <h4 className="text-green-900 dark:text-green-100 font-semibold text-sm">Tahmini AI Telafi Potansiyeli</h4>
+                  <p className="text-green-800 dark:text-green-200 text-base font-bold">{timeLossStats.estimatedAiSavingsHours} saat tasarruf edilebilir</p>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl p-4 border border-green-300 dark:border-green-700">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="text-green-900 dark:text-green-100 font-semibold">Tahmini AI Tasarrufu</h4>
-                <p className="text-green-800 dark:text-green-200 text-lg font-bold">170 saat</p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Dual Panel Grid */}

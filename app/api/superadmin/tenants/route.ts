@@ -94,6 +94,9 @@ export async function GET(request: NextRequest) {
         domain: t.domain,
         type: t.type,
         subscriptionPlan: t.subscriptionPlan || "STARTER",
+        isTrial: t.isTrial ?? false,
+        trialEndsAt: t.trialEndsAt ? t.trialEndsAt.toISOString() : null,
+        subscriptionStatus: t.subscriptionStatus || "ACTIVE",
         status: t.status || (t.isActive ? "ACTIVE" : "SUSPENDED"),
         licenses: t.licenses || 50,
         maxUsers: t.maxUsers || 10,
@@ -133,6 +136,7 @@ export async function POST(request: NextRequest) {
       domain,
       type,
       subscriptionPlan,
+      isTrial,
       licenses,
       maxUsers,
       maxStorageMB,
@@ -168,6 +172,10 @@ export async function POST(request: NextRequest) {
       const finalLicenses = Number(licenses || maxUsers) || 50;
       const finalMaxStorageMB = Number(maxStorageMB) || 51200;
 
+      const isDemoTrial = Boolean(isTrial);
+      const subscriptionStatus = isDemoTrial ? "TRIAL" : "ACTIVE";
+      const trialEndsAt = isDemoTrial ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) : null;
+
       // 2. Tenant Kaydını Oluştur
       const newTenant = await tx.tenant.create({
         data: {
@@ -176,6 +184,9 @@ export async function POST(request: NextRequest) {
           domain: domain?.trim() || null,
           type: tenantType,
           subscriptionPlan: subscriptionPlan || "STARTER",
+          isTrial: isDemoTrial,
+          trialEndsAt,
+          subscriptionStatus,
           status: "ACTIVE",
           licenses: finalLicenses,
           maxUsers: finalMaxUsers,
