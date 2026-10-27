@@ -1,46 +1,57 @@
-"use client"
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Lisans Bariyeri / Süresi Dolan Abonelik & Demo Ekranı
+ * Lisans Bariyeri / Süresi Dolan Abonelik & Demo Ekranı (Server Component)
  */
 
 import React from "react"
-import { motion } from "framer-motion"
-import { signOut, useSession } from "next-auth/react"
 import { 
   ShieldAlert, 
   Clock, 
   Building2, 
   Headphones, 
-  LogOut, 
   ExternalLink, 
-  Sparkles,
   AlertTriangle,
   Mail,
   Phone
 } from "lucide-react"
+import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import LogoutButton from "@/components/auth/LogoutButton"
 
-export default function LicenseExpiredPage() {
-  const { data: session } = useSession()
+export const dynamic = "force-dynamic"
+
+export default async function LicenseExpiredPage() {
+  const session = await auth()
   const user = session?.user as any
-  const companyName = user?.companyName || user?.name || "Kurumsal Müşteri"
+
+  let companyName = user?.companyName || user?.name || "Kurumsal Müşteri"
   const email = user?.email || ""
 
-  const handleContactSales = () => {
-    const subject = encodeURIComponent(`NEXA ERP Lisans Yenileme Talebi - ${companyName}`)
-    const body = encodeURIComponent(
-      `Merhaba Nexa Satış Ekibi,\n\nFirma Adı: ${companyName}\nKullanıcı E-posta: ${email}\n\n14 günlük demo / lisans süremiz sona ermiştir. Kesintisiz erişim için lisansımızı yenilemek ve paket detaylarını öğrenmek istiyoruz.\n\nİyi çalışmalar.`
-    )
-    window.location.href = `mailto:destek@nxerp.com.tr?subject=${subject}&body=${body}`
+  if (user?.tenantId) {
+    try {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: user.tenantId },
+        select: { name: true }
+      })
+      if (tenant?.name) {
+        companyName = tenant.name
+      }
+    } catch {
+      // Prisma error fallback
+    }
   }
 
-  const handleWhatsApp = () => {
-    const text = encodeURIComponent(
-      `Merhaba Nexa ERP Satış Ekibi, ${companyName} (${email}) firmamızın lisans/demo süresi doldu. Lisansımızı yenilemek istiyoruz.`
-    )
-    window.open(`https://wa.me/905000000000?text=${text}`, "_blank")
-  }
+  const mailSubject = encodeURIComponent(`NEXA ERP Lisans Yenileme Talebi - ${companyName}`)
+  const mailBody = encodeURIComponent(
+    `Merhaba Nexa Satış Ekibi,\n\nFirma Adı: ${companyName}\nKullanıcı E-posta: ${email}\n\n14 günlük demo / lisans süremiz sona ermiştir. Kesintisiz erişim için lisansımızı yenilemek ve paket detaylarını öğrenmek istiyoruz.\n\nİyi çalışmalar.`
+  )
+  const mailtoUrl = `mailto:destek@nxerp.com.tr?subject=${mailSubject}&body=${mailBody}`
+
+  const waText = encodeURIComponent(
+    `Merhaba Nexa ERP Satış Ekibi, ${companyName} (${email}) firmamızın lisans/demo süresi doldu. Lisansımızı yenilemek istiyoruz.`
+  )
+  const waUrl = `https://wa.me/905000000000?text=${waText}`
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between relative overflow-hidden select-none">
@@ -64,23 +75,12 @@ export default function LicenseExpiredPage() {
           </div>
         </div>
 
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition-colors"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          <span>Güvenli Çıkış</span>
-        </button>
+        <LogoutButton />
       </header>
 
       {/* Main Expired Card */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="max-w-xl w-full rounded-3xl border border-red-500/20 bg-slate-900/80 backdrop-blur-xl p-8 sm:p-10 shadow-2xl shadow-red-950/40 text-center relative"
-        >
+        <div className="max-w-xl w-full rounded-3xl border border-red-500/20 bg-slate-900/80 backdrop-blur-xl p-8 sm:p-10 shadow-2xl shadow-red-950/40 text-center relative">
           {/* Badge */}
           <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-tr from-red-500/20 to-amber-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shadow-inner mb-6">
             <Clock className="w-10 h-10 text-red-400 animate-pulse" />
@@ -113,7 +113,7 @@ export default function LicenseExpiredPage() {
                 <Mail className="w-3.5 h-3.5 text-slate-500" />
                 Hesap:
               </span>
-              <span className="font-mono text-purple-300 text-[11px] truncate max-w-[200px]">{email}</span>
+              <span className="font-mono text-purple-300 text-[11px] truncate max-w-[200px]">{email || "Giriş Yapılmadı"}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 flex items-center gap-1.5">
@@ -126,29 +126,31 @@ export default function LicenseExpiredPage() {
 
           {/* Action CTA Buttons */}
           <div className="space-y-3">
-            <button
-              onClick={handleContactSales}
+            <a
+              href={mailtoUrl}
               className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-sm shadow-lg shadow-red-600/30 transition-all flex items-center justify-center gap-2 group active:scale-[0.99]"
             >
               <Headphones className="w-4 h-4" />
               <span>Satış & Lisans Yenileme ile İletişime Geç</span>
               <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
-            </button>
+            </a>
 
-            <button
-              onClick={handleWhatsApp}
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full py-3 px-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-semibold text-xs transition-all flex items-center justify-center gap-2"
             >
               <Phone className="w-3.5 h-3.5" />
               <span>WhatsApp Kurumsal Destek Hattı</span>
-            </button>
+            </a>
           </div>
 
           {/* Footer note */}
           <p className="text-[11px] text-slate-500 mt-6">
             Lisans yenilemeniz onaylandığında paneliniz otomatik olarak yeniden aktif hale gelecektir.
           </p>
-        </motion.div>
+        </div>
       </main>
 
       {/* Bottom Footer */}
