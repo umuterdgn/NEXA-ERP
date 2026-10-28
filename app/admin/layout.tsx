@@ -38,6 +38,7 @@ export default async function AdminLayout({
       where: { id: sessionUser.tenantId },
       select: {
         id: true,
+        type: true,
         primaryColor: true,
         isWhiteLabelActive: true,
         subscriptionStatus: true,
@@ -49,6 +50,10 @@ export default async function AdminLayout({
     }).catch(() => null)
 
     if (tenant) {
+      if (tenant.type === "FRANCHISE") {
+        redirect("/franchise/dashboard")
+      }
+
       const isTrialExpired = Boolean(
         tenant.isTrial && tenant.trialEndsAt && new Date(tenant.trialEndsAt) < new Date()
       )

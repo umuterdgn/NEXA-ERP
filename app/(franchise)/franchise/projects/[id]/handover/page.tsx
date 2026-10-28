@@ -179,7 +179,7 @@ export default function StoreHandoverPage() {
       {/* Top Breadcrumb & Nav */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <Link
-          href="/admin/franchise/rollout-map"
+          href="/franchise/rollout-map"
           className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

@@ -219,7 +219,7 @@ export default function StageGatesProjectPage() {
       {/* Top Navigation */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <Link
-          href="/admin/franchise/rollout"
+          href="/franchise/rollout"
           className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -228,7 +228,7 @@ export default function StageGatesProjectPage() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/franchise/punch-list"
+            href="/franchise/punch-list"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-medium transition-colors"
           >
             <span>Punch List (QA)</span>

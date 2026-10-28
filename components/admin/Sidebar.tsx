@@ -121,16 +121,16 @@ const inspectorMenuItems: MenuItem[] = [
 
 // Franchise / Rollout Menü Listesi (companyType === 'FRANCHISE')
 const franchiseMenuItems: MenuItem[] = [
-  { href: "/admin/franchise/dashboard", label: "AI Risk Radarı & Özet", icon: Bot, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/rollout-map", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/rollout", label: "Rollout Takip (Kanban)", icon: FolderKanban, category: "FRANCHISE & ROLLOUT" },
+  { href: "/franchise/dashboard", label: "AI Risk Radarı & Özet", icon: Bot, category: "FRANCHISE & ROLLOUT" },
+  { href: "/franchise/rollout-map", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
+  { href: "/franchise/rollout", label: "Rollout Takip (Kanban)", icon: FolderKanban, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/projects", label: "Mağazalar (Projeler)", icon: Building2, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/procurement/consolidated", label: "Konsolide Satınalma", icon: ShoppingCart, category: "FRANCHISE & ROLLOUT" },
+  { href: "/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
+  { href: "/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
+  { href: "/franchise/procurement/consolidated", label: "Konsolide Satınalma", icon: ShoppingCart, category: "FRANCHISE & ROLLOUT" },
   { href: "/admin/procurement/logistics", label: "OFCI Lojistik", icon: Truck, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/logistics/rma", label: "Hasarlı Teslimat (RMA)", icon: AlertTriangle, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
+  { href: "/franchise/logistics/rma", label: "Hasarlı Teslimat (RMA)", icon: AlertTriangle, category: "FRANCHISE & ROLLOUT" },
+  { href: "/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
 ]
 
 const menuItems: MenuItem[] = [
@@ -214,15 +214,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "İLETİŞİM & OPERASYON" },
   { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "İLETİŞİM & OPERASYON" },
   
-  // FRANCHISE & ROLLOUT
-  { href: "/admin/franchise/dashboard", label: "AI Risk Radarı & Özet", icon: Bot, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/rollout-map", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/rollout", label: "Rollout Takip (Kanban)", icon: FolderKanban, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/procurement/consolidated", label: "Konsolide Satınalma", icon: ShoppingCart, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/logistics/rma", label: "Hasarlı Teslimat (RMA)", icon: AlertTriangle, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
+
 
   // SİSTEM & AYARLAR
   { href: "/admin/system-health", label: "Sistem Sağlığı & Check-up", icon: Activity, category: "SİSTEM & AYARLAR" },
@@ -282,7 +274,7 @@ export default function AdminSidebar({
   }, [pathname])
 
   const boqHref = activeProjectId ? `/admin/projects/${activeProjectId}/boq` : "/admin/projects"
-  const stageGateHref = activeProjectId ? `/admin/franchise/stage-gates/${activeProjectId}` : "/admin/franchise/stage-gates"
+  const stageGateHref = activeProjectId ? `/franchise/stage-gates/${activeProjectId}` : "/franchise/stage-gates"
 
   const userRole = session?.user?.role as string
   const userCompanyType = propCompanyType || (session?.user as any)?.companyType as string | undefined
@@ -328,7 +320,7 @@ export default function AdminSidebar({
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin" ||
       item.href === "/admin/procurement" ||
-      item.href === "/admin/franchise/procurement/consolidated" ||
+      item.href === "/franchise/procurement/consolidated" ||
       item.href === "/admin/contracts" ||
       item.href === "/admin/inventory" ||
       item.href === "/admin/inventory/qr-scanner" ||

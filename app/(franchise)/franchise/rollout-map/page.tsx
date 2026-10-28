@@ -156,7 +156,7 @@ export default function FranchiseRolloutMapPage() {
 
         <div className="flex items-center gap-2.5">
           <Link
-            href="/admin/franchise/dashboard"
+            href="/franchise/dashboard"
             className="px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-medium transition-colors"
           >
             Dashboard'a Dön
@@ -359,7 +359,7 @@ export default function FranchiseRolloutMapPage() {
               {/* Direct Actions */}
               <div className="space-y-2 pt-2 border-t border-slate-800">
                 <Link
-                  href={`/admin/franchise/projects/${selectedProject.id}/handover`}
+                  href={`/franchise/projects/${selectedProject.id}/handover`}
                   className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
                 >
                   <FolderArchive className="w-4 h-4" />
@@ -367,7 +367,7 @@ export default function FranchiseRolloutMapPage() {
                 </Link>
 
                 <Link
-                  href={`/admin/franchise/stage-gates/${selectedProject.id}`}
+                  href={`/franchise/stage-gates/${selectedProject.id}`}
                   className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
                 >
                   <ShieldCheck className="w-4 h-4" />

@@ -48,7 +48,7 @@ export default function CreateTenantModal({
   // 1. Firma Bilgileri
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
-  const [type, setType] = useState<"MAIN_CONTRACTOR" | "INSPECTION">("MAIN_CONTRACTOR")
+  const [type, setType] = useState<"MAIN_CONTRACTOR" | "INSPECTION" | "FRANCHISE">("MAIN_CONTRACTOR")
   const [domain, setDomain] = useState("")
   const [subscriptionPlan, setSubscriptionPlan] = useState("PROFESSIONAL")
   const [isTrial, setIsTrial] = useState(false)
@@ -283,6 +283,7 @@ export default function CreateTenantModal({
                   >
                     <option value="MAIN_CONTRACTOR">Ana Müteahhit / İnşaat</option>
                     <option value="INSPECTION">Yapı Denetim Kuruluşu</option>
+                    <option value="FRANCHISE">Franchise / Zincir Mağaza Merkez</option>
                   </select>
                 </div>
 

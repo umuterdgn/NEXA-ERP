@@ -82,7 +82,7 @@ export default function StageGatesIndexPage() {
             </p>
           </div>
           <Link
-            href="/admin/franchise/rollout"
+            href="/franchise/rollout"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
           >
             <span>Rollout Sayfasına Git</span>
@@ -99,7 +99,7 @@ export default function StageGatesIndexPage() {
             return (
               <Link
                 key={p.id}
-                href={`/admin/franchise/stage-gates/${p.id}`}
+                href={`/franchise/stage-gates/${p.id}`}
                 className="group bg-slate-900/80 border border-slate-800 hover:border-blue-700/60 rounded-xl p-5 transition-all hover:shadow-xl space-y-4"
               >
                 <div className="flex items-start justify-between gap-2">

@@ -226,7 +226,7 @@ export default function FranchiseTemplatesPage() {
                 </div>
 
                 <Link
-                  href="/admin/franchise/rollout"
+                  href="/franchise/rollout"
                   className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 transition-colors flex items-center gap-1"
                 >
                   <span>Rollout'ta Gör</span>

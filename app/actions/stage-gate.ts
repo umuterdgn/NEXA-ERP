@@ -97,6 +97,8 @@ export async function approveStageGate(stageGateId: string, approvedById?: strin
       },
     })
 
+    revalidatePath(`/franchise/stage-gates/${gate.projectId}`)
+    revalidatePath("/franchise/rollout")
     revalidatePath(`/admin/franchise/stage-gates/${gate.projectId}`)
     revalidatePath("/admin/franchise/rollout")
     revalidatePath("/admin/billing")
@@ -122,6 +124,8 @@ export async function revokeStageGate(stageGateId: string) {
         approvedAt: null,
       },
     })
+    revalidatePath(`/franchise/stage-gates/${updated.projectId}`)
+    revalidatePath("/franchise/rollout")
     revalidatePath(`/admin/franchise/stage-gates/${updated.projectId}`)
     revalidatePath("/admin/franchise/rollout")
     return { success: true, stageGate: updated }

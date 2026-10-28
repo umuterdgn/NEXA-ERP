@@ -433,7 +433,7 @@ export default function FranchiseRolloutPage() {
                         {/* Stage-Gate & Punch List Badges */}
                         <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-900 text-[10px]">
                           <Link
-                            href={`/admin/franchise/stage-gates/${project.id}`}
+                            href={`/franchise/stage-gates/${project.id}`}
                             className={`flex items-center gap-1 p-1.5 rounded border transition-colors ${
                               project.approvedGates === project.totalGates && project.totalGates > 0
                                 ? "bg-emerald-950/40 border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/40"
@@ -448,7 +448,7 @@ export default function FranchiseRolloutPage() {
                           </Link>
 
                           <Link
-                            href="/admin/franchise/punch-list"
+                            href="/franchise/punch-list"
                             className={`flex items-center gap-1 p-1.5 rounded border transition-colors ${
                               project.openDefects > 0
                                 ? "bg-amber-950/40 border-amber-800/50 text-amber-400 hover:bg-amber-900/40"
@@ -691,14 +691,14 @@ export default function FranchiseRolloutPage() {
             {/* Modal Links */}
             <div className="flex items-center gap-3 pt-2">
               <Link
-                href={`/admin/franchise/stage-gates/${selectedProjectForModal.id}`}
+                href={`/franchise/stage-gates/${selectedProjectForModal.id}`}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>İdari Kilitleri (Stage-Gate) Yönet</span>
               </Link>
               <Link
-                href="/admin/franchise/punch-list"
+                href="/franchise/punch-list"
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
               >
                 <ClipboardCheck className="w-4 h-4" />

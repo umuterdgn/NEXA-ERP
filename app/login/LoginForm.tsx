@@ -60,12 +60,14 @@ export default function LoginForm({ tenant }: LoginFormProps) {
     tenant?.type === "MAIN_CONTRACTOR" ||
     tenant?.type === "MUTEAHHIT" ||
     tenant?.type === "CONTRACTOR";
+  const isFranchiseTenant =
+    tenant?.type === "FRANCHISE";
 
   // Eğer belirli bir tenant tipi varsa sekmeleri gizle
-  const shouldHideTabs = isInspectionTenant || isContractorTenant;
+  const shouldHideTabs = isInspectionTenant || isContractorTenant || isFranchiseTenant;
 
-  const [loginMode, setLoginMode] = useState<"contractor" | "inspection">(
-    isInspectionTenant ? "inspection" : "contractor"
+  const [loginMode, setLoginMode] = useState<"contractor" | "inspection" | "franchise">(
+    isFranchiseTenant ? "franchise" : isInspectionTenant ? "inspection" : "contractor"
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -101,61 +103,65 @@ export default function LoginForm({ tenant }: LoginFormProps) {
 
       setLoginSuccess(true);
 
-      // Kullanıcı oturumundaki role bilgisine göre KESİN DİNAMİK YÖNLENDİRME
-      let targetPath = "/admin";
+      // Kullanıcı oturumundaki role ve tenant bilgisine göre KESİN DİNAMİK YÖNLENDİRME
+      let targetPath = isFranchiseTenant || tenant?.type === "FRANCHISE" ? "/franchise/dashboard" : "/admin";
       try {
         const sessionRes = await fetch("/api/auth/session");
         if (sessionRes.ok) {
           const sessionData = await sessionRes.json();
           const role = (sessionData?.user?.role as string)?.toUpperCase() || "";
 
-          switch (role) {
-            case "INSPECTION_ADMIN":
-            case "INSPECTOR":
-            case "AUDITOR":
-              targetPath = "/inspection/dashboard";
-              break;
+          if (isFranchiseTenant || tenant?.type === "FRANCHISE") {
+            targetPath = "/franchise/dashboard";
+          } else {
+            switch (role) {
+              case "INSPECTION_ADMIN":
+              case "INSPECTOR":
+              case "AUDITOR":
+                targetPath = "/inspection/dashboard";
+                break;
 
-            case "SUBCONTRACTOR":
-              targetPath = "/subcontractor";
-              break;
+              case "SUBCONTRACTOR":
+                targetPath = "/subcontractor";
+                break;
 
-            case "ENGINEER":
-            case "SITE_MANAGER":
-            case "PERSONNEL":
-            case "STAFF":
-            case "WORKER":
-              targetPath = "/personnel/dashboard";
-              break;
+              case "ENGINEER":
+              case "SITE_MANAGER":
+              case "PERSONNEL":
+              case "STAFF":
+              case "WORKER":
+                targetPath = "/personnel/dashboard";
+                break;
 
-            case "SUPPLIER":
-              targetPath = "/supplier";
-              break;
+              case "SUPPLIER":
+                targetPath = "/supplier";
+                break;
 
-            case "HR_MANAGER":
-              targetPath = "/admin/personel";
-              break;
-            case "FINANCE_MANAGER":
-              targetPath = "/admin/finance";
-              break;
-            case "PROCUREMENT_MANAGER":
-              targetPath = "/admin/procurement";
-              break;
-            case "EQUIPMENT_MANAGER":
-              targetPath = "/admin/equipments";
-              break;
-            case "ISG_EXPERT":
-              targetPath = "/admin/personel/alerts";
-              break;
+              case "HR_MANAGER":
+                targetPath = "/admin/personel";
+                break;
+              case "FINANCE_MANAGER":
+                targetPath = "/admin/finance";
+                break;
+              case "PROCUREMENT_MANAGER":
+                targetPath = "/admin/procurement";
+                break;
+              case "EQUIPMENT_MANAGER":
+                targetPath = "/admin/equipments";
+                break;
+              case "ISG_EXPERT":
+                targetPath = "/admin/personel/alerts";
+                break;
 
-            case "ADMIN":
-            case "SUPER_ADMIN":
-            case "MANAGER":
-            case "PROJECT_MANAGER":
-            case "MUTEAHHIT":
-            default:
-              targetPath = "/admin";
-              break;
+              case "ADMIN":
+              case "SUPER_ADMIN":
+              case "MANAGER":
+              case "PROJECT_MANAGER":
+              case "MUTEAHHIT":
+              default:
+                targetPath = "/admin";
+                break;
+            }
           }
         }
       } catch (err) {
@@ -261,7 +267,7 @@ export default function LoginForm({ tenant }: LoginFormProps) {
                   style={{ backgroundColor: primaryColor }}
                 />
                 <span>
-                  Kurumsal Giriş Portalı:{" "}
+                  {isFranchiseTenant ? "Franchise & Zincir Mağaza Portalı: " : "Kurumsal Giriş Portalı: "}
                   <strong className="text-white">{tenant.name}</strong>
                 </span>
               </div>
@@ -329,10 +335,16 @@ export default function LoginForm({ tenant }: LoginFormProps) {
           {/* Kart Başlığı */}
           <div className="mb-5 pb-4 border-b border-slate-800">
             <h2 className="text-base font-semibold text-white">
-              {loginMode === "contractor" ? "Müteahhit Girişi" : "Yapı Denetim Girişi"}
+              {isFranchiseTenant || loginMode === "franchise"
+                ? "Franchise Merkez Portalı Girişi"
+                : loginMode === "contractor"
+                ? "Müteahhit Girişi"
+                : "Yapı Denetim Girişi"}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              {loginMode === "contractor"
+              {isFranchiseTenant || loginMode === "franchise"
+                ? "Rollout takibi, mağaza konseptleri, punch list ve satınalma yönetimi"
+                : loginMode === "contractor"
                 ? "Yönetim, şantiye şefliği, taşeron ve saha personeli erişimi"
                 : "Bakanlık e-YİBF, numune denetimi ve hakediş kontrolü"}
             </p>
@@ -360,7 +372,9 @@ export default function LoginForm({ tenant }: LoginFormProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={
-                    loginMode === "contractor"
+                    isFranchiseTenant || loginMode === "franchise"
+                      ? "franchise@nexa.com veya kullanici.adi"
+                      : loginMode === "contractor"
                       ? "admin@nexa.com veya kullanici.adi"
                       : "denetim@nexa.com veya denetim.patron@nexa.com"
                   }

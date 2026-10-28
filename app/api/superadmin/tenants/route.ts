@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
         targetSlug = `${targetSlug}-${Math.random().toString(36).substring(2, 6)}`;
       }
 
-      const tenantType = type === "INSPECTION" ? "INSPECTION" : "MAIN_CONTRACTOR";
+      const tenantType = type === "FRANCHISE" ? "FRANCHISE" : type === "INSPECTION" ? "INSPECTION" : "MAIN_CONTRACTOR";
       const finalMaxUsers = Number(maxUsers || licenses) || 10;
       const finalLicenses = Number(licenses || maxUsers) || 50;
       const finalMaxStorageMB = Number(maxStorageMB) || 51200;

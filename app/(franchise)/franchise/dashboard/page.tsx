@@ -178,20 +178,20 @@ export default function FranchiseDashboardPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href="/admin/franchise/rollout"
+            href="/franchise/rollout"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-xs text-slate-200 transition-colors"
           >
             <span>Rollout Haritası</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
-            href="/admin/franchise/procurement/consolidated"
+            href="/franchise/procurement/consolidated"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-xs text-slate-200 transition-colors"
           >
             <span>Konsolide İhale</span>
           </Link>
           <Link
-            href="/admin/franchise/logistics/rma"
+            href="/franchise/logistics/rma"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-xs text-slate-200 transition-colors"
           >
             <span>RMA Hasar Merkezi</span>
@@ -366,7 +366,7 @@ export default function FranchiseDashboardPage() {
 
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/admin/franchise/stage-gates/${p.id}`}
+                          href={`/franchise/stage-gates/${p.id}`}
                           className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors flex items-center gap-1"
                         >
                           <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
@@ -407,7 +407,7 @@ export default function FranchiseDashboardPage() {
               <span>Konsolide Satınalma Havuzu</span>
             </div>
             <Link
-              href="/admin/franchise/procurement/consolidated"
+              href="/franchise/procurement/consolidated"
               className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
             >
               <span>Tümünü Gör</span>
@@ -435,7 +435,7 @@ export default function FranchiseDashboardPage() {
               <span>Hasarlı Teslimatlar (RMA)</span>
             </div>
             <Link
-              href="/admin/franchise/logistics/rma"
+              href="/franchise/logistics/rma"
               className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
             >
               <span>Merkeze Git</span>
