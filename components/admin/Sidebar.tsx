@@ -374,6 +374,16 @@ export default function AdminSidebar({
       item.href === "/admin/map" ||
       (item.category === "ANA MENÜ" && item.href === "/admin")
     )
+  } else if (userRole === "SECURITY") {
+    // Sadece Kapı Güvenlik & Lojistik Takvimi
+    rawMenuItems = [
+      {
+        href: "/admin/procurement/logistics",
+        label: "Kapı Güvenlik & Lojistik Takvimi",
+        icon: Truck,
+        category: "KAPI GÜVENLİK",
+      },
+    ]
   }
 
   const sessionEnabledModules = (session?.user as any)?.enabledModules as string[] | undefined

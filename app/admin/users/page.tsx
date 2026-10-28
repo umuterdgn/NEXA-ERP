@@ -147,6 +147,16 @@ const ROLE_CONFIG: Record<
     badge: "bg-violet-950/80 border-violet-800 text-violet-300",
     category: "SAHA",
   },
+  DRIVER: {
+    label: "Lojistik Sürücüsü",
+    badge: "bg-amber-950/80 border-amber-800 text-amber-300",
+    category: "SAHA",
+  },
+  SECURITY: {
+    label: "Kapı Güvenlik Görevlisi",
+    badge: "bg-indigo-950/80 border-indigo-800 text-indigo-300",
+    category: "SAHA",
+  },
 }
 
 export default function AdminUsersPage() {
@@ -381,6 +391,8 @@ export default function AdminUsersPage() {
             <option value="WORKER">Saha Çalışanı (WORKER)</option>
             <option value="SUBCONTRACTOR">Taşeron (SUBCONTRACTOR)</option>
             <option value="INSPECTOR">Saha Denetçisi (INSPECTOR)</option>
+            <option value="DRIVER">Lojistik Sürücüsü (DRIVER)</option>
+            <option value="SECURITY">Kapı Güvenlik Görevlisi (SECURITY)</option>
           </select>
         </div>
       </div>
@@ -726,6 +738,11 @@ function AddUserModal({
                 <option value="INSPECTION_ADMIN">Yapı Denetim Patronu (INSPECTION_ADMIN)</option>
                 <option value="INSPECTOR">Saha Denetçisi (INSPECTOR)</option>
                 <option value="AUDITOR">Denetçi (AUDITOR)</option>
+              </optgroup>
+
+              <optgroup label="🚚 Lojistik & Kapı Güvenliği">
+                <option value="DRIVER">Lojistik Sürücüsü (DRIVER) - Canlı Sefer & Konum Takibi</option>
+                <option value="SECURITY">Kapı Güvenlik Görevlisi (SECURITY) - Şantiye Kapı Giriş / Çıkış</option>
               </optgroup>
             </select>
           </div>

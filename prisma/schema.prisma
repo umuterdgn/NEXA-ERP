@@ -89,6 +89,7 @@ enum UserRole {
   EQUIPMENT_MANAGER
   ISG_EXPERT
   DRIVER
+  SECURITY
   ACCOUNTANT
   HR_STAFF
   PURCHASING_STAFF
@@ -3648,17 +3649,25 @@ model PPEAssignment {
 // ============================================================================
 
 model LogisticsAppointment {
-  id              String   @id @default(cuid())
-  tenantId        String? // SaaS: Kiracı ID
-  title           String
-  supplier        String
-  type            String // DELIVERY, PICKUP, OTHER
-  appointmentDate DateTime
-  status          String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
-  notes           String?  @db.Text
+  id               String   @id @default(cuid())
+  tenantId         String? // SaaS: Kiracı ID
+  materialId       String? // İlgili malzeme/sipariş
+  supplierId       String? // Tedarikçi firma
+  title            String?
+  supplier         String?
+  type             String?  @default("DELIVERY") // DELIVERY, PICKUP, OTHER
+  plateNumber      String?  // Araç Plakası
+  driverName       String?  // Sürücü Adı
+  driverPhone      String?  // Sürücü Telefonu (WhatsApp için KRİTİK)
+  isInternalDriver Boolean  @default(false)
+  driverUserId     String?  // Eğer iç şoförse User ID'si
+  appointmentDate  DateTime // Randevu Tarihi ve Saati
+  status           String   @default("BEKLİYOR") // BEKLİYOR, KAPIDA, İÇERİDE, BOŞALTILDI, İPTAL, SCHEDULED, COMPLETED
+  notes            String?  @db.Text
+  trackingToken    String?  @unique // GPS takip linki için benzersiz token
 
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3667,6 +3676,8 @@ model LogisticsAppointment {
   @@index([appointmentDate])
   @@index([status])
   @@index([tenantId])
+  @@index([driverUserId])
+  @@index([trackingToken])
 }
 
 // ============================================================================

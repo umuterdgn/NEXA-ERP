@@ -88,7 +88,16 @@ export default function PersonnelSidebar({
     { href: "/personnel/announcements", label: "Duyurular ve Belgeler", icon: Bell },
   ]
 
-  const navItems = baseNavItems
+  const isDriver = userRole === "DRIVER"
+
+  const driverNavItems = [
+    { href: "/personnel", label: "Aktif Seferlerim (GPS)", icon: Truck },
+    { href: "/personnel/chat", label: "Şantiye Chat / İletişim", icon: MessageSquare },
+    { href: "/personnel/expenses", label: "Yakıt & Masraflar", icon: Receipt },
+    { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
+  ]
+
+  const navItems = isDriver ? driverNavItems : baseNavItems
 
   return (
     <>

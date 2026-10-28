@@ -9,7 +9,7 @@ export function isMenuItemAllowed(
   enabledModules: string[] | null | undefined,
   userRole?: string
 ): boolean {
-  if (userRole === "SUPER_ADMIN") return true
+  if (userRole === "SUPER_ADMIN" || userRole === "SECURITY") return true
   if (!enabledModules || enabledModules.length === 0) return true
 
   const href = item.href.toLowerCase()

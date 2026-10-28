@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { PersonnelDashboard } from "./components/PersonnelDashboard"
+import DriverDashboard from "@/components/personnel/DriverDashboard"
 
 export default async function PersonnelPage() {
   const session = await auth()
@@ -24,7 +25,8 @@ export default async function PersonnelPage() {
     "ENGINEER",
     "SITE_MANAGER",
     "ADMIN",
-    "SUPER_ADMIN"
+    "SUPER_ADMIN",
+    "DRIVER"
   ].includes(userRole)
 
   if (!isPersonnel) {
@@ -38,6 +40,42 @@ export default async function PersonnelPage() {
       redirect("/supplier")
     }
     redirect("/admin")
+  }
+
+  // ADIM 5: Sürücü (Driver) Özel Görünümü
+  if (userRole === "DRIVER") {
+    const today = new Date()
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0)
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+
+    const appointments = await prisma.logisticsAppointment.findMany({
+      where: {
+        OR: [
+          { driverUserId: session.user.id },
+          {
+            appointmentDate: {
+              gte: startOfDay,
+              lte: endOfDay,
+            },
+          },
+        ],
+      },
+      include: {
+        project: {
+          select: { id: true, title: true, name: true, location: true },
+        },
+      },
+      orderBy: {
+        appointmentDate: "asc",
+      },
+    })
+
+    return (
+      <DriverDashboard
+        initialAppointments={JSON.parse(JSON.stringify(appointments))}
+        user={session.user}
+      />
+    )
   }
 
   // Fetch personnel data

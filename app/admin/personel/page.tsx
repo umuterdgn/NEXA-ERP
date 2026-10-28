@@ -841,6 +841,8 @@ function PersonelLoginGrantModal({
               <option value="STAFF">Personel (/personnel)</option>
               <option value="SITE_MANAGER">Şantiye Şefi (/admin)</option>
               <option value="WORKER">Saha Çalışanı (/personnel)</option>
+              <option value="DRIVER">Lojistik Sürücüsü (/personnel)</option>
+              <option value="SECURITY">Kapı Güvenlik Görevlisi (/admin/procurement/logistics)</option>
               <option value="ENGINEER">Sorumlu Mühendis (/admin)</option>
               <option value="ADMIN">Yönetici (/admin)</option>
             </select>

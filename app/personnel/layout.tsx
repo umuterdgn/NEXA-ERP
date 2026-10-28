@@ -23,7 +23,7 @@ export default async function PersonnelLayout({
   }
 
   const userRole = session.user?.role as string
-  const allowedRoles = ["STAFF", "WORKER", "SITE_MANAGER", "ENGINEER", "ADMIN", "SUPER_ADMIN"]
+  const allowedRoles = ["STAFF", "WORKER", "SITE_MANAGER", "ENGINEER", "ADMIN", "SUPER_ADMIN", "DRIVER"]
   const isPersonnel = allowedRoles.includes(userRole)
 
   if (!isPersonnel) {
