@@ -32,6 +32,7 @@ export default function CreateReportPage() {
   // Annotation URLs
   const [markedBlueprintUrl, setMarkedBlueprintUrl] = useState<string | null>(null);
   const [markedPhotoUrl, setMarkedPhotoUrl] = useState<string | null>(null);
+  const [rawPhotoUrl, setRawPhotoUrl] = useState<string | null>(null);
   
   // DWG file URL (for CAD viewer)
   const [dwgFileUrl, setDwgFileUrl] = useState<string | null>(null);
@@ -281,6 +282,11 @@ export default function CreateReportPage() {
         <h2 className="text-lg font-semibold text-white mb-4">📷 Saha Fotoğrafı İşaretleme</h2>
         
         <PhotoAnnotator
+          imageUrl={rawPhotoUrl}
+          onImageUpload={(dataUrl) => {
+            setRawPhotoUrl(dataUrl);
+            setMarkedPhotoUrl(dataUrl);
+          }}
           onSaveAnnotation={(dataUrl: any) => setMarkedPhotoUrl(dataUrl)}
         />
         {markedPhotoUrl && (
