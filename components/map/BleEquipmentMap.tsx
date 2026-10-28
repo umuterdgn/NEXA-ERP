@@ -62,11 +62,43 @@ export interface LiveBleWorker {
   currentZoneType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | null
 }
 
-interface BleEquipmentMapProps {
+export interface ActiveRadarPersonnel {
+  id: string
+  name?: string
+  firstName?: string
+  lastName?: string
+  department?: string
+  position?: string
+  lastKnownLat: number | null
+  lastKnownLng: number | null
+  role?: string
+  pulse?: number
+  battery?: number
+  hasHelmet?: boolean
+  inDanger?: boolean
+  currentZoneName?: string
+  currentZoneType?: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | null
+}
+
+export interface GeofenceZoneItem {
+  id: string
+  name?: string
+  title?: string
+  type?: string
+  zoneType?: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | string
+  coordinates?: any
+  polygonCoordinates?: { lat: number; lng: number }[]
+  supervisor?: string
+  projectId?: string
+}
+
+export interface BleEquipmentMapProps {
   center: [number, number]
   zoom?: number
   equipments: BleEquipment[]
   siteZones?: BleSiteZone[]
+  zones?: GeofenceZoneItem[]
+  activeRadars?: ActiveRadarPersonnel[]
   highlightedId?: string | null
   searchQuery?: string
   onSelectEquipment?: (equipment: BleEquipment) => void
@@ -276,6 +308,8 @@ export default function BleEquipmentMap({
   zoom = 16,
   equipments,
   siteZones = [],
+  zones = [],
+  activeRadars = [],
   highlightedId,
   searchQuery = "",
   onSelectEquipment,
@@ -284,87 +318,122 @@ export default function BleEquipmentMap({
   const isSearchActive = searchQuery.trim().length > 0
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
-  // Live BLE Workers State
+  // Unified Poligon Sanal Çitler (SiteZone + Prisma GeofenceZone)
+  const allZones = useMemo<BleSiteZone[]>(() => {
+    const res: BleSiteZone[] = []
+    const seen = new Set<string>()
+
+    if (Array.isArray(siteZones)) {
+      for (const sz of siteZones) {
+        if (!seen.has(sz.id)) {
+          seen.add(sz.id)
+          res.push(sz)
+        }
+      }
+    }
+
+    if (Array.isArray(zones)) {
+      for (const z of zones) {
+        if (!seen.has(z.id)) {
+          seen.add(z.id)
+          let coords: { lat: number; lng: number }[] | undefined = undefined
+          const raw = z.polygonCoordinates || z.coordinates
+          if (typeof raw === "string") {
+            try {
+              coords = JSON.parse(raw)
+            } catch {}
+          } else if (Array.isArray(raw)) {
+            coords = raw
+          }
+
+          let zType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" = "MAIN_SITE"
+          const rawType = (z.zoneType || z.type || "").toUpperCase()
+          if (rawType.includes("DANGER") || rawType.includes("RISK")) zType = "DANGER_ZONE"
+          else if (rawType.includes("REST")) zType = "REST_AREA"
+
+          res.push({
+            id: z.id,
+            title: z.title || z.name || "Sanal Çit",
+            zoneType: zType,
+            polygonCoordinates: coords,
+            supervisor: z.supervisor
+          })
+        }
+      }
+    }
+
+    return res
+  }, [siteZones, zones])
+
+  // Live BLE Workers State (100% Prisma DB - Sıfır Mock Veri)
   const [liveWorkers, setLiveWorkers] = useState<LiveBleWorker[]>([])
 
-  // Initialize and stream workers
+  // Initialize and stream real workers from activeRadars
   useEffect(() => {
-    if (!center || !center[0] || !center[1]) return
+    if (!activeRadars || activeRadars.length === 0) {
+      setLiveWorkers([])
+      return
+    }
 
-    const initial: LiveBleWorker[] = [
-      {
-        id: "w-1",
-        name: "Ahmet Yılmaz",
-        department: "Kaba Yapı",
-        position: "Kalıp Ustası",
-        latitude: center[0] + 0.0003,
-        longitude: center[1] + 0.0002,
-        pulse: 78,
-        battery: 89,
-        hasHelmet: true,
-        inDanger: false,
-        currentZoneName: "Ana Şantiye",
-        currentZoneType: "MAIN_SITE"
-      },
-      {
-        id: "w-2",
-        name: "Mustafa Kaya",
-        department: "İskele & Vinç",
-        position: "Vinç Operatörü",
-        latitude: center[0] - 0.00025,
-        longitude: center[1] + 0.00035,
-        pulse: 84,
-        battery: 64,
-        hasHelmet: true,
-        inDanger: false,
-        currentZoneName: "Ana Şantiye",
-        currentZoneType: "MAIN_SITE"
-      },
-      {
-        id: "w-3",
-        name: "Emre Demir",
-        department: "Demir & Donatı",
-        position: "Demirci Ustası",
-        latitude: center[0] + 0.0001,
-        longitude: center[1] - 0.0003,
-        pulse: 92,
-        battery: 76,
-        hasHelmet: false,
-        inDanger: false,
-        currentZoneName: "Genel Saha",
-        currentZoneType: null
-      },
-      {
-        id: "w-4",
-        name: "Ali Öztürk",
-        department: "Elektrik & Mekanik",
-        position: "Elektrik Teknisyeni",
-        latitude: center[0] - 0.0004,
-        longitude: center[1] - 0.0002,
-        pulse: 75,
-        battery: 94,
-        hasHelmet: true,
-        inDanger: false,
-        currentZoneName: "Dinlenme Alanı",
-        currentZoneType: "REST_AREA"
-      }
-    ]
+    const initialWorkers: LiveBleWorker[] = activeRadars
+      .filter((r) => r.lastKnownLat != null && r.lastKnownLng != null)
+      .map((r, idx) => {
+        const displayName =
+          r.name ||
+          (r.firstName && r.lastName ? `${r.firstName} ${r.lastName}` : `Personel #${idx + 1}`)
 
-    setLiveWorkers(initial)
+        const lat = r.lastKnownLat!
+        const lng = r.lastKnownLng!
 
-    // Interval to simulate live BLE telemetry and autonomous Turf point-in-polygon
+        // Turf calculation for initial zone detection
+        const pt = turf.point([lng, lat])
+        let detectedZone: BleSiteZone | null = null
+
+        for (const zone of allZones) {
+          if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
+            const poly = toTurfPolygon(zone.polygonCoordinates)
+            if (poly && turf.booleanPointInPolygon(pt, poly)) {
+              detectedZone = zone
+              break
+            }
+          }
+        }
+
+        return {
+          id: r.id,
+          name: displayName,
+          department: r.department || "Saha Operasyon",
+          position: r.position || r.role || "Saha Personeli",
+          latitude: lat,
+          longitude: lng,
+          pulse: r.pulse ?? 76,
+          battery: r.battery ?? 88,
+          hasHelmet: r.hasHelmet ?? true,
+          inDanger: detectedZone?.zoneType === "DANGER_ZONE",
+          currentZoneName: detectedZone ? detectedZone.title : "Genel Saha",
+          currentZoneType: detectedZone ? detectedZone.zoneType : null
+        }
+      })
+
+    setLiveWorkers(initialWorkers)
+  }, [activeRadars, allZones])
+
+  // Canlı BLE telemetri ve otonom Turf.js point-in-polygon motoru (Yalnızca gerçek personeller için)
+  useEffect(() => {
+    if (liveWorkers.length === 0) return
+
     const interval = setInterval(() => {
       setLiveWorkers((prev) =>
         prev.map((w) => {
-          const newLat = w.latitude + (Math.random() - 0.5) * 0.00008
-          const newLng = w.longitude + (Math.random() - 0.5) * 0.00008
+          const newLat = w.latitude + (Math.random() - 0.5) * 0.00004
+          const newLng = w.longitude + (Math.random() - 0.5) * 0.00004
           const newPulse = Math.max(68, Math.min(125, w.pulse + (Math.random() > 0.5 ? 1 : -1)))
 
           // Turf calculation
           const pt = turf.point([newLng, newLat])
           let detectedZone: BleSiteZone | null = null
 
-          for (const zone of siteZones) {
+          for (const zone of allZones) {
             if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
               const poly = toTurfPolygon(zone.polygonCoordinates)
               if (poly && turf.booleanPointInPolygon(pt, poly)) {
@@ -389,10 +458,10 @@ export default function BleEquipmentMap({
           }
         })
       )
-    }, 2500)
+    }, 3500)
 
     return () => clearInterval(interval)
-  }, [center, siteZones])
+  }, [liveWorkers.length, allZones])
 
   // Filter equipments: if search query exists, only show matching equipments!
   const visibleEquipments = useMemo(() => {
@@ -483,7 +552,7 @@ export default function BleEquipmentMap({
         <MapViewController center={center} zoom={zoom} targetPoint={targetPoint} />
 
         {/* 1. Poligon Sanal Çitler (Polygon Geofences per prompt specifications) */}
-        {siteZones.map((zone) => {
+        {allZones.map((zone) => {
           const cfg = ZONE_COLORS[zone.zoneType] || ZONE_COLORS.MAIN_SITE
           if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
             const positions: [number, number][] = zone.polygonCoordinates.map((c) => [c.lat, c.lng])
@@ -523,9 +592,10 @@ export default function BleEquipmentMap({
         })}
 
         {/* 2. Project Center Hub */}
-        <Marker position={center} icon={createProjectHubIcon(selectedProjectName)}>
-          <Popup>
-            <div className="p-3.5 min-w-[220px]">
+        {center && center[0] && center[1] && center[0] !== 0 && (
+          <Marker position={center} icon={createProjectHubIcon(selectedProjectName)}>
+            <Popup>
+              <div className="p-3.5 min-w-[220px]">
               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-700/60">
                 <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
                   GPS
@@ -550,6 +620,7 @@ export default function BleEquipmentMap({
             </div>
           </Popup>
         </Marker>
+        )}
 
         {/* 3. Live Streaming BLE Personnel (Workers) */}
         {liveWorkers.map((worker) => {

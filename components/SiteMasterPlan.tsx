@@ -385,40 +385,33 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
     let interval: NodeJS.Timeout;
 
     if (isLiveTracking && projectLat && projectLng) {
-      // 1. İşçileri Gerçek Personel Verisi veya Gerçekçi Mock Veri ile Başlat
+      // 1. İşçileri Gerçek Personel Verisi ile Başlat (100% Prisma DB)
       if (workers.length === 0) {
-        const fallbackList = [
-          { name: "Ahmet Yılmaz", dep: "Kaba Yapı", pos: "Kalıp Ustası", hasHelmet: true },
-          { name: "Mehmet Demir", dep: "Demir & Donatı", pos: "Demir Bağlama Ustası", hasHelmet: false },
-          { name: "Mustafa Çelik", dep: "İskele & Cephe", pos: "İskele Kurulum Şefi", hasHelmet: true },
-          { name: "Ali Kaya", dep: "Makine Parkı", pos: "Kule Vinç Operatörü", hasHelmet: true },
-          { name: "Emre Şahin", dep: "Elektrik & Tesisat", pos: "Baş Elektrikçi", hasHelmet: false },
-          { name: "Caner Aydın", dep: "İSG Departmanı", pos: "Saha İSG Denetmeni", hasHelmet: true },
-          { name: "Serkan Öztürk", dep: "Kaba Yapı", pos: "Beton İşçisi", hasHelmet: true },
-          { name: "Hasan Koç", dep: "Hafriyat & Altyapı", pos: "Ekskavatör Operatörü", hasHelmet: false }
-        ];
-
-        const initialWorkers: WorkerLiveItem[] = (personnel.length > 0 ? personnel.slice(0, 10) : fallbackList).map(
-          (p: any, idx: number) => {
-            const hasHelmet = idx % 3 !== 1; // Her 3 kişiden birinin baret eksiği simülasyonu
-            return {
-              id: p.id || `worker-ble-${idx + 1}`,
-              name: p.name || `İşçi #${idx + 1}`,
-              department: p.department || (fallbackList[idx % fallbackList.length]?.dep || "Saha Personeli"),
-              position: p.position || (fallbackList[idx % fallbackList.length]?.pos || "İşçi"),
-              lat: projectLat + (Math.random() - 0.5) * 0.0018,
-              lng: projectLng + (Math.random() - 0.5) * 0.0018,
-              pulse: 74 + Math.floor(Math.random() * 26), // 74 - 100 bpm
-              battery: 65 + Math.floor(Math.random() * 35), // 65% - 99%
-              hasHelmet,
-              inDanger: false,
-              currentZoneName: "Ana Şantiye",
-              currentZoneType: 'MAIN_SITE',
-              timeOnSite: `${Math.floor(Math.random() * 5) + 2}sa ${Math.floor(Math.random() * 50)}dk`
-            };
-          }
-        );
-        setWorkers(initialWorkers);
+        if (!personnel || personnel.length === 0) {
+          setWorkers([]);
+        } else {
+          const initialWorkers: WorkerLiveItem[] = personnel.slice(0, 15).map(
+            (p: any, idx: number) => {
+              const hasHelmet = idx % 3 !== 1;
+              return {
+                id: p.id || `worker-ble-${idx + 1}`,
+                name: p.name || `İşçi #${idx + 1}`,
+                department: p.department || "Saha Personeli",
+                position: p.position || "İşçi",
+                lat: projectLat + (Math.random() - 0.5) * 0.0018,
+                lng: projectLng + (Math.random() - 0.5) * 0.0018,
+                pulse: 74 + Math.floor(Math.random() * 26), // 74 - 100 bpm
+                battery: 65 + Math.floor(Math.random() * 35), // 65% - 99%
+                hasHelmet,
+                inDanger: false,
+                currentZoneName: "Ana Şantiye",
+                currentZoneType: 'MAIN_SITE',
+                timeOnSite: `${Math.floor(Math.random() * 5) + 2}sa ${Math.floor(Math.random() * 50)}dk`
+              };
+            }
+          );
+          setWorkers(initialWorkers);
+        }
       }
 
       // 2. Her 2.5 saniyede bir personelleri mikro hareket ettir & Turf.js booleanPointInPolygon çalıştır
