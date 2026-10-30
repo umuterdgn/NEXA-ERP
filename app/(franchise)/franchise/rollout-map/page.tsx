@@ -47,6 +47,7 @@ export default async function FranchiseRolloutMapPage() {
       city: p.city,
       district: p.city,
       location: `${p.city} Şubesi`,
+      locationType: p.locationType || "STREET",
       status: p.status,
       rolloutPhase: p.status,
       lat,
@@ -64,7 +65,7 @@ export default async function FranchiseRolloutMapPage() {
           ? 85
           : p.status === "INSAAT" || p.status === "INSAATTA"
           ? 65
-          : p.status === "AVM_ONAY" || p.status === "AVM_ONAYI"
+          : p.status === "LOKASYON_ONAYI" || p.status === "AVM_ONAY" || p.status === "AVM_ONAYI"
           ? 30
           : 15,
       stageGates: p.stageGates.map((g) => ({

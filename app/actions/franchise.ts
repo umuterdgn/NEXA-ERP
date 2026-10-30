@@ -152,6 +152,7 @@ export async function getRolloutProjectById(id: string) {
 export async function createRolloutProject(data: {
   name: string
   city: string
+  locationType?: string // "STREET" | "MALL" | "KIOSK"
   budget?: number | null
   totalBudget?: number | null
   lat?: number | null
@@ -180,12 +181,77 @@ export async function createRolloutProject(data: {
     }
 
     const budgetVal = data.totalBudget ?? data.budget ?? 0
+    const locationType = (data.locationType || "STREET").toUpperCase()
+
+    // Lokasyon tipine göre dinamik Stage-Gate kapıları
+    let locationGates: { name: string; stageName: string }[] = []
+    if (locationType === "MALL") {
+      locationGates = [
+        { name: "AVM Yönetimi Dekorasyon Onayı", stageName: "LOKASYON_ONAYI" },
+        { name: "AVM Gece Çalışma İzni", stageName: "LOKASYON_ONAYI" },
+      ]
+    } else if (locationType === "KIOSK") {
+      locationGates = [
+        { name: "Kiosk Yerleşim & AVM/Alan İzni", stageName: "LOKASYON_ONAYI" },
+        { name: "Elektrik & Altyapı Bağlantı Onayı", stageName: "LOKASYON_ONAYI" },
+      ]
+    } else {
+      // STREET (Cadde / Bağımsız Dükkan)
+      locationGates = [
+        { name: "Belediye Tadilat Ruhsatı", stageName: "LOKASYON_ONAYI" },
+        { name: "Belediye Tabela İzni", stageName: "LOKASYON_ONAYI" },
+      ]
+    }
+
+    const initialGates = [
+      {
+        name: "Kiralama & Kira Sözleşmesi",
+        stageName: "KİRALAMA",
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      },
+      ...locationGates.map((gate) => ({
+        name: gate.name,
+        stageName: gate.stageName,
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      })),
+      {
+        name: "Kaba & İnce İnşaat Montajı",
+        stageName: "KABA_YAPI",
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      },
+      {
+        name: "Punch List & QA Denetim Onayı",
+        stageName: "PUNCH_LIST",
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      },
+      {
+        name: "İtfaiye Ruhsatı & Nihai Açılış İzni",
+        stageName: "İTFAİYE_ONAYI",
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      },
+    ]
 
     const project = await prisma.rolloutProject.create({
       data: {
         tenantId,
         name: data.name.trim(),
         city: data.city.trim(),
+        locationType,
         lat,
         lng,
         totalBudget: Number(budgetVal),
@@ -194,48 +260,7 @@ export async function createRolloutProject(data: {
         regionalManagerId: data.regionalManagerId || null,
         branchManagerId: data.branchManagerId || null,
         stageGates: {
-          create: [
-            {
-              name: "Kiralama & Kira Sözleşmesi",
-              stageName: "KİRALAMA",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-            {
-              name: "AVM Dekorasyon & Mimari Onay",
-              stageName: "AVM_ONAYI",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-            {
-              name: "Kaba & İnce İnşaat Uygulama Onayı",
-              stageName: "KABA_YAPI",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-            {
-              name: "Punch List & QA Denetim Onayı",
-              stageName: "PUNCH_LIST",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-            {
-              name: "İtfaiye Ruhsatı & Nihai Açılış İzni",
-              stageName: "İTFAİYE_ONAYI",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-          ],
+          create: initialGates,
         },
       },
       include: {

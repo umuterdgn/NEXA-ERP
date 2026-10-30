@@ -56,6 +56,7 @@ interface StoreProject {
   city: string | null
   district?: string | null
   location?: string | null
+  locationType?: "STREET" | "MALL" | "KIOSK" | string | null
   latitude?: number | null
   longitude?: number | null
   progress: number
@@ -64,7 +65,7 @@ interface StoreProject {
   totalBudget?: number | null
   regionalManagerId?: string | null
   branchManagerId?: string | null
-  rolloutPhase: "KIRALAMA" | "AVM_ONAY" | "INSAAT" | "PUNCH_LIST" | "ACILISA_HAZIR" | string
+  rolloutPhase: "KIRALAMA" | "LOKASYON_ONAYI" | "AVM_ONAY" | "INSAAT" | "PUNCH_LIST" | "ACILISA_HAZIR" | string
   stageGates: StageGate[]
   openDefects: number
   totalGates: number
@@ -81,9 +82,9 @@ const PHASES = [
     dotColor: "bg-amber-400",
   },
   {
-    key: "AVM_ONAY",
-    label: "AVM & Ruhsat Onayı",
-    desc: "Mimari proje, teknik şartname & izinler",
+    key: "LOKASYON_ONAYI",
+    label: "Lokasyon & Ruhsat Onayı",
+    desc: "Mimari proje, AVM/Belediye izinleri",
     badgeBg: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
     headerBg: "bg-indigo-500/5 border-indigo-500/30",
     dotColor: "bg-indigo-400",
@@ -132,6 +133,7 @@ export default function FranchiseRolloutPage() {
   const [formData, setFormData] = useState({
     name: "",
     city: "İstanbul",
+    locationType: "STREET", // "STREET" | "MALL" | "KIOSK"
     budget: "",
     status: "KIRALAMA",
     templateId: "",
@@ -202,6 +204,7 @@ export default function FranchiseRolloutPage() {
       const res = await createRolloutProject({
         name: formData.name.trim(),
         city: formData.city.trim(),
+        locationType: formData.locationType,
         budget: formData.budget ? parseFloat(formData.budget) : null,
         totalBudget: formData.budget ? parseFloat(formData.budget) : 0,
         status: formData.status,
@@ -218,6 +221,7 @@ export default function FranchiseRolloutPage() {
       setFormData({
         name: "",
         city: "İstanbul",
+        locationType: "STREET",
         budget: "",
         status: "KIRALAMA",
         templateId: "",
@@ -232,9 +236,9 @@ export default function FranchiseRolloutPage() {
     }
   }
 
-  // Normalize phase name helper
+  // Normalize phase name helper (AVM_ONAY -> LOKASYON_ONAYI)
   const normalizePhaseKey = (phase: string) => {
-    if (phase === "AVM_ONAYI") return "AVM_ONAY"
+    if (phase === "AVM_ONAYI" || phase === "AVM_ONAY" || phase === "LOKASYON_ONAYI") return "LOKASYON_ONAYI"
     if (phase === "INSAATTA") return "INSAAT"
     return phase
   }
@@ -254,7 +258,7 @@ export default function FranchiseRolloutPage() {
   // Metrics
   const totalStores = projects.length
   const inRental = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "KIRALAMA").length
-  const inAvm = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "AVM_ONAY").length
+  const inPermits = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "LOKASYON_ONAYI").length
   const inConstruction = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "INSAAT").length
   const inPunchList = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "PUNCH_LIST").length
   const readyStores = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "ACILISA_HAZIR").length
@@ -338,8 +342,8 @@ export default function FranchiseRolloutPage() {
             <span>Kiralama & İzin</span>
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-2xl font-bold text-amber-400 mt-2">{inRental + inAvm}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Sözleşme & AVM Onayında</div>
+          <div className="text-2xl font-bold text-amber-400 mt-2">{inRental + inPermits}</div>
+          <div className="text-[11px] text-slate-500 mt-1">Sözleşme & Lokasyon İzninde</div>
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
@@ -491,9 +495,18 @@ export default function FranchiseRolloutPage() {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
-                            <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
-                            <span className="truncate">{project.city || "Türkiye"}</span>
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                              <span className="truncate">{project.city || "Türkiye"}</span>
+                            </div>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-slate-300 font-medium shrink-0">
+                              {project.locationType === "MALL"
+                                ? "AVM İçi"
+                                : project.locationType === "KIOSK"
+                                ? "Kiosk"
+                                : "Cadde"}
+                            </span>
                           </div>
                         </div>
 
@@ -676,6 +689,23 @@ export default function FranchiseRolloutPage() {
                 />
               </div>
 
+              {/* Lokasyon Tipi Dropdown */}
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Lokasyon Tipi <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={formData.locationType}
+                  onChange={(e) => setFormData({ ...formData, locationType: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                  required
+                >
+                  <option value="STREET">Cadde Mağazası / Bağımsız Dükkan</option>
+                  <option value="MALL">AVM İçi Mağaza</option>
+                  <option value="KIOSK">Kiosk / Stand</option>
+                </select>
+              </div>
+
               {/* Konsept Şablonu Seçimi */}
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -756,7 +786,7 @@ export default function FranchiseRolloutPage() {
                     className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
                   >
                     <option value="KIRALAMA">Kiralama & Etüt</option>
-                    <option value="AVM_ONAY">AVM & Ruhsat Onayı</option>
+                    <option value="LOKASYON_ONAYI">Lokasyon & Ruhsat Onayı</option>
                     <option value="INSAAT">Kaba & İnce İnşaat</option>
                     <option value="PUNCH_LIST">Punch List & QA</option>
                     <option value="ACILISA_HAZIR">Açılışa Hazır</option>
@@ -866,9 +896,13 @@ export default function FranchiseRolloutPage() {
                 </div>
               </div>
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
-                <span className="text-slate-400">İdari Kilitler (Stage-Gate)</span>
-                <div className="text-sm font-bold text-emerald-400 mt-1">
-                  {selectedProjectForModal.approvedGates} / {selectedProjectForModal.totalGates} Onaylandı
+                <span className="text-slate-400">Lokasyon Konsepti</span>
+                <div className="text-sm font-bold text-amber-400 mt-1">
+                  {selectedProjectForModal.locationType === "MALL"
+                    ? "AVM İçi Mağaza"
+                    : selectedProjectForModal.locationType === "KIOSK"
+                    ? "Kiosk / Stand"
+                    : "Cadde Mağazası"}
                 </div>
               </div>
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">

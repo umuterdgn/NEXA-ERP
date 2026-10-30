@@ -187,6 +187,14 @@ export default function RolloutProjectDetailPage() {
             </Link>
             <span>•</span>
             <span className="text-amber-400">{project?.city || "Türkiye"}</span>
+            <span>•</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-900 border border-slate-800 text-slate-300">
+              {project?.locationType === "MALL"
+                ? "AVM İçi Mağaza"
+                : project?.locationType === "KIOSK"
+                ? "Kiosk / Stand"
+                : "Cadde Mağazası"}
+            </span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             {project?.name || "Şube Projesi"}

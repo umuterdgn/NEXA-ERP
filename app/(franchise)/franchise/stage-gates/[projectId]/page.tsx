@@ -73,8 +73,14 @@ const STAGE_METADATA: Record<
     requiredDocs: "İmzalı Kira Kontratı, Tapu/Tahsis Belgesi",
     unlocksPhase: "AVM & Mimari Proje Onay Fazı",
   },
+  LOKASYON_ONAYI: {
+    title: "2. Lokasyon & Ruhsat Onayı",
+    subtitle: "Mimari elektrik, mekanik, AVM yönetim veya Belediye tadilat/tabela onayları",
+    requiredDocs: "AVM/Belediye Ruhsat Onay Belgesi, Mimari Proje Onay Yazısı",
+    unlocksPhase: "Kaba & İnce İnşaat Başlangıç Fazı",
+  },
   AVM_ONAYI: {
-    title: "2. AVM & Ruhsat Onayı",
+    title: "2. Lokasyon & Ruhsat Onayı",
     subtitle: "AVM teknik şartnamesi, mimari elektrik ve statik uygulama projesi",
     requiredDocs: "AVM Teknik Onay Yazısı, Mimari Proje Onay Belgesi",
     unlocksPhase: "Kaba & İnce İnşaat Başlangıç Fazı",

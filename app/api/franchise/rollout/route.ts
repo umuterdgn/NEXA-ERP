@@ -102,12 +102,12 @@ export async function GET() {
 
       // Aşama / Statü Normalizasyonu
       let rolloutPhase = p.status || "KIRALAMA"
-      if (rolloutPhase === "AVM_ONAY") rolloutPhase = "AVM_ONAYI"
+      if (rolloutPhase === "AVM_ONAY" || rolloutPhase === "AVM_ONAYI") rolloutPhase = "LOKASYON_ONAYI"
       if (rolloutPhase === "INSAAT") rolloutPhase = "INSAATTA"
 
       // İlerleme yüzdesi hesabı
       let progress = 10
-      if (rolloutPhase === "AVM_ONAYI" || rolloutPhase === "AVM_ONAY") progress = 30
+      if (rolloutPhase === "LOKASYON_ONAYI") progress = 30
       else if (rolloutPhase === "INSAATTA" || rolloutPhase === "INSAAT") progress = 65
       else if (rolloutPhase === "PUNCH_LIST") progress = 85
       else if (rolloutPhase === "ACILISA_HAZIR") progress = 100
@@ -119,6 +119,7 @@ export async function GET() {
         city: p.city,
         district: p.city,
         location: `${p.city} Şubesi`,
+        locationType: p.locationType || "STREET",
         latitude: p.lat || coords.latitude,
         longitude: p.lng || coords.longitude,
         progress,
@@ -178,7 +179,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { name, city, budget, totalBudget, status, regionalManagerId, branchManagerId, lat, lng } = body
+    const { name, city, budget, totalBudget, status, regionalManagerId, branchManagerId, lat, lng, locationType } = body
 
     if (!name || !city) {
       return NextResponse.json({ error: "Mağaza adı ve şehir zorunludur" }, { status: 400 })
@@ -188,12 +189,77 @@ export async function POST(request: Request) {
     const coords = getCoordsForCity(city)
     const finalLat = lat ?? coords.latitude
     const finalLng = lng ?? coords.longitude
+    const normLocationType = (locationType || "STREET").toUpperCase()
+
+    // Lokasyon tipine göre dinamik Stage-Gate kapıları
+    let locationGates: { name: string; stageName: string }[] = []
+    if (normLocationType === "MALL") {
+      locationGates = [
+        { name: "AVM Yönetimi Dekorasyon Onayı", stageName: "LOKASYON_ONAYI" },
+        { name: "AVM Gece Çalışma İzni", stageName: "LOKASYON_ONAYI" },
+      ]
+    } else if (normLocationType === "KIOSK") {
+      locationGates = [
+        { name: "Kiosk Yerleşim & AVM/Alan İzni", stageName: "LOKASYON_ONAYI" },
+        { name: "Elektrik & Altyapı Bağlantı Onayı", stageName: "LOKASYON_ONAYI" },
+      ]
+    } else {
+      // STREET (Cadde / Dükkan)
+      locationGates = [
+        { name: "Belediye Tadilat Ruhsatı", stageName: "LOKASYON_ONAYI" },
+        { name: "Belediye Tabela İzni", stageName: "LOKASYON_ONAYI" },
+      ]
+    }
+
+    const initialGates = [
+      {
+        name: "Kiralama & Alan Tahsisi",
+        stageName: "KİRALAMA",
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      },
+      ...locationGates.map((g) => ({
+        name: g.name,
+        stageName: g.stageName,
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      })),
+      {
+        name: "Kaba & İnce İnşaat Montajı",
+        stageName: "KABA_YAPI",
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      },
+      {
+        name: "Punch List & Kalite Denetimi",
+        stageName: "PUNCH_LIST",
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      },
+      {
+        name: "İtfaiye Ruhsatı & Açılış İzni",
+        stageName: "İTFAİYE_ONAYI",
+        status: "BEKLIYOR",
+        isRequired: true,
+        isApproved: false,
+        tenantId,
+      },
+    ]
 
     const project = await prisma.rolloutProject.create({
       data: {
         tenantId,
         name: name.trim(),
         city: city.trim(),
+        locationType: normLocationType,
         lat: finalLat,
         lng: finalLng,
         totalBudget: Number(bVal),
@@ -202,48 +268,7 @@ export async function POST(request: Request) {
         regionalManagerId: regionalManagerId || null,
         branchManagerId: branchManagerId || null,
         stageGates: {
-          create: [
-            {
-              name: "Kiralama & Alan Tahsisi",
-              stageName: "KİRALAMA",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-            {
-              name: "AVM & Ruhsat Onayı",
-              stageName: "AVM_ONAYI",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-            {
-              name: "Kaba & İnce İnşaat Montajı",
-              stageName: "KABA_YAPI",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-            {
-              name: "Punch List & Kalite Denetimi",
-              stageName: "PUNCH_LIST",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-            {
-              name: "İtfaiye Ruhsatı & Açılış İzni",
-              stageName: "İTFAİYE_ONAYI",
-              status: "BEKLIYOR",
-              isRequired: true,
-              isApproved: false,
-              tenantId,
-            },
-          ],
+          create: initialGates,
         },
       },
       include: {
@@ -287,9 +312,11 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "projectId zorunludur" }, { status: 400 })
     }
 
-    // Normalizasyon: KIRALAMA, AVM_ONAY, INSAAT, PUNCH_LIST, ACILISA_HAZIR
+    // Normalizasyon: KIRALAMA, LOKASYON_ONAYI, INSAAT, PUNCH_LIST, ACILISA_HAZIR
     let dbStatus = rolloutPhase
-    if (rolloutPhase === "AVM_ONAYI") dbStatus = "AVM_ONAY"
+    if (rolloutPhase === "AVM_ONAYI" || rolloutPhase === "AVM_ONAY" || rolloutPhase === "LOKASYON_ONAYI") {
+      dbStatus = "LOKASYON_ONAYI"
+    }
     if (rolloutPhase === "INSAATTA") dbStatus = "INSAAT"
 
     // Tenant Isolation ile sadece kiracının kendi projesini güncelle

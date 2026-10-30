@@ -83,7 +83,7 @@ export default function StageGatesIndexPage() {
             Stage-Gate İdari Onaylar
           </h1>
           <p className="text-sm text-slate-400">
-            Kiralama, AVM onayı, şantiye izni ve itfaiye ruhsatlarını veritabanındaki mağaza kayıtları üzerinden yönetin.
+            Kiralama, lokasyon ve ruhsat onayı, şantiye izni ve itfaiye ruhsatlarını veritabanındaki mağaza kayıtları üzerinden yönetin.
           </p>
         </div>
 

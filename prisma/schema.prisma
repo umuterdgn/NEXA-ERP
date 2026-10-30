@@ -4782,7 +4782,8 @@ model RolloutProject {
   city              String
   lat               Float?             // Harita için gerçek koordinat
   lng               Float?             // Harita için gerçek koordinat
-  status            String             @default("KIRALAMA") // KIRALAMA, AVM_ONAY, INSAAT, PUNCH_LIST, ACILISA_HAZIR
+  locationType      String             @default("STREET") // "MALL" (AVM), "STREET" (Cadde/Dükkan), "KIOSK"
+  status            String             @default("KIRALAMA") // KIRALAMA, LOKASYON_ONAYI, INSAAT, PUNCH_LIST, ACILISA_HAZIR
   totalBudget       Float              @default(0) // Şube kurulum bütçesi
   budget            Float?             // Geriye dönük uyumluluk
   regionalManagerId String?            // Bölge Müdürü Ataması
@@ -4795,6 +4796,7 @@ model RolloutProject {
 
   @@index([tenantId])
   @@index([status])
+  @@index([locationType])
 }
 
 // Hasarlı Teslimat (RMA)
