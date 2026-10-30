@@ -179,10 +179,12 @@ export async function PATCH(request: Request) {
       currentGate.billingPercentage > 0 &&
       !currentGate.progressBillingId
     ) {
-      const contract = await prisma.contract.findFirst({
-        where: { projectId: currentGate.projectId },
-        orderBy: { createdAt: "desc" },
-      })
+      const contract = currentGate.projectId
+        ? await prisma.contract.findFirst({
+            where: { projectId: currentGate.projectId },
+            orderBy: { createdAt: "desc" },
+          })
+        : null
       const contractAmount = (contract as any)?.totalAmount || 750000
       const grossAmount = (contractAmount * currentGate.billingPercentage) / 100
 

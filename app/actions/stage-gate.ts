@@ -63,7 +63,7 @@ export async function approveStageGate(stageGateId: string, approvedById?: strin
     let createdBillingId = gate.progressBillingId || null
 
     if (gate.billingPercentage && gate.billingPercentage > 0 && !gate.progressBillingId) {
-      const contract = gate.project.contracts[0]
+      const contract = gate.project?.contracts?.[0]
       // Sözleşme tutarı (yoksa proje bazlı varsayılan franchise taşeron montaj bedeli 750.000 ₺)
       const contractAmount = (contract as any)?.totalAmount || 750000
       const grossAmount = (contractAmount * gate.billingPercentage) / 100
