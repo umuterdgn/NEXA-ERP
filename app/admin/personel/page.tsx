@@ -276,6 +276,25 @@ export default function AdminPersonelPage() {
   )
 }
 
+const DEPARTMENT_LIST = [
+  "Lojistik ve Taşıma",
+  "Kapı Güvenlik ve Nizamiye",
+  "Yönetim",
+  "Saha Ekibi",
+  "Mühendislik",
+  "İSG & Kalite",
+  "Muhasebe & Finans",
+  "Taşeron",
+  "Lojistik / Taşıma",
+  "Kapı Güvenlik / Nizamiye"
+]
+
+const REQUIRED_POSITIONS = [
+  "Lojistik Sürücüsü (Şoför)",
+  "Kamyon / Mikser Operatörü",
+  "Güvenlik Görevlisi"
+]
+
 function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
   const [formData, setFormData] = useState({
     personnelNo: "",
@@ -285,6 +304,7 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     age: "",
     birthDate: "",
     department: "",
+    position: "",
     currentSite: "",
     phone: "",
     email: "",
@@ -298,7 +318,11 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     gunlukYevmiye: "",
     professionId: ""
   })
-  const [professions, setProfessions] = useState<Profession[]>([])
+  const [professions, setProfessions] = useState<Profession[]>([
+    { id: "default-driver", name: "Lojistik Sürücüsü (Şoför)" },
+    { id: "default-operator", name: "Kamyon / Mikser Operatörü" },
+    { id: "default-security", name: "Güvenlik Görevlisi" }
+  ])
   const [isSaving, setIsSaving] = useState(false)
   const [createLogin, setCreateLogin] = useState(false)
   const [loginData, setLoginData] = useState({
@@ -316,7 +340,14 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
         if (!isActive) return
 
         if (response.ok) {
-          setProfessions(await response.json())
+          const data: Profession[] = await response.json()
+          const merged = [...data]
+          for (const req of REQUIRED_POSITIONS) {
+            if (!merged.some(p => p.name.toLowerCase() === req.toLowerCase())) {
+              merged.push({ id: `temp-${req}`, name: req })
+            }
+          }
+          setProfessions(merged)
         }
       } catch (error) {
         if (!isActive) return
@@ -331,15 +362,60 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     }
   }, [])
 
+  // ADIM 3: Otomatik Rol Eşleştirme (UX İyileştirmesi)
+  const syncRoleFromPositionOrDept = (posName: string, deptName: string) => {
+    const isDriver =
+      posName === "Lojistik Sürücüsü (Şoför)" ||
+      posName === "Kamyon / Mikser Operatörü" ||
+      posName.toLowerCase().includes("şoför") ||
+      posName.toLowerCase().includes("sürücü") ||
+      deptName === "Lojistik ve Taşıma" ||
+      deptName === "Lojistik / Taşıma"
+
+    const isSecurity =
+      posName === "Güvenlik Görevlisi" ||
+      posName.toLowerCase().includes("güvenlik") ||
+      deptName === "Kapı Güvenlik ve Nizamiye" ||
+      deptName === "Kapı Güvenlik / Nizamiye"
+
+    if (isDriver) {
+      setLoginData(prev => (prev.role === "DRIVER" ? prev : { ...prev, role: "DRIVER" }))
+    } else if (isSecurity) {
+      setLoginData(prev => (prev.role === "SECURITY" ? prev : { ...prev, role: "SECURITY" }))
+    }
+  }
+
+  const handleDepartmentChange = (val: string) => {
+    setFormData(prev => ({ ...prev, department: val }))
+    syncRoleFromPositionOrDept(formData.position, val)
+  }
+
+  const handleProfessionChange = (val: string) => {
+    const matched = professions.find(p => p.id === val || p.name === val)
+    const posName = matched ? matched.name : val
+    setFormData(prev => ({ ...prev, professionId: val, position: posName }))
+    syncRoleFromPositionOrDept(posName, formData.department)
+  }
+
+  useEffect(() => {
+    const matched = professions.find(p => p.id === formData.professionId)
+    const posName = matched ? matched.name : formData.position
+    syncRoleFromPositionOrDept(posName, formData.department)
+  }, [formData.professionId, formData.position, formData.department, createLogin, professions])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
     try {
+      const selectedProf = professions.find(p => p.id === formData.professionId)
+      const currentPos = formData.position || selectedProf?.name || null
+
       const response = await fetch("/api/admin/personnel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          position: currentPos,
           age: parseInt(formData.age),
           birthDate: new Date(formData.birthDate),
           hireDate: formData.hireDate ? new Date(formData.hireDate) : new Date(),
@@ -470,19 +546,14 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
             <label className="block text-sm font-medium text-slate-300 mb-2">Birim</label>
             <select
               value={formData.department}
-              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+              onChange={(e) => handleDepartmentChange(e.target.value)}
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
               required
             >
               <option value="">Birim Seçin</option>
-              <option value="Yönetim">Yönetim</option>
-              <option value="Saha Ekibi">Saha Ekibi</option>
-              <option value="Mühendislik">Mühendislik</option>
-              <option value="İSG & Kalite">İSG & Kalite</option>
-              <option value="Muhasebe & Finans">Muhasebe & Finans</option>
-              <option value="Taşeron">Taşeron</option>
-              <option value="Lojistik / Taşıma">Lojistik / Taşıma</option>
-              <option value="Kapı Güvenlik / Nizamiye">Kapı Güvenlik / Nizamiye</option>
+              {DEPARTMENT_LIST.map((dept) => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
             </select>
           </div>
 
@@ -540,13 +611,13 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Birim / Meslek</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Meslek / Pozisyon</label>
             <select
               value={formData.professionId}
-              onChange={(e) => setFormData({ ...formData, professionId: e.target.value })}
+              onChange={(e) => handleProfessionChange(e.target.value)}
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
             >
-              <option value="">Meslek Seçin</option>
+              <option value="">Meslek / Pozisyon Seçin</option>
               {professions.map((prof) => (
                 <option key={prof.id} value={prof.id}>{prof.name}</option>
               ))}
@@ -635,7 +706,15 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
               <input
                 type="checkbox"
                 checked={createLogin}
-                onChange={(e) => setCreateLogin(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  setCreateLogin(checked)
+                  if (checked) {
+                    const matched = professions.find(p => p.id === formData.professionId)
+                    const posName = matched ? matched.name : formData.position
+                    syncRoleFromPositionOrDept(posName, formData.department)
+                  }
+                }}
                 className="sr-only peer"
               />
               <div className="w-10 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>

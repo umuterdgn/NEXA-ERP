@@ -15,7 +15,15 @@ export async function GET() {
     })
     
     // Temel operasyonel mesleklerin her zaman var olmasını garanti et
-    const requiredProfessions = ["Lojistik / Taşıma", "Kapı Güvenlik / Nizamiye"]
+    const requiredProfessions = [
+      "Lojistik Sürücüsü (Şoför)",
+      "Kamyon / Mikser Operatörü",
+      "Güvenlik Görevlisi",
+      "Lojistik ve Taşıma",
+      "Kapı Güvenlik ve Nizamiye",
+      "Lojistik / Taşıma",
+      "Kapı Güvenlik / Nizamiye"
+    ]
     for (const reqName of requiredProfessions) {
       if (!professions.some(p => p.name.toLowerCase() === reqName.toLowerCase())) {
         try {

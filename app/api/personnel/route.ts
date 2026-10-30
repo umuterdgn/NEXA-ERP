@@ -103,6 +103,44 @@ export async function POST(request: Request) {
 
     const assignedRole = createdUser ? createdUser.role : (body.role || "STAFF")
 
+    // Meslek (Profession) ve Pozisyon (Position) eşleştirmesi
+    let resolvedProfessionId: string | null = null
+    const positionTitle = body.position ? String(body.position).trim() : null
+    const departmentValue = body.department ? String(body.department).trim() : "Genel"
+
+    if (body.professionId && !body.professionId.startsWith("temp-") && !body.professionId.startsWith("default-")) {
+      const existingProf = await prisma.profession.findUnique({
+        where: { id: body.professionId }
+      })
+      if (existingProf) {
+        resolvedProfessionId = existingProf.id
+      }
+    }
+
+    if (!resolvedProfessionId && (positionTitle || body.professionId)) {
+      const searchName = positionTitle || body.professionId
+      const foundByName = await prisma.profession.findFirst({
+        where: {
+          name: {
+            equals: searchName,
+            mode: "insensitive"
+          }
+        }
+      })
+      if (foundByName) {
+        resolvedProfessionId = foundByName.id
+      } else if (searchName && !searchName.startsWith("temp-") && !searchName.startsWith("default-")) {
+        try {
+          const newProf = await prisma.profession.create({
+            data: { name: searchName }
+          })
+          resolvedProfessionId = newProf.id
+        } catch {
+          resolvedProfessionId = null
+        }
+      }
+    }
+
     const personnel = await prisma.personel.create({
       data: {
         tenantId: userTenantId || null,
@@ -112,7 +150,8 @@ export async function POST(request: Request) {
         nfcUid: body.nfcUid || null,
         age: body.age ? Number(body.age) : 0,
         birthDate: new Date(body.birthDate),
-        department: body.department,
+        department: departmentValue,
+        position: positionTitle,
         currentSite: body.currentSite,
         phone: body.phone || null,
         email: body.email || null,
@@ -126,7 +165,7 @@ export async function POST(request: Request) {
         bonuses: body.bonuses ? parseFloat(body.bonuses.toString()) : 0,
         takim: body.takim || null,
         gunlukYevmiye: body.gunlukYevmiye ? parseFloat(body.gunlukYevmiye.toString()) : 0,
-        professionId: body.professionId || null,
+        professionId: resolvedProfessionId,
         userId: createdUser ? createdUser.id : null,
         username: createdUser ? (body.username || createdUser.email) : null,
         role: assignedRole
