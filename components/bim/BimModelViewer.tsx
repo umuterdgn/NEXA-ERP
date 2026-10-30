@@ -49,10 +49,20 @@ export interface SelectedElementInfo {
 }
 
 export interface BimModelViewerProps {
-  initialModelUrl?: string
+  modelUrl?: string | null
+  initialModelUrl?: string | null
+  projectName?: string | null
+  hideUpload?: boolean
+  hasAssignedProject?: boolean
 }
 
-export default function BimModelViewer({ initialModelUrl }: BimModelViewerProps = {}) {
+export default function BimModelViewer({
+  modelUrl,
+  initialModelUrl,
+  projectName,
+  hideUpload = false,
+  hasAssignedProject = false,
+}: BimModelViewerProps = {}) {
   const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -68,8 +78,11 @@ export default function BimModelViewer({ initialModelUrl }: BimModelViewerProps 
   const [selectedElement, setSelectedElement] = useState<SelectedElementInfo | null>(null)
   const [showArModal, setShowArModal] = useState(false)
   const [loadingModel, setLoadingModel] = useState(false)
-  const [loadedFileName, setLoadedFileName] = useState("Nexa-Plaza-A-Blok-Statik.ifc")
+  const [loadedFileName, setLoadedFileName] = useState(
+    projectName ? `${projectName} (BIM)` : "Nexa-Plaza-A-Blok-Statik.ifc"
+  )
   const [modelError, setModelError] = useState<string | null>(null)
+  const [noModelAssigned, setNoModelAssigned] = useState(false)
 
   // Scene Objects Container
   const modelGroupRef = useRef<THREE.Group>(new THREE.Group())
@@ -531,14 +544,18 @@ export default function BimModelViewer({ initialModelUrl }: BimModelViewerProps 
     axesHelper.position.set(-18, 0, 12)
     scene.add(axesHelper)
 
-    // 6. Başlangıç BIM Modelini İnşa Et veya Harici Modeli Yükle
+    // 6. Başlangıç BIM Modelini İnşa Et veya Harici Modeli Yükle (ADIM 4)
     const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null
-    const modelParam = searchParams?.get("model") || initialModelUrl
+    const queryModel = searchParams?.get("model")
+    const targetModel = modelUrl || initialModelUrl || queryModel
 
-    if (modelParam) {
-      loadExternalModel(modelParam)
+    if (targetModel) {
+      loadExternalModel(targetModel)
     } else {
       buildProceduralBimModel()
+      if (hasAssignedProject) {
+        setNoModelAssigned(true)
+      }
     }
 
     // 7. Render Loop
@@ -587,7 +604,7 @@ export default function BimModelViewer({ initialModelUrl }: BimModelViewerProps 
       renderer.dispose()
       if (container) container.innerHTML = ""
     }
-  }, [updateCameraPosition, buildProceduralBimModel, loadExternalModel, initialModelUrl])
+  }, [updateCameraPosition, buildProceduralBimModel, loadExternalModel, initialModelUrl, modelUrl, hasAssignedProject])
 
   // Mouse & Touch Orbit Controls
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -748,29 +765,33 @@ export default function BimModelViewer({ initialModelUrl }: BimModelViewerProps 
               AR Modunu Başlat (Kamera)
             </button>
 
-            {/* IFC / GLB Upload */}
-            <label className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium cursor-pointer flex items-center gap-1.5 transition">
-              <Upload className="w-3.5 h-3.5 text-orange-400" />
-              <span>.IFC / .GLB Yükle</span>
-              <input
-                type="file"
-                accept=".ifc,.glb,.gltf,.dwg"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
+            {/* IFC / GLB Upload & Test (Normal saha personeli için hideUpload ile gizlenir) */}
+            {!hideUpload && (
+              <>
+                <label className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium cursor-pointer flex items-center gap-1.5 transition">
+                  <Upload className="w-3.5 h-3.5 text-orange-400" />
+                  <span>.IFC / .GLB Yükle</span>
+                  <input
+                    type="file"
+                    accept=".ifc,.glb,.gltf,.dwg"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
 
-            {/* Vintage Living Room GLB Model Test Button */}
-            <button
-              type="button"
-              onClick={() => loadExternalModel("/models/Vintage_Living_Room.glb")}
-              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition"
-              title="Vintage_Living_Room.glb Modelini Test Et"
-            >
-              <Box className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">Vintage_Living_Room.glb</span>
-              <span className="sm:hidden">Örnek Model</span>
-            </button>
+                {/* Vintage Living Room GLB Model Test Button */}
+                <button
+                  type="button"
+                  onClick={() => loadExternalModel("/models/Vintage_Living_Room.glb")}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition"
+                  title="Vintage_Living_Room.glb Modelini Test Et"
+                >
+                  <Box className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="hidden sm:inline">Vintage_Living_Room.glb</span>
+                  <span className="sm:hidden">Örnek Model</span>
+                </button>
+              </>
+            )}
 
             {/* Fullscreen */}
             <button
@@ -782,6 +803,23 @@ export default function BimModelViewer({ initialModelUrl }: BimModelViewerProps 
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ADIM 4: Şantiye İçin Henüz Model Yüklenmediyse Gösterilen Şık Bildirim */}
+      {noModelAssigned && (
+        <div className="mb-3 p-3.5 rounded-xl bg-blue-950/70 border border-blue-800/80 text-blue-200 text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <Info className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="font-medium">
+              Bu şantiye için henüz Merkez tarafından bir 3D model yüklenmemiştir.
+            </span>
+          </div>
+          {projectName && (
+            <span className="text-[11px] text-blue-300 bg-blue-900/60 px-2.5 py-0.5 rounded-md border border-blue-700/60 font-semibold">
+              {projectName}
+            </span>
+          )}
         </div>
       )}
 

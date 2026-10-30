@@ -22,6 +22,8 @@ type PersonnelRecord = {
   tcNo?: string
   department?: string
   currentSite?: string
+  projectId?: string | null
+  project?: { id: string; title?: string; name?: string } | null
   username?: string
   userId?: string
 }
@@ -201,7 +203,15 @@ export default function AdminPersonelPage() {
                     <td className="px-6 py-4 text-sm text-slate-400">{person.age}</td>
                     <td className="px-6 py-4 text-sm text-slate-400">{person.tcNo || "-"}</td>
                     <td className="px-6 py-4 text-sm text-slate-400">{person.department}</td>
-                    <td className="px-6 py-4 text-sm text-slate-400">{person.currentSite}</td>
+                    <td className="px-6 py-4 text-sm text-slate-400">
+                      {person.project ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-medium">
+                          {person.project.title || person.project.name}
+                        </span>
+                      ) : (
+                        person.currentSite || "-"
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
                         <button
@@ -295,6 +305,13 @@ const REQUIRED_POSITIONS = [
   "Güvenlik Görevlisi"
 ]
 
+type ProjectItem = {
+  id: string
+  title?: string
+  name?: string
+  city?: string
+}
+
 function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
   const [formData, setFormData] = useState({
     personnelNo: "",
@@ -306,6 +323,7 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     department: "",
     position: "",
     currentSite: "",
+    projectId: "",
     phone: "",
     email: "",
     hireDate: "",
@@ -318,6 +336,7 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     gunlukYevmiye: "",
     professionId: ""
   })
+  const [projects, setProjects] = useState<ProjectItem[]>([])
   const [professions, setProfessions] = useState<Profession[]>([
     { id: "default-driver", name: "Lojistik Sürücüsü (Şoför)" },
     { id: "default-operator", name: "Kamyon / Mikser Operatörü" },
@@ -334,13 +353,17 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
   useEffect(() => {
     let isActive = true
 
-    const loadProfessions = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch('/api/admin/professions')
+        const [profRes, projRes] = await Promise.all([
+          fetch('/api/admin/professions'),
+          fetch('/api/admin/projects')
+        ])
+
         if (!isActive) return
 
-        if (response.ok) {
-          const data: Profession[] = await response.json()
+        if (profRes.ok) {
+          const data: Profession[] = await profRes.json()
           const merged = [...data]
           for (const req of REQUIRED_POSITIONS) {
             if (!merged.some(p => p.name.toLowerCase() === req.toLowerCase())) {
@@ -349,13 +372,19 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
           }
           setProfessions(merged)
         }
+
+        if (projRes.ok) {
+          const projData = await projRes.json()
+          const list = Array.isArray(projData) ? projData : (projData.projects || [])
+          setProjects(list)
+        }
       } catch (error) {
         if (!isActive) return
-        console.error('Failed to fetch professions:', error)
+        console.error('Failed to fetch form reference data:', error)
       }
     }
 
-    void loadProfessions()
+    void loadData()
 
     return () => {
       isActive = false
@@ -395,6 +424,16 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     const posName = matched ? matched.name : val
     setFormData(prev => ({ ...prev, professionId: val, position: posName }))
     syncRoleFromPositionOrDept(posName, formData.department)
+  }
+
+  const handleProjectChange = (projId: string) => {
+    const selected = projects.find(p => p.id === projId)
+    const siteTitle = selected ? (selected.title || selected.name || "") : ""
+    setFormData(prev => ({
+      ...prev,
+      projectId: projId,
+      currentSite: siteTitle || prev.currentSite
+    }))
   }
 
   useEffect(() => {
@@ -558,12 +597,31 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Atanacağı Şantiye / Proje
+            </label>
+            <select
+              value={formData.projectId}
+              onChange={(e) => handleProjectChange(e.target.value)}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+            >
+              <option value="">Şantiye / Proje Seçin (Opsiyonel)</option>
+              {projects.map((proj) => (
+                <option key={proj.id} value={proj.id}>
+                  {proj.title || proj.name || `Proje #${proj.id.slice(-4)}`} {proj.city ? `(${proj.city})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Mevcut Şantiye</label>
             <input
               type="text"
               value={formData.currentSite}
               onChange={(e) => setFormData({ ...formData, currentSite: e.target.value })}
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              placeholder="Örn: Vadi Evleri Projesi veya Kadıköy Şantiyesi"
               required
             />
           </div>

@@ -38,7 +38,8 @@ export async function GET() {
         ...tenantFilter
       },
       include: {
-        profession: true
+        profession: true,
+        project: true
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -154,6 +155,7 @@ export async function POST(request: Request) {
         department: departmentValue,
         position: positionTitle,
         currentSite: body.currentSite,
+        projectId: body.projectId || null,
         phone: body.phone || null,
         email: body.email || null,
         hireDate: new Date(body.hireDate || new Date()),

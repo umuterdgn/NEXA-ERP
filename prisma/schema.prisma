@@ -330,7 +330,7 @@ model Project {
   gpsRadius                Float?                    @default(100) // Metre cinsinden izin verilen çap
   geofenceRadius           Float?                    @default(100) // Güvenlik/çit alanı metre cinsinden çap (uyumluluk)
   ifcModelUrl              String? // 3D BIM modelinin dosya yolu (.ifc)
-  bimModelUrl              String? // 3D BIM model URL (.ifc)
+  bimModelUrl              String? // 3D BIM model URL (Örn: /uploads/models/vadi_evleri_rev3.glb veya .ifc)
   locationCity             String? // Proje lokasyon şehri (hava durumu için)
   contractValue            Float? // Sözleşme bedeli (hakediş hesaplamaları için)
   // Relations
@@ -343,6 +343,7 @@ model Project {
   equipments               Equipment[]
   contracts                Contract[]
   personnelContracts       PersonnelContract[]
+  personnel                Personel[]
   inventory                Inventory[]
   attendanceRecords        AttendanceRecord[]
   visitorRecords           VisitorRecord[]
@@ -1030,7 +1031,9 @@ model Personel {
   bonuses                  Float                     @default(0)
   takim                    String? // Takım (Demirci, Kalıpçı vb.) - DEPRECATED, use professionId
   gunlukYevmiye            Float                     @default(0) // Günlük Yevmiye
-  userId                   String? // AdminUser ile eşleşme (opsiyonel)
+  userId                   String?                   @unique // AdminUser ile eşleşme (opsiyonel)
+  projectId                String? // Atandığı Şantiye / Proje
+  project                  Project?                  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   username                 String? // Kullanıcı adı (login için)
   role                     UserRole                  @default(STAFF) // Rol bazlı yetkilendirme
   companyId                String? // Firma ID (Taşeron izolasyonu için)
@@ -1097,6 +1100,7 @@ model Personel {
   @@index([role])
   @@index([companyId])
   @@index([tenantId])
+  @@index([projectId])
 }
 
 // ============================================================================
