@@ -435,39 +435,71 @@ export async function getFranchisePersonnelAndSubcontractors() {
   }
 }
 
-export async function createRolloutProject(data: {
-  name: string
-  city: string
-  locationType?: string // "STREET" | "MALL" | "KIOSK"
-  budget?: number | null
-  totalBudget?: number | null
-  lat?: number | null
-  lng?: number | null
-  status?: string
-  regionalManagerId?: string | null
-  branchManagerId?: string | null
-}) {
+export async function createRolloutProject(
+  data:
+    | FormData
+    | {
+        name: string
+        city: string
+        locationType?: string // "STREET" | "MALL" | "KIOSK"
+        budget?: number | null
+        totalBudget?: number | null
+        lat?: number | null
+        lng?: number | null
+        status?: string
+        regionalManagerId?: string | null
+        branchManagerId?: string | null
+      }
+) {
   try {
     const tenantId = await getFranchiseTenantId()
 
-    if (!data.name?.trim()) {
+    let name = ""
+    let city = ""
+    let locationType = "STREET"
+    let budgetVal: number = 0
+    let lat: number | undefined | null
+    let lng: number | undefined | null
+    let status = "KIRALAMA"
+    let regionalManagerId: string | null = null
+    let branchManagerId: string | null = null
+
+    if (data instanceof FormData || typeof (data as any)?.get === "function") {
+      const fd = data as FormData
+      name = ((fd.get("name") as string) || "").trim()
+      city = ((fd.get("city") as string) || "").trim()
+      locationType = (((fd.get("locationType") as string) || "STREET").trim()).toUpperCase()
+      const b = fd.get("budget") || fd.get("totalBudget")
+      if (b) budgetVal = parseFloat(b as string) || 0
+      status = (fd.get("status") as string) || "KIRALAMA"
+      regionalManagerId = (fd.get("regionalManagerId") as string) || null
+      branchManagerId = (fd.get("branchManagerId") as string) || null
+    } else {
+      const obj = data as any
+      name = (obj.name || "").trim()
+      city = (obj.city || "").trim()
+      locationType = ((obj.locationType || "STREET").trim()).toUpperCase()
+      budgetVal = obj.totalBudget ?? obj.budget ?? 0
+      lat = obj.lat
+      lng = obj.lng
+      status = obj.status || "KIRALAMA"
+      regionalManagerId = obj.regionalManagerId || null
+      branchManagerId = obj.branchManagerId || null
+    }
+
+    if (!name) {
       return { success: false, error: "Mağaza adı zorunludur." }
     }
-    if (!data.city?.trim()) {
+    if (!city) {
       return { success: false, error: "Şehir bilgisi zorunludur." }
     }
 
     // Koordinatları çözümle veya kullanıcının sağladığı koordinatı kullan
-    let lat = data.lat
-    let lng = data.lng
     if (!lat || !lng) {
-      const coords = await resolveCityCoords(data.city)
+      const coords = await resolveCityCoords(city)
       lat = coords.lat
       lng = coords.lng
     }
-
-    const budgetVal = data.totalBudget ?? data.budget ?? 0
-    const locationType = (data.locationType || "STREET").toUpperCase()
 
     // Lokasyon tipine göre dinamik Stage-Gate kapıları
     let locationGates: { name: string; stageName: string }[] = []
@@ -535,16 +567,16 @@ export async function createRolloutProject(data: {
     const project = await prisma.rolloutProject.create({
       data: {
         tenantId,
-        name: data.name.trim(),
-        city: data.city.trim(),
+        name,
+        city,
         locationType,
         lat,
         lng,
         totalBudget: Number(budgetVal),
         budget: Number(budgetVal),
-        status: data.status || "KIRALAMA",
-        regionalManagerId: data.regionalManagerId || null,
-        branchManagerId: data.branchManagerId || null,
+        status,
+        regionalManagerId: regionalManagerId || null,
+        branchManagerId: branchManagerId || null,
         stageGates: {
           create: initialGates,
         },
@@ -642,18 +674,30 @@ export async function getConsolidatedTenders() {
   }
 }
 
-export async function createConsolidatedTender(title: string) {
+export async function createConsolidatedTender(
+  titleOrData: string | FormData | { title: string }
+) {
   try {
     const tenantId = await getFranchiseTenantId()
 
-    if (!title?.trim()) {
+    let title = ""
+    if (titleOrData instanceof FormData || typeof (titleOrData as any)?.get === "function") {
+      const fd = titleOrData as FormData
+      title = ((fd.get("title") as string) || (fd.get("name") as string) || "").trim()
+    } else if (typeof titleOrData === "object" && titleOrData !== null) {
+      title = ((titleOrData as any).title || (titleOrData as any).name || "").trim()
+    } else if (typeof titleOrData === "string") {
+      title = titleOrData.trim()
+    }
+
+    if (!title) {
       return { success: false, error: "İhale paketi başlığı zorunludur." }
     }
 
     const tender = await prisma.consolidatedTender.create({
       data: {
         tenantId,
-        title: title.trim(),
+        title,
         status: "ACTIVE",
       },
     })
@@ -1100,18 +1144,44 @@ export async function getConceptTemplates() {
   }
 }
 
-export async function createConceptTemplate(data: {
-  name: string
-  baseBudget: number
-  phasesJson?: any
-}) {
+export async function createConceptTemplate(
+  data:
+    | FormData
+    | {
+        name: string
+        baseBudget: number
+        phasesJson?: any
+      }
+) {
   try {
     const tenantId = await getFranchiseTenantId()
 
-    if (!data.name?.trim()) {
+    let name = ""
+    let baseBudget = 0
+    let phasesJson: any = null
+
+    if (data instanceof FormData || typeof (data as any)?.get === "function") {
+      const fd = data as FormData
+      name = ((fd.get("name") as string) || "").trim()
+      const b = fd.get("baseBudget") as string
+      baseBudget = b ? parseFloat(b) : 0
+      const phasesRaw = fd.get("phasesJson") as string
+      if (phasesRaw) {
+        try {
+          phasesJson = JSON.parse(phasesRaw)
+        } catch {}
+      }
+    } else {
+      const obj = data as any
+      name = (obj.name || "").trim()
+      baseBudget = Number(obj.baseBudget || 0)
+      phasesJson = obj.phasesJson
+    }
+
+    if (!name) {
       return { success: false, error: "Şablon adı zorunludur." }
     }
-    if (!data.baseBudget || data.baseBudget <= 0) {
+    if (!baseBudget || baseBudget <= 0) {
       return { success: false, error: "Geçerli bir taban bütçe giriniz." }
     }
 
@@ -1126,9 +1196,9 @@ export async function createConceptTemplate(data: {
     const template = await prisma.conceptTemplate.create({
       data: {
         tenantId,
-        name: data.name.trim(),
-        baseBudget: Number(data.baseBudget),
-        phasesJson: data.phasesJson || defaultPhases,
+        name,
+        baseBudget: Number(baseBudget),
+        phasesJson: phasesJson || defaultPhases,
         isActive: true,
       },
     })

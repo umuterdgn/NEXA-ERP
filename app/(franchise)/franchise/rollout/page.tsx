@@ -41,6 +41,7 @@ import {
   getConceptTemplates,
   getFranchisePersonnelAndSubcontractors,
 } from "@/app/actions/franchise"
+import CreateRolloutModal from "@/components/franchise/CreateRolloutModal"
 
 interface StageGate {
   id: string
@@ -129,18 +130,6 @@ export default function FranchiseRolloutPage() {
 
   // Yeni Mağaza Açılışı Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    city: "İstanbul",
-    locationType: "STREET", // "STREET" | "MALL" | "KIOSK"
-    budget: "",
-    status: "KIRALAMA",
-    templateId: "",
-    regionalManagerId: "",
-    branchManagerId: "",
-  })
 
   const [regionalManagers, setRegionalManagers] = useState<any[]>([])
   const [branchManagers, setBranchManagers] = useState<any[]>([])
@@ -194,56 +183,7 @@ export default function FranchiseRolloutPage() {
     }
   }
 
-  // Yeni Mağaza Kaydı Ekleme (Server Action Entegrasyonu)
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormError(null)
 
-    if (!formData.name.trim()) {
-      setFormError("Lütfen mağaza adını giriniz.")
-      return
-    }
-    if (!formData.city.trim()) {
-      setFormError("Lütfen şehir bilgisini seçiniz.")
-      return
-    }
-
-    try {
-      setIsSubmitting(true)
-      const res = await createRolloutProject({
-        name: formData.name.trim(),
-        city: formData.city.trim(),
-        locationType: formData.locationType,
-        budget: formData.budget ? parseFloat(formData.budget) : null,
-        totalBudget: formData.budget ? parseFloat(formData.budget) : 0,
-        status: formData.status,
-        regionalManagerId: formData.regionalManagerId ? formData.regionalManagerId.trim() : null,
-        branchManagerId: formData.branchManagerId ? formData.branchManagerId.trim() : null,
-      })
-
-      if (!res.success) {
-        setFormError(res.error || "Proje oluşturulamadı.")
-        return
-      }
-
-      setIsCreateModalOpen(false)
-      setFormData({
-        name: "",
-        city: "İstanbul",
-        locationType: "STREET",
-        budget: "",
-        status: "KIRALAMA",
-        templateId: "",
-        regionalManagerId: "",
-        branchManagerId: "",
-      })
-      await fetchRollout()
-    } catch (err: any) {
-      setFormError(err.message || "Beklenmedik bir hata oluştu.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   // Normalize phase name helper (AVM_ONAY -> LOKASYON_ONAYI)
   const normalizePhaseKey = (phase: string) => {
@@ -436,7 +376,7 @@ export default function FranchiseRolloutPage() {
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors text-sm font-semibold shadow-lg shadow-amber-600/20"
           >
             <Plus className="w-4 h-4" />
-            <span>Yeni Mağaza Açılışı Başlat</span>
+            <span>Yeni Şantiye / Mağaza Projesi Başlat</span>
           </button>
         </div>
       )}
@@ -660,222 +600,14 @@ export default function FranchiseRolloutPage() {
         </div>
       )}
 
-      {/* MODAL: Yeni Mağaza Açılışı Formu */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Store className="w-5 h-5 text-amber-500" />
-                <h3 className="text-base font-bold text-white">Yeni Mağaza Açılışı Projesi</h3>
-              </div>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {formError && (
-              <div className="p-3 rounded-lg bg-red-950/50 border border-red-800 text-xs text-red-300">
-                {formError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Mağaza / Şube Adı <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Örn: Kadıköy Şube Açılışı"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  required
-                />
-              </div>
-
-              {/* Lokasyon Tipi Dropdown */}
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Lokasyon Tipi <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={formData.locationType}
-                  onChange={(e) => setFormData({ ...formData, locationType: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                  required
-                >
-                  <option value="STREET">Cadde Mağazası / Bağımsız Dükkan</option>
-                  <option value="MALL">AVM İçi Mağaza</option>
-                  <option value="KIOSK">Kiosk / Stand</option>
-                </select>
-              </div>
-
-              {/* Konsept Şablonu Seçimi */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-slate-300">
-                    Konsept Şablonu (Opsiyonel)
-                  </label>
-                  <Link
-                    href="/franchise/templates"
-                    className="text-[11px] text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1"
-                  >
-                    <span>Şablonları Yönet</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </Link>
-                </div>
-                <select
-                  value={formData.templateId}
-                  onChange={(e) => {
-                    const selectedId = e.target.value
-                    const t = conceptTemplates.find((tmpl) => tmpl.id === selectedId)
-                    setFormData({
-                      ...formData,
-                      templateId: selectedId,
-                      budget: t ? String(t.baseBudget) : formData.budget,
-                    })
-                  }}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="">-- Şablon Seçilmedi (Serbest Bütçe) --</option>
-                  {conceptTemplates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} (Baz Bütçe: {t.baseBudget?.toLocaleString("tr-TR")} ₺)
-                    </option>
-                  ))}
-                </select>
-                {formData.templateId && (
-                  <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Şablon seçildi: Standart bütçe otomatik uygulandı.
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Şehir <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Örn: İstanbul, Ankara, İzmir, Bursa..."
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Kurulum Bütçesi (₺)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Örn: 1500000"
-                    value={formData.budget}
-                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Başlangıç Aşaması
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="KIRALAMA">Kiralama & Etüt</option>
-                    <option value="LOKASYON_ONAYI">Lokasyon & Ruhsat Onayı</option>
-                    <option value="INSAAT">Kaba & İnce İnşaat</option>
-                    <option value="PUNCH_LIST">Punch List & QA</option>
-                    <option value="ACILISA_HAZIR">Açılışa Hazır</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Personel Atamaları */}
-              <div className="p-3 bg-slate-950/80 border border-slate-800/80 rounded-lg space-y-3">
-                <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">
-                  Sorumlu Personel Atamaları
-                </span>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] text-slate-300 font-medium mb-1">
-                      Bölge Müdürü Ata
-                    </label>
-                    <select
-                      value={formData.regionalManagerId}
-                      onChange={(e) => setFormData({ ...formData, regionalManagerId: e.target.value })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded text-white focus:outline-none focus:border-amber-500"
-                    >
-                      <option value="">-- Bölge Müdürü Seçin (Opsiyonel) --</option>
-                      {regionalManagers.map((mgr) => (
-                        <option key={mgr.id} value={mgr.id}>
-                          {mgr.name} ({mgr.email || mgr.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-slate-300 font-medium mb-1">
-                      Şube Müdürü Ata
-                    </label>
-                    <select
-                      value={formData.branchManagerId}
-                      onChange={(e) => setFormData({ ...formData, branchManagerId: e.target.value })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded text-white focus:outline-none focus:border-amber-500"
-                    >
-                      <option value="">-- Şube Müdürü Seçin (Opsiyonel) --</option>
-                      {branchManagers.map((mgr) => (
-                        <option key={mgr.id} value={mgr.id}>
-                          {mgr.name} ({mgr.email || mgr.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 text-xs text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-                >
-                  Vazgeç
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md shadow-amber-600/20 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Kaydediliyor...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Projeyi Başlat</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* CreateRolloutModal Component */}
+      <CreateRolloutModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchRollout}
+        regionalManagers={regionalManagers}
+        branchManagers={branchManagers}
+      />
 
       {/* Project Quick Detail Modal */}
       {selectedProjectForModal && (

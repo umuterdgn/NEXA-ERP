@@ -29,9 +29,9 @@ import {
 } from "lucide-react"
 import {
   getConceptTemplates,
-  createConceptTemplate,
   toggleConceptTemplate,
 } from "@/app/actions/franchise"
+import CreateTemplateModal from "@/components/franchise/CreateTemplateModal"
 
 interface ConceptTemplateItem {
   id: string
@@ -47,13 +47,6 @@ export default function FranchiseTemplatesPage() {
   const [loading, setLoading] = useState(true)
   const [selectedTemplate, setSelectedTemplate] = useState<ConceptTemplateItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-
-  const [newTemplate, setNewTemplate] = useState({
-    name: "",
-    baseBudget: "1850000",
-  })
 
   const fetchTemplates = async () => {
     try {
@@ -76,47 +69,7 @@ export default function FranchiseTemplatesPage() {
     fetchTemplates()
   }, [])
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormError(null)
 
-    if (!newTemplate.name.trim()) {
-      setFormError("Lütfen şablon adını giriniz.")
-      return
-    }
-    if (!newTemplate.baseBudget || parseFloat(newTemplate.baseBudget) <= 0) {
-      setFormError("Geçerli bir taban kurulum bütçesi giriniz.")
-      return
-    }
-
-    try {
-      setIsSubmitting(true)
-      const res = await createConceptTemplate({
-        name: newTemplate.name.trim(),
-        baseBudget: parseFloat(newTemplate.baseBudget),
-        phasesJson: [
-          { name: "Kiralama Sözleşmesi & Alan Tahsisi", days: 10, weight: 15 },
-          { name: "AVM Teknik Şartnamesi & Mimari Onay", days: 12, weight: 20 },
-          { name: "Kaba & İnce İnşaat Montajı", days: 20, weight: 40 },
-          { name: "Punch List & Kalite Denetimi", days: 5, weight: 15 },
-          { name: "İtfaiye Ruhsatı & Açılış İzni", days: 3, weight: 10 },
-        ],
-      })
-
-      if (!res.success) {
-        setFormError(res.error || "Şablon oluşturulamadı.")
-        return
-      }
-
-      setIsModalOpen(false)
-      setNewTemplate({ name: "", baseBudget: "1850000" })
-      await fetchTemplates()
-    } catch (err: any) {
-      setFormError(err.message || "Hata meydana geldi.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   const handleToggleActive = async (id: string) => {
     try {
@@ -159,7 +112,7 @@ export default function FranchiseTemplatesPage() {
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-all shadow-md shadow-amber-600/20"
           >
             <Plus className="w-4 h-4" />
-            <span>Yeni Konsept Şablonu Tanımla</span>
+            <span>Yeni Şablon Tanımla</span>
           </button>
         </div>
       </div>
@@ -181,7 +134,7 @@ export default function FranchiseTemplatesPage() {
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-lg shadow-amber-500/20 transition-all hover:scale-105"
           >
             <Plus className="w-4 h-4" />
-            <span>İlk Şablonu Tanımla</span>
+            <span>İlk Şablonu Oluştur</span>
           </button>
         </div>
       ) : (
@@ -316,88 +269,12 @@ export default function FranchiseTemplatesPage() {
         </div>
       )}
 
-      {/* MODAL: Yeni Konsept Şablonu */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Box className="w-5 h-5 text-amber-500" />
-                <h3 className="text-base font-bold text-white">Yeni Konsept Şablonu Tanımla</h3>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {formError && (
-              <div className="p-3 rounded-lg bg-red-950/50 border border-red-800 text-xs text-red-300">
-                {formError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Şablon / Konsept Adı <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Örn: 500m2 Cadde Mağazası veya AVM Kiosk"
-                  value={newTemplate.name}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Taban Kurulum Bütçesi (₺) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="Örn: 1850000"
-                  value={newTemplate.baseBudget}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, baseBudget: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-                >
-                  Vazgeç
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md shadow-amber-600/20 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Kaydediliyor...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Şablonu Kaydet</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* CreateTemplateModal Component */}
+      <CreateTemplateModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchTemplates}
+      />
     </div>
   )
 }

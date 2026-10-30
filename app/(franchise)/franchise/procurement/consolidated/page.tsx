@@ -32,9 +32,9 @@ import {
 } from "lucide-react"
 import {
   getConsolidatedTenders,
-  createConsolidatedTender,
   updateConsolidatedTenderStatus,
 } from "@/app/actions/franchise"
+import CreateTenderModal from "@/components/franchise/CreateTenderModal"
 
 interface ConsolidatedTenderItem {
   id: string
@@ -49,10 +49,7 @@ export default function ConsolidatedProcurementPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("ALL")
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [newPackageTitle, setNewPackageTitle] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null)
-  const [formError, setFormError] = useState<string | null>(null)
 
   const fetchData = async () => {
     try {
@@ -78,36 +75,7 @@ export default function ConsolidatedProcurementPage() {
     fetchData()
   }, [])
 
-  // Toplu İhale Paketi Oluşturma
-  const handleCreatePackage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormError(null)
 
-    if (!newPackageTitle.trim()) {
-      setFormError("Lütfen bir ihale paketi başlığı giriniz.")
-      return
-    }
-
-    try {
-      setIsSubmitting(true)
-      const res = await createConsolidatedTender(newPackageTitle.trim())
-      if (!res.success) {
-        setFormError(res.error || "İhale paketi oluşturulamadı.")
-        return
-      }
-
-      setActionSuccessMsg(`"${newPackageTitle}" başarıyla oluşturuldu ve teklif toplamaya açıldı.`)
-      setNewPackageTitle("")
-      setIsModalOpen(false)
-      await fetchData()
-
-      setTimeout(() => setActionSuccessMsg(null), 5000)
-    } catch (err: any) {
-      setFormError(err.message || "İhale oluşturulurken hata meydana geldi.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   // İhale Durumunu Değiştirme
   const handleToggleStatus = async (id: string, currentStatus: string) => {
@@ -317,77 +285,12 @@ export default function ConsolidatedProcurementPage() {
         </div>
       )}
 
-      {/* MODAL: Toplu İhale Paketi Oluştur */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 text-amber-500" />
-                <h3 className="text-base font-bold text-white">Toplu İhale Paketi Oluştur</h3>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {formError && (
-              <div className="p-3 rounded-lg bg-red-950/50 border border-red-800 text-xs text-red-300">
-                {formError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreatePackage} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  İhale Paketi Başlığı <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Örn: 2026 Q4 Mağaza Seramik & Vitrifiye Konsolide İhalesi"
-                  value={newPackageTitle}
-                  onChange={(e) => setNewPackageTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  required
-                />
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Bu ihale paketi kiracınıza ait tüm şubeler için konsolide olarak yayınlanacaktır.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-                >
-                  Vazgeç
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md shadow-amber-600/20 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Oluşturuluyor...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>İhaleyi Başlat</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* CreateTenderModal Component */}
+      <CreateTenderModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchData}
+      />
     </div>
   )
 }
