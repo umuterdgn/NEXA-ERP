@@ -24,10 +24,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.nxerp.com.tr"),
   title: {
-    default: "Nexa ERP | Yeni Nesil İnşaat & Şantiye Yönetim Yazılımı",
+    default: "Nexa ERP | Yeni Nesil İnşaat & Franchise İşletim Sistemi",
     template: "%s | Nexa ERP",
   },
-  description: "3D BIM, IoT İSG takibi, otomatik hakediş blokesi ve Offline-First PWA altyapısıyla inşaat projelerinizi tek merkezden yönetin. Kurumsal SaaS çözümü.",
+  description: "Nexa Global tarafından geliştirilen gelişmiş inşaat, franchise ve operasyon yönetim sistemi.",
   keywords: [
     "İnşaat ERP",
     "Şantiye Yönetim Yazılımı",
@@ -49,11 +49,19 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon.png" },
+      new URL("/icon.png", "https://nxerp.com.tr"),
     ],
+    shortcut: ["/shortcut-icon.png"],
     apple: [
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/apple-icon.png" },
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    other: [
+      {
+        rel: "apple-touch-icon-precomposed",
+        url: "/apple-touch-icon-precomposed.png",
+      },
     ],
   },
   openGraph: {
