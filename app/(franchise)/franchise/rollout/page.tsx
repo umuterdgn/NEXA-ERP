@@ -39,6 +39,7 @@ import {
   createRolloutProject,
   updateRolloutProjectStatus,
   getConceptTemplates,
+  getFranchisePersonnelAndSubcontractors,
 } from "@/app/actions/franchise"
 
 interface StageGate {
@@ -141,12 +142,16 @@ export default function FranchiseRolloutPage() {
     branchManagerId: "",
   })
 
+  const [regionalManagers, setRegionalManagers] = useState<any[]>([])
+  const [branchManagers, setBranchManagers] = useState<any[]>([])
+
   const fetchRollout = async () => {
     try {
       setLoading(true)
-      const [res, tmplRes] = await Promise.all([
+      const [res, tmplRes, teamRes] = await Promise.all([
         fetch("/api/franchise/rollout").then((r) => r.json()),
         getConceptTemplates(),
+        getFranchisePersonnelAndSubcontractors(),
       ])
 
       if (res.projects) {
@@ -154,6 +159,10 @@ export default function FranchiseRolloutPage() {
       }
       if (tmplRes.success && tmplRes.templates) {
         setConceptTemplates(tmplRes.templates.filter((t: any) => t.isActive))
+      }
+      if (teamRes.success) {
+        setRegionalManagers(teamRes.regionalManagers || [])
+        setBranchManagers(teamRes.branchManagers || [])
       }
     } catch (err) {
       console.error("Failed to load rollout data", err)
@@ -801,24 +810,38 @@ export default function FranchiseRolloutPage() {
                 </span>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Bölge Müdürü</label>
-                    <input
-                      type="text"
-                      placeholder="Örn: Bölge Müdürü ID / Adı"
+                    <label className="block text-[11px] text-slate-300 font-medium mb-1">
+                      Bölge Müdürü Ata
+                    </label>
+                    <select
                       value={formData.regionalManagerId}
                       onChange={(e) => setFormData({ ...formData, regionalManagerId: e.target.value })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
-                    />
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded text-white focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="">-- Bölge Müdürü Seçin (Opsiyonel) --</option>
+                      {regionalManagers.map((mgr) => (
+                        <option key={mgr.id} value={mgr.id}>
+                          {mgr.name} ({mgr.email || mgr.role})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Şube Müdürü</label>
-                    <input
-                      type="text"
-                      placeholder="Örn: Şube Müdürü ID / Adı"
+                    <label className="block text-[11px] text-slate-300 font-medium mb-1">
+                      Şube Müdürü Ata
+                    </label>
+                    <select
                       value={formData.branchManagerId}
                       onChange={(e) => setFormData({ ...formData, branchManagerId: e.target.value })}
-                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
-                    />
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded text-white focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="">-- Şube Müdürü Seçin (Opsiyonel) --</option>
+                      {branchManagers.map((mgr) => (
+                        <option key={mgr.id} value={mgr.id}>
+                          {mgr.name} ({mgr.email || mgr.role})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>

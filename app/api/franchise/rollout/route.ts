@@ -84,9 +84,27 @@ export async function GET() {
       return NextResponse.json({ projects: [] })
     }
 
+    const userRole = session.user.role
+    const userId = session.user.id
+
+    const whereClause: any = { tenantId }
+
+    // ADIM 4: Rol bazlı görünürlük / Yetki Koruması
+    // BÖLGE MÜDÜRÜ ise; sadece regionalManagerId'si kendisine atanmış Rollout projelerini görsün.
+    if (userRole === "REGIONAL_MANAGER" && userId) {
+      whereClause.regionalManagerId = userId
+    }
+
+    // TAŞERON ise; sadece kendisine iş kanıtı atanmış projeleri görsün
+    if (userRole === "SUBCONTRACTOR" && userId) {
+      whereClause.workProofs = {
+        some: { subcontractorId: userId },
+      }
+    }
+
     // RolloutProject tablosundan kiracıya özel (Tenant Isolation) mağaza projelerini çek
     const rolloutProjects = await prisma.rolloutProject.findMany({
-      where: { tenantId },
+      where: whereClause,
       include: {
         stageGates: {
           orderBy: { createdAt: "asc" },

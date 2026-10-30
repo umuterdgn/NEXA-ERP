@@ -27,8 +27,11 @@ import {
   Loader2,
   FileText,
   UserCheck,
+  UserPlus,
   Layers,
   Sparkles,
+  Building,
+  Briefcase,
 } from "lucide-react"
 import {
   getRolloutProjectById,
@@ -37,6 +40,7 @@ import {
   approveRegionalWorkProof,
   approveHqWorkProof,
   rejectWorkProof,
+  getFranchisePersonnelAndSubcontractors,
 } from "@/app/actions/franchise"
 
 interface WorkProofItem {
@@ -44,7 +48,7 @@ interface WorkProofItem {
   rolloutProjectId: string
   subcontractorId: string
   title: string
-  photoUrl: string
+  photoUrl?: string | null
   status: "PENDING" | "REGIONAL_APPROVED" | "HQ_APPROVED" | "REJECTED" | string
   regionalNotes?: string | null
   hqNotes?: string | null
@@ -57,18 +61,29 @@ export default function WorkProofsPage() {
 
   const [project, setProject] = useState<any | null>(null)
   const [proofs, setProofs] = useState<WorkProofItem[]>([])
+  const [subcontractorsList, setSubcontractorsList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   // Perspektif Filtresi: ALL, SUBCONTRACTOR, REGIONAL, HQ
   const [activeRoleView, setActiveRoleView] = useState<"ALL" | "SUBCONTRACTOR" | "REGIONAL" | "HQ">("ALL")
 
-  // Modal / Form State
+  // Modal 1: Yeni İş Paketi & Taşeron Ata (ADIM 3)
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
+  const [isAssignSubmitting, setIsAssignSubmitting] = useState(false)
+  const [assignFormError, setAssignFormError] = useState<string | null>(null)
+  const [assignFormData, setAssignFormData] = useState({
+    title: "",
+    subcontractorId: "",
+    photoUrl: "",
+  })
+
+  // Modal 2: Taşeron Fotoğraf / Kanıt Yükleme Formu
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: "",
-    subcontractorId: "Taşeron - Elektrik & Mekanik Ltd.",
+    subcontractorId: "",
     photoUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186c5f7?q=80&w=800&auto=format&fit=crop",
   })
 
@@ -88,6 +103,22 @@ export default function WorkProofsPage() {
       if (proofRes.success && proofRes.workProofs) {
         setProofs(proofRes.workProofs)
       }
+
+      // Taşeron firmaları ve kullanıcıları çek
+      const staffRes = await getFranchisePersonnelAndSubcontractors()
+      if (staffRes.success && staffRes.subcontractors) {
+        setSubcontractorsList(staffRes.subcontractors)
+        if (staffRes.subcontractors.length > 0) {
+          setAssignFormData((prev) => ({
+            ...prev,
+            subcontractorId: prev.subcontractorId || staffRes.subcontractors[0].id,
+          }))
+          setFormData((prev) => ({
+            ...prev,
+            subcontractorId: prev.subcontractorId || staffRes.subcontractors[0].id,
+          }))
+        }
+      }
     } catch (err) {
       console.error("İş kanıtları yüklenemedi", err)
     } finally {
@@ -99,7 +130,47 @@ export default function WorkProofsPage() {
     fetchData()
   }, [projectId])
 
-  // Yeni Kanıt Yükleme (Taşeron)
+  // ADIM 3: Yeni İş Paketi & Taşeron Ata
+  const handleAssignSubcontractor = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAssignFormError(null)
+
+    if (!assignFormData.title.trim()) {
+      setAssignFormError("Lütfen iş paketi başlığını giriniz.")
+      return
+    }
+
+    const selectedSub = assignFormData.subcontractorId || (subcontractorsList[0]?.id || "SUB_DEFAULT")
+
+    try {
+      setIsAssignSubmitting(true)
+      const res = await createRolloutWorkProof({
+        rolloutProjectId: projectId,
+        subcontractorId: selectedSub,
+        title: assignFormData.title.trim(),
+        photoUrl: assignFormData.photoUrl?.trim() || "",
+      })
+
+      if (!res.success) {
+        setAssignFormError(res.error || "İş paketi atanamadı.")
+        return
+      }
+
+      setIsAssignModalOpen(false)
+      setAssignFormData({
+        title: "",
+        subcontractorId: subcontractorsList[0]?.id || "",
+        photoUrl: "",
+      })
+      await fetchData()
+    } catch (err: any) {
+      setAssignFormError(err.message || "Hata oluştu.")
+    } finally {
+      setIsAssignSubmitting(false)
+    }
+  }
+
+  // Yeni Kanıt Yükleme (Taşeron Fotoğrafı)
   const handleUploadProof = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError(null)
@@ -117,7 +188,7 @@ export default function WorkProofsPage() {
       setIsSubmitting(true)
       const res = await createRolloutWorkProof({
         rolloutProjectId: projectId,
-        subcontractorId: formData.subcontractorId,
+        subcontractorId: formData.subcontractorId || (subcontractorsList[0]?.id || "SUB_DEFAULT"),
         title: formData.title.trim(),
         photoUrl: formData.photoUrl.trim(),
       })
@@ -130,7 +201,7 @@ export default function WorkProofsPage() {
       setIsUploadModalOpen(false)
       setFormData({
         title: "",
-        subcontractorId: "Taşeron - Elektrik & Mekanik Ltd.",
+        subcontractorId: subcontractorsList[0]?.id || "",
         photoUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186c5f7?q=80&w=800&auto=format&fit=crop",
       })
       await fetchData()
@@ -213,12 +284,26 @@ export default function WorkProofsPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
 
+          {/* ADIM 3: Yeni İş Paketi & Taşeron Ata Butonu */}
+          <button
+            onClick={() => {
+              if (subcontractorsList.length > 0 && !assignFormData.subcontractorId) {
+                setAssignFormData((prev) => ({ ...prev, subcontractorId: subcontractorsList[0].id }))
+              }
+              setIsAssignModalOpen(true)
+            }}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/20 transition-all"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Yeni İş Paketi & Taşeron Ata</span>
+          </button>
+
           <button
             onClick={() => setIsUploadModalOpen(true)}
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md shadow-amber-600/20 transition-all"
           >
             <Camera className="w-4 h-4" />
-            <span>Taşeron: Fotoğraf / Kanıt Yükle</span>
+            <span>Fotoğraf / Kanıt Yükle</span>
           </button>
         </div>
       </div>
@@ -288,13 +373,27 @@ export default function WorkProofsPage() {
               Bu şantiye için taşeronlar tarafından sisteme henüz imalat fotoğrafı veya iş teslim kanıtı yüklenmemiştir.
             </p>
           </div>
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors text-xs font-semibold shadow-lg shadow-amber-600/20"
-          >
-            <Upload className="w-4 h-4" />
-            <span>İlk Fotoğrafı Yükle</span>
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                if (subcontractorsList.length > 0 && !assignFormData.subcontractorId) {
+                  setAssignFormData((prev) => ({ ...prev, subcontractorId: subcontractorsList[0].id }))
+                }
+                setIsAssignModalOpen(true)
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors text-xs font-semibold shadow-lg shadow-emerald-600/20"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Yeni İş Paketi & Taşeron Ata</span>
+            </button>
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors text-xs font-semibold border border-slate-700"
+            >
+              <Upload className="w-4 h-4" />
+              <span>İlk Fotoğrafı Yükle</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -305,6 +404,11 @@ export default function WorkProofsPage() {
           const isRegionalApproved = proof.status === "REGIONAL_APPROVED"
           const isHqApproved = proof.status === "HQ_APPROVED"
           const isRejected = proof.status === "REJECTED"
+
+          const subMatch = subcontractorsList.find(
+            (s) => s.id === proof.subcontractorId || s.name === proof.subcontractorId
+          )
+          const subDisplayName = subMatch?.name || proof.subcontractorId
 
           const dateStr = new Date(proof.createdAt).toLocaleDateString("tr-TR", {
             day: "numeric",
@@ -323,8 +427,9 @@ export default function WorkProofsPage() {
                 {/* Header & Status */}
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      {proof.subcontractorId}
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                      <Briefcase className="w-3 h-3" />
+                      <span>{subDisplayName}</span>
                     </span>
                     <h3 className="text-base font-bold text-white mt-0.5">{proof.title}</h3>
                     <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
@@ -362,29 +467,59 @@ export default function WorkProofsPage() {
                   </div>
                 </div>
 
-                {/* Proof Image Box */}
-                <div className="relative w-full h-52 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 group">
-                  <img
-                    src={proof.photoUrl}
-                    alt={proof.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60"></div>
-                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-xs text-slate-300">
-                    <span className="bg-slate-900/90 px-2 py-0.5 rounded border border-slate-800 text-[10px] font-mono">
-                      Fotoğraflı Saha Kanıtı
-                    </span>
-                    <a
-                      href={proof.photoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1 rounded bg-slate-900/90 border border-slate-800 hover:text-white"
-                      title="Büyük Görsel"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" />
-                    </a>
+                {/* Proof Image Box or Placeholder */}
+                {proof.photoUrl ? (
+                  <div className="relative w-full h-52 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 group">
+                    <img
+                      src={proof.photoUrl}
+                      alt={proof.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60"></div>
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-xs text-slate-300">
+                      <span className="bg-slate-900/90 px-2 py-0.5 rounded border border-slate-800 text-[10px] font-mono">
+                        Fotoğraflı Saha Kanıtı
+                      </span>
+                      <a
+                        href={proof.photoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1 rounded bg-slate-900/90 border border-slate-800 hover:text-white"
+                        title="Büyük Görsel"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="w-full h-40 rounded-xl border border-dashed border-slate-800 bg-slate-950/60 flex flex-col items-center justify-center p-4 text-center space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-300 block">
+                        Taşeron İmalat Görseli Bekleniyor
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        İş paketi atandı. Taşeron sahada imalatı tamamlayıp fotoğraf yükleyecektir.
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          title: proof.title,
+                          subcontractorId: proof.subcontractorId,
+                        }))
+                        setIsUploadModalOpen(true)
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-400 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Fotoğraf Yükle</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* STEPPER: Çift Kademeli Akış Çubuğu */}
                 <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
@@ -671,6 +806,139 @@ export default function WorkProofsPage() {
                     <>
                       <Upload className="w-3.5 h-3.5" />
                       <span>Kanıtı İncelemeye Gönder</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: Yeni İş Paketi & Taşeron Ata (ADIM 3) */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold text-white">Yeni İş Paketi & Taşeron Ata</h3>
+              </div>
+              <button
+                onClick={() => setIsAssignModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {assignFormError && (
+              <div className="p-3 rounded-lg bg-red-950/50 border border-red-800 text-xs text-red-300">
+                {assignFormError}
+              </div>
+            )}
+
+            <form onSubmit={handleAssignSubcontractor} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  İş Paketi / İmalat Başlığı <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Örn: Zemin Seramik Döşemesi"
+                  value={assignFormData.title}
+                  onChange={(e) => setAssignFormData({ ...assignFormData, title: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+
+                {/* Hızlı Şablon Butonları */}
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {[
+                    "Zemin Seramik Döşemesi",
+                    "Alçıpan Asma Tavan & Boya",
+                    "3 Fazlı Pano & Aydınlatma",
+                    "VRF Havalandırma & İklimlendirme",
+                    "Mağaza Vitrin & Alüminyum Doğrama",
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setAssignFormData({ ...assignFormData, title: preset })}
+                      className="px-2 py-0.5 rounded text-[10px] bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+                    >
+                      + {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Taşeron Seç <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={assignFormData.subcontractorId}
+                  onChange={(e) =>
+                    setAssignFormData({ ...assignFormData, subcontractorId: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  required
+                >
+                  {subcontractorsList.length === 0 ? (
+                    <option value="">Kayıtlı taşeron bulunamadı</option>
+                  ) : (
+                    subcontractorsList.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.name} — {sub.phone !== "-" ? sub.phone : sub.email}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Sistemdeki rolü SUBCONTRACTOR olan kullanıcılar ve taşeron firmalar listelenir.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Teknik Çizim / Örnek Görsel Linki (Opsiyonel)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://... (Taşeron sahada fotoğraf yükleyecektir)"
+                  value={assignFormData.photoUrl}
+                  onChange={(e) => setAssignFormData({ ...assignFormData, photoUrl: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-900/40 text-[11px] text-emerald-300/90 space-y-1">
+                <strong>İş Akışı Bilgisi:</strong> İş paketi oluşturulduğunda <strong>PENDING</strong> statüsünde açılır ve atanan taşeronun ekranına düşer. Taşeron işi tamamlayıp fotoğraf yüklediğinde Bölge Müdürü onayına sunulur.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsAssignModalOpen(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  disabled={isAssignSubmitting}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/20 disabled:opacity-50"
+                >
+                  {isAssignSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Kaydediliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>İş Paketini Başlat & Taşeronu Görevlendir</span>
                     </>
                   )}
                 </button>

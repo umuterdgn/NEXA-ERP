@@ -52,6 +52,7 @@ model User {
   approvalWorkflows        ApprovalWorkflow[]
   documentRevisions        DocumentRevision[]
   coreSamplesTaken         CoreSample[]
+  phone                    String?
   leaveRequests            LeaveRequest[]
   advanceRequests          AdvanceRequest[]
   personnelDocuments       PersonnelDocument[]
@@ -62,6 +63,8 @@ model User {
   reinforcementVisas       ReinforcementVisa[]
   nonConformancesCreated   NonConformance[]
   inspectionFormsFilled    InspectionForm[]
+  regionalRollouts         RolloutProject[]          @relation("RegionalManagerRollouts")
+  branchRollouts           RolloutProject[]          @relation("BranchManagerRollouts")
 
   @@index([companyId])
   @@index([organizationId])
@@ -94,6 +97,8 @@ enum UserRole {
   HR_STAFF
   PURCHASING_STAFF
   PROJECT_MANAGER
+  REGIONAL_MANAGER
+  BRANCH_MANAGER
 }
 
 enum CompanyType {
@@ -4788,6 +4793,8 @@ model RolloutProject {
   budget            Float?             // Geriye dönük uyumluluk
   regionalManagerId String?            // Bölge Müdürü Ataması
   branchManagerId   String?            // Şube Müdürü Ataması
+  regionalManager   User?              @relation("RegionalManagerRollouts", fields: [regionalManagerId], references: [id], onDelete: SetNull)
+  branchManager     User?              @relation("BranchManagerRollouts", fields: [branchManagerId], references: [id], onDelete: SetNull)
   createdAt         DateTime           @default(now())
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   stageGates        StageGate[]
@@ -4847,7 +4854,7 @@ model RolloutWorkProof {
   rolloutProjectId String
   subcontractorId  String         // İşi yapan taşeron
   title            String         // Örn: "Alçıpan Tavan Montajı"
-  photoUrl         String         // Kanıt Fotoğrafı
+  photoUrl         String?        @default("") // Kanıt Fotoğrafı
   status           String         @default("PENDING") // PENDING, REGIONAL_APPROVED, HQ_APPROVED, REJECTED
   regionalNotes    String?
   hqNotes          String?

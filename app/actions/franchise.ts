@@ -92,9 +92,30 @@ export async function getFranchiseTenantId(): Promise<string> {
 export async function getRolloutProjects() {
   try {
     const tenantId = await getFranchiseTenantId()
+    const session = await auth()
+    const userRole = session?.user?.role
+    const userId = session?.user?.id
+
+    const where: any = { tenantId }
+
+    // ADIM 4: Rol bazlı görünürlük / Yetki Koruması
+    // BÖLGE MÜDÜRÜ ise; sadece regionalManagerId'si kendisine atanmış Rollout projelerini görsün.
+    // (Superadmin/Franchise Sahibi/Admin herkesi görür)
+    if (userRole === "REGIONAL_MANAGER" && userId) {
+      where.regionalManagerId = userId
+    }
+
+    // TAŞERON ise; sadece kendisine iş kanıtı atanmış projeleri görsün
+    if (userRole === "SUBCONTRACTOR" && userId) {
+      where.workProofs = {
+        some: {
+          subcontractorId: userId,
+        },
+      }
+    }
 
     const projects = await prisma.rolloutProject.findMany({
-      where: { tenantId },
+      where,
       include: {
         stageGates: {
           orderBy: { createdAt: "asc" },
@@ -104,6 +125,12 @@ export async function getRolloutProjects() {
         },
         workProofs: {
           orderBy: { createdAt: "desc" },
+        },
+        regionalManager: {
+          select: { id: true, name: true, email: true, phone: true },
+        },
+        branchManager: {
+          select: { id: true, name: true, email: true, phone: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -120,6 +147,10 @@ export async function getRolloutProjectById(id: string) {
   try {
     const tenantId = await getFranchiseTenantId()
 
+    const session = await auth()
+    const userRole = session?.user?.role
+    const userId = session?.user?.id
+
     const project = await prisma.rolloutProject.findFirst({
       where: {
         id,
@@ -135,6 +166,12 @@ export async function getRolloutProjectById(id: string) {
         workProofs: {
           orderBy: { createdAt: "desc" },
         },
+        regionalManager: {
+          select: { id: true, name: true, email: true, phone: true, role: true },
+        },
+        branchManager: {
+          select: { id: true, name: true, email: true, phone: true, role: true },
+        },
       },
     })
 
@@ -142,10 +179,259 @@ export async function getRolloutProjectById(id: string) {
       return { success: false, error: "Mağaza projesi bulunamadı." }
     }
 
-    return { success: true, project }
+    // ADIM 4: Sisteme giren kişi BÖLGE MÜDÜRÜ ise; sadece regionalManagerId'si kendisine atanmış Rollout projelerini görsün.
+    if (userRole === "REGIONAL_MANAGER" && userId) {
+      const u = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
+      const isAssigned = project.regionalManagerId === userId || (u?.name && project.regionalManagerId === u.name)
+      if (!isAssigned) {
+        return { success: false, error: "Bu projeyi görüntüleme yetkiniz bulunmamaktadır (Sadece kendi bölgenize atanmış mağazaları görebilirsiniz)." }
+      }
+    }
+
+    // Ekstra profil bilgisi çözümlemesi: Eğer regionalManagerId bir User ID'si değil de isim ise
+    let enrichedRegionalManager = project.regionalManager
+    if (!enrichedRegionalManager && project.regionalManagerId) {
+      const u = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: project.regionalManagerId },
+            { name: project.regionalManagerId },
+            { email: project.regionalManagerId },
+          ],
+        },
+        select: { id: true, name: true, email: true, phone: true, role: true },
+      })
+      if (u) {
+        enrichedRegionalManager = u
+      } else {
+        const p = await prisma.personel.findFirst({
+          where: {
+            OR: [
+              { id: project.regionalManagerId },
+              { name: project.regionalManagerId },
+            ],
+          },
+          select: { id: true, name: true, email: true, phone: true, role: true },
+        })
+        if (p) {
+          enrichedRegionalManager = {
+            id: p.id,
+            name: p.name,
+            email: p.email || "-",
+            phone: p.phone || "-",
+            role: (p.role as any) || "REGIONAL_MANAGER",
+          }
+        }
+      }
+    }
+
+    let enrichedBranchManager = project.branchManager
+    if (!enrichedBranchManager && project.branchManagerId) {
+      const u = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: project.branchManagerId },
+            { name: project.branchManagerId },
+            { email: project.branchManagerId },
+          ],
+        },
+        select: { id: true, name: true, email: true, phone: true, role: true },
+      })
+      if (u) {
+        enrichedBranchManager = u
+      } else {
+        const p = await prisma.personel.findFirst({
+          where: {
+            OR: [
+              { id: project.branchManagerId },
+              { name: project.branchManagerId },
+            ],
+          },
+          select: { id: true, name: true, email: true, phone: true, role: true },
+        })
+        if (p) {
+          enrichedBranchManager = {
+            id: p.id,
+            name: p.name,
+            email: p.email || "-",
+            phone: p.phone || "-",
+            role: (p.role as any) || "BRANCH_MANAGER",
+          }
+        }
+      }
+    }
+
+    // ADIM 4: Sisteme giren kişi TAŞERON ise; sadece subcontractorId'si kendine ait olan İş Kanıtı paketlerini görsün.
+    let filteredWorkProofs = project.workProofs
+    if (userRole === "SUBCONTRACTOR" && userId) {
+      const u = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, companyId: true, company: { select: { id: true, name: true } } },
+      })
+      const matchingIds = [userId]
+      if (u?.name) matchingIds.push(u.name)
+      if (u?.companyId) matchingIds.push(u.companyId)
+      if (u?.company?.name) matchingIds.push(u.company.name)
+      if (u?.company?.id) matchingIds.push(u.company.id)
+
+      filteredWorkProofs = project.workProofs.filter((wp) => matchingIds.includes(wp.subcontractorId))
+    }
+
+    return {
+      success: true,
+      project: {
+        ...project,
+        workProofs: filteredWorkProofs,
+        regionalManager: enrichedRegionalManager,
+        branchManager: enrichedBranchManager,
+      },
+    }
   } catch (error: any) {
     console.error("❌ getRolloutProjectById Error:", error)
     return { success: false, error: error.message || "Proje yüklenemedi." }
+  }
+}
+
+export async function updateRolloutProjectTeam(data: {
+  projectId: string
+  regionalManagerId?: string | null
+  branchManagerId?: string | null
+}) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const project = await prisma.rolloutProject.findFirst({
+      where: { id: data.projectId, tenantId },
+    })
+    if (!project) {
+      return { success: false, error: "Mağaza projesi bulunamadı veya yetkiniz yok." }
+    }
+
+    const updated = await prisma.rolloutProject.update({
+      where: { id: data.projectId },
+      data: {
+        regionalManagerId: data.regionalManagerId !== undefined ? data.regionalManagerId : project.regionalManagerId,
+        branchManagerId: data.branchManagerId !== undefined ? data.branchManagerId : project.branchManagerId,
+      },
+      include: {
+        regionalManager: {
+          select: { id: true, name: true, email: true, phone: true, role: true },
+        },
+        branchManager: {
+          select: { id: true, name: true, email: true, phone: true, role: true },
+        },
+      },
+    })
+
+    revalidatePath(`/franchise/rollout/${data.projectId}`)
+    revalidatePath("/franchise/rollout")
+
+    return { success: true, project: updated }
+  } catch (error: any) {
+    console.error("❌ updateRolloutProjectTeam Error:", error)
+    return { success: false, error: error.message || "Proje ekibi güncellenemedi." }
+  }
+}
+
+export async function getFranchisePersonnelAndSubcontractors() {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    // 1. Kullanıcıları çek
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { tenantId },
+          { tenantId: null },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        companyType: true,
+      },
+      orderBy: { name: "asc" },
+    })
+
+    // 2. Taşeron firmaları çek
+    const companies = await prisma.company.findMany({
+      where: {
+        OR: [
+          { tenantId },
+          { tenantId: null },
+        ],
+        type: "SUBCONTRACTOR",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+      },
+      orderBy: { name: "asc" },
+    })
+
+    // Bölge Müdürleri: REGIONAL_MANAGER rolü (veya PROJECT_MANAGER / SITE_MANAGER)
+    let regionalManagers = users.filter((u) => u.role === "REGIONAL_MANAGER" || u.role === "PROJECT_MANAGER")
+    if (regionalManagers.length === 0) {
+      regionalManagers = users.filter((u) => u.role === "ADMIN" || u.role === "SITE_MANAGER")
+    }
+
+    // Şube Müdürleri: BRANCH_MANAGER rolü (veya SITE_MANAGER / STAFF)
+    let branchManagers = users.filter((u) => u.role === "BRANCH_MANAGER" || u.role === "SITE_MANAGER")
+    if (branchManagers.length === 0) {
+      branchManagers = users.filter((u) => u.role === "STAFF" || u.role === "ADMIN")
+    }
+
+    // Taşeronlar: SUBCONTRACTOR rolü, SUBCONTRACTOR firma türü veya Company listesi
+    const subcontractors = [
+      ...companies.map((c) => ({
+        id: c.id,
+        name: `${c.name} (Taşeron Firma)`,
+        email: c.email || "-",
+        phone: c.phone || "-",
+        type: "COMPANY",
+      })),
+      ...users
+        .filter((u) => u.role === "SUBCONTRACTOR" || u.companyType === "SUBCONTRACTOR")
+        .map((u) => ({
+          id: u.id,
+          name: `${u.name} (Taşeron)`,
+          email: u.email,
+          phone: u.phone || "-",
+          type: "USER",
+        })),
+    ]
+
+    // Eğer sistemde kayıtlı taşeron yoksa standart operasyonel taşeron seçenekleri sun
+    if (subcontractors.length === 0) {
+      subcontractors.push(
+        { id: "sub-1", name: "Zirve Alçıpan & Boya İmalat Ltd.", email: "info@zirvealcipan.com", phone: "+90 532 111 2233", type: "COMPANY" },
+        { id: "sub-2", name: "Akdeniz Seramik & Zemin Ltd.", email: "iletisim@akdenizseramik.com", phone: "+90 533 222 3344", type: "COMPANY" },
+        { id: "sub-3", name: "Modern Elektrik & Mekanik Tesisat A.Ş.", email: "proje@modernelektrik.com", phone: "+90 535 333 4455", type: "COMPANY" },
+        { id: "sub-4", name: "Art Mobilya & Dekorasyon Atölyesi", email: "siparis@artmobilya.com", phone: "+90 542 444 5566", type: "COMPANY" }
+      )
+    }
+
+    return {
+      success: true,
+      regionalManagers,
+      branchManagers,
+      subcontractors,
+      allUsers: users,
+    }
+  } catch (error: any) {
+    console.error("❌ getFranchisePersonnelAndSubcontractors Error:", error)
+    return {
+      success: false,
+      regionalManagers: [],
+      branchManagers: [],
+      subcontractors: [],
+      allUsers: [],
+    }
   }
 }
 
@@ -611,6 +897,9 @@ export async function deleteRolloutExpense(id: string) {
 export async function getRolloutWorkProofs(rolloutProjectId: string) {
   try {
     const tenantId = await getFranchiseTenantId()
+    const session = await auth()
+    const userRole = session?.user?.role
+    const userId = session?.user?.id
 
     const project = await prisma.rolloutProject.findFirst({
       where: { id: rolloutProjectId, tenantId },
@@ -619,8 +908,35 @@ export async function getRolloutWorkProofs(rolloutProjectId: string) {
       return { success: false, error: "Proje bulunamadı.", workProofs: [] }
     }
 
+    const where: any = { rolloutProjectId }
+
+    // ADIM 4: Sisteme giren kişi BÖLGE MÜDÜRÜ ise; sadece regionalManagerId'si kendisine atanmış Rollout projelerindeki iş kanıtlarını görsün.
+    if (userRole === "REGIONAL_MANAGER" && userId) {
+      const u = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
+      const isAssigned = project.regionalManagerId === userId || (u?.name && project.regionalManagerId === u.name)
+      if (!isAssigned) {
+        return { success: false, error: "Bu projenin iş kanıtlarını görüntüleme yetkiniz bulunmamaktadır.", workProofs: [] }
+      }
+    }
+
+    // ADIM 4: Sisteme giren kişi TAŞERON ise; sadece subcontractorId'si kendine ait olan İş Kanıtı paketlerini görsün.
+    // Diğer taşeronların işlerini göremesin.
+    if (userRole === "SUBCONTRACTOR" && userId) {
+      const u = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, companyId: true, company: { select: { id: true, name: true } } },
+      })
+      const matchingIds = [userId]
+      if (u?.name) matchingIds.push(u.name)
+      if (u?.companyId) matchingIds.push(u.companyId)
+      if (u?.company?.name) matchingIds.push(u.company.name)
+      if (u?.company?.id) matchingIds.push(u.company.id)
+
+      where.subcontractorId = { in: matchingIds }
+    }
+
     const workProofs = await prisma.rolloutWorkProof.findMany({
-      where: { rolloutProjectId },
+      where,
       orderBy: { createdAt: "desc" },
     })
 
@@ -635,7 +951,7 @@ export async function createRolloutWorkProof(data: {
   rolloutProjectId: string
   subcontractorId?: string
   title: string
-  photoUrl: string
+  photoUrl?: string | null
 }) {
   try {
     const tenantId = await getFranchiseTenantId()
@@ -650,16 +966,13 @@ export async function createRolloutWorkProof(data: {
     if (!data.title?.trim()) {
       return { success: false, error: "İş başlığı zorunludur." }
     }
-    if (!data.photoUrl?.trim()) {
-      return { success: false, error: "Kanıt fotoğrafı zorunludur." }
-    }
 
     const proof = await prisma.rolloutWorkProof.create({
       data: {
         rolloutProjectId: data.rolloutProjectId,
         subcontractorId: data.subcontractorId || "SUB_DEFAULT",
         title: data.title.trim(),
-        photoUrl: data.photoUrl.trim(),
+        photoUrl: data.photoUrl?.trim() || "",
         status: "PENDING",
       },
     })
