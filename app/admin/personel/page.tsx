@@ -295,7 +295,6 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     sgkPayDay: "",
     healthStatus: "",
     bonuses: "",
-    takim: "",
     gunlukYevmiye: "",
     professionId: ""
   })
@@ -350,9 +349,13 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
           sgkPayDay: formData.sgkPayDay ? parseInt(formData.sgkPayDay) : null,
           healthStatus: formData.healthStatus || null,
           bonuses: formData.bonuses ? parseFloat(formData.bonuses) : 0,
-          takim: formData.takim || null,
           gunlukYevmiye: formData.gunlukYevmiye ? parseFloat(formData.gunlukYevmiye) : 0,
-          professionId: formData.professionId || null
+          professionId: formData.professionId || null,
+          createAccount: createLogin,
+          hasLogin: createLogin,
+          role: loginData.role,
+          username: loginData.username,
+          password: loginData.password
         })
       })
 
@@ -478,6 +481,8 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
               <option value="İSG & Kalite">İSG & Kalite</option>
               <option value="Muhasebe & Finans">Muhasebe & Finans</option>
               <option value="Taşeron">Taşeron</option>
+              <option value="Lojistik / Taşıma">Lojistik / Taşıma</option>
+              <option value="Kapı Güvenlik / Nizamiye">Kapı Güvenlik / Nizamiye</option>
             </select>
           </div>
 
@@ -545,27 +550,6 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
               {professions.map((prof) => (
                 <option key={prof.id} value={prof.id}>{prof.name}</option>
               ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Takım (Eski)</label>
-            <select
-              value={formData.takim}
-              onChange={(e) => setFormData({ ...formData, takim: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-            >
-              <option value="">Takım Seçin</option>
-              <option value="Demirci">Demirci</option>
-              <option value="Kalıpçı">Kalıpçı</option>
-              <option value="Betoncu">Betoncu</option>
-              <option value="İnşaat İşçisi">İnşaat İşçisi</option>
-              <option value="Marangoz">Marangoz</option>
-              <option value="Elektrikçi">Elektrikçi</option>
-              <option value="Tesisatçı">Tesisatçı</option>
-              <option value="Sıvacı">Sıvacı</option>
-              <option value="Boyacı">Boyacı</option>
-              <option value="Diğer">Diğer</option>
             </select>
           </div>
 
@@ -690,10 +674,13 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
                   onChange={(e) => setLoginData({ ...loginData, role: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
                 >
-                  <option value="STAFF">Personel (/personnel)</option>
-                  <option value="SITE_MANAGER">Şantiye Şefi (/admin)</option>
-                  <option value="WORKER">Saha Çalışanı (/personnel)</option>
-                  <option value="ENGINEER">Mühendis (/admin)</option>
+                  <option value="STAFF">Personel (STAFF) - (/personnel)</option>
+                  <option value="WORKER">Saha Çalışanı (WORKER) - (/personnel)</option>
+                  <option value="DRIVER">Lojistik Sürücüsü (DRIVER)</option>
+                  <option value="SECURITY">Kapı Güvenlik Görevlisi (SECURITY)</option>
+                  <option value="SITE_MANAGER">Şantiye Şefi (SITE_MANAGER) - (/admin)</option>
+                  <option value="ENGINEER">Sorumlu Mühendis (ENGINEER) - (/admin)</option>
+                  <option value="ADMIN">Yönetici (ADMIN) - (/admin)</option>
                 </select>
               </div>
             </div>
@@ -838,13 +825,13 @@ function PersonelLoginGrantModal({
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
             >
-              <option value="STAFF">Personel (/personnel)</option>
-              <option value="SITE_MANAGER">Şantiye Şefi (/admin)</option>
-              <option value="WORKER">Saha Çalışanı (/personnel)</option>
-              <option value="DRIVER">Lojistik Sürücüsü (/personnel)</option>
-              <option value="SECURITY">Kapı Güvenlik Görevlisi (/admin/procurement/logistics)</option>
-              <option value="ENGINEER">Sorumlu Mühendis (/admin)</option>
-              <option value="ADMIN">Yönetici (/admin)</option>
+              <option value="STAFF">Personel (STAFF) - (/personnel)</option>
+              <option value="WORKER">Saha Çalışanı (WORKER) - (/personnel)</option>
+              <option value="DRIVER">Lojistik Sürücüsü (DRIVER)</option>
+              <option value="SECURITY">Kapı Güvenlik Görevlisi (SECURITY)</option>
+              <option value="SITE_MANAGER">Şantiye Şefi (SITE_MANAGER) - (/admin)</option>
+              <option value="ENGINEER">Sorumlu Mühendis (ENGINEER) - (/admin)</option>
+              <option value="ADMIN">Yönetici (ADMIN) - (/admin)</option>
             </select>
           </div>
 

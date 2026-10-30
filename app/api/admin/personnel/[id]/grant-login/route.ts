@@ -26,8 +26,9 @@ export async function POST(
       return NextResponse.json({ error: "Personel bulunamadı" }, { status: 404 })
     }
 
-    // Hash password
+    // Hash password with bcrypt
     const hashedPassword = await bcrypt.hash(password, 10)
+    const targetRole = role || "STAFF"
 
     // Check if email already exists - if so, update existing user
     const existingUser = await prisma.user.findUnique({
@@ -41,7 +42,8 @@ export async function POST(
         where: { email },
         data: {
           password: hashedPassword,
-          role: role || "STAFF"
+          role: targetRole,
+          tenantId: personnel.tenantId || existingUser.tenantId || null
         }
       })
     } else {
@@ -51,17 +53,19 @@ export async function POST(
           name: personnel.name,
           email,
           password: hashedPassword,
-          role: role || "STAFF"
+          role: targetRole,
+          tenantId: personnel.tenantId || null
         }
       })
     }
 
-    // Update personnel with userId and username
+    // Update personnel with userId, username and role
     const updatedPersonnel = await prisma.personel.update({
       where: { id: resolvedParams.id },
       data: { 
         userId: user.id,
-        username: username || email // Use username if provided, otherwise use email
+        username: username || email,
+        role: user.role
       }
     })
 

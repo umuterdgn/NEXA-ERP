@@ -10,10 +10,24 @@ import { prisma } from "@/lib/prisma"
 // GET - Tüm meslekleri getir
 export async function GET() {
   try {
-    const professions = await prisma.profession.findMany({
+    let professions = await prisma.profession.findMany({
       orderBy: { name: 'asc' }
     })
     
+    // Temel operasyonel mesleklerin her zaman var olmasını garanti et
+    const requiredProfessions = ["Lojistik / Taşıma", "Kapı Güvenlik / Nizamiye"]
+    for (const reqName of requiredProfessions) {
+      if (!professions.some(p => p.name.toLowerCase() === reqName.toLowerCase())) {
+        try {
+          const created = await prisma.profession.create({
+            data: { name: reqName }
+          })
+          professions.push(created)
+        } catch {}
+      }
+    }
+
+    professions.sort((a, b) => a.name.localeCompare(b.name, "tr"))
     return NextResponse.json(professions)
   } catch (error) {
     console.error("Error fetching professions:", error)

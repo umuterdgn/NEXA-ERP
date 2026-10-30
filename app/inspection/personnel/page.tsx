@@ -548,26 +548,7 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Takım (Eski)</label>
-            <select
-              value={formData.takim}
-              onChange={(e) => setFormData({ ...formData, takim: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-            >
-              <option value="">Takım Seçin</option>
-              <option value="Demirci">Demirci</option>
-              <option value="Kalıpçı">Kalıpçı</option>
-              <option value="Betoncu">Betoncu</option>
-              <option value="İnşaat İşçisi">İnşaat İşçisi</option>
-              <option value="Marangoz">Marangoz</option>
-              <option value="Elektrikçi">Elektrikçi</option>
-              <option value="Tesisatçı">Tesisatçı</option>
-              <option value="Sıvacı">Sıvacı</option>
-              <option value="Boyacı">Boyacı</option>
-              <option value="Diğer">Diğer</option>
-            </select>
-          </div>
+
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Günlük Yevmiye (TL)</label>

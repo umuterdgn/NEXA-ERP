@@ -49,6 +49,8 @@ export async function GET() {
   }
 }
 
+import bcrypt from "bcryptjs"
+
 export async function POST(request: Request) {
   try {
     const session = await auth()
@@ -65,6 +67,43 @@ export async function POST(request: Request) {
     
     const body = await request.json()
     
+    // Sisteme giriş hesabı oluşturma kontrolü (createAccount veya hasLogin true ise)
+    let createdUser: any = null
+    const shouldCreateAccount = Boolean(body.createAccount || body.hasLogin) && Boolean(body.username && body.password)
+    
+    if (shouldCreateAccount) {
+      const email = body.username.includes("@") ? body.username : `${body.username}@nexa.local`
+      const hashedPassword = await bcrypt.hash(body.password, 10)
+      const userRole = body.role || "STAFF"
+
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      })
+
+      if (existingUser) {
+        createdUser = await prisma.user.update({
+          where: { email },
+          data: {
+            password: hashedPassword,
+            role: userRole,
+            tenantId: userTenantId || existingUser.tenantId || null
+          }
+        })
+      } else {
+        createdUser = await prisma.user.create({
+          data: {
+            name: body.name,
+            email,
+            password: hashedPassword,
+            role: userRole,
+            tenantId: userTenantId || null
+          }
+        })
+      }
+    }
+
+    const assignedRole = createdUser ? createdUser.role : (body.role || "STAFF")
+
     const personnel = await prisma.personel.create({
       data: {
         tenantId: userTenantId || null,
@@ -88,7 +127,10 @@ export async function POST(request: Request) {
         bonuses: body.bonuses ? parseFloat(body.bonuses.toString()) : 0,
         takim: body.takim || null,
         gunlukYevmiye: body.gunlukYevmiye ? parseFloat(body.gunlukYevmiye.toString()) : 0,
-        professionId: body.professionId || null
+        professionId: body.professionId || null,
+        userId: createdUser ? createdUser.id : null,
+        username: createdUser ? (body.username || createdUser.email) : null,
+        role: assignedRole
       }
     })
     
