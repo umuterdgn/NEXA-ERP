@@ -113,55 +113,37 @@ export default function LoginForm({ tenant }: LoginFormProps) {
 
           if (isFranchiseTenant || tenant?.type === "FRANCHISE") {
             targetPath = "/franchise/dashboard";
+          } else if (role === "DRIVER") {
+            targetPath = "/personnel";
+          } else if (role === "SECURITY") {
+            targetPath = "/admin/procurement/logistics";
+          } else if (role === "WORKER") {
+            targetPath = "/personnel";
+          } else if (role === "INSPECTION_ADMIN" || role === "INSPECTOR" || role === "AUDITOR") {
+            targetPath = "/inspection/dashboard";
+          } else if (role === "SUBCONTRACTOR") {
+            targetPath = "/subcontractor";
+          } else if (role === "SUPPLIER") {
+            targetPath = "/supplier";
+          } else if (
+            role === "ENGINEER" ||
+            role === "SITE_MANAGER" ||
+            role === "PERSONNEL" ||
+            role === "STAFF"
+          ) {
+            targetPath = "/personnel/dashboard";
+          } else if (role === "HR_MANAGER") {
+            targetPath = "/admin/personel";
+          } else if (role === "FINANCE_MANAGER") {
+            targetPath = "/admin/finance";
+          } else if (role === "PROCUREMENT_MANAGER") {
+            targetPath = "/admin/procurement";
+          } else if (role === "EQUIPMENT_MANAGER") {
+            targetPath = "/admin/equipments";
+          } else if (role === "ISG_EXPERT") {
+            targetPath = "/admin/personel/alerts";
           } else {
-            switch (role) {
-              case "INSPECTION_ADMIN":
-              case "INSPECTOR":
-              case "AUDITOR":
-                targetPath = "/inspection/dashboard";
-                break;
-
-              case "SUBCONTRACTOR":
-                targetPath = "/subcontractor";
-                break;
-
-              case "ENGINEER":
-              case "SITE_MANAGER":
-              case "PERSONNEL":
-              case "STAFF":
-              case "WORKER":
-                targetPath = "/personnel/dashboard";
-                break;
-
-              case "SUPPLIER":
-                targetPath = "/supplier";
-                break;
-
-              case "HR_MANAGER":
-                targetPath = "/admin/personel";
-                break;
-              case "FINANCE_MANAGER":
-                targetPath = "/admin/finance";
-                break;
-              case "PROCUREMENT_MANAGER":
-                targetPath = "/admin/procurement";
-                break;
-              case "EQUIPMENT_MANAGER":
-                targetPath = "/admin/equipments";
-                break;
-              case "ISG_EXPERT":
-                targetPath = "/admin/personel/alerts";
-                break;
-
-              case "ADMIN":
-              case "SUPER_ADMIN":
-              case "MANAGER":
-              case "PROJECT_MANAGER":
-              case "MUTEAHHIT":
-              default:
-                targetPath = "/admin";
-                break;
-            }
+            targetPath = "/admin/dashboard";
           }
         }
       } catch (err) {

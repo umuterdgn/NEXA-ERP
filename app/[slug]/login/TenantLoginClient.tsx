@@ -86,14 +86,18 @@ export default function TenantLoginClient({ company }: TenantLoginClientProps) {
         const sessionRes = await fetch("/api/auth/session");
         if (sessionRes.ok) {
           const sessionData = await sessionRes.json();
-          const role = sessionData?.user?.role;
+          const role = ((sessionData?.user?.role as string) || "").toUpperCase();
 
-          if (role === "INSPECTION_ADMIN" || role === "INSPECTOR" || role === "AUDITOR") {
+          if (role === "DRIVER") {
+            targetPath = "/personnel";
+          } else if (role === "SECURITY") {
+            targetPath = "/admin/procurement/logistics";
+          } else if (role === "WORKER" || role === "STAFF") {
+            targetPath = "/personnel";
+          } else if (role === "INSPECTION_ADMIN" || role === "INSPECTOR" || role === "AUDITOR") {
             targetPath = "/dashboard";
           } else if (role === "SUBCONTRACTOR") {
             targetPath = "/subcontractor";
-          } else if (role === "WORKER" || role === "STAFF") {
-            targetPath = "/personnel";
           } else if (role === "SUPPLIER") {
             targetPath = "/supplier";
           } else if (role === "HR_MANAGER") {
@@ -106,6 +110,8 @@ export default function TenantLoginClient({ company }: TenantLoginClientProps) {
             targetPath = "/admin/equipments";
           } else if (role === "ISG_EXPERT") {
             targetPath = "/admin/personel/alerts";
+          } else {
+            targetPath = "/admin/dashboard";
           }
         }
       } catch (err) {

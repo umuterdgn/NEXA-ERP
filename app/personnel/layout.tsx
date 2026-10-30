@@ -22,12 +22,12 @@ export default async function PersonnelLayout({
     redirect("/login")
   }
 
-  const userRole = session.user?.role as string
-  const allowedRoles = ["STAFF", "WORKER", "SITE_MANAGER", "ENGINEER", "ADMIN", "SUPER_ADMIN", "DRIVER"]
+  const userRole = ((session.user?.role as string) || "").toUpperCase()
+  const allowedRoles = ["WORKER", "DRIVER", "STAFF", "PERSONNEL", "SITE_MANAGER", "ENGINEER", "ADMIN", "SUPER_ADMIN"]
   const isPersonnel = allowedRoles.includes(userRole)
 
   if (!isPersonnel) {
-    redirect("/admin")
+    redirect("/login")
   }
 
   return (

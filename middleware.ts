@@ -12,6 +12,14 @@ import { authConfig } from "@/lib/auth.config"
 const ROUTE_PROTECTION = {
   "/superadmin": ["SUPER_ADMIN"],
   "/super-admin": ["SUPER_ADMIN"],
+  "/admin/procurement/logistics": [
+    "SECURITY",
+    "ADMIN",
+    "SUPER_ADMIN",
+    "MANAGER",
+    "PROJECT_MANAGER",
+    "PROCUREMENT_MANAGER"
+  ],
   "/admin": [
     "ADMIN",
     "SUPER_ADMIN",
@@ -24,7 +32,8 @@ const ROUTE_PROTECTION = {
     "FINANCE_MANAGER",
     "PROCUREMENT_MANAGER",
     "EQUIPMENT_MANAGER",
-    "ISG_EXPERT"
+    "ISG_EXPERT",
+    "SECURITY"
   ],
   "/inspection": ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
   "/subcontractor": ["SUBCONTRACTOR", "ADMIN", "SUPER_ADMIN"],
@@ -35,9 +44,11 @@ const ROUTE_PROTECTION = {
     "PERSONNEL",
     "STAFF",
     "WORKER",
+    "DRIVER",
     "ADMIN",
     "SUPER_ADMIN"
   ],
+  "/driver": ["DRIVER", "ADMIN", "SUPER_ADMIN"],
   "/dashboard": ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
   "/yibf": ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
   "/field": ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"],
@@ -128,19 +139,36 @@ export default NextAuth(authConfig).auth((req) => {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // 3. ENGINEER, SITE_MANAGER veya PERSONNEL ➔ /personnel/dashboard
+    // 3. DRIVER ➔ /personnel
+    if (userRole === "DRIVER") {
+      redirectUrl.pathname = "/personnel"
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // 4. SECURITY ➔ /admin/procurement/logistics
+    if (userRole === "SECURITY") {
+      redirectUrl.pathname = "/admin/procurement/logistics"
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // 5. WORKER ➔ /personnel
+    if (userRole === "WORKER") {
+      redirectUrl.pathname = "/personnel"
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // 6. ENGINEER, SITE_MANAGER veya PERSONNEL ➔ /personnel/dashboard
     if (
       userRole === "ENGINEER" ||
       userRole === "SITE_MANAGER" ||
       userRole === "PERSONNEL" ||
-      userRole === "STAFF" ||
-      userRole === "WORKER"
+      userRole === "STAFF"
     ) {
       redirectUrl.pathname = "/personnel/dashboard"
       return NextResponse.redirect(redirectUrl)
     }
 
-    // 4. SUPPLIER ➔ /supplier
+    // 7. SUPPLIER ➔ /supplier
     if (userRole === "SUPPLIER") {
       redirectUrl.pathname = "/supplier"
       return NextResponse.redirect(redirectUrl)
@@ -182,6 +210,37 @@ export default NextAuth(authConfig).auth((req) => {
   }
 
   // --- ROL BAZLI YALITIM VE ERİŞİM KORUMASI (ROUTE CONFINEMENT) ---
+
+  // A0. DRIVER: Sadece /personnel, /driver veya mobil arayüz rotalarına erişebilir. KESİNLİKLE /admin veya /superadmin rotalarına erişemez.
+  if (userRole === "DRIVER") {
+    if (
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/superadmin") ||
+      pathname.startsWith("/super-admin") ||
+      pathname.startsWith("/subcontractor") ||
+      pathname.startsWith("/supplier") ||
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/inspection")
+    ) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/personnel"
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  // A1. SECURITY: Sadece /admin/procurement/logistics rotasına ve alt rotalarına erişebilir (veya özel bir /security rotası varsa oraya).
+  // Diğer tüm rotalar engellenir ve doğrudan lojistik takvimi ekranına yönlendirilir.
+  if (userRole === "SECURITY") {
+    const isAllowedSecurityPath =
+      pathname.startsWith("/admin/procurement/logistics") ||
+      pathname.startsWith("/security")
+
+    if (!isAllowedSecurityPath && !isOnLoginPage) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/admin/procurement/logistics"
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
 
   // A. ENGINEER, SITE_MANAGER, PERSONNEL, STAFF, WORKER:
   // /admin rotalarına (örn: /admin/projects) veya yetkisiz portallara girmeye çalıştığında KESİNLİKLE /personnel/dashboard'a yönlendir
@@ -410,8 +469,10 @@ export default NextAuth(authConfig).auth((req) => {
     if (!userRole || !allowedRoles.includes(userRole)) {
       // Eğer kendi portalı varsa oraya, yoksa unauthorized
       const redirectUrl = req.nextUrl.clone()
-      if (userRole === "STAFF" || userRole === "WORKER") {
+      if (userRole === "STAFF" || userRole === "WORKER" || userRole === "DRIVER") {
         redirectUrl.pathname = "/personnel"
+      } else if (userRole === "SECURITY") {
+        redirectUrl.pathname = "/admin/procurement/logistics"
       } else if (userRole === "SUBCONTRACTOR") {
         redirectUrl.pathname = "/subcontractor"
       } else if (userRole === "SUPPLIER") {
