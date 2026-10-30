@@ -29,13 +29,16 @@ import {
   Layers,
   Sparkles,
   X,
-  DollarSign,
   Loader2,
+  Coins,
+  Camera,
+  Box,
 } from "lucide-react"
 import {
   getRolloutProjects,
   createRolloutProject,
   updateRolloutProjectStatus,
+  getConceptTemplates,
 } from "@/app/actions/franchise"
 
 interface StageGate {
@@ -58,6 +61,9 @@ interface StoreProject {
   progress: number
   status: string
   budget?: number | null
+  totalBudget?: number | null
+  regionalManagerId?: string | null
+  branchManagerId?: string | null
   rolloutPhase: "KIRALAMA" | "AVM_ONAY" | "INSAAT" | "PUNCH_LIST" | "ACILISA_HAZIR" | string
   stageGates: StageGate[]
   openDefects: number
@@ -110,6 +116,7 @@ const PHASES = [
 
 export default function FranchiseRolloutPage() {
   const [projects, setProjects] = useState<StoreProject[]>([])
+  const [conceptTemplates, setConceptTemplates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeView, setActiveView] = useState<"KANBAN" | "MAP">("KANBAN")
   const [searchQuery, setSearchQuery] = useState("")
@@ -127,15 +134,24 @@ export default function FranchiseRolloutPage() {
     city: "İstanbul",
     budget: "",
     status: "KIRALAMA",
+    templateId: "",
+    regionalManagerId: "",
+    branchManagerId: "",
   })
 
   const fetchRollout = async () => {
     try {
       setLoading(true)
-      const res = await fetch("/api/franchise/rollout")
-      const data = await res.json()
-      if (data.projects) {
-        setProjects(data.projects)
+      const [res, tmplRes] = await Promise.all([
+        fetch("/api/franchise/rollout").then((r) => r.json()),
+        getConceptTemplates(),
+      ])
+
+      if (res.projects) {
+        setProjects(res.projects)
+      }
+      if (tmplRes.success && tmplRes.templates) {
+        setConceptTemplates(tmplRes.templates.filter((t: any) => t.isActive))
       }
     } catch (err) {
       console.error("Failed to load rollout data", err)
@@ -187,7 +203,10 @@ export default function FranchiseRolloutPage() {
         name: formData.name.trim(),
         city: formData.city.trim(),
         budget: formData.budget ? parseFloat(formData.budget) : null,
+        totalBudget: formData.budget ? parseFloat(formData.budget) : 0,
         status: formData.status,
+        regionalManagerId: formData.regionalManagerId ? formData.regionalManagerId.trim() : null,
+        branchManagerId: formData.branchManagerId ? formData.branchManagerId.trim() : null,
       })
 
       if (!res.success) {
@@ -196,7 +215,15 @@ export default function FranchiseRolloutPage() {
       }
 
       setIsCreateModalOpen(false)
-      setFormData({ name: "", city: "İstanbul", budget: "", status: "KIRALAMA" })
+      setFormData({
+        name: "",
+        city: "İstanbul",
+        budget: "",
+        status: "KIRALAMA",
+        templateId: "",
+        regionalManagerId: "",
+        branchManagerId: "",
+      })
       await fetchRollout()
     } catch (err: any) {
       setFormError(err.message || "Beklenmedik bir hata oluştu.")
@@ -484,8 +511,29 @@ export default function FranchiseRolloutPage() {
                           </div>
                         </div>
 
-                        {/* Stage-Gate Badges */}
+                        {/* Quick Module Links */}
                         <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-900 text-[10px]">
+                          <Link
+                            href={`/franchise/rollout/${project.id}`}
+                            className="flex items-center gap-1 p-1.5 rounded border bg-amber-950/20 border-amber-800/40 text-amber-300 hover:bg-amber-900/30 transition-colors"
+                            title="Bütçe ve Fatura Takibi"
+                          >
+                            <Coins className="w-3 h-3 text-amber-400 shrink-0" />
+                            <span className="truncate">Bütçe & Gider</span>
+                          </Link>
+
+                          <Link
+                            href={`/franchise/rollout/${project.id}/work-proofs`}
+                            className="flex items-center gap-1 p-1.5 rounded border bg-blue-950/20 border-blue-800/40 text-blue-300 hover:bg-blue-900/30 transition-colors"
+                            title="Çift Onaylı İş Kanıtları"
+                          >
+                            <Camera className="w-3 h-3 text-blue-400 shrink-0" />
+                            <span className="truncate">İş Kanıtı</span>
+                          </Link>
+                        </div>
+
+                        {/* Stage-Gate Badges */}
+                        <div className="grid grid-cols-2 gap-1.5 text-[10px]">
                           <Link
                             href="/franchise/stage-gates"
                             className={`flex items-center gap-1 p-1.5 rounded border transition-colors ${
@@ -628,6 +676,48 @@ export default function FranchiseRolloutPage() {
                 />
               </div>
 
+              {/* Konsept Şablonu Seçimi */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-slate-300">
+                    Konsept Şablonu (Opsiyonel)
+                  </label>
+                  <Link
+                    href="/franchise/templates"
+                    className="text-[11px] text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1"
+                  >
+                    <span>Şablonları Yönet</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </div>
+                <select
+                  value={formData.templateId}
+                  onChange={(e) => {
+                    const selectedId = e.target.value
+                    const t = conceptTemplates.find((tmpl) => tmpl.id === selectedId)
+                    setFormData({
+                      ...formData,
+                      templateId: selectedId,
+                      budget: t ? String(t.baseBudget) : formData.budget,
+                    })
+                  }}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="">-- Şablon Seçilmedi (Serbest Bütçe) --</option>
+                  {conceptTemplates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} (Baz Bütçe: {t.baseBudget?.toLocaleString("tr-TR")} ₺)
+                    </option>
+                  ))}
+                </select>
+                {formData.templateId && (
+                  <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Şablon seçildi: Standart bütçe otomatik uygulandı.
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
                   Şehir <span className="text-rose-500">*</span>
@@ -642,34 +732,65 @@ export default function FranchiseRolloutPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Tahmini Açılış Bütçesi (₺)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Örn: 1500000"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Kurulum Bütçesi (₺)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Örn: 1500000"
+                    value={formData.budget}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Başlangıç Aşaması
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="KIRALAMA">Kiralama & Etüt</option>
+                    <option value="AVM_ONAY">AVM & Ruhsat Onayı</option>
+                    <option value="INSAAT">Kaba & İnce İnşaat</option>
+                    <option value="PUNCH_LIST">Punch List & QA</option>
+                    <option value="ACILISA_HAZIR">Açılışa Hazır</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Başlangıç Aşaması
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="KIRALAMA">Kiralama & Etüt</option>
-                  <option value="AVM_ONAY">AVM & Ruhsat Onayı</option>
-                  <option value="INSAAT">Kaba & İnce İnşaat</option>
-                  <option value="PUNCH_LIST">Punch List & QA</option>
-                  <option value="ACILISA_HAZIR">Açılışa Hazır</option>
-                </select>
+              {/* Personel Atamaları */}
+              <div className="p-3 bg-slate-950/80 border border-slate-800/80 rounded-lg space-y-3">
+                <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">
+                  Sorumlu Personel Atamaları
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Bölge Müdürü</label>
+                    <input
+                      type="text"
+                      placeholder="Örn: Bölge Müdürü ID / Adı"
+                      value={formData.regionalManagerId}
+                      onChange={(e) => setFormData({ ...formData, regionalManagerId: e.target.value })}
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Şube Müdürü</label>
+                    <input
+                      type="text"
+                      placeholder="Örn: Şube Müdürü ID / Adı"
+                      value={formData.branchManagerId}
+                      onChange={(e) => setFormData({ ...formData, branchManagerId: e.target.value })}
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
@@ -737,10 +858,10 @@ export default function FranchiseRolloutPage() {
                 </div>
               </div>
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
-                <span className="text-slate-400">Tahmini Bütçe</span>
+                <span className="text-slate-400">Toplam Bütçe</span>
                 <div className="text-sm font-bold text-amber-400 mt-1">
-                  {selectedProjectForModal.budget
-                    ? `${selectedProjectForModal.budget.toLocaleString("tr-TR")} ₺`
+                  {selectedProjectForModal.totalBudget || selectedProjectForModal.budget
+                    ? `${(selectedProjectForModal.totalBudget || selectedProjectForModal.budget || 0).toLocaleString("tr-TR")} ₺`
                     : "Belirtilmemiş"}
                 </div>
               </div>
@@ -758,12 +879,47 @@ export default function FranchiseRolloutPage() {
               </div>
             </div>
 
-            <div className="pt-2">
+            {/* Sorumlu Personel Bilgisi */}
+            {(selectedProjectForModal.regionalManagerId || selectedProjectForModal.branchManagerId) && (
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs space-y-1">
+                <span className="text-slate-400 font-semibold block">Atanan Personeller</span>
+                <div className="grid grid-cols-2 gap-2 text-slate-300">
+                  <div>
+                    <span className="text-slate-500">Bölge Md:</span>{" "}
+                    {selectedProjectForModal.regionalManagerId || "Atanmadı"}
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Şube Md:</span>{" "}
+                    {selectedProjectForModal.branchManagerId || "Atanmadı"}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation Actions */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+              <Link
+                href={`/franchise/rollout/${selectedProjectForModal.id}`}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-colors shadow-md shadow-amber-600/20"
+              >
+                <Coins className="w-4 h-4" />
+                <span>Bütçe & Harcamalar (Hub)</span>
+              </Link>
+              <Link
+                href={`/franchise/rollout/${selectedProjectForModal.id}/work-proofs`}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors shadow-md shadow-blue-600/20"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Çift Onaylı İş Kanıtları</span>
+              </Link>
+            </div>
+
+            <div>
               <Link
                 href="/franchise/stage-gates"
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors"
               >
-                <ShieldCheck className="w-4 h-4" />
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
                 <span>İdari Kilitleri (Stage-Gate) Yönet</span>
               </Link>
             </div>

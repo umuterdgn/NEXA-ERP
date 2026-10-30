@@ -149,6 +149,7 @@ model Tenant {
   rolloutProjects RolloutProject[]
   rmaRequests     RmaRequest[]
   consolidatedTenders ConsolidatedTender[]
+  conceptTemplates    ConceptTemplate[]
 
   @@index([slug])
   @@index([isActive])
@@ -4775,15 +4776,22 @@ model DailyJournal {
 
 // Mağaza Kurulum Projeleri (Rollout)
 model RolloutProject {
-  id          String      @id @default(cuid())
-  tenantId    String
-  name        String      // Örn: Kadıköy Şube Açılışı
-  city        String
-  status      String      @default("KIRALAMA") // KIRALAMA, AVM_ONAY, INSAAT, PUNCH_LIST, ACILISA_HAZIR
-  budget      Float?
-  createdAt   DateTime    @default(now())
-  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  stageGates  StageGate[]
+  id                String             @id @default(cuid())
+  tenantId          String
+  name              String             // Örn: Kadıköy Şube Açılışı
+  city              String
+  lat               Float?             // Harita için gerçek koordinat
+  lng               Float?             // Harita için gerçek koordinat
+  status            String             @default("KIRALAMA") // KIRALAMA, AVM_ONAY, INSAAT, PUNCH_LIST, ACILISA_HAZIR
+  totalBudget       Float              @default(0) // Şube kurulum bütçesi
+  budget            Float?             // Geriye dönük uyumluluk
+  regionalManagerId String?            // Bölge Müdürü Ataması
+  branchManagerId   String?            // Şube Müdürü Ataması
+  createdAt         DateTime           @default(now())
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stageGates        StageGate[]
+  expenses          RolloutExpense[]
+  workProofs        RolloutWorkProof[]
 
   @@index([tenantId])
   @@index([status])
@@ -4814,4 +4822,50 @@ model ConsolidatedTender {
 
   @@index([tenantId])
   @@index([status])
+}
+
+
+// YENİ: Şube Kurulum Giderleri (Expense Tracking)
+model RolloutExpense {
+  id               String         @id @default(cuid())
+  rolloutProjectId String
+  title            String
+  amount           Float
+  category         String         // INSAAT, MOBILYA, IT_DONANIM, RESMI_HARC
+  receiptUrl       String?
+  createdAt        DateTime       @default(now())
+  project          RolloutProject @relation(fields: [rolloutProjectId], references: [id], onDelete: Cascade)
+
+  @@index([rolloutProjectId])
+}
+
+// YENİ: Taşeron İş Kanıtı ve Çift Onay (Work Proof)
+model RolloutWorkProof {
+  id               String         @id @default(cuid())
+  rolloutProjectId String
+  subcontractorId  String         // İşi yapan taşeron
+  title            String         // Örn: "Alçıpan Tavan Montajı"
+  photoUrl         String         // Kanıt Fotoğrafı
+  status           String         @default("PENDING") // PENDING, REGIONAL_APPROVED, HQ_APPROVED, REJECTED
+  regionalNotes    String?
+  hqNotes          String?
+  createdAt        DateTime       @default(now())
+  project          RolloutProject @relation(fields: [rolloutProjectId], references: [id], onDelete: Cascade)
+
+  @@index([rolloutProjectId])
+  @@index([status])
+}
+
+// YENİ: Konsept Şablonları (Templates)
+model ConceptTemplate {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String   // Örn: "AVM İçi Kiosk", "500m2 Cadde Mağazası"
+  baseBudget  Float
+  phasesJson  Json     // Şablonun standart iş adımları (Gantt verisi vb.)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }

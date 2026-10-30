@@ -2,7 +2,8 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Franchise Tip Mağaza / Konsept Şablonları Yönetimi
+ * Franchise Konsept Şablonları (ConceptTemplate) Yönetimi
+ * %100 Tenant İzolasyonu ile ConceptTemplate Modeline Bağlıdır.
  */
 
 import { useState, useEffect } from "react"
@@ -20,43 +21,52 @@ import {
   CheckCircle2,
   ArrowRight,
   FileSpreadsheet,
+  X,
+  Loader2,
+  Coins,
+  Check,
+  Sparkles,
 } from "lucide-react"
+import {
+  getConceptTemplates,
+  createConceptTemplate,
+  toggleConceptTemplate,
+} from "@/app/actions/franchise"
 
-interface StoreTemplate {
+interface ConceptTemplateItem {
   id: string
   name: string
-  estimatedDays: number
-  defaultBoQ: any
-  defaultTasks: any
-  createdAt: string
-  _count?: {
-    projects: number
-  }
+  baseBudget: number
+  phasesJson: any
+  isActive: boolean
+  createdAt: string | Date
 }
 
 export default function FranchiseTemplatesPage() {
-  const [templates, setTemplates] = useState<StoreTemplate[]>([])
+  const [templates, setTemplates] = useState<ConceptTemplateItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedTemplate, setSelectedTemplate] = useState<StoreTemplate | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<ConceptTemplateItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
   const [newTemplate, setNewTemplate] = useState({
     name: "",
-    estimatedDays: 45,
+    baseBudget: "1850000",
   })
 
   const fetchTemplates = async () => {
     try {
       setLoading(true)
-      const res = await fetch("/api/franchise/templates")
-      const data = await res.json()
-      if (data.templates) {
-        setTemplates(data.templates)
-        if (data.templates.length > 0 && !selectedTemplate) {
-          setSelectedTemplate(data.templates[0])
+      const res = await getConceptTemplates()
+      if (res.success && res.templates) {
+        setTemplates(res.templates)
+        if (res.templates.length > 0 && !selectedTemplate) {
+          setSelectedTemplate(res.templates[0])
         }
       }
     } catch (err) {
-      console.error(err)
+      console.error("Şablonlar yüklenemedi", err)
     } finally {
       setLoading(false)
     }
@@ -68,51 +78,69 @@ export default function FranchiseTemplatesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFormError(null)
+
+    if (!newTemplate.name.trim()) {
+      setFormError("Lütfen şablon adını giriniz.")
+      return
+    }
+    if (!newTemplate.baseBudget || parseFloat(newTemplate.baseBudget) <= 0) {
+      setFormError("Geçerli bir taban kurulum bütçesi giriniz.")
+      return
+    }
+
     try {
-      const res = await fetch("/api/franchise/templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newTemplate,
-          defaultBoQ: [
-            { code: "ELK-01", description: "3 Fazlı Pano & Aydınlatma Rayları", unit: "Set", quantity: 1, unitPrice: 75000 },
-            { code: "MIM-01", description: "Granit Seramik Zemin Kaplaması", unit: "m2", quantity: 100, unitPrice: 1400 },
-            { code: "MOB-01", description: "Kurumsal Kasa Bankosu & Arka Görsel", unit: "Adet", quantity: 1, unitPrice: 85000 },
-          ],
-          defaultTasks: [
-            { name: "Kira Kontratı & AVM Proje Onayı", durationDays: 10 },
-            { name: "Şantiye Kurulumu & Kaba Altyapı", durationDays: 12 },
-            { name: "Elektrik & Havalandırma İmalatları", durationDays: 15 },
-            { name: "OFCI Mağaza Mobilya & Kasa Montajı", durationDays: 5 },
-            { name: "Punch List & Açılış Denetimi", durationDays: 3 },
-          ],
-        }),
+      setIsSubmitting(true)
+      const res = await createConceptTemplate({
+        name: newTemplate.name.trim(),
+        baseBudget: parseFloat(newTemplate.baseBudget),
+        phasesJson: [
+          { name: "Kiralama Sözleşmesi & Alan Tahsisi", days: 10, weight: 15 },
+          { name: "AVM Teknik Şartnamesi & Mimari Onay", days: 12, weight: 20 },
+          { name: "Kaba & İnce İnşaat Montajı", days: 20, weight: 40 },
+          { name: "Punch List & Kalite Denetimi", days: 5, weight: 15 },
+          { name: "İtfaiye Ruhsatı & Açılış İzni", days: 3, weight: 10 },
+        ],
       })
 
-      if (res.ok) {
-        setIsModalOpen(false)
-        setNewTemplate({ name: "", estimatedDays: 45 })
-        fetchTemplates()
+      if (!res.success) {
+        setFormError(res.error || "Şablon oluşturulamadı.")
+        return
       }
+
+      setIsModalOpen(false)
+      setNewTemplate({ name: "", baseBudget: "1850000" })
+      await fetchTemplates()
+    } catch (err: any) {
+      setFormError(err.message || "Hata meydana geldi.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleToggleActive = async (id: string) => {
+    try {
+      await toggleConceptTemplate(id)
+      await fetchTemplates()
     } catch (err) {
-      console.error(err)
+      console.error("Durum güncellenemedi", err)
     }
   }
 
   return (
-    <div className="w-full space-y-6 pb-8">
+    <div className="w-full space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-400 mb-1">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
             <Box className="w-4 h-4" />
-            <span>Tip Proje ve Standartizasyon</span>
+            <span>Tip Proje ve Konsept Standartizasyonu</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
             Konsept Şablonları (Tip Mağaza)
           </h1>
           <p className="text-sm text-slate-400">
-            Farklı metrekare ve lokasyonlar için standart BoQ (metraj) ve Gantt iş planı şablonlarını yönetin.
+            Farklı metrekare ve lokasyonlar için standart BoQ (metraj), taban bütçe ve iş planı şablonlarını yönetin.
           </p>
         </div>
 
@@ -128,251 +156,242 @@ export default function FranchiseTemplatesPage() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors shadow-sm"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-all shadow-md shadow-amber-600/20"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Yeni Şablon Tanımla</span>
+            <Plus className="w-4 h-4" />
+            <span>Yeni Konsept Şablonu Tanımla</span>
           </button>
         </div>
       </div>
 
       {/* Empty State */}
       {!loading && templates.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl">
+        <div className="bg-slate-900/60 border border-dashed border-slate-800 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl my-6">
           <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto text-slate-400 shadow-inner">
-            <Box className="w-8 h-8 text-blue-400" />
+            <Box className="w-8 h-8 text-amber-400" />
           </div>
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-white">Henüz Konsept Şablonu Tanımlanmadı</h3>
             <p className="text-sm text-slate-400">
-              Mağazalarınız için standart BoQ (metraj) ve iş planı şablonlarını oluşturarak rollout süreçlerinizi hızlandırın.
+              Mağazalarınız için standart taban bütçe ve aşama adımlarını oluşturarak açılış süreçlerinizi hızlandırın.
             </p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-lg shadow-amber-500/20 transition-all hover:scale-105"
           >
             <Plus className="w-4 h-4" />
-            <span>İlk Şablonu Oluştur</span>
+            <span>İlk Şablonu Tanımla</span>
           </button>
         </div>
       ) : (
-        /* Main Grid: Template Cards + Detail */
+        /* Main Grid: Template Cards + Detail Panel */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Templates List */}
-        <div className="space-y-3 lg:col-span-1">
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Kayıtlı Konseptler ({templates.length})
-          </h2>
+          {/* Templates List (1 col) */}
+          <div className="space-y-3 lg:col-span-1">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Kayıtlı Konseptler ({templates.length})
+            </h2>
 
-          <div className="space-y-2.5">
-            {templates.map((tpl) => {
-              const isSelected = selectedTemplate?.id === tpl.id
-              return (
-                <div
-                  key={tpl.id}
-                  onClick={() => setSelectedTemplate(tpl)}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                    isSelected
-                      ? "bg-blue-950/40 border-blue-600/70 shadow-md"
-                      : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-white">{tpl.name}</h3>
-                      <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                        <span className="flex items-center gap-1 text-blue-400 font-medium">
-                          <Clock className="w-3.5 h-3.5" />
-                          {tpl.estimatedDays} Gün Kurulum
-                        </span>
-                        <span>•</span>
-                        <span>{tpl._count?.projects || 0} Aktif Mağaza</span>
+            <div className="space-y-2.5">
+              {templates.map((tpl) => {
+                const isSelected = selectedTemplate?.id === tpl.id
+                return (
+                  <div
+                    key={tpl.id}
+                    onClick={() => setSelectedTemplate(tpl)}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all space-y-3 ${
+                      isSelected
+                        ? "bg-amber-950/40 border-amber-600/70 shadow-md ring-1 ring-amber-500/50"
+                        : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="text-sm font-bold text-white">{tpl.name}</h3>
+                        <div className="text-xs text-emerald-400 font-semibold font-mono mt-0.5">
+                          {tpl.baseBudget.toLocaleString("tr-TR")} ₺ Taban Bütçe
+                        </div>
                       </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleToggleActive(tpl.id)
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+                          tpl.isActive
+                            ? "bg-emerald-950/60 text-emerald-300 border-emerald-800"
+                            : "bg-slate-800 text-slate-400 border-slate-700"
+                        }`}
+                      >
+                        {tpl.isActive ? "Aktif" : "Pasif"}
+                      </button>
                     </div>
-                    <ChevronRight
-                      className={`w-4 h-4 mt-1 transition-transform ${
-                        isSelected ? "text-blue-400 translate-x-1" : "text-slate-600"
-                      }`}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
 
-        {/* Selected Template BoQ and Tasks Detail */}
-        <div className="lg:col-span-2 space-y-4">
-          {selectedTemplate ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div>
-                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
-                    Konsept Detayı
-                  </span>
-                  <h2 className="text-lg font-bold text-white mt-0.5">{selectedTemplate.name}</h2>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-blue-400" />
-                      Hedef Süre: {selectedTemplate.estimatedDays} Gün
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                      Bağlı Mağazalar: {selectedTemplate._count?.projects || 0} Adet
-                    </span>
-                  </div>
-                </div>
-
-                <Link
-                  href="/franchise/rollout"
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 transition-colors flex items-center gap-1"
-                >
-                  <span>Rollout'ta Gör</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              {/* BoQ Items Table */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Calculator className="w-4 h-4 text-emerald-400" />
-                  <span>Standart Keşif ve Malzeme Listesi (BoQ)</span>
-                </h3>
-
-                <div className="bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800">
-                      <tr>
-                        <th className="p-2.5">Poz Kodu</th>
-                        <th className="p-2.5">Malzeme / İmalat Tanımı</th>
-                        <th className="p-2.5 text-right">Miktar</th>
-                        <th className="p-2.5">Birim</th>
-                        <th className="p-2.5 text-right">Birim Fiyat</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                      {(Array.isArray(selectedTemplate.defaultBoQ)
-                        ? selectedTemplate.defaultBoQ
-                        : []
-                      ).map((item: any, i: number) => (
-                        <tr key={i} className="hover:bg-slate-900/40">
-                          <td className="p-2.5 font-mono text-[11px] text-blue-400">{item.code}</td>
-                          <td className="p-2.5 font-medium">{item.description}</td>
-                          <td className="p-2.5 text-right font-semibold">{item.quantity}</td>
-                          <td className="p-2.5 text-slate-400">{item.unit}</td>
-                          <td className="p-2.5 text-right font-mono text-emerald-400">
-                            {item.unitPrice ? `${Number(item.unitPrice).toLocaleString("tr-TR")} ₺` : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Default Tasks Gantt Summary */}
-              <div className="space-y-2 pt-2">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-indigo-400" />
-                  <span>Standart Kurulum İş Planı (Gantt Fazları)</span>
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {(Array.isArray(selectedTemplate.defaultTasks)
-                    ? selectedTemplate.defaultTasks
-                    : []
-                  ).map((task: any, i: number) => (
-                    <div
-                      key={i}
-                      className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center font-bold text-[10px] text-blue-400">
-                          {i + 1}
-                        </span>
-                        <span className="font-medium text-white">{task.name}</span>
-                      </div>
-                      <span className="font-mono text-xs font-bold text-indigo-400 whitespace-nowrap">
-                        {task.durationDays} Gün
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/80">
+                      <span>Standart İş Adımı: {Array.isArray(tpl.phasesJson) ? tpl.phasesJson.length : 5} Faz</span>
+                      <span className="text-amber-400 flex items-center gap-0.5 font-medium">
+                        İncele <ChevronRight className="w-3 h-3" />
                       </span>
                     </div>
-                  ))}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Template Inspector & Gantt Breakdown (2 cols) */}
+          <div className="lg:col-span-2 space-y-4">
+            {selectedTemplate ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div>
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                      Seçili Tip Konsept Detayı
+                    </span>
+                    <h2 className="text-xl font-bold text-white mt-1">{selectedTemplate.name}</h2>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800 text-xs">
+                      <span className="text-slate-400 block text-[10px]">Taban Kurulum Bütçesi</span>
+                      <span className="font-bold text-emerald-400 font-mono text-sm">
+                        {selectedTemplate.baseBudget.toLocaleString("tr-TR")} ₺
+                      </span>
+                    </div>
+
+                    <Link
+                      href="/franchise/rollout"
+                      className="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md transition-colors flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Bu Konseptle Şube Aç</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Standard Phases Breakdown */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-amber-400" />
+                    <span>Standart Rollout İş Planı Fazları (Gantt Kurgusu)</span>
+                  </h3>
+
+                  <div className="space-y-2">
+                    {(Array.isArray(selectedTemplate.phasesJson)
+                      ? selectedTemplate.phasesJson
+                      : []
+                    ).map((phase: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-full bg-slate-800 text-amber-400 flex items-center justify-center font-bold text-[11px]">
+                            {idx + 1}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-white">{phase.name}</span>
+                            <div className="text-[10px] text-slate-500">
+                              Tahmini Süre: {phase.days || 10} İş Günü
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="text-[11px] font-mono text-slate-400 px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
+                          Ağırlık: %{phase.weight || 20}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-10 text-center text-slate-500 text-xs">
-              Lütfen sol menüden incelemek istediğiniz bir konsept seçin.
-            </div>
-          )}
+            ) : (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
+                Detayları incelemek için soldaki listeden bir konsept şablonu seçin.
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
-      {/* New Template Modal */}
+      {/* MODAL: Yeni Konsept Şablonu */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Box className="w-4 h-4 text-blue-400" />
-                <span>Yeni Konsept Şablonu Oluştur</span>
-              </h3>
+              <div className="flex items-center gap-2">
+                <Box className="w-5 h-5 text-amber-500" />
+                <h3 className="text-base font-bold text-white">Yeni Konsept Şablonu Tanımla</h3>
+              </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Konsept Adı *</label>
+            {formError && (
+              <div className="p-3 rounded-lg bg-red-950/50 border border-red-800 text-xs text-red-300">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Şablon / Konsept Adı <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
+                  placeholder="Örn: 500m2 Cadde Mağazası veya AVM Kiosk"
                   value={newTemplate.name}
                   onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                  placeholder="Örn: Cadde Kiosk - 50m2"
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-600 focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
                   required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">
-                  Tahmini Standart Kurulum Süresi (Gün) *
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Taban Kurulum Bütçesi (₺) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="number"
-                  value={newTemplate.estimatedDays}
-                  onChange={(e) =>
-                    setNewTemplate({ ...newTemplate, estimatedDays: Number(e.target.value) })
-                  }
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500"
+                  placeholder="Örn: 1850000"
+                  value={newTemplate.baseBudget}
+                  onChange={(e) => setNewTemplate({ ...newTemplate, baseBudget: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
                   required
                 />
               </div>
-
-              <p className="text-[11px] text-slate-400 pt-1">
-                Şablon oluşturulduktan sonra standart BoQ ve Gantt fazları otomatik olarak atanacaktır.
-              </p>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3.5 py-2 text-xs rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
                 >
-                  İptal
+                  Vazgeç
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md shadow-amber-600/20 disabled:opacity-50"
                 >
-                  Oluştur
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Kaydediliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Şablonu Kaydet</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

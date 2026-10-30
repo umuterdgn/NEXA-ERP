@@ -40,6 +40,8 @@ export interface StoreProject {
   longitude: number | null;
   progress: number;
   status: string;
+  totalBudget?: number | null;
+  budget?: number | null;
   grossAreaSqm: number | null;
   totalCapex: number | null;
   rolloutPhase: string;
@@ -229,26 +231,26 @@ export default function RolloutLeafletMap({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800 text-[11px]">
-                    <div className="bg-slate-900/80 p-1.5 rounded border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Brüt Alan</span>
-                      <strong className="text-white font-mono">{p.grossAreaSqm ? `${p.grossAreaSqm} m²` : "120 m²"}</strong>
+                  <div className="p-2.5 bg-slate-900/95 rounded-lg border border-slate-800 space-y-1.5 text-xs">
+                    <div className="flex justify-between items-center text-slate-300">
+                      <span className="text-slate-400">Statü:</span>
+                      <strong className="text-amber-400 font-semibold">{p.status || p.rolloutPhase}</strong>
                     </div>
-                    <div className="bg-slate-900/80 p-1.5 rounded border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">CAPEX</span>
+                    <div className="flex justify-between items-center text-slate-300">
+                      <span className="text-slate-400">Kurulum Bütçesi:</span>
                       <strong className="text-emerald-400 font-mono">
-                        {p.totalCapex ? `${(p.totalCapex / 1000000).toFixed(2)}M ₺` : "1.85M ₺"}
+                        {(p.totalBudget || p.budget || p.totalCapex || 0).toLocaleString("tr-TR")} ₺
                       </strong>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => onSelectProject(p)}
+                  <a
+                    href={`/franchise/rollout/${p.id}`}
                     className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors mt-1"
                   >
-                    <span>Detayları İncele</span>
+                    <span>Şube Detay & Giderler</span>
                     <ArrowRight className="w-3 h-3" />
-                  </button>
+                  </a>
                 </div>
               </Popup>
             </Marker>

@@ -10,6 +10,47 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
+// Türkiye şehir koordinatları tablosu
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  İSTANBUL: { lat: 41.0082, lng: 28.9784 },
+  ISTANBUL: { lat: 41.0082, lng: 28.9784 },
+  ANKARA: { lat: 39.9334, lng: 32.8597 },
+  İZMİR: { lat: 38.4237, lng: 27.1428 },
+  IZMIR: { lat: 38.4237, lng: 27.1428 },
+  BURSA: { lat: 40.1885, lng: 29.0610 },
+  ANTALYA: { lat: 36.8969, lng: 30.7133 },
+  ADANA: { lat: 37.0000, lng: 35.3213 },
+  TRABZON: { lat: 41.0027, lng: 39.7168 },
+  GAZİANTEP: { lat: 37.0662, lng: 37.3833 },
+  GAZIANTEP: { lat: 37.0662, lng: 37.3833 },
+  KONYA: { lat: 37.8746, lng: 32.4932 },
+  KAYSERİ: { lat: 38.7205, lng: 35.4826 },
+  KAYSERI: { lat: 38.7205, lng: 35.4826 },
+  DİYARBAKIR: { lat: 37.9144, lng: 40.2306 },
+  DIYARBAKIR: { lat: 37.9144, lng: 40.2306 },
+  ESKİŞEHİR: { lat: 39.7767, lng: 30.5206 },
+  ESKISEHIR: { lat: 39.7767, lng: 30.5206 },
+  MERSİN: { lat: 36.8121, lng: 34.6415 },
+  MERSIN: { lat: 36.8121, lng: 34.6415 },
+  SAMSUN: { lat: 41.2867, lng: 36.3300 },
+  DENİZLİ: { lat: 37.7765, lng: 29.0864 },
+  DENIZLI: { lat: 37.7765, lng: 29.0864 },
+  SAKARYA: { lat: 40.7569, lng: 30.3783 },
+  KOCAELİ: { lat: 40.7654, lng: 29.9408 },
+  KOCAELI: { lat: 40.7654, lng: 29.9408 },
+  MUĞLA: { lat: 37.2153, lng: 28.3636 },
+  MUGLA: { lat: 37.2153, lng: 28.3636 },
+  BALIKESİR: { lat: 39.6484, lng: 27.8826 },
+  BALIKESIR: { lat: 39.6484, lng: 27.8826 },
+  TEKİRDAĞ: { lat: 40.9833, lng: 27.5167 },
+  TEKIRDAG: { lat: 40.9833, lng: 27.5167 },
+}
+
+export function resolveCityCoords(city: string): { lat: number; lng: number } {
+  const norm = (city || "").trim().toUpperCase()
+  return CITY_COORDS[norm] || { lat: 39.0, lng: 35.0 }
+}
+
 /**
  * Helper: Güvenli ve zorunlu Tenant ID alımı (Strict Multi-Tenant Isolation)
  */
@@ -30,7 +71,6 @@ export async function getFranchiseTenantId(): Promise<string> {
   }
 
   if (!tenantId) {
-    // SuperAdmin fallback veya ilk aktif tenant
     const firstTenant = await prisma.tenant.findFirst({
       where: { isActive: true },
       select: { id: true },
@@ -59,6 +99,12 @@ export async function getRolloutProjects() {
         stageGates: {
           orderBy: { createdAt: "asc" },
         },
+        expenses: {
+          orderBy: { createdAt: "desc" },
+        },
+        workProofs: {
+          orderBy: { createdAt: "desc" },
+        },
       },
       orderBy: { createdAt: "desc" },
     })
@@ -70,11 +116,49 @@ export async function getRolloutProjects() {
   }
 }
 
+export async function getRolloutProjectById(id: string) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const project = await prisma.rolloutProject.findFirst({
+      where: {
+        id,
+        tenantId,
+      },
+      include: {
+        stageGates: {
+          orderBy: { createdAt: "asc" },
+        },
+        expenses: {
+          orderBy: { createdAt: "desc" },
+        },
+        workProofs: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    })
+
+    if (!project) {
+      return { success: false, error: "Mağaza projesi bulunamadı." }
+    }
+
+    return { success: true, project }
+  } catch (error: any) {
+    console.error("❌ getRolloutProjectById Error:", error)
+    return { success: false, error: error.message || "Proje yüklenemedi." }
+  }
+}
+
 export async function createRolloutProject(data: {
   name: string
   city: string
   budget?: number | null
+  totalBudget?: number | null
+  lat?: number | null
+  lng?: number | null
   status?: string
+  regionalManagerId?: string | null
+  branchManagerId?: string | null
 }) {
   try {
     const tenantId = await getFranchiseTenantId()
@@ -86,13 +170,29 @@ export async function createRolloutProject(data: {
       return { success: false, error: "Şehir bilgisi zorunludur." }
     }
 
+    // Koordinatları çözümle veya kullanıcının sağladığı koordinatı kullan
+    let lat = data.lat
+    let lng = data.lng
+    if (!lat || !lng) {
+      const coords = resolveCityCoords(data.city)
+      lat = coords.lat
+      lng = coords.lng
+    }
+
+    const budgetVal = data.totalBudget ?? data.budget ?? 0
+
     const project = await prisma.rolloutProject.create({
       data: {
         tenantId,
         name: data.name.trim(),
         city: data.city.trim(),
-        budget: data.budget ? Number(data.budget) : null,
+        lat,
+        lng,
+        totalBudget: Number(budgetVal),
+        budget: Number(budgetVal),
         status: data.status || "KIRALAMA",
+        regionalManagerId: data.regionalManagerId || null,
+        branchManagerId: data.branchManagerId || null,
         stageGates: {
           create: [
             {
@@ -365,5 +465,366 @@ export async function updateRmaRequestStatus(id: string, status: string) {
   } catch (error: any) {
     console.error("❌ updateRmaRequestStatus Error:", error)
     return { success: false, error: error.message || "RMA durumu güncellenemedi." }
+  }
+}
+
+// ============================================================================
+// 5. ROLLOUT EXPENSES (Şube Kurulum Giderleri & Bütçe Takibi)
+// ============================================================================
+
+export async function getRolloutExpenses(rolloutProjectId: string) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    // Verify project belongs to tenant
+    const project = await prisma.rolloutProject.findFirst({
+      where: { id: rolloutProjectId, tenantId },
+      select: { id: true, totalBudget: true, budget: true, name: true },
+    })
+
+    if (!project) {
+      return { success: false, error: "Proje bulunamadı veya yetkiniz yok.", expenses: [] }
+    }
+
+    const expenses = await prisma.rolloutExpense.findMany({
+      where: { rolloutProjectId },
+      orderBy: { createdAt: "desc" },
+    })
+
+    const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0)
+    const budget = project.totalBudget || project.budget || 0
+    const remaining = budget - totalSpent
+
+    return {
+      success: true,
+      expenses,
+      summary: {
+        totalBudget: budget,
+        totalSpent,
+        remaining,
+        burnPercentage: budget > 0 ? Math.min(100, Math.round((totalSpent / budget) * 100)) : 0,
+      },
+    }
+  } catch (error: any) {
+    console.error("❌ getRolloutExpenses Error:", error)
+    return { success: false, error: error.message || "Giderler yüklenemedi", expenses: [] }
+  }
+}
+
+export async function createRolloutExpense(data: {
+  rolloutProjectId: string
+  title: string
+  amount: number
+  category: string // INSAAT, MOBILYA, IT_DONANIM, RESMI_HARC
+  receiptUrl?: string | null
+}) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    // Project check
+    const project = await prisma.rolloutProject.findFirst({
+      where: { id: data.rolloutProjectId, tenantId },
+    })
+    if (!project) {
+      return { success: false, error: "Mağaza projesi bulunamadı." }
+    }
+
+    if (!data.title?.trim()) {
+      return { success: false, error: "Harcama başlığı zorunludur." }
+    }
+    if (!data.amount || data.amount <= 0) {
+      return { success: false, error: "Geçerli bir harcama tutarı giriniz." }
+    }
+
+    const expense = await prisma.rolloutExpense.create({
+      data: {
+        rolloutProjectId: data.rolloutProjectId,
+        title: data.title.trim(),
+        amount: Number(data.amount),
+        category: data.category || "INSAAT",
+        receiptUrl: data.receiptUrl || null,
+      },
+    })
+
+    revalidatePath(`/franchise/rollout/${data.rolloutProjectId}`)
+    revalidatePath("/franchise/rollout")
+
+    return { success: true, expense }
+  } catch (error: any) {
+    console.error("❌ createRolloutExpense Error:", error)
+    return { success: false, error: error.message || "Gider kaydı eklenemedi." }
+  }
+}
+
+export async function deleteRolloutExpense(id: string) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const expense = await prisma.rolloutExpense.findUnique({
+      where: { id },
+      include: { project: true },
+    })
+
+    if (!expense || expense.project.tenantId !== tenantId) {
+      return { success: false, error: "Gider kaydı bulunamadı veya yetkiniz yok." }
+    }
+
+    await prisma.rolloutExpense.delete({ where: { id } })
+
+    revalidatePath(`/franchise/rollout/${expense.rolloutProjectId}`)
+    return { success: true }
+  } catch (error: any) {
+    console.error("❌ deleteRolloutExpense Error:", error)
+    return { success: false, error: error.message || "Gider silinemedi." }
+  }
+}
+
+// ============================================================================
+// 6. WORK PROOFS (Taşeron İş Kanıtı ve Çift Onay Akışı)
+// ============================================================================
+
+export async function getRolloutWorkProofs(rolloutProjectId: string) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const project = await prisma.rolloutProject.findFirst({
+      where: { id: rolloutProjectId, tenantId },
+    })
+    if (!project) {
+      return { success: false, error: "Proje bulunamadı.", workProofs: [] }
+    }
+
+    const workProofs = await prisma.rolloutWorkProof.findMany({
+      where: { rolloutProjectId },
+      orderBy: { createdAt: "desc" },
+    })
+
+    return { success: true, workProofs }
+  } catch (error: any) {
+    console.error("❌ getRolloutWorkProofs Error:", error)
+    return { success: false, error: error.message || "İş kanıtları yüklenemedi", workProofs: [] }
+  }
+}
+
+export async function createRolloutWorkProof(data: {
+  rolloutProjectId: string
+  subcontractorId?: string
+  title: string
+  photoUrl: string
+}) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const project = await prisma.rolloutProject.findFirst({
+      where: { id: data.rolloutProjectId, tenantId },
+    })
+    if (!project) {
+      return { success: false, error: "Proje bulunamadı." }
+    }
+
+    if (!data.title?.trim()) {
+      return { success: false, error: "İş başlığı zorunludur." }
+    }
+    if (!data.photoUrl?.trim()) {
+      return { success: false, error: "Kanıt fotoğrafı zorunludur." }
+    }
+
+    const proof = await prisma.rolloutWorkProof.create({
+      data: {
+        rolloutProjectId: data.rolloutProjectId,
+        subcontractorId: data.subcontractorId || "SUB_DEFAULT",
+        title: data.title.trim(),
+        photoUrl: data.photoUrl.trim(),
+        status: "PENDING",
+      },
+    })
+
+    revalidatePath(`/franchise/rollout/${data.rolloutProjectId}/work-proofs`)
+    revalidatePath(`/franchise/rollout/${data.rolloutProjectId}`)
+
+    return { success: true, proof }
+  } catch (error: any) {
+    console.error("❌ createRolloutWorkProof Error:", error)
+    return { success: false, error: error.message || "İş kanıtı eklenemedi." }
+  }
+}
+
+export async function approveRegionalWorkProof(id: string, notes?: string) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const proof = await prisma.rolloutWorkProof.findUnique({
+      where: { id },
+      include: { project: true },
+    })
+
+    if (!proof || proof.project.tenantId !== tenantId) {
+      return { success: false, error: "İş kanıtı bulunamadı veya yetkiniz yok." }
+    }
+
+    const updated = await prisma.rolloutWorkProof.update({
+      where: { id },
+      data: {
+        status: "REGIONAL_APPROVED",
+        regionalNotes: notes || "Bölge Müdürü tarafından sahada incelendi ve onaylandı.",
+      },
+    })
+
+    revalidatePath(`/franchise/rollout/${proof.rolloutProjectId}/work-proofs`)
+    revalidatePath(`/franchise/rollout/${proof.rolloutProjectId}`)
+
+    return { success: true, proof: updated }
+  } catch (error: any) {
+    console.error("❌ approveRegionalWorkProof Error:", error)
+    return { success: false, error: error.message || "Bölge onayı verilemedi." }
+  }
+}
+
+export async function approveHqWorkProof(id: string, notes?: string) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const proof = await prisma.rolloutWorkProof.findUnique({
+      where: { id },
+      include: { project: true },
+    })
+
+    if (!proof || proof.project.tenantId !== tenantId) {
+      return { success: false, error: "İş kanıtı bulunamadı veya yetkiniz yok." }
+    }
+
+    const updated = await prisma.rolloutWorkProof.update({
+      where: { id },
+      data: {
+        status: "HQ_APPROVED",
+        hqNotes: notes || "Genel Merkez (HQ) teknik incelemesi onaylandı. Hakedişe hazır.",
+      },
+    })
+
+    revalidatePath(`/franchise/rollout/${proof.rolloutProjectId}/work-proofs`)
+    revalidatePath(`/franchise/rollout/${proof.rolloutProjectId}`)
+
+    return { success: true, proof: updated }
+  } catch (error: any) {
+    console.error("❌ approveHqWorkProof Error:", error)
+    return { success: false, error: error.message || "Genel Merkez onayı verilemedi." }
+  }
+}
+
+export async function rejectWorkProof(id: string, notes?: string) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const proof = await prisma.rolloutWorkProof.findUnique({
+      where: { id },
+      include: { project: true },
+    })
+
+    if (!proof || proof.project.tenantId !== tenantId) {
+      return { success: false, error: "İş kanıtı bulunamadı veya yetkiniz yok." }
+    }
+
+    const updated = await prisma.rolloutWorkProof.update({
+      where: { id },
+      data: {
+        status: "REJECTED",
+        hqNotes: notes || "İş kanıtı standartlara uygun bulunmadı, revizyon talep edildi.",
+      },
+    })
+
+    revalidatePath(`/franchise/rollout/${proof.rolloutProjectId}/work-proofs`)
+    revalidatePath(`/franchise/rollout/${proof.rolloutProjectId}`)
+
+    return { success: true, proof: updated }
+  } catch (error: any) {
+    console.error("❌ rejectWorkProof Error:", error)
+    return { success: false, error: error.message || "İş kanıtı reddedilemedi." }
+  }
+}
+
+// ============================================================================
+// 7. CONCEPT TEMPLATES (Tip Mağaza / Konsept Şablonları)
+// ============================================================================
+
+export async function getConceptTemplates() {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const templates = await prisma.conceptTemplate.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "desc" },
+    })
+
+    return { success: true, templates }
+  } catch (error: any) {
+    console.error("❌ getConceptTemplates Error:", error)
+    return { success: false, error: error.message || "Konsept şablonları yüklenemedi", templates: [] }
+  }
+}
+
+export async function createConceptTemplate(data: {
+  name: string
+  baseBudget: number
+  phasesJson?: any
+}) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    if (!data.name?.trim()) {
+      return { success: false, error: "Şablon adı zorunludur." }
+    }
+    if (!data.baseBudget || data.baseBudget <= 0) {
+      return { success: false, error: "Geçerli bir taban bütçe giriniz." }
+    }
+
+    const defaultPhases = [
+      { name: "Kiralama & Alan Teslimi", days: 10, weight: 15 },
+      { name: "AVM & Mimari Proje Onayı", days: 12, weight: 20 },
+      { name: "Kaba & İnce İnşaat Montajı", days: 20, weight: 40 },
+      { name: "Punch List & Kalite Denetimi", days: 5, weight: 15 },
+      { name: "İtfaiye Ruhsatı & Açılış İzni", days: 3, weight: 10 },
+    ]
+
+    const template = await prisma.conceptTemplate.create({
+      data: {
+        tenantId,
+        name: data.name.trim(),
+        baseBudget: Number(data.baseBudget),
+        phasesJson: data.phasesJson || defaultPhases,
+        isActive: true,
+      },
+    })
+
+    revalidatePath("/franchise/templates")
+    revalidatePath("/franchise/rollout")
+
+    return { success: true, template }
+  } catch (error: any) {
+    console.error("❌ createConceptTemplate Error:", error)
+    return { success: false, error: error.message || "Konsept şablonu oluşturulamadı." }
+  }
+}
+
+export async function toggleConceptTemplate(id: string) {
+  try {
+    const tenantId = await getFranchiseTenantId()
+
+    const tpl = await prisma.conceptTemplate.findFirst({
+      where: { id, tenantId },
+    })
+    if (!tpl) {
+      return { success: false, error: "Şablon bulunamadı." }
+    }
+
+    const updated = await prisma.conceptTemplate.update({
+      where: { id },
+      data: { isActive: !tpl.isActive },
+    })
+
+    revalidatePath("/franchise/templates")
+    return { success: true, template: updated }
+  } catch (error: any) {
+    console.error("❌ toggleConceptTemplate Error:", error)
+    return { success: false, error: error.message || "Şablon durumu güncellenemedi." }
   }
 }

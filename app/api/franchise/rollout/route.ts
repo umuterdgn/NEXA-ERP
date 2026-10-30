@@ -119,14 +119,17 @@ export async function GET() {
         city: p.city,
         district: p.city,
         location: `${p.city} Şubesi`,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+        latitude: p.lat || coords.latitude,
+        longitude: p.lng || coords.longitude,
         progress,
         status: p.status,
         rolloutPhase,
-        budget: p.budget || 1200000,
+        budget: p.totalBudget || p.budget || 0,
+        totalBudget: p.totalBudget || p.budget || 0,
+        regionalManagerId: p.regionalManagerId,
+        branchManagerId: p.branchManagerId,
         grossAreaSqm: 140,
-        totalCapex: p.budget || 1200000,
+        totalCapex: p.totalBudget || p.budget || 0,
         stageGates: p.stageGates.map((g) => ({
           id: g.id,
           stageName: g.name || g.stageName || "Aşama",
@@ -175,19 +178,29 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { name, city, budget, status } = body
+    const { name, city, budget, totalBudget, status, regionalManagerId, branchManagerId, lat, lng } = body
 
     if (!name || !city) {
       return NextResponse.json({ error: "Mağaza adı ve şehir zorunludur" }, { status: 400 })
     }
+
+    const bVal = totalBudget ?? budget ?? 0
+    const coords = getCoordsForCity(city)
+    const finalLat = lat ?? coords.latitude
+    const finalLng = lng ?? coords.longitude
 
     const project = await prisma.rolloutProject.create({
       data: {
         tenantId,
         name: name.trim(),
         city: city.trim(),
-        budget: budget ? Number(budget) : null,
+        lat: finalLat,
+        lng: finalLng,
+        totalBudget: Number(bVal),
+        budget: Number(bVal),
         status: status || "KIRALAMA",
+        regionalManagerId: regionalManagerId || null,
+        branchManagerId: branchManagerId || null,
         stageGates: {
           create: [
             {
