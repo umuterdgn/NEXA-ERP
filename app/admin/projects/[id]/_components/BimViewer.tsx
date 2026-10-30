@@ -1622,14 +1622,14 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </button>
       </div>
 
-      {/* --- GLASSMORPHISM KATMANLAR & X-RAY KONTROL PANELİ (TOP RIGHT) --- */}
-      <div className="absolute top-16 right-3 sm:top-4 sm:right-4 z-40 flex flex-col items-end">
+      {/* --- GLASSMORPHISM KATMANLAR & X-RAY KONTROL PANELİ (TOP RIGHT - ADIM 2) --- */}
+      <div className="absolute right-4 top-4 z-40 flex flex-col items-end pointer-events-auto">
         {!isLayerPanelOpen ? (
           // Collapsed Floating Button
           <button
             type="button"
             onClick={() => setIsLayerPanelOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-900/90 hover:bg-slate-850 backdrop-blur-xl border border-cyan-500/40 rounded-xl shadow-[0_8px_30px_rgba(6,182,212,0.25)] text-white text-xs font-semibold transition-all transform hover:scale-105"
+            className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-900/90 hover:bg-slate-850 backdrop-blur-xl border border-cyan-500/40 rounded-xl shadow-[0_8px_30px_rgba(6,182,212,0.25)] text-white text-xs font-semibold transition-all transform hover:scale-105 pointer-events-auto"
           >
             <span className="text-base animate-pulse">🩻</span>
             <span>Katmanlar & X-Ray</span>
@@ -1645,7 +1645,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           </button>
         ) : (
           // Expanded Glassmorphism Control Panel (Compact & Responsive)
-          <div className="w-[calc(100vw-24px)] max-w-xs sm:w-72 bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.65)] overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200 max-h-[calc(100vh-140px)] flex flex-col">
+          <div className="w-80 max-w-sm max-h-[calc(100vh-120px)] overflow-y-auto bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg shadow-2xl p-0 z-40 flex flex-col pointer-events-auto animate-in fade-in zoom-in-95 duration-200">
             {/* Panel Header */}
             <div className="p-3 px-3.5 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-700/80 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
@@ -2129,8 +2129,8 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </div>
       )}
 
-      {/* Floating Bottom Toolbar (BoQ 5D, Snagging, Measurement & AR Buttons) */}
-      <div className="absolute bottom-4 left-4 right-20 sm:left-auto sm:right-20 z-30 flex items-center justify-center sm:justify-end gap-2 flex-wrap">
+      {/* Floating Bottom Toolbar (BoQ 5D, Snagging, Measurement & AR Buttons - ADIM 3) */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-50 bg-gray-900/80 p-2 rounded-xl backdrop-blur-md items-center justify-center flex-wrap shadow-2xl border border-gray-700/60 pointer-events-auto">
         {/* 5D BoQ Toggle */}
         <button
           type="button"
@@ -2217,9 +2217,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         )}
       </div>
 
-      {/* 2D Measurement & Element Quantity Metric Card (Left Bottom) */}
+      {/* 2D Measurement & Element Quantity Metric Card (Left Panel - ADIM 1) */}
       {isMeasureMode && (
-        <div className="absolute bottom-20 sm:bottom-6 left-4 sm:left-6 lg:left-8 z-40 w-[calc(100%-32px)] sm:w-72 max-w-xs bg-slate-900/95 backdrop-blur-xl border border-cyan-500/40 rounded-2xl p-3.5 shadow-2xl shadow-cyan-950/60 space-y-2.5 animate-in slide-in-from-bottom duration-200">
+        <div className="absolute left-4 top-20 w-80 max-h-[calc(100vh-120px)] overflow-y-auto bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-4 z-40 shadow-2xl pointer-events-auto space-y-2.5 animate-in fade-in slide-in-from-left duration-200">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold border border-cyan-500/30">
@@ -2300,9 +2300,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         </span>
       </div>
 
-      {/* 5D BIM Poz & İmalat Kartı (Bottom Left Panel) */}
+      {/* 5D BIM Poz & İmalat Kartı (Sol Bilgi Paneli - ADIM 1) */}
       {isBoqMode && selectedBoqElement && (
-        <div className="absolute bottom-20 sm:bottom-6 left-4 sm:left-6 lg:left-8 z-40 w-[calc(100%-32px)] sm:w-80 max-w-sm bg-slate-900/95 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-4 shadow-[0_12px_45px_rgba(0,0,0,0.75)] space-y-3.5 animate-in slide-in-from-bottom duration-200">
+        <div className="absolute left-4 top-20 w-80 max-h-[calc(100vh-120px)] overflow-y-auto bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-4 z-40 shadow-2xl pointer-events-auto space-y-3.5 animate-in fade-in slide-in-from-left duration-200">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold border border-emerald-500/30">
@@ -2637,9 +2637,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           </div>
         </div>
       )}
-      {/* Sağ Bilgi Paneli: Yapı Elemanı Özellikleri (IFC) */}
+      {/* Sol Bilgi Paneli: Yapı Elemanı Özellikleri (IFC Properties Panel - ADIM 1) */}
       {selectedIfcElement && (
-        <div className="absolute right-0 top-0 bottom-0 w-80 sm:w-96 bg-slate-950/95 backdrop-blur-md border-l border-slate-800 p-5 shadow-2xl z-40 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-200">
+        <div className="absolute left-4 top-20 w-80 max-h-[calc(100vh-120px)] overflow-y-auto bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-4 z-40 shadow-2xl pointer-events-auto flex flex-col justify-between animate-in fade-in slide-in-from-left duration-200">
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">

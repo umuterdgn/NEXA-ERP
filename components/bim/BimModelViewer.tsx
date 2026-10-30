@@ -960,9 +960,9 @@ export default function BimModelViewer({
           </div>
         </div>
 
-        {/* Selected BIM Element Inspector Drawer (Bottom Left Overlay) */}
+        {/* Selected BIM Element Inspector Drawer (Sol Bilgi Paneli - ADIM 1) */}
         {selectedElement ? (
-          <div className="absolute bottom-4 left-4 max-w-sm w-full bg-slate-950/90 backdrop-blur-md border border-cyan-500/40 rounded-2xl p-4 shadow-2xl space-y-2 pointer-events-auto animate-in fade-in slide-in-from-bottom-2">
+          <div className="absolute left-4 top-20 w-80 max-h-[calc(100vh-120px)] overflow-y-auto bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-4 z-40 shadow-2xl pointer-events-auto space-y-2 animate-in fade-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
