@@ -46,7 +46,7 @@ const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   TEKIRDAG: { lat: 40.9833, lng: 27.5167 },
 }
 
-export function resolveCityCoords(city: string): { lat: number; lng: number } {
+export async function resolveCityCoords(city: string): Promise<{ lat: number; lng: number }> {
   const norm = (city || "").trim().toUpperCase()
   return CITY_COORDS[norm] || { lat: 39.0, lng: 35.0 }
 }
@@ -461,7 +461,7 @@ export async function createRolloutProject(data: {
     let lat = data.lat
     let lng = data.lng
     if (!lat || !lng) {
-      const coords = resolveCityCoords(data.city)
+      const coords = await resolveCityCoords(data.city)
       lat = coords.lat
       lng = coords.lng
     }
