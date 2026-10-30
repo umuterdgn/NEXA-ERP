@@ -31,6 +31,13 @@ export async function approveStageGate(stageGateId: string, approvedById?: strin
             },
           },
         },
+        rolloutProject: {
+          include: {
+            stageGates: {
+              orderBy: { createdAt: "asc" },
+            },
+          },
+        },
       },
     })
 
@@ -39,7 +46,7 @@ export async function approveStageGate(stageGateId: string, approvedById?: strin
     }
 
     // 2. Stage-Gate Kuralı: Kendisinden önceki aşamalar onaylı mı?
-    const allStages = gate.project.stageGates
+    const allStages = gate.project?.stageGates || gate.rolloutProject?.stageGates || []
     const currentIndex = allStages.findIndex((s) => s.id === stageGateId)
 
     for (let i = 0; i < currentIndex; i++) {

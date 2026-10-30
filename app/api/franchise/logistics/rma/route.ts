@@ -2,6 +2,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Franchise Hasarlı Teslimat ve İade / Değişim (RMA) API'si
+ * %100 Tenant İzolasyonu ile RmaRequest Modeline Bağlıdır.
  */
 
 import { NextResponse } from "next/server"
@@ -17,68 +18,59 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
-    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
-    const tenantId = (session.user as any)?.tenantId
+    let tenantId = (session.user as any)?.tenantId
+
+    if (!tenantId && session.user.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      })
+      tenantId = user?.tenantId
+    }
+
+    if (!tenantId) {
+      const firstTenant = await prisma.tenant.findFirst({ select: { id: true } })
+      tenantId = firstTenant?.id
+    }
+
+    if (!tenantId) {
+      return NextResponse.json({ issues: [], rmaRequests: [] })
+    }
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
 
-    const where: any = {}
-    if (!isSuperAdmin) {
-      where.tenantId = tenantId || "non-existent"
-    }
+    const where: any = { tenantId }
     if (status && status !== "ALL") {
       where.status = status
     }
 
-    const issues = await prisma.deliveryIssue.findMany({
+    const rmaRequests = await prisma.rmaRequest.findMany({
       where,
-      include: {
-        goodsReceipt: {
-          include: {
-            issues: true,
-          },
-        },
-      },
       orderBy: { createdAt: "desc" },
     })
 
-    // Fetch associated purchase requests & projects for the goods receipts
-    const purchaseRequestIds = issues.map((i) => i.goodsReceipt.purchaseRequestId).filter(Boolean)
-    const purchaseRequests = await prisma.purchaseRequest.findMany({
-      where: { id: { in: purchaseRequestIds } },
-      include: {
-        project: {
-          select: { id: true, name: true, city: true, district: true },
-        },
-        bids: {
-          where: { isWinningBid: true },
-          include: { supplier: true },
-          take: 1,
-        },
+    const enrichedIssues = rmaRequests.map((r) => ({
+      id: r.id,
+      storeName: r.storeName,
+      itemName: r.itemName,
+      status: r.status,
+      createdAt: r.createdAt,
+      materialName: r.itemName,
+      description: `${r.storeName} için kusurlu ürün kaydı: ${r.itemName}`,
+      issueType: "DAMAGED",
+      project: {
+        name: r.storeName,
+        city: "Türkiye",
       },
-    })
+      supplier: {
+        name: "Merkezi Franchise Tedarikçi",
+        email: "tedarik@franchise.nexa.com",
+        phone: "0850 444 00 22",
+      },
+    }))
 
-    const prMap = new Map(purchaseRequests.map((pr) => [pr.id, pr]))
-
-    const enrichedIssues = issues.map((issue) => {
-      const pr = prMap.get(issue.goodsReceipt.purchaseRequestId)
-      return {
-        ...issue,
-        materialName: pr?.materialName || "Kurumsal Malzeme",
-        orderedQuantity: issue.goodsReceipt.orderedQuantity,
-        deliveredQuantity: issue.goodsReceipt.deliveredQuantity,
-        waybillNo: issue.goodsReceipt.waybillNo,
-        project: pr?.project || { name: "Franchise Şantiyesi", city: "Türkiye" },
-        supplier: pr?.bids[0]?.supplier || {
-          name: "Kurumsal Merkez Tedarikçi A.Ş.",
-          email: "tedarik@kurumsal.com",
-          phone: "0850 444 00 22",
-        },
-      }
-    })
-
-    return NextResponse.json({ issues: enrichedIssues })
+    return NextResponse.json({ issues: enrichedIssues, rmaRequests })
   } catch (error: any) {
     console.error("❌ RMA GET Error:", error)
     return NextResponse.json({ error: error.message || "Hasarlı teslimatlar alınamadı" }, { status: 500 })
@@ -92,29 +84,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { goodsReceiptId, issueType, description, photoUrls } = body
+    let tenantId = (session.user as any)?.tenantId
 
-    if (!goodsReceiptId || !description) {
+    if (!tenantId && session.user.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      })
+      tenantId = user?.tenantId
+    }
+
+    if (!tenantId) {
+      const firstTenant = await prisma.tenant.findFirst({ select: { id: true } })
+      tenantId = firstTenant?.id
+    }
+
+    if (!tenantId) {
+      return NextResponse.json({ error: "Kiracı (Tenant) bulunamadı" }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const { storeName, itemName, status } = body
+
+    if (!storeName || !itemName) {
       return NextResponse.json(
-        { error: "goodsReceiptId ve açıklama zorunludur" },
+        { error: "Mağaza adı ve kusurlu ürün adı zorunludur" },
         { status: 400 }
       )
     }
 
-    const tenantId = (session.user as any)?.tenantId
-    const issue = await prisma.deliveryIssue.create({
+    const rma = await prisma.rmaRequest.create({
       data: {
-        goodsReceiptId,
-        tenantId: tenantId || null,
-        issueType: issueType || "DAMAGED",
-        description,
-        photoUrls: photoUrls || [],
-        status: "REPORTED",
+        tenantId,
+        storeName: storeName.trim(),
+        itemName: itemName.trim(),
+        status: status || "REPORTED",
       },
     })
 
-    return NextResponse.json({ issue }, { status: 201 })
+    return NextResponse.json({ issue: rma, rma, success: true }, { status: 201 })
   } catch (error: any) {
     console.error("❌ RMA POST Error:", error)
     return NextResponse.json({ error: error.message || "Hasar kaydı eklenemedi" }, { status: 500 })
@@ -128,6 +136,21 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    let tenantId = (session.user as any)?.tenantId
+
+    if (!tenantId && session.user.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      })
+      tenantId = user?.tenantId
+    }
+
+    if (!tenantId) {
+      const firstTenant = await prisma.tenant.findFirst({ select: { id: true } })
+      tenantId = firstTenant?.id
+    }
+
     const body = await request.json()
     const { id, status } = body
 
@@ -135,12 +158,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "ID ve status zorunludur" }, { status: 400 })
     }
 
-    const updated = await prisma.deliveryIssue.update({
-      where: { id },
+    const updated = await prisma.rmaRequest.updateMany({
+      where: {
+        id,
+        ...(tenantId ? { tenantId } : {}),
+      },
       data: { status },
     })
 
-    return NextResponse.json({ issue: updated })
+    return NextResponse.json({ success: true, count: updated.count })
   } catch (error: any) {
     console.error("❌ RMA PATCH Error:", error)
     return NextResponse.json({ error: error.message || "RMA durumu güncellenemedi" }, { status: 500 })

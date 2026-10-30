@@ -149,7 +149,7 @@ export default function RolloutLeafletMap({
   };
 
   return (
-    <div className="relative w-full h-[520px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950">
+    <div className="relative w-full h-[calc(100vh-240px)] min-h-[500px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950">
       <style jsx global>{`
         .leaflet-popup-content-wrapper {
           background: #090d16 !important;

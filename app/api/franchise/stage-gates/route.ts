@@ -33,13 +33,23 @@ export async function GET(request: Request) {
       const project = await prisma.project.findFirst({
         where: { id: projectId, ...projectWhere },
       })
+      const rolloutProject = !project
+        ? await prisma.rolloutProject.findFirst({
+            where: { id: projectId, ...(tenantId ? { tenantId } : {}) },
+          })
+        : null
 
-      if (!project && !isSuperAdmin) {
+      if (!project && !rolloutProject && !isSuperAdmin) {
         return NextResponse.json({ stages: [] })
       }
 
       let stages = await prisma.stageGate.findMany({
-        where: { projectId },
+        where: {
+          OR: [
+            { projectId },
+            { rolloutProjectId: projectId },
+          ],
+        },
         orderBy: { createdAt: "asc" },
       })
 
@@ -132,7 +142,10 @@ export async function PATCH(request: Request) {
 
     const currentGate = await prisma.stageGate.findUnique({
       where: { id },
-      include: { project: { include: { stageGates: { orderBy: { createdAt: "asc" } } } } },
+      include: {
+        project: { include: { stageGates: { orderBy: { createdAt: "asc" } } } },
+        rolloutProject: { include: { stageGates: { orderBy: { createdAt: "asc" } } } },
+      },
     })
 
     if (!currentGate) {
@@ -141,15 +154,15 @@ export async function PATCH(request: Request) {
 
     // Stage-Gate Kuralı: Eğer onaylanmak isteniyorsa, kendisinden önceki zorunlu aşamaların onaylanmış olması gerekir
     if (isApproved === true) {
-      const allStages = currentGate.project.stageGates
+      const allStages = currentGate.project?.stageGates || currentGate.rolloutProject?.stageGates || []
       const currentIndex = allStages.findIndex((s) => s.id === id)
 
       for (let i = 0; i < currentIndex; i++) {
         const prevStage = allStages[i]
-        if (prevStage.isRequired && !prevStage.isApproved) {
+        if (prevStage.isRequired && !prevStage.isApproved && prevStage.status !== "ONAYLANDI") {
           return NextResponse.json(
             {
-              error: `Bu aşamayı onaylayamazsınız! Önce "${prevStage.stageName}" aşamasının onaylanması gerekmektedir.`,
+              error: `Bu aşamayı onaylayamazsınız! Önce "${prevStage.name || prevStage.stageName}" aşamasının onaylanması gerekmektedir.`,
             },
             { status: 400 }
           )

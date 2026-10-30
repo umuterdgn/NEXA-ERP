@@ -24,6 +24,7 @@ import {
   SlidersHorizontal,
   Compass,
   CheckCircle2,
+  Plus,
 } from "lucide-react"
 
 import RolloutMapWrapper from "./_components/RolloutMapWrapper"
@@ -247,8 +248,29 @@ export default function FranchiseRolloutMapPage() {
         </button>
       </div>
 
-      {/* Main Map & Detail Panel Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Empty State: data.length === 0 */}
+      {projects.length === 0 && !loading ? (
+        <div className="bg-slate-900/60 rounded-2xl border border-dashed border-slate-800 p-12 text-center max-w-xl mx-auto space-y-4 shadow-xl my-6">
+          <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto text-slate-400 shadow-inner">
+            <MapIcon className="w-8 h-8 text-amber-400" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-white">Kayıtlı Mağaza Projesi Bulunamadı</h3>
+            <p className="text-sm text-slate-400">
+              Haritada görüntülenecek herhangi bir franchise veya çoklu mağaza açılış projesi bulunamadı.
+            </p>
+          </div>
+          <Link
+            href="/franchise/rollout"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors text-xs font-semibold shadow-lg shadow-amber-600/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Yeni Mağaza Açılışı Başlat</span>
+          </Link>
+        </div>
+      ) : (
+        /* Main Map & Detail Panel Grid */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Interactive Map Area (2 Columns) */}
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -382,6 +404,7 @@ export default function FranchiseRolloutMapPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }

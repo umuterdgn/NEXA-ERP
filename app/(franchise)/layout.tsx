@@ -72,7 +72,7 @@ export default async function FranchisePortalLayout({
   return (
     <NextAuthSessionProvider>
       <div 
-        className="min-h-screen bg-slate-950 text-white flex flex-col selection:bg-amber-500 selection:text-white"
+        className="h-screen overflow-hidden bg-slate-950 text-white flex flex-col selection:bg-amber-500 selection:text-white"
         style={{
           "--tenant-primary": primaryColor,
         } as React.CSSProperties}

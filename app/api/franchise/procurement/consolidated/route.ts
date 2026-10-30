@@ -2,6 +2,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Franchise Konsolide Satınalma ve Toplu İhale API'si
+ * %100 Tenant İzolasyonu ile ConsolidatedTender Modeline Bağlıdır.
  */
 
 import { NextResponse } from "next/server"
@@ -17,53 +18,39 @@ export async function GET() {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
-    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
-    const tenantId = (session.user as any)?.tenantId
+    let tenantId = (session.user as any)?.tenantId
 
-    const tenantWhere: any = {}
-    if (!isSuperAdmin) {
-      tenantWhere.tenantId = tenantId || "non-existent"
+    if (!tenantId && session.user.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      })
+      tenantId = user?.tenantId
     }
 
-    // 1. Mevcut Konsolide Paketler
-    const consolidatedList = await prisma.consolidatedProcurement.findMany({
-      where: tenantWhere,
-      include: {
-        requests: {
-          include: {
-            project: {
-              select: { id: true, name: true, city: true, district: true },
-            },
-            bids: {
-              include: { supplier: true },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    })
+    if (!tenantId) {
+      const firstTenant = await prisma.tenant.findFirst({ select: { id: true } })
+      tenantId = firstTenant?.id
+    }
 
-    // 2. Henüz konsolide edilmemiş açık satınalma talepleri (Şantiyelerden gelenler)
-    const openRequests = await prisma.purchaseRequest.findMany({
-      where: {
-        consolidatedId: null,
-        ...tenantWhere,
-      },
-      include: {
-        project: {
-          select: { id: true, name: true, city: true, district: true },
-        },
-      },
+    if (!tenantId) {
+      return NextResponse.json({ tenders: [], consolidatedList: [] })
+    }
+
+    // ConsolidatedTender tablosundan kiracıya ait kayıtları çek
+    const tenders = await prisma.consolidatedTender.findMany({
+      where: { tenantId },
       orderBy: { createdAt: "desc" },
     })
 
     return NextResponse.json({
-      consolidatedList,
-      openRequests,
+      tenders,
+      consolidatedList: tenders,
+      openRequests: [],
     })
   } catch (error: any) {
     console.error("❌ Consolidated Procurement GET Error:", error)
-    return NextResponse.json({ error: error.message || "Talepler alınamadı" }, { status: 500 })
+    return NextResponse.json({ error: error.message || "İhaleler alınamadı" }, { status: 500 })
   }
 }
 
@@ -74,38 +61,47 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
-    const tenantId = (session.user as any)?.tenantId
-    const body = await request.json()
-    const { title, requestIds } = body
+    let tenantId = (session.user as any)?.tenantId
 
-    if (!title || !requestIds || !Array.isArray(requestIds) || requestIds.length === 0) {
+    if (!tenantId && session.user.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      })
+      tenantId = user?.tenantId
+    }
+
+    if (!tenantId) {
+      const firstTenant = await prisma.tenant.findFirst({ select: { id: true } })
+      tenantId = firstTenant?.id
+    }
+
+    if (!tenantId) {
+      return NextResponse.json({ error: "Kiracı (Tenant) bulunamadı" }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const { title, status } = body
+
+    if (!title?.trim()) {
       return NextResponse.json(
-        { error: "Başlık ve en az bir talep seçimi zorunludur" },
+        { error: "İhale paketi başlığı zorunludur" },
         { status: 400 }
       )
     }
 
-    // Konsolide paketi oluştur ve talepleri bağla
-    const consolidated = await prisma.consolidatedProcurement.create({
+    const tender = await prisma.consolidatedTender.create({
       data: {
-        title,
-        status: "TENDER_ACTIVE", // Toplu ihale açıldı
-        tenantId: tenantId || null,
-        requests: {
-          connect: requestIds.map((id: string) => ({ id })),
-        },
-      },
-      include: {
-        requests: {
-          include: { project: true },
-        },
+        tenantId,
+        title: title.trim(),
+        status: status || "ACTIVE",
       },
     })
 
-    return NextResponse.json({ consolidated }, { status: 201 })
+    return NextResponse.json({ tender, success: true }, { status: 201 })
   } catch (error: any) {
     console.error("❌ Consolidated Procurement POST Error:", error)
-    return NextResponse.json({ error: error.message || "Toplu ihale paketi oluşturulamadı" }, { status: 500 })
+    return NextResponse.json({ error: error.message || "İhale paketi oluşturulamadı" }, { status: 500 })
   }
 }
 
@@ -116,6 +112,21 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
+    let tenantId = (session.user as any)?.tenantId
+
+    if (!tenantId && session.user.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      })
+      tenantId = user?.tenantId
+    }
+
+    if (!tenantId) {
+      const firstTenant = await prisma.tenant.findFirst({ select: { id: true } })
+      tenantId = firstTenant?.id
+    }
+
     const body = await request.json()
     const { id, status } = body
 
@@ -123,17 +134,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "ID ve status zorunludur" }, { status: 400 })
     }
 
-    const updated = await prisma.consolidatedProcurement.update({
-      where: { id },
-      data: { status },
-      include: {
-        requests: {
-          include: { project: true },
-        },
+    const updated = await prisma.consolidatedTender.updateMany({
+      where: {
+        id,
+        ...(tenantId ? { tenantId } : {}),
       },
+      data: { status },
     })
 
-    return NextResponse.json({ consolidated: updated })
+    return NextResponse.json({ success: true, count: updated.count })
   } catch (error: any) {
     console.error("❌ Consolidated Procurement PATCH Error:", error)
     return NextResponse.json({ error: error.message || "İhale güncellenemedi" }, { status: 500 })

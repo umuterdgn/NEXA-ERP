@@ -17,13 +17,22 @@ export async function GET() {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
 
-    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
-    const tenantId = (session.user as any)?.tenantId
+    let tenantId = (session.user as any)?.tenantId
 
-    const where: any = {}
-    if (!isSuperAdmin) {
-      where.tenantId = tenantId || "non-existent"
+    if (!tenantId && session.user.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      })
+      tenantId = user?.tenantId
     }
+
+    if (!tenantId) {
+      const firstTenant = await prisma.tenant.findFirst({ select: { id: true } })
+      tenantId = firstTenant?.id
+    }
+
+    const where: any = tenantId ? { tenantId } : {}
 
     const templates = await prisma.storeTemplate.findMany({
       where,

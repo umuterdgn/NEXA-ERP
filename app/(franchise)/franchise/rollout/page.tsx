@@ -3,6 +3,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Franchise / Rollout (Çoklu Mağaza Kurulumu) Paneli - Kanban & Harita
+ * %100 Tenant İzolasyonu ile RolloutProject Modeline Bağlıdır.
  */
 
 import { useState, useEffect } from "react"
@@ -27,7 +28,15 @@ import {
   ExternalLink,
   Layers,
   Sparkles,
+  X,
+  DollarSign,
+  Loader2,
 } from "lucide-react"
+import {
+  getRolloutProjects,
+  createRolloutProject,
+  updateRolloutProjectStatus,
+} from "@/app/actions/franchise"
 
 interface StageGate {
   id: string
@@ -37,31 +46,20 @@ interface StageGate {
   documentUrl?: string | null
 }
 
-interface PunchListDefect {
-  id: string
-  status: string
-  defectDesc: string
-}
-
 interface StoreProject {
   id: string
   name: string
   title: string
   city: string | null
-  district: string | null
-  location: string | null
-  latitude: number | null
-  longitude: number | null
+  district?: string | null
+  location?: string | null
+  latitude?: number | null
+  longitude?: number | null
   progress: number
   status: string
-  rolloutPhase: "KIRALAMA" | "AVM_ONAYI" | "INSAATTA" | "PUNCH_LIST" | "ACILISA_HAZIR"
-  storeTemplate?: {
-    id: string
-    name: string
-    estimatedDays: number
-  } | null
+  budget?: number | null
+  rolloutPhase: "KIRALAMA" | "AVM_ONAY" | "INSAAT" | "PUNCH_LIST" | "ACILISA_HAZIR" | string
   stageGates: StageGate[]
-  punchLists: PunchListDefect[]
   openDefects: number
   totalGates: number
   approvedGates: number
@@ -77,7 +75,7 @@ const PHASES = [
     dotColor: "bg-amber-400",
   },
   {
-    key: "AVM_ONAYI",
+    key: "AVM_ONAY",
     label: "AVM & Ruhsat Onayı",
     desc: "Mimari proje, teknik şartname & izinler",
     badgeBg: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
@@ -85,7 +83,7 @@ const PHASES = [
     dotColor: "bg-indigo-400",
   },
   {
-    key: "INSAATTA",
+    key: "INSAAT",
     label: "Kaba & İnce İnşaat",
     desc: "Saha imalatı, elektrik & mekanik montaj",
     badgeBg: "bg-blue-500/10 text-blue-400 border-blue-500/20",
@@ -120,6 +118,17 @@ export default function FranchiseRolloutPage() {
   const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null)
   const [movingProjectId, setMovingProjectId] = useState<string | null>(null)
 
+  // Yeni Mağaza Açılışı Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [formData, setFormData] = useState({
+    name: "",
+    city: "İstanbul",
+    budget: "",
+    status: "KIRALAMA",
+  })
+
   const fetchRollout = async () => {
     try {
       setLoading(true)
@@ -139,20 +148,17 @@ export default function FranchiseRolloutPage() {
     fetchRollout()
   }, [])
 
-  // Move project to phase
+  // Faz Değişimi (Kanban Sürükle-Bırak veya Butonla İlerletme)
   const handleMovePhase = async (projectId: string, newPhase: string) => {
     try {
       setMovingProjectId(projectId)
       // Optimistic update
       setProjects((prev) =>
-        prev.map((p) => (p.id === projectId ? { ...p, rolloutPhase: newPhase as any } : p))
+        prev.map((p) => (p.id === projectId ? { ...p, rolloutPhase: newPhase } : p))
       )
 
-      await fetch("/api/franchise/rollout", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, rolloutPhase: newPhase }),
-      })
+      await updateRolloutProjectStatus(projectId, newPhase)
+      await fetchRollout()
     } catch (err) {
       console.error("Move phase failed", err)
       fetchRollout()
@@ -161,12 +167,56 @@ export default function FranchiseRolloutPage() {
     }
   }
 
+  // Yeni Mağaza Kaydı Ekleme (Server Action Entegrasyonu)
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormError(null)
+
+    if (!formData.name.trim()) {
+      setFormError("Lütfen mağaza adını giriniz.")
+      return
+    }
+    if (!formData.city.trim()) {
+      setFormError("Lütfen şehir bilgisini seçiniz.")
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const res = await createRolloutProject({
+        name: formData.name.trim(),
+        city: formData.city.trim(),
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+        status: formData.status,
+      })
+
+      if (!res.success) {
+        setFormError(res.error || "Proje oluşturulamadı.")
+        return
+      }
+
+      setIsCreateModalOpen(false)
+      setFormData({ name: "", city: "İstanbul", budget: "", status: "KIRALAMA" })
+      await fetchRollout()
+    } catch (err: any) {
+      setFormError(err.message || "Beklenmedik bir hata oluştu.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Normalize phase name helper
+  const normalizePhaseKey = (phase: string) => {
+    if (phase === "AVM_ONAYI") return "AVM_ONAY"
+    if (phase === "INSAATTA") return "INSAAT"
+    return phase
+  }
+
   // Filtered list
   const filteredProjects = projects.filter((p) => {
     const matchesSearch =
       (p.name || p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.city || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.district || "").toLowerCase().includes(searchQuery.toLowerCase())
+      (p.city || "").toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCity = selectedCity === "ALL" || p.city === selectedCity
     return matchesSearch && matchesCity
   })
@@ -176,25 +226,26 @@ export default function FranchiseRolloutPage() {
 
   // Metrics
   const totalStores = projects.length
-  const inRental = projects.filter((p) => p.rolloutPhase === "KIRALAMA" || p.rolloutPhase === "AVM_ONAYI").length
-  const inConstruction = projects.filter((p) => p.rolloutPhase === "INSAATTA").length
-  const inPunchList = projects.filter((p) => p.rolloutPhase === "PUNCH_LIST").length
-  const readyStores = projects.filter((p) => p.rolloutPhase === "ACILISA_HAZIR").length
+  const inRental = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "KIRALAMA").length
+  const inAvm = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "AVM_ONAY").length
+  const inConstruction = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "INSAAT").length
+  const inPunchList = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "PUNCH_LIST").length
+  const readyStores = projects.filter((p) => normalizePhaseKey(p.rolloutPhase) === "ACILISA_HAZIR").length
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6 pb-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-400 mb-1">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
             <Store className="w-4 h-4" />
-            <span>Zincir Mağaza & Franchise Operasyonu</span>
+            <span>Zincir Mağaza & Franchise Rollout Operasyonu</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             Rollout Yönetim Paneli
           </h1>
           <p className="text-sm text-slate-400">
-            Tüm Türkiye'deki mağaza açılışlarını idari kilitler (Stage-Gate) ve Punch List denetimleri ile uçtan uca takip edin.
+            Tüm Türkiye'deki mağaza açılışlarını idari kilitler (Stage-Gate) ve aşama aşama uçtan uca takip edin.
           </p>
         </div>
 
@@ -205,7 +256,7 @@ export default function FranchiseRolloutPage() {
               onClick={() => setActiveView("KANBAN")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 activeView === "KANBAN"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? "bg-amber-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -216,7 +267,7 @@ export default function FranchiseRolloutPage() {
               onClick={() => setActiveView("MAP")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 activeView === "MAP"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? "bg-amber-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -234,19 +285,19 @@ export default function FranchiseRolloutPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
 
-          <Link
-            href="/admin/projects/new"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors shadow-sm"
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-all shadow-md shadow-amber-600/20"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>Yeni Mağaza Açılışı</span>
-          </Link>
+          </button>
         </div>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
           <div className="text-xs text-slate-400 flex items-center justify-between">
             <span>Toplam Mağaza</span>
             <Building2 className="w-4 h-4 text-slate-500" />
@@ -255,16 +306,16 @@ export default function FranchiseRolloutPage() {
           <div className="text-[11px] text-slate-500 mt-1">Rollout Portföyü</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
           <div className="text-xs text-amber-400 flex items-center justify-between">
             <span>Kiralama & İzin</span>
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-2xl font-bold text-amber-400 mt-2">{inRental}</div>
+          <div className="text-2xl font-bold text-amber-400 mt-2">{inRental + inAvm}</div>
           <div className="text-[11px] text-slate-500 mt-1">Sözleşme & AVM Onayında</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
           <div className="text-xs text-blue-400 flex items-center justify-between">
             <span>Aktif Şantiye</span>
             <Layers className="w-4 h-4 text-blue-400" />
@@ -273,7 +324,7 @@ export default function FranchiseRolloutPage() {
           <div className="text-[11px] text-slate-500 mt-1">Kaba / İnce Montajda</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
           <div className="text-xs text-purple-400 flex items-center justify-between">
             <span>Punch List (QA)</span>
             <AlertTriangle className="w-4 h-4 text-purple-400" />
@@ -282,7 +333,7 @@ export default function FranchiseRolloutPage() {
           <div className="text-[11px] text-slate-500 mt-1">Kusur Düzeltme Aşamasında</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 col-span-2 md:col-span-1">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 col-span-2 md:col-span-1">
           <div className="text-xs text-emerald-400 flex items-center justify-between">
             <span>Açılışa Hazır</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -297,15 +348,15 @@ export default function FranchiseRolloutPage() {
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Mağaza adı, ilçe veya şehir ara..."
+            placeholder="Mağaza adı veya şehir ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-72 px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full sm:w-72 px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
           />
           <select
             value={selectedCity}
             onChange={(e) => setSelectedCity(e.target.value)}
-            className="px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500"
+            className="px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-amber-500"
           >
             <option value="ALL">Tüm Şehirler ({projects.length})</option>
             {cities.map((city) => (
@@ -332,26 +383,31 @@ export default function FranchiseRolloutPage() {
         </div>
       </div>
 
+      {/* Empty State: data.length === 0 */}
       {projects.length === 0 && !loading && (
         <div className="bg-slate-900/60 rounded-2xl border border-dashed border-slate-700/60 p-12 text-center my-6">
           <Store className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-          <h3 className="text-lg font-semibold text-white mb-1">Henüz Mağaza Kurulum Projesi Bulunmuyor</h3>
-          <p className="text-sm text-slate-400 mb-6">Bu kiracı için tanımlanmış herhangi bir franchise veya çoklu şantiye açılış projesi bulunamadı.</p>
-          <Link
-            href="/admin/projects"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm font-medium shadow-lg shadow-blue-600/20"
+          <h3 className="text-lg font-semibold text-white mb-1">Kayıtlı Mağaza Projesi Bulunamadı</h3>
+          <p className="text-sm text-slate-400 mb-6">
+            Bu kiracı için tanımlanmış herhangi bir franchise veya çoklu mağaza açılış projesi bulunamadı.
+          </p>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors text-sm font-semibold shadow-lg shadow-amber-600/20"
           >
             <Plus className="w-4 h-4" />
-            Yeni Şantiye / Mağaza Projesi Başlat
-          </Link>
+            <span>Yeni Mağaza Açılışı Başlat</span>
+          </button>
         </div>
       )}
 
       {/* Main Content: KANBAN VIEW */}
-      {activeView === "KANBAN" && (
+      {activeView === "KANBAN" && projects.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
           {PHASES.map((phase) => {
-            const phaseProjects = filteredProjects.filter((p) => p.rolloutPhase === phase.key)
+            const phaseProjects = filteredProjects.filter(
+              (p) => normalizePhaseKey(p.rolloutPhase) === phase.key
+            )
 
             return (
               <div
@@ -399,20 +455,18 @@ export default function FranchiseRolloutPage() {
                         {/* Store Title & Location */}
                         <div>
                           <div className="flex items-start justify-between gap-1">
-                            <h3 className="text-xs font-semibold text-white group-hover:text-blue-400 transition-colors line-clamp-1">
+                            <h3 className="text-xs font-semibold text-white group-hover:text-amber-400 transition-colors line-clamp-1">
                               {project.name || project.title}
                             </h3>
-                            {project.storeTemplate && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/50 text-blue-300 font-medium whitespace-nowrap">
-                                {project.storeTemplate.name.split("-")[0]}
+                            {project.budget && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300 font-medium whitespace-nowrap">
+                                {project.budget.toLocaleString("tr-TR")} ₺
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
                             <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
-                            <span className="truncate">
-                              {project.city || "Türkiye"} {project.district ? `• ${project.district}` : ""}
-                            </span>
+                            <span className="truncate">{project.city || "Türkiye"}</span>
                           </div>
                         </div>
 
@@ -424,43 +478,36 @@ export default function FranchiseRolloutPage() {
                           </div>
                           <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                              className="h-full bg-amber-500 rounded-full transition-all duration-300"
                               style={{ width: `${project.progress || 0}%` }}
                             ></div>
                           </div>
                         </div>
 
-                        {/* Stage-Gate & Punch List Badges */}
+                        {/* Stage-Gate Badges */}
                         <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-900 text-[10px]">
                           <Link
-                            href={`/franchise/stage-gates/${project.id}`}
+                            href="/franchise/stage-gates"
                             className={`flex items-center gap-1 p-1.5 rounded border transition-colors ${
                               project.approvedGates === project.totalGates && project.totalGates > 0
                                 ? "bg-emerald-950/40 border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/40"
-                                : "bg-slate-900 border-slate-800 text-slate-300 hover:border-blue-600/50 hover:text-white"
+                                : "bg-slate-900 border-slate-800 text-slate-300 hover:border-amber-600/50 hover:text-white"
                             }`}
                             title="İdari Kilitleri İncele"
                           >
-                            <ShieldCheck className="w-3 h-3 text-blue-400 shrink-0" />
+                            <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
                             <span className="truncate">
                               Gate: {project.approvedGates}/{project.totalGates || 5}
                             </span>
                           </Link>
 
-                          <Link
-                            href="/franchise/punch-list"
-                            className={`flex items-center gap-1 p-1.5 rounded border transition-colors ${
-                              project.openDefects > 0
-                                ? "bg-amber-950/40 border-amber-800/50 text-amber-400 hover:bg-amber-900/40"
-                                : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
-                            }`}
-                            title="Punch List Kusur Denetimi"
+                          <div
+                            className="flex items-center gap-1 p-1.5 rounded border bg-slate-900 border-slate-800 text-slate-400"
+                            title="Şehir Bilgisi"
                           >
-                            <ClipboardCheck className="w-3 h-3 text-purple-400 shrink-0" />
-                            <span className="truncate">
-                              {project.openDefects > 0 ? `${project.openDefects} Kusur` : "QA Temiz"}
-                            </span>
-                          </Link>
+                            <Store className="w-3 h-3 text-blue-400 shrink-0" />
+                            <span className="truncate">{project.city}</span>
+                          </div>
                         </div>
 
                         {/* Card Actions */}
@@ -482,7 +529,7 @@ export default function FranchiseRolloutPage() {
                                   handleMovePhase(project.id, PHASES[currentIndex + 1].key)
                                 }
                               }}
-                              className="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-0.5 transition-colors"
+                              className="text-amber-400 hover:text-amber-300 font-medium flex items-center gap-0.5 transition-colors"
                               title="Sonraki Aşamaya Taşı"
                             >
                               <span>İlerlet</span>
@@ -501,134 +548,39 @@ export default function FranchiseRolloutPage() {
       )}
 
       {/* Main Content: MAP VIEW */}
-      {activeView === "MAP" && (
+      {activeView === "MAP" && projects.length > 0 && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
             <div>
               <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-                <MapIcon className="w-4 h-4 text-blue-400" />
-                Türkiye Geneli Mağaza Lokasyon Haritası
+                <MapIcon className="w-4 h-4 text-amber-400" />
+                Türkiye Geneli Rollout Mağaza Haritası
               </h2>
               <p className="text-xs text-slate-400">
-                Harita üzerindeki mağaza pinlerine tıklayarak idari onay ve şantiye faz durumunu görüntüleyin.
+                Veritabanındaki mağaza kayıtlarının şehir konumları üzerinden dinamik olarak oluşturulmuştur.
               </p>
             </div>
             <div className="text-xs text-slate-400 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-              Gösterilen Mağaza: <span className="font-bold text-white">{filteredProjects.length}</span>
+              Kayıtlı Mağaza: <span className="font-bold text-white">{filteredProjects.length}</span>
             </div>
           </div>
 
-          {/* Interactive Simulated Map Canvas */}
-          <div className="relative w-full h-[520px] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center p-4">
-            {/* Background Grid & Compass */}
-            <div
-              className="absolute inset-0 opacity-10 pointer-events-none"
-              style={{
-                backgroundImage:
-                  "radial-gradient(#3b82f6 1px, transparent 1px), radial-gradient(#1e293b 1px, transparent 1px)",
-                backgroundSize: "24px 24px",
-              }}
-            ></div>
-
-            {/* Simulated Turkey Outline / Region Radar */}
-            <svg
-              viewBox="0 0 1000 500"
-              className="w-full h-full max-h-[480px] text-slate-800/40 select-none"
-              fill="currentColor"
-            >
-              {/* Stylized Turkey Shape */}
-              <path
-                d="M 120 180 Q 200 130 350 140 Q 550 130 750 150 Q 880 170 920 220 Q 940 300 860 340 Q 720 370 560 380 Q 420 370 280 390 Q 180 370 140 310 Q 100 240 120 180 Z"
-                fill="#0f172a"
-                stroke="#1e293b"
-                strokeWidth="2"
-              />
-              {/* Marmara / Aegean accent */}
-              <circle cx="220" cy="200" r="14" fill="#1e293b" opacity="0.6" />
-              <circle cx="200" cy="280" r="14" fill="#1e293b" opacity="0.6" />
-              {/* Central Anatolia accent */}
-              <circle cx="450" cy="260" r="18" fill="#1e293b" opacity="0.4" />
-              {/* Mediterranean accent */}
-              <circle cx="430" cy="380" r="16" fill="#1e293b" opacity="0.5" />
-            </svg>
-
-            {/* Interactive Pins Projected onto Coordinate Space */}
-            {filteredProjects.map((p) => {
-              // Convert lat/long to svg/box percentage (Turkey: lat 36-42, lng 26-45)
-              const minLat = 35.5
-              const maxLat = 42.5
-              const minLng = 25.5
-              const maxLng = 45.0
-
-              const lat = p.latitude || 39.0
-              const lng = p.longitude || 35.0
-
-              const leftPercent = Math.max(5, Math.min(92, ((lng - minLng) / (maxLng - minLng)) * 100))
-              const topPercent = Math.max(8, Math.min(90, (1 - (lat - minLat) / (maxLat - minLat)) * 100))
-
-              let pinColor = "bg-blue-500 ring-blue-500/40 text-blue-300"
-              if (p.rolloutPhase === "ACILISA_HAZIR") {
-                pinColor = "bg-emerald-500 ring-emerald-500/40 text-emerald-300"
-              } else if (p.rolloutPhase === "PUNCH_LIST") {
-                pinColor = "bg-purple-500 ring-purple-500/40 text-purple-300"
-              } else if (p.rolloutPhase === "KIRALAMA" || p.rolloutPhase === "AVM_ONAYI") {
-                pinColor = "bg-amber-500 ring-amber-500/40 text-amber-300"
-              }
-
-              return (
-                <div
-                  key={p.id}
-                  style={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20 group"
-                >
-                  <button
-                    onClick={() => setSelectedProjectForModal(p)}
-                    className={`relative p-2 rounded-full text-white shadow-xl ring-4 transition-all duration-300 hover:scale-125 focus:scale-125 ${pinColor}`}
-                  >
-                    <Store className="w-4 h-4" />
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-white ring-2 ring-slate-900"></span>
-                  </button>
-
-                  {/* Tooltip on Hover */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-30 min-w-[180px]">
-                    <div className="bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-xs shadow-2xl space-y-1">
-                      <div className="font-semibold text-blue-400 line-clamp-1">{p.name || p.title}</div>
-                      <div className="text-[11px] text-slate-300 flex items-center justify-between">
-                        <span>{p.city}</span>
-                        <span className="font-bold">%{p.progress}</span>
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        {p.rolloutPhase === "ACILISA_HAZIR"
-                          ? "Açılışa Hazır"
-                          : p.rolloutPhase === "PUNCH_LIST"
-                          ? "Punch List Denetiminde"
-                          : p.rolloutPhase === "INSAATTA"
-                          ? "Şantiyede"
-                          : "İdari İzin Sürecinde"}
-                      </div>
-                    </div>
-                    <div className="w-2 h-2 bg-slate-900 border-r border-b border-slate-700 transform rotate-45 -mt-1"></div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Map Stores Bottom Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-            {filteredProjects.slice(0, 4).map((p) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+            {filteredProjects.map((p) => (
               <div
                 key={p.id}
                 onClick={() => setSelectedProjectForModal(p)}
-                className="bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 p-3 rounded-lg cursor-pointer transition-all space-y-2"
+                className="bg-slate-950/70 border border-slate-800 hover:border-amber-600/50 p-4 rounded-xl cursor-pointer transition-all space-y-2"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white line-clamp-1">{p.name || p.title}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{p.city}</span>
+                  <span className="text-sm font-bold text-white line-clamp-1">{p.name || p.title}</span>
+                  <span className="text-xs text-amber-400 font-semibold px-2 py-0.5 rounded bg-amber-950/40 border border-amber-800/50">
+                    {p.city}
+                  </span>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span>İlerleme: %{p.progress}</span>
-                  <span className="text-blue-400 flex items-center gap-0.5">
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Aşama: {PHASES.find((ph) => ph.key === normalizePhaseKey(p.rolloutPhase))?.label || p.rolloutPhase}</span>
+                  <span className="text-amber-400 flex items-center gap-0.5">
                     İncele <ChevronRight className="w-3 h-3" />
                   </span>
                 </div>
@@ -638,21 +590,134 @@ export default function FranchiseRolloutPage() {
         </div>
       )}
 
+      {/* MODAL: Yeni Mağaza Açılışı Formu */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Store className="w-5 h-5 text-amber-500" />
+                <h3 className="text-base font-bold text-white">Yeni Mağaza Açılışı Projesi</h3>
+              </div>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {formError && (
+              <div className="p-3 rounded-lg bg-red-950/50 border border-red-800 text-xs text-red-300">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateProject} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Mağaza / Şube Adı <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Örn: Kadıköy Şube Açılışı"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Şehir <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Örn: İstanbul, Ankara, İzmir, Bursa..."
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Tahmini Açılış Bütçesi (₺)
+                </label>
+                <input
+                  type="number"
+                  placeholder="Örn: 1500000"
+                  value={formData.budget}
+                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Başlangıç Aşaması
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="KIRALAMA">Kiralama & Etüt</option>
+                  <option value="AVM_ONAY">AVM & Ruhsat Onayı</option>
+                  <option value="INSAAT">Kaba & İnce İnşaat</option>
+                  <option value="PUNCH_LIST">Punch List & QA</option>
+                  <option value="ACILISA_HAZIR">Açılışa Hazır</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md shadow-amber-600/20 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Kaydediliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Projeyi Başlat</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Project Quick Detail Modal */}
       {selectedProjectForModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl animate-in fade-in duration-200">
             <div className="flex items-start justify-between border-b border-slate-800 pb-4">
               <div>
-                <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
-                  {selectedProjectForModal.storeTemplate?.name || "Standart Kurumsal Konsept"}
+                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                  Rollout Mağaza Projesi
                 </span>
                 <h2 className="text-lg font-bold text-white mt-1">
                   {selectedProjectForModal.name || selectedProjectForModal.title}
                 </h2>
                 <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
                   <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                  {selectedProjectForModal.location || `${selectedProjectForModal.city} / ${selectedProjectForModal.district}`}
+                  {selectedProjectForModal.city}
                 </p>
               </div>
               <button
@@ -667,12 +732,17 @@ export default function FranchiseRolloutPage() {
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
                 <span className="text-slate-400">Mevcut Aşama</span>
                 <div className="text-sm font-bold text-white mt-1">
-                  {PHASES.find((p) => p.key === selectedProjectForModal.rolloutPhase)?.label}
+                  {PHASES.find((p) => p.key === normalizePhaseKey(selectedProjectForModal.rolloutPhase))?.label ||
+                    selectedProjectForModal.rolloutPhase}
                 </div>
               </div>
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
-                <span className="text-slate-400">Şantiye İlerlemesi</span>
-                <div className="text-sm font-bold text-blue-400 mt-1">%{selectedProjectForModal.progress}</div>
+                <span className="text-slate-400">Tahmini Bütçe</span>
+                <div className="text-sm font-bold text-amber-400 mt-1">
+                  {selectedProjectForModal.budget
+                    ? `${selectedProjectForModal.budget.toLocaleString("tr-TR")} ₺`
+                    : "Belirtilmemiş"}
+                </div>
               </div>
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
                 <span className="text-slate-400">İdari Kilitler (Stage-Gate)</span>
@@ -681,28 +751,20 @@ export default function FranchiseRolloutPage() {
                 </div>
               </div>
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
-                <span className="text-slate-400">Punch List Kusur Durumu</span>
-                <div className="text-sm font-bold text-purple-400 mt-1">
-                  {selectedProjectForModal.openDefects} Açık Kusur
+                <span className="text-slate-400">Şantiye İlerlemesi</span>
+                <div className="text-sm font-bold text-blue-400 mt-1">
+                  %{selectedProjectForModal.progress}
                 </div>
               </div>
             </div>
 
-            {/* Modal Links */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="pt-2">
               <Link
-                href={`/franchise/stage-gates/${selectedProjectForModal.id}`}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
+                href="/franchise/stage-gates"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-colors"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>İdari Kilitleri (Stage-Gate) Yönet</span>
-              </Link>
-              <Link
-                href="/franchise/punch-list"
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
-              >
-                <ClipboardCheck className="w-4 h-4" />
-                <span>Punch List QA İncele</span>
               </Link>
             </div>
           </div>

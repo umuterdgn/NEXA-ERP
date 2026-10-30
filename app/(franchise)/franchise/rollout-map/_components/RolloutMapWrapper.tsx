@@ -24,7 +24,7 @@ const DynamicRolloutLeafletMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[520px] rounded-xl bg-slate-950 border border-slate-800 flex flex-col items-center justify-center text-slate-400 gap-3">
+      <div className="w-full h-[calc(100vh-240px)] min-h-[500px] rounded-xl bg-slate-950 border border-slate-800 flex flex-col items-center justify-center text-slate-400 gap-3">
         <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
         <span className="text-xs font-medium">İnteraktif Rollout Haritası Yükleniyor...</span>
       </div>

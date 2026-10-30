@@ -146,6 +146,9 @@ model Tenant {
   users          User[]           @relation("UserTenant")
   supportTickets SupportTicket[]
   errorLogs      SystemErrorLog[]
+  rolloutProjects RolloutProject[]
+  rmaRequests     RmaRequest[]
+  consolidatedTenders ConsolidatedTender[]
 
   @@index([slug])
   @@index([isActive])
@@ -4444,23 +4447,30 @@ model StoreTemplate {
 // Proje (Mağaza) Aşamaları ve İdari Kilitler (Stage-Gate)
 model StageGate {
   id                String           @id @default(cuid())
-  tenantId     String?   // SaaS: Kiracı ID
-  projectId         String
-  project           Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  stageName         String // "KİRALAMA", "AVM_ONAYI", "KABA_YAPI", "İTFAİYE_ONAYI"
+  tenantId          String?          // SaaS: Kiracı ID
+  projectId         String?
+  project           Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  rolloutProjectId  String?
+  rolloutProject    RolloutProject?  @relation(fields: [rolloutProjectId], references: [id], onDelete: Cascade)
+  name              String?          // Örn: AVM Dekorasyon Onayı, İtfaiye Ruhsatı
+  stageName         String?          // "KİRALAMA", "AVM_ONAYI", "KABA_YAPI", "İTFAİYE_ONAYI"
+  status            String           @default("BEKLIYOR") // BEKLIYOR, ONAYLANDI, REDDEDILDI
   isRequired        Boolean          @default(true)
   isApproved        Boolean          @default(false)
-  documentUrl       String? // İlgili ruhsat veya kontrat belgesi
-  approvedById      String? // Onaylayan yöneticinin ID'si
+  documentUrl       String?          // İlgili ruhsat veya kontrat belgesi
+  approvedById      String?          // Onaylayan yöneticinin ID'si
   approvedAt        DateTime?
   progressBillingId String?
   progressBilling   ProgressBilling? @relation(fields: [progressBillingId], references: [id], onDelete: SetNull)
-  billingPercentage Float? // Örn: Bu aşama bitince sözleşmenin %30'u ödenir
+  billingPercentage Float?           // Örn: Bu aşama bitince sözleşmenin %30'u ödenir
   createdAt         DateTime         @default(now())
 
   @@index([projectId])
+  @@index([rolloutProjectId])
   @@index([stageName])
+  @@index([name])
   @@index([isApproved])
+  @@index([status])
   @@index([progressBillingId])
   @@index([tenantId])
 }
@@ -4756,4 +4766,52 @@ model DailyJournal {
   @@index([engineerId])
   @@index([date])
   @@index([tenantId])
+}
+
+
+// ============================================================================
+// FRANCHISE & ROLLOUT MODULES
+// ============================================================================
+
+// Mağaza Kurulum Projeleri (Rollout)
+model RolloutProject {
+  id          String      @id @default(cuid())
+  tenantId    String
+  name        String      // Örn: Kadıköy Şube Açılışı
+  city        String
+  status      String      @default("KIRALAMA") // KIRALAMA, AVM_ONAY, INSAAT, PUNCH_LIST, ACILISA_HAZIR
+  budget      Float?
+  createdAt   DateTime    @default(now())
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stageGates  StageGate[]
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+// Hasarlı Teslimat (RMA)
+model RmaRequest {
+  id          String   @id @default(cuid())
+  tenantId    String
+  storeName   String   // Hangi mağaza/şantiye
+  itemName    String   // Kusurlu ürün adı
+  status      String   @default("REPORTED") // REPORTED, SHIPPED, RESOLVED
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+// Konsolide Satınalma İhaleleri
+model ConsolidatedTender {
+  id          String   @id @default(cuid())
+  tenantId    String
+  title       String
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
 }
