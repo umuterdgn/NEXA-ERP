@@ -43,7 +43,8 @@ import {
   Compass,
   AlertTriangle
 } from "lucide-react"
-import { createDailyLog, getJournalInitialData, getLatestLog } from "./actions"
+import { createDailyLog, getJournalInitialData } from "./actions"
+import { getLatestLog } from "@/app/actions/dailyLog"
 import { toast } from "react-hot-toast"
 
 interface HeavyEquipment {

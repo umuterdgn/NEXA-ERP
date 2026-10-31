@@ -313,6 +313,4 @@ export async function createDailyLog(formData: FormData) {
   }
 }
 
-export { getLatestLog, getProjectLogsHistory, getProjectLatestProgress } from "@/app/actions/dailyLog"
-
 
