@@ -7,6 +7,11 @@
 import { NextResponse } from "next/server"
 import NextAuth from "next-auth"
 import { authConfig } from "@/lib/auth.config"
+import createIntlMiddleware from "next-intl/middleware"
+import { routing } from "@/i18n/routing"
+
+// 1. next-intl middleware örneği (Tarayıcı dili algılama, Accept-Language, NEXT_LOCALE cookie)
+const intlMiddleware = createIntlMiddleware(routing)
 
 // Define role-based access control rules
 const ROUTE_PROTECTION = {
@@ -93,12 +98,32 @@ export default NextAuth(authConfig).auth((req) => {
     return NextResponse.next()
   }
 
-  // --- 0. ROUTE GROUP URL NORMALIZATION ---
-  if (pathname.startsWith("/(inspection)")) {
-    const cleanPath = pathname.replace("/(inspection)", "") || "/dashboard"
+  // --- 0. OTOMATİK DİL ALGILAMA & YÖNLENDİRME (next-intl) ---
+  const isLocalePath = pathname.startsWith("/tr") || pathname.startsWith("/en")
+  if (!isLocalePath) {
+    const intlResponse = intlMiddleware(req)
+    if (intlResponse) {
+      return intlResponse
+    }
+  }
+
+  // Aktif locale ve normalize edilmiş (locale öneksiz) rota
+  const localeMatch = pathname.match(/^\/(tr|en)(\/.*)?$/)
+  const currentLocale = localeMatch ? localeMatch[1] : routing.defaultLocale
+  const normalizedPath = localeMatch ? (localeMatch[2] || "/") : pathname
+
+  // Helper: Mevcut locale'i koruyarak güvenli yönlendirme
+  const redirectWithLocale = (targetPath: string) => {
     const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = cleanPath
+    const cleanTarget = targetPath.startsWith("/") ? targetPath : `/${targetPath}`
+    redirectUrl.pathname = `/${currentLocale}${cleanTarget}`
     return NextResponse.redirect(redirectUrl)
+  }
+
+  // --- 0. ROUTE GROUP URL NORMALIZATION ---
+  if (normalizedPath.startsWith("/(inspection)")) {
+    const cleanPath = normalizedPath.replace("/(inspection)", "") || "/dashboard"
+    return redirectWithLocale(cleanPath)
   }
 
   // --- 1. DOMAIN & HOSTNAME KONTROLÜ ---
@@ -113,48 +138,39 @@ export default NextAuth(authConfig).auth((req) => {
   }
 
   // --- 2. RBAC & KESİN YÖNLENDİRME KONTROLLERİ ---
-  
   const userRole = ((session?.user?.role as string) || "").toUpperCase()
-  const isOnLoginPage = pathname === "/login" || pathname.endsWith("/login")
+  const isOnLoginPage = normalizedPath === "/login" || normalizedPath.endsWith("/login")
 
-  // Giriş Yapmış Kullanıcı /login veya / (Kök Dizin) Sayfasındaysa Rolüne Göre Yönlendirme (Adım 2)
-  if ((isOnLoginPage || pathname === "/") && session) {
-    const redirectUrl = req.nextUrl.clone()
-
+  // Giriş Yapmış Kullanıcı /login veya / (Kök Dizin) Sayfasındaysa Rolüne Göre Yönlendirme
+  if ((isOnLoginPage || normalizedPath === "/") && session) {
     // 0. SUPER_ADMIN ➔ /admin
     if (userRole === "SUPER_ADMIN") {
-      redirectUrl.pathname = "/admin"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/admin")
     }
 
     // 1. INSPECTION_ADMIN veya INSPECTOR ➔ /inspection/dashboard
     if (userRole === "INSPECTION_ADMIN" || userRole === "INSPECTOR" || userRole === "AUDITOR") {
-      redirectUrl.pathname = "/inspection/dashboard"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/inspection/dashboard")
     }
 
     // 2. SUBCONTRACTOR ➔ /subcontractor
     if (userRole === "SUBCONTRACTOR") {
-      redirectUrl.pathname = "/subcontractor"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/subcontractor")
     }
 
     // 3. DRIVER ➔ /personnel
     if (userRole === "DRIVER") {
-      redirectUrl.pathname = "/personnel"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/personnel")
     }
 
     // 4. SECURITY ➔ /admin/procurement/logistics
     if (userRole === "SECURITY") {
-      redirectUrl.pathname = "/admin/procurement/logistics"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/admin/procurement/logistics")
     }
 
     // 5. WORKER ➔ /personnel
     if (userRole === "WORKER") {
-      redirectUrl.pathname = "/personnel"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/personnel")
     }
 
     // 6. ENGINEER, SITE_MANAGER veya PERSONNEL ➔ /personnel/dashboard
@@ -164,49 +180,39 @@ export default NextAuth(authConfig).auth((req) => {
       userRole === "PERSONNEL" ||
       userRole === "STAFF"
     ) {
-      redirectUrl.pathname = "/personnel/dashboard"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/personnel/dashboard")
     }
 
     // 7. SUPPLIER ➔ /supplier
     if (userRole === "SUPPLIER") {
-      redirectUrl.pathname = "/supplier"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/supplier")
     }
 
-    // 5. Departman Bazlı Manager Yönlendirmeleri
+    // 8. Departman Bazlı Manager Yönlendirmeleri
     if (userRole === "HR_MANAGER") {
-      redirectUrl.pathname = "/admin/personel"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/admin/personel")
     }
     if (userRole === "FINANCE_MANAGER") {
-      redirectUrl.pathname = "/admin/finance"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/admin/finance")
     }
     if (userRole === "PROCUREMENT_MANAGER") {
-      redirectUrl.pathname = "/admin/procurement"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/admin/procurement")
     }
     if (userRole === "EQUIPMENT_MANAGER") {
-      redirectUrl.pathname = "/admin/equipments"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/admin/equipments")
     }
     if (userRole === "ISG_EXPERT") {
-      redirectUrl.pathname = "/admin/personel/alerts"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/admin/personel/alerts")
     }
 
-    // 6. ADMIN veya MANAGER ➔ /admin
-    redirectUrl.pathname = "/admin"
-    return NextResponse.redirect(redirectUrl)
+    // 9. ADMIN veya MANAGER ➔ /admin
+    return redirectWithLocale("/admin")
   }
 
   // Kullanıcı Giriş Yapmamışsa ve Korumalı Rotalardaysa Login'e Yönlendir
-  const isProtectedRoute = Object.keys(ROUTE_PROTECTION).some(route => pathname.startsWith(route))
+  const isProtectedRoute = Object.keys(ROUTE_PROTECTION).some(route => normalizedPath.startsWith(route))
   if (isProtectedRoute && !session && !isOnLoginPage) {
-    const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = "/login"
-    return NextResponse.redirect(redirectUrl)
+    return redirectWithLocale("/login")
   }
 
   // --- ROL BAZLI YALITIM VE ERİŞİM KORUMASI (ROUTE CONFINEMENT) ---
@@ -214,36 +220,30 @@ export default NextAuth(authConfig).auth((req) => {
   // A0. DRIVER: Sadece /personnel, /driver veya mobil arayüz rotalarına erişebilir. KESİNLİKLE /admin veya /superadmin rotalarına erişemez.
   if (userRole === "DRIVER") {
     if (
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/superadmin") ||
-      pathname.startsWith("/super-admin") ||
-      pathname.startsWith("/subcontractor") ||
-      pathname.startsWith("/supplier") ||
-      pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/inspection")
+      normalizedPath.startsWith("/admin") ||
+      normalizedPath.startsWith("/superadmin") ||
+      normalizedPath.startsWith("/super-admin") ||
+      normalizedPath.startsWith("/subcontractor") ||
+      normalizedPath.startsWith("/supplier") ||
+      normalizedPath.startsWith("/dashboard") ||
+      normalizedPath.startsWith("/inspection")
     ) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/personnel"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/personnel")
     }
   }
 
   // A1. SECURITY: Sadece /admin/procurement/logistics rotasına ve alt rotalarına erişebilir (veya özel bir /security rotası varsa oraya).
-  // Diğer tüm rotalar engellenir ve doğrudan lojistik takvimi ekranına yönlendirilir.
   if (userRole === "SECURITY") {
     const isAllowedSecurityPath =
-      pathname.startsWith("/admin/procurement/logistics") ||
-      pathname.startsWith("/security")
+      normalizedPath.startsWith("/admin/procurement/logistics") ||
+      normalizedPath.startsWith("/security")
 
     if (!isAllowedSecurityPath && !isOnLoginPage) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/admin/procurement/logistics"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/admin/procurement/logistics")
     }
   }
 
   // A. ENGINEER, SITE_MANAGER, PERSONNEL, STAFF, WORKER:
-  // /admin rotalarına (örn: /admin/projects) veya yetkisiz portallara girmeye çalıştığında KESİNLİKLE /personnel/dashboard'a yönlendir
   const isPersonnelScope =
     userRole === "ENGINEER" ||
     userRole === "SITE_MANAGER" ||
@@ -253,73 +253,59 @@ export default NextAuth(authConfig).auth((req) => {
 
   if (isPersonnelScope) {
     if (
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/subcontractor") ||
-      pathname.startsWith("/supplier") ||
-      pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/inspection")
+      normalizedPath.startsWith("/admin") ||
+      normalizedPath.startsWith("/subcontractor") ||
+      normalizedPath.startsWith("/supplier") ||
+      normalizedPath.startsWith("/dashboard") ||
+      normalizedPath.startsWith("/inspection")
     ) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/personnel/dashboard"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/personnel/dashboard")
     }
   }
 
   // B. SUBCONTRACTOR: Sadece /subcontractor rotalarına erişebilir
   if (userRole === "SUBCONTRACTOR") {
     if (
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/personnel") ||
-      pathname.startsWith("/supplier") ||
-      pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/inspection")
+      normalizedPath.startsWith("/admin") ||
+      normalizedPath.startsWith("/personnel") ||
+      normalizedPath.startsWith("/supplier") ||
+      normalizedPath.startsWith("/dashboard") ||
+      normalizedPath.startsWith("/inspection")
     ) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/subcontractor"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/subcontractor")
     }
-    if (!pathname.startsWith("/subcontractor") && !isOnLoginPage) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/subcontractor"
-      return NextResponse.redirect(redirectUrl)
+    if (!normalizedPath.startsWith("/subcontractor") && !isOnLoginPage) {
+      return redirectWithLocale("/subcontractor")
     }
   }
 
   // C. SUPPLIER: Sadece /supplier rotalarına erişebilir
   if (userRole === "SUPPLIER") {
     if (
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/personnel") ||
-      pathname.startsWith("/subcontractor") ||
-      pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/inspection")
+      normalizedPath.startsWith("/admin") ||
+      normalizedPath.startsWith("/personnel") ||
+      normalizedPath.startsWith("/subcontractor") ||
+      normalizedPath.startsWith("/dashboard") ||
+      normalizedPath.startsWith("/inspection")
     ) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/supplier"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/supplier")
     }
-    if (!pathname.startsWith("/supplier") && !isOnLoginPage) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/supplier"
-      return NextResponse.redirect(redirectUrl)
+    if (!normalizedPath.startsWith("/supplier") && !isOnLoginPage) {
+      return redirectWithLocale("/supplier")
     }
   }
 
-  // D. INSPECTION_ADMIN & INSPECTOR: Yapı Denetimciler KESİNLİKLE /inspection/dashboard içinde kalmalı; Müteahhit /admin paneline erişimleri kesinlikle engellenmeli
+  // D. INSPECTION_ADMIN & INSPECTOR: Yapı Denetimciler KESİNLİKLE /inspection/dashboard içinde kalmalı
   if (userRole === "INSPECTION_ADMIN" || userRole === "INSPECTOR" || userRole === "AUDITOR") {
-    // 1. Müteahhit ana paneli (/admin) ve diğer portallar kesinlikle engellenir
     if (
-      pathname === "/admin" ||
-      pathname.startsWith("/subcontractor") ||
-      pathname.startsWith("/supplier") ||
-      pathname.startsWith("/personnel")
+      normalizedPath === "/admin" ||
+      normalizedPath.startsWith("/subcontractor") ||
+      normalizedPath.startsWith("/supplier") ||
+      normalizedPath.startsWith("/personnel")
     ) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/inspection/dashboard"
-      return NextResponse.redirect(redirectUrl)
+      return redirectWithLocale("/inspection/dashboard")
     }
 
-    // 2. Müteahhit şantiye, satınalma, taşeron ve ikmal modülleri kesinlikle yasaktır
     const contractorOnlyPaths = [
       "/admin/procurement",
       "/admin/subcontractors",
@@ -334,13 +320,10 @@ export default NextAuth(authConfig).auth((req) => {
       "/admin/logistics",
       "/admin/inventory/qr-scanner"
     ]
-    if (contractorOnlyPaths.some(p => pathname.startsWith(p))) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/inspection/dashboard"
-      return NextResponse.redirect(redirectUrl)
+    if (contractorOnlyPaths.some(p => normalizedPath.startsWith(p))) {
+      return redirectWithLocale("/inspection/dashboard")
     }
 
-    // 3. Saha Denetçisi (INSPECTOR): Kasa, Finans, İK, Personel, Muhasebe modüllerine erişemez
     if (userRole === "INSPECTOR" || userRole === "AUDITOR") {
       const inspectorRestrictedPaths = [
         "/admin/finance",
@@ -359,15 +342,13 @@ export default NextAuth(authConfig).auth((req) => {
         "/inspection/companies",
         "/inspection/contracts"
       ]
-      if (inspectorRestrictedPaths.some(p => pathname.startsWith(p))) {
-        const redirectUrl = req.nextUrl.clone()
-        redirectUrl.pathname = "/inspection/dashboard"
-        return NextResponse.redirect(redirectUrl)
+      if (inspectorRestrictedPaths.some(p => normalizedPath.startsWith(p))) {
+        return redirectWithLocale("/inspection/dashboard")
       }
     }
   }
 
-  // E. DEPARTMAN BAZLI YALITIM (HR_MANAGER, FINANCE_MANAGER, PROCUREMENT_MANAGER, EQUIPMENT_MANAGER, ISG_EXPERT)
+  // E. DEPARTMAN BAZLI YALITIM
   if (userRole === "HR_MANAGER") {
     const hrRestricted = [
       "/admin/finance",
@@ -382,10 +363,8 @@ export default NextAuth(authConfig).auth((req) => {
       "/admin/samples",
       "/admin/forms",
     ]
-    if (hrRestricted.some((p) => pathname.startsWith(p))) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/admin/personel"
-      return NextResponse.redirect(redirectUrl)
+    if (hrRestricted.some((p) => normalizedPath.startsWith(p))) {
+      return redirectWithLocale("/admin/personel")
     }
   }
 
@@ -402,10 +381,8 @@ export default NextAuth(authConfig).auth((req) => {
       "/admin/qa-qc",
       "/admin/deficiencies",
     ]
-    if (finRestricted.some((p) => pathname.startsWith(p))) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/admin/finance"
-      return NextResponse.redirect(redirectUrl)
+    if (finRestricted.some((p) => normalizedPath.startsWith(p))) {
+      return redirectWithLocale("/admin/finance")
     }
   }
 
@@ -421,10 +398,8 @@ export default NextAuth(authConfig).auth((req) => {
       "/admin/progress-payments",
       "/admin/finance/documents",
     ]
-    if (procRestricted.some((p) => pathname.startsWith(p))) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/admin/procurement"
-      return NextResponse.redirect(redirectUrl)
+    if (procRestricted.some((p) => normalizedPath.startsWith(p))) {
+      return redirectWithLocale("/admin/procurement")
     }
   }
 
@@ -438,10 +413,8 @@ export default NextAuth(authConfig).auth((req) => {
       "/admin/personel",
       "/admin/progress-payments",
     ]
-    if (equipRestricted.some((p) => pathname.startsWith(p))) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/admin/equipments"
-      return NextResponse.redirect(redirectUrl)
+    if (equipRestricted.some((p) => normalizedPath.startsWith(p))) {
+      return redirectWithLocale("/admin/equipments")
     }
   }
 
@@ -455,38 +428,33 @@ export default NextAuth(authConfig).auth((req) => {
       "/admin/progress-payments",
       "/admin/shifts",
     ]
-    if (isgRestricted.some((p) => pathname.startsWith(p))) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/admin/personel/alerts"
-      return NextResponse.redirect(redirectUrl)
+    if (isgRestricted.some((p) => normalizedPath.startsWith(p))) {
+      return redirectWithLocale("/admin/personel/alerts")
     }
   }
 
-  // E. Genel Rol ve Rota Koruması
-  const protectedRoute = Object.keys(ROUTE_PROTECTION).find(route => pathname.startsWith(route))
+  // F. Genel Rol ve Rota Koruması
+  const protectedRoute = Object.keys(ROUTE_PROTECTION).find(route => normalizedPath.startsWith(route))
   if (protectedRoute) {
     const allowedRoles = ROUTE_PROTECTION[protectedRoute as keyof typeof ROUTE_PROTECTION]
     if (!userRole || !allowedRoles.includes(userRole)) {
-      // Eğer kendi portalı varsa oraya, yoksa unauthorized
-      const redirectUrl = req.nextUrl.clone()
       if (userRole === "STAFF" || userRole === "WORKER" || userRole === "DRIVER") {
-        redirectUrl.pathname = "/personnel"
+        return redirectWithLocale("/personnel")
       } else if (userRole === "SECURITY") {
-        redirectUrl.pathname = "/admin/procurement/logistics"
+        return redirectWithLocale("/admin/procurement/logistics")
       } else if (userRole === "SUBCONTRACTOR") {
-        redirectUrl.pathname = "/subcontractor"
+        return redirectWithLocale("/subcontractor")
       } else if (userRole === "SUPPLIER") {
-        redirectUrl.pathname = "/supplier"
+        return redirectWithLocale("/supplier")
       } else if (userRole === "INSPECTOR" || userRole === "AUDITOR" || userRole === "INSPECTION_ADMIN") {
-        redirectUrl.pathname = "/dashboard"
+        return redirectWithLocale("/dashboard")
       } else {
-        redirectUrl.pathname = "/unauthorized"
+        return redirectWithLocale("/unauthorized")
       }
-      return NextResponse.redirect(redirectUrl)
     }
   }
 
-  return NextResponse.next()
+  return intlMiddleware(req)
 })
 
 // Configure middleware matcher for better performance

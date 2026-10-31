@@ -10,7 +10,9 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
+import { useTranslations } from "next-intl"
 import NotificationBell from "@/components/NotificationBell"
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { isMenuItemAllowed } from "@/lib/utils/module-permissions"
 import { 
@@ -242,6 +244,7 @@ export default function AdminSidebar({
   const pathname = usePathname()
   const { isInstallable, promptInstall } = usePwaInstall()
   const { data: session } = useSession()
+  const t = useTranslations("Index")
 
   useEffect(() => {
     // 1. URL'den aktif proje ID'sini al
@@ -532,7 +535,8 @@ export default function AdminSidebar({
                   </div>
                 )
               )}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {!isCollapsed && <LanguageSwitcher />}
                 {!isCollapsed && <NotificationBell />}
                 <button
                   type="button"
@@ -579,6 +583,7 @@ export default function AdminSidebar({
                     {items.map((item) => {
                       const isActive = pathname === item.href || (item.label === "Keşif & Metraj (BoQ)" && pathname?.includes("/boq"))
                       const Icon = item.icon
+                      const displayLabel = item.label === "Dashboard" ? t("title") : item.label
                       return (
                         <Link
                           key={item.href}
@@ -589,10 +594,10 @@ export default function AdminSidebar({
                               ? "bg-tenant/15 font-semibold text-tenant border-l-2 border-tenant dark:bg-slate-800 dark:text-tenant"
                               : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                           } gap-3 px-3 py-2`}
-                          title={isCollapsed ? item.label : undefined}
+                          title={isCollapsed ? displayLabel : undefined}
                         >
                           <Icon className="h-4 w-4 shrink-0" />
-                          {!isCollapsed && <span className="text-sm">{item.label}</span>}
+                          {!isCollapsed && <span className="text-sm">{displayLabel}</span>}
                         </Link>
                       )
                     })}

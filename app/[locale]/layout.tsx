@@ -6,7 +6,7 @@
 
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "@/app/globals.css";
 import { Toaster } from "react-hot-toast";
 import OfflineStatus from "@/components/OfflineStatus";
 import OfflineSyncManager from "@/components/OfflineSyncManager";
@@ -15,6 +15,10 @@ import AILegislationAssistant from "@/components/AILegislationAssistant";
 import JsonLd from "@/components/JsonLd";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
+import { locales } from "@/i18n";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -99,9 +103,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://www.nxerp.com.tr",
     languages: {
-      "tr": "https://www.nxerp.com.tr",
+      "tr": "https://www.nxerp.com.tr/tr",
       "en": "https://www.nxerp.com.tr/en",
-      "x-default": "https://www.nxerp.com.tr",
+      "x-default": "https://www.nxerp.com.tr/tr",
     },
   },
   other: {
@@ -114,30 +118,46 @@ export const viewport: Viewport = {
   themeColor: "#0f172a",
 };
 
-export default function RootLayout({
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
+export default async function LocaleLayout({
   children,
-}: Readonly<{
+  params,
+}: {
   children: React.ReactNode;
-}>) {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+
+  if (!locales.includes(locale as any)) {
+    notFound();
+  }
+
+  setRequestLocale(locale);
+  const messages = await getMessages();
+
   return (
-    <html lang="tr" className={`${inter.variable} antialiased`} suppressHydrationWarning>
+    <html lang={locale} className={`${inter.variable} antialiased`} suppressHydrationWarning>
       <head>
-        {/* Google International SEO / Multilingual GEO Hreflang Tags */}
-        <link rel="alternate" hrefLang="tr" href="https://www.nxerp.com.tr" />
+        <link rel="alternate" hrefLang="tr" href="https://www.nxerp.com.tr/tr" />
         <link rel="alternate" hrefLang="en" href="https://www.nxerp.com.tr/en" />
-        <link rel="alternate" hrefLang="x-default" href="https://www.nxerp.com.tr" />
+        <link rel="alternate" hrefLang="x-default" href="https://www.nxerp.com.tr/tr" />
       </head>
       <body className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white" suppressHydrationWarning>
-        <JsonLd />
-        <ThemeProvider>
-          <OfflineStatus />
-          <OfflineSyncManager />
-          <AILegislationAssistant />
-          {children}
-          <Toaster position="bottom-right" />
-        </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+        <NextIntlClientProvider messages={messages} locale={locale}>
+          <JsonLd />
+          <ThemeProvider>
+            <OfflineStatus />
+            <OfflineSyncManager />
+            <AILegislationAssistant />
+            {children}
+            <Toaster position="bottom-right" />
+          </ThemeProvider>
+          <Analytics />
+          <SpeedInsights />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

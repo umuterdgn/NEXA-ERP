@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { ArrowRight, LogIn, Menu, X, Sparkles } from 'lucide-react'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -105,6 +106,7 @@ export default function Navbar() {
 
           {/* Desktop Action Buttons */}
           <div className="hidden sm:flex items-center gap-3">
+            <LanguageSwitcher />
             <Link
               href="/login"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all duration-200 shadow-sm"

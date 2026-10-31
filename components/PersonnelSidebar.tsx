@@ -11,6 +11,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher"
 import { 
   Home,
   User,
@@ -205,9 +206,12 @@ export default function PersonnelSidebar({
           {/* Header */}
           <div className={`mb-4 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
             {!isCollapsed && (
-              <div>
-                <h1 className="text-lg font-bold text-slate-900 dark:text-white">Şantiye Asistanı</h1>
-                <p className="text-xs text-slate-600 dark:text-slate-400">Nexa ERP</p>
+              <div className="flex items-center justify-between w-full pr-2">
+                <div>
+                  <h1 className="text-lg font-bold text-slate-900 dark:text-white">Şantiye Asistanı</h1>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">Nexa ERP</p>
+                </div>
+                <LanguageSwitcher />
               </div>
             )}
             <button

@@ -1,0 +1,22 @@
+{
+  "Index": {
+    "title": "Gösterge Paneli",
+    "welcome": "Hoş Geldiniz",
+    "overview": "Sistem Özeti"
+  },
+  "Navigation": {
+    "dashboard": "Gösterge Paneli",
+    "projects": "Projeler",
+    "personnel": "Personeller",
+    "finance": "Kasa & Finans",
+    "inspection": "Yapı Denetim",
+    "subcontractor": "Taşeron Yönetimi",
+    "settings": "Ayarlar",
+    "logout": "Çıkış Yap"
+  },
+  "Language": {
+    "turkish": "Türkçe",
+    "english": "English",
+    "select": "Dil Seçiniz"
+  }
+}

@@ -7,7 +7,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import FinancialChart from "../../components/admin/FinancialChart"
+import FinancialChart from "@/components/admin/FinancialChart"
 import PersonnelWorkloadChart, { WorkloadItem } from "@/components/admin/PersonnelWorkloadChart"
 import DriverCapacityWidget, { DriverCapacityItem } from "@/components/admin/DriverCapacityWidget"
 import WeatherWidget from "@/components/ui/WeatherWidget"
