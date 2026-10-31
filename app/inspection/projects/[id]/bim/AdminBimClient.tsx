@@ -21,7 +21,7 @@ const BimViewer = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[700px] bg-slate-950 rounded-2xl border border-slate-800 flex flex-col items-center justify-center shadow-2xl">
+      <div className="w-full h-[calc(100vh-120px)] min-h-[600px] bg-slate-950 rounded-2xl border border-slate-800 flex flex-col items-center justify-center shadow-2xl">
         <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mb-3"></div>
         <p className="text-cyan-400 text-sm font-semibold tracking-wide">3D BIM Görüntüleyici Hazırlanıyor...</p>
         <p className="text-slate-500 text-xs mt-1">WebGL 3D motoru ve Web-IFC kütüphaneleri başlatılıyor</p>
@@ -89,7 +89,7 @@ export default function AdminBimClient({ project }: AdminBimClientProps) {
       </div>
 
       {/* 3D BIM Viewer Kartı */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl relative min-h-[700px]">
+      <div className="relative w-full h-[calc(100vh-120px)] min-h-[600px]">
         <BimViewer
           url={modelUrl}
           ifcUrl={project.ifcModelUrl}

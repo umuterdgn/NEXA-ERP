@@ -67,7 +67,7 @@ export default function SubcontractorSidebar({
       )}
 
       <aside
-        className={`fixed top-0 left-0 h-full z-[9999] transition-all duration-300 ${
+        className={`fixed top-0 left-0 h-full z-[9999] lg:z-40 transition-all duration-300 ${
           isOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
         } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800`}
       >

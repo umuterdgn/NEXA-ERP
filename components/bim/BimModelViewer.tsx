@@ -721,7 +721,7 @@ export default function BimModelViewer({
   return (
     <div
       className={`min-h-screen bg-slate-950 text-slate-100 flex flex-col ${
-        isFullscreen ? "fixed inset-0 z-50 p-0" : "p-4 sm:p-6"
+        isFullscreen ? "fixed inset-0 z-[100] p-0" : "p-4 sm:p-6"
       }`}
     >
       {/* Top Header Bar */}
@@ -853,7 +853,7 @@ export default function BimModelViewer({
       {/* ADIM 2: 3D Canvas Viewport Container (Açık Yükseklik ve Genişlik) */}
       <div
         ref={containerRef}
-        className="relative w-full h-[calc(100vh-180px)] min-h-[500px] overflow-hidden bg-gray-900 rounded-lg border border-slate-800 shadow-2xl flex flex-col"
+        className={`relative flex flex-col w-full ${isFullscreen ? "h-screen" : "h-[calc(100vh-120px)]"} min-h-[500px] overflow-hidden bg-gray-900 rounded-lg border border-slate-800 shadow-2xl`}
       >
         {/* Loading Spinner Overlay */}
         {loadingModel && (
@@ -962,7 +962,7 @@ export default function BimModelViewer({
 
         {/* Selected BIM Element Inspector Drawer (Sol Bilgi Paneli - ADIM 1) */}
         {selectedElement ? (
-          <div className="absolute left-4 top-20 w-80 max-h-[calc(100vh-120px)] overflow-y-auto bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-4 z-40 shadow-2xl pointer-events-auto space-y-2 animate-in fade-in slide-in-from-left duration-200">
+          <div className="absolute left-4 top-16 w-[350px] max-h-[calc(100%-100px)] overflow-y-auto z-40 bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col p-4 border border-gray-700 pointer-events-auto space-y-2 animate-in fade-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
