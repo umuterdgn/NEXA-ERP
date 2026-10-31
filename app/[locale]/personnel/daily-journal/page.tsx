@@ -790,44 +790,40 @@ export default function DailyLogEntryPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      Kendi Personelimiz
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                      <span>Kendi Personelimiz</span>
+                      <span className="text-[10px] text-slate-400 font-normal">🔒 Kilitli (Salt Okunur)</span>
                     </label>
                     <div className="relative">
                       <input
                         type="number"
                         min="0"
+                        readOnly={true}
                         value={staffCount}
-                        onChange={(e) => {
-                          setStaffCount(e.target.value)
-                          setIsPersonnelSyncedFromHr(false)
-                        }}
                         placeholder="Örn: 12"
-                        className="w-full bg-slate-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-orange-500"
+                        className="w-full bg-gray-800/50 text-gray-400 border border-gray-700 cursor-not-allowed focus:ring-0 rounded-xl px-3 py-2.5 text-xs font-mono"
                       />
-                      <span className="absolute right-3 top-2.5 text-[11px] text-slate-400">
+                      <span className="absolute right-3 top-2.5 text-[11px] text-slate-500 font-medium">
                         Kişi
                       </span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      Taşeron Mevcudu
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                      <span>Taşeron Mevcudu</span>
+                      <span className="text-[10px] text-slate-400 font-normal">🔒 Kilitli (Salt Okunur)</span>
                     </label>
                     <div className="relative">
                       <input
                         type="number"
                         min="0"
+                        readOnly={true}
                         value={subcontractorCount}
-                        onChange={(e) => {
-                          setSubcontractorCount(e.target.value)
-                          setIsPersonnelSyncedFromHr(false)
-                        }}
                         placeholder="Örn: 48"
-                        className="w-full bg-slate-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-orange-500"
+                        className="w-full bg-gray-800/50 text-gray-400 border border-gray-700 cursor-not-allowed focus:ring-0 rounded-xl px-3 py-2.5 text-xs font-mono"
                       />
-                      <span className="absolute right-3 top-2.5 text-[11px] text-slate-400">
+                      <span className="absolute right-3 top-2.5 text-[11px] text-slate-500 font-medium">
                         Kişi
                       </span>
                     </div>
@@ -841,9 +837,10 @@ export default function DailyLogEntryPage() {
                     <span>(Veriler kapı turnike/QR sisteminden anlık çekilmiştir ✅)</span>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-slate-500">
-                    (Bugün için henüz puantaj/giriş kaydı bulunamadıysa veya farklı bir sayı varsa manuel girebilirsiniz.)
-                  </p>
+                  <div className="bg-slate-950 border border-gray-800 rounded-xl p-2.5 flex items-center gap-2 text-xs text-slate-400">
+                    <span className="text-amber-400">ℹ️</span>
+                    <span>(Personel sayıları manuel girişe kapalıdır. Güncel mevcudu almak için yukarıdaki &quot;👥 Canlı Puantajdan Çek&quot; butonuna basınız.)</span>
+                  </div>
                 )}
 
                 <div className="bg-slate-950/70 border border-gray-800/80 rounded-xl p-3 flex items-center justify-between text-xs">

@@ -1,0 +1,269 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * Field Personnel Tasks & Work Orders Server Actions
+ * Bridges field personnel portal to admin task & work-order ecosystem
+ */
+
+"use server"
+
+import { prisma } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
+
+export interface WorkOrderItem {
+  id: string
+  title: string
+  description: string | null
+  status: "TODO" | "IN_PROGRESS" | "DONE" | string
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT" | string
+  dueDate: Date | null
+  createdAt: Date
+  projectId?: string | null
+  projectName?: string
+  taskType?: string | null
+  source: "task" | "work_order"
+}
+
+export interface GetMyWorkOrdersResponse {
+  success: boolean
+  workOrders: WorkOrderItem[]
+  error?: string
+}
+
+export interface UpdateWorkOrderStatusResponse {
+  success: boolean
+  data?: any
+  message?: string
+  error?: string
+}
+
+/**
+ * ADIM 2: getMyWorkOrders(userId: string)
+ * Task ve WorkOrder tablolarında kullanıcıya atanan görevleri getirir.
+ */
+export async function getMyWorkOrders(userId: string): Promise<GetMyWorkOrdersResponse> {
+  try {
+    if (!userId) {
+      return { success: false, workOrders: [], error: "Kullanıcı ID'si gereklidir." }
+    }
+
+    // 1. Kullanıcı veya Personel ID'sini tespit et
+    const personnel = await (prisma as any).personel.findFirst({
+      where: {
+        OR: [
+          { userId },
+          { id: userId }
+        ]
+      },
+      select: {
+        id: true,
+        userId: true,
+        name: true
+      }
+    })
+
+    const targetIds = [userId]
+    if (personnel?.id && !targetIds.includes(personnel.id)) {
+      targetIds.push(personnel.id)
+    }
+    if (personnel?.userId && !targetIds.includes(personnel.userId)) {
+      targetIds.push(personnel.userId)
+    }
+
+    // 2. Task (Admin To-Do / Kanban) tablosundan görevleri çek
+    const tasks = await prisma.task.findMany({
+      where: {
+        assignedTo: { in: targetIds }
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            title: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    })
+
+    // 3. WorkOrder tablosundan iş emirlerini çek
+    let workOrders: any[] = []
+    try {
+      workOrders = await (prisma as any).workOrder.findMany({
+        where: {
+          assignedToId: { in: targetIds }
+        },
+        include: {
+          project: {
+            select: {
+              id: true,
+              name: true,
+              title: true
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      })
+    } catch (woErr) {
+      console.warn("WorkOrder fetch warning:", woErr)
+    }
+
+    // 4. Ortak WorkOrderItem formatına dönüştür
+    const mappedTasks: WorkOrderItem[] = tasks.map((t) => {
+      let priority = "MEDIUM"
+      const taskTypeLower = (t.taskType || "").toLowerCase()
+      if (taskTypeLower.includes("acil") || taskTypeLower.includes("urgent")) {
+        priority = "URGENT"
+      } else if (taskTypeLower.includes("yüksek") || taskTypeLower.includes("high")) {
+        priority = "HIGH"
+      } else if (taskTypeLower.includes("düşük") || taskTypeLower.includes("low")) {
+        priority = "LOW"
+      }
+
+      return {
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        status: t.status || "TODO",
+        priority,
+        dueDate: t.dueDate,
+        createdAt: t.createdAt,
+        projectId: t.projectId,
+        projectName: t.project?.name || t.project?.title || "Genel Şantiye",
+        taskType: t.taskType || "Görev",
+        source: "task"
+      }
+    })
+
+    const mappedWorkOrders: WorkOrderItem[] = workOrders.map((wo: any) => ({
+      id: wo.id,
+      title: wo.title,
+      description: wo.description,
+      status: String(wo.status || "TODO"),
+      priority: String(wo.priority || "MEDIUM"),
+      dueDate: wo.dueDate,
+      createdAt: wo.createdAt,
+      projectId: wo.projectId,
+      projectName: wo.project?.name || wo.project?.title || "Genel Şantiye",
+      taskType: wo.department || "İş Emri",
+      source: "work_order"
+    }))
+
+    // İkisini birleştirip tarihe göre sırala
+    const combined = [...mappedTasks, ...mappedWorkOrders].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+
+    return {
+      success: true,
+      workOrders: combined
+    }
+  } catch (error: any) {
+    console.error("getMyWorkOrders error:", error)
+    return {
+      success: false,
+      workOrders: [],
+      error: error?.message || "İş emirleri alınırken bir hata oluştu."
+    }
+  }
+}
+
+/**
+ * ADIM 2: updateWorkOrderStatus(taskId: string, status: string)
+ * Sahadaki personelin görevi "Tamamlandı" veya "Devam Ediyor" yapabilmesi için.
+ */
+export async function updateWorkOrderStatus(
+  taskId: string,
+  status: string
+): Promise<UpdateWorkOrderStatusResponse> {
+  try {
+    if (!taskId) {
+      return { success: false, error: "Görev ID'si gereklidir." }
+    }
+
+    // Durumu normalize et (TODO, IN_PROGRESS, DONE)
+    let normalizedStatus = status.toUpperCase().trim()
+    if (
+      normalizedStatus === "TAMAMLANDI" ||
+      normalizedStatus === "TAMAMLA" ||
+      normalizedStatus === "DONE" ||
+      normalizedStatus === "COMPLETED"
+    ) {
+      normalizedStatus = "DONE"
+    } else if (
+      normalizedStatus === "DEVAM EDIYOR" ||
+      normalizedStatus === "DEVAM EDİYOR" ||
+      normalizedStatus === "BAŞLA" ||
+      normalizedStatus === "IN_PROGRESS"
+    ) {
+      normalizedStatus = "IN_PROGRESS"
+    } else if (
+      normalizedStatus === "YAPILACAK" ||
+      normalizedStatus === "DURAKLAT" ||
+      normalizedStatus === "TODO"
+    ) {
+      normalizedStatus = "TODO"
+    }
+
+    // 1. Önce Task tablosunu güncelle
+    const existingTask = await prisma.task.findUnique({
+      where: { id: taskId }
+    })
+
+    if (existingTask) {
+      const updated = await prisma.task.update({
+        where: { id: taskId },
+        data: { status: normalizedStatus }
+      })
+
+      revalidatePath("/personnel/work-orders")
+      revalidatePath("/personnel/tasks")
+      revalidatePath("/admin/tasks")
+      revalidatePath("/admin/my-tasks")
+
+      return {
+        success: true,
+        data: updated,
+        message: `Görev durumu "${normalizedStatus === "DONE" ? "Tamamlandı" : normalizedStatus === "IN_PROGRESS" ? "Devam Ediyor" : "Yapılacak"}" olarak güncellendi.`
+      }
+    }
+
+    // 2. Task bulunamadıysa WorkOrder tablosunu güncelle
+    try {
+      const existingWorkOrder = await (prisma as any).workOrder.findUnique({
+        where: { id: taskId }
+      })
+
+      if (existingWorkOrder) {
+        const updated = await (prisma as any).workOrder.update({
+          where: { id: taskId },
+          data: { status: normalizedStatus }
+        })
+
+        revalidatePath("/personnel/work-orders")
+        revalidatePath("/personnel/tasks")
+        revalidatePath("/admin/work-orders")
+
+        return {
+          success: true,
+          data: updated,
+          message: `İş emri durumu "${normalizedStatus === "DONE" ? "Tamamlandı" : normalizedStatus === "IN_PROGRESS" ? "Devam Ediyor" : "Yapılacak"}" olarak güncellendi.`
+        }
+      }
+    } catch (woErr) {
+      console.warn("WorkOrder update check error:", woErr)
+    }
+
+    return {
+      success: false,
+      error: "Belirtilen görev veya iş emri kaydı bulunamadı."
+    }
+  } catch (error: any) {
+    console.error("updateWorkOrderStatus error:", error)
+    return {
+      success: false,
+      error: error?.message || "Görev durumu güncellenirken bir hata oluştu."
+    }
+  }
+}
