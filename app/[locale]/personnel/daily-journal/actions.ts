@@ -148,3 +148,134 @@ export async function submitJournalEntryAction(formData: FormData) {
     return { success: false, error: error?.message || "Jurnal kaydedilemedi." }
   }
 }
+
+export async function createDailyLog(formData: FormData) {
+  try {
+    const session = await auth()
+    let userId = session?.user?.id
+
+    let projectId = (formData.get("projectId") as string) || ""
+    const dateStr = (formData.get("date") as string) || ""
+    const weatherCondition = (formData.get("weatherCondition") as string) || "Açık"
+    const temperature = (formData.get("temperature") as string) || "22"
+    const staffCountStr = (formData.get("staffCount") as string) || "0"
+    const subcontractorCountStr = (formData.get("subcontractorCount") as string) || "0"
+    const equipment = (formData.get("equipment") as string) || ""
+    const completedWorks = (formData.get("completedWorks") as string) || ""
+    const safetyAndDelayNotes = (formData.get("safetyAndDelayNotes") as string) || ""
+
+    const staffCount = parseInt(staffCountStr, 10) || 0
+    const subcontractorCount = parseInt(subcontractorCountStr, 10) || 0
+    const totalWorkers = staffCount + subcontractorCount
+
+    if (!projectId) {
+      const firstProject = await prisma.project.findFirst({ select: { id: true } })
+      if (firstProject) {
+        projectId = firstProject.id
+      } else {
+        return { success: false, error: "Lütfen bir şantiye projesi seçiniz." }
+      }
+    }
+
+    if (!completedWorks.trim()) {
+      return { success: false, error: "Lütfen gün içinde yapılan imalatları (işleri) giriniz." }
+    }
+
+    if (!userId) {
+      const firstUser = await prisma.user.findFirst({ select: { id: true } })
+      userId = firstUser?.id || "engineer"
+    }
+
+    const logDate = dateStr ? new Date(dateStr) : new Date()
+    const weatherSummary = `${weatherCondition}, ${temperature}°C`
+
+    // Calculate machinery count from equipment text/entries
+    let machineryCount = 0
+    if (equipment) {
+      const matches = equipment.match(/:?\s*(\d+)/g)
+      if (matches) {
+        for (const m of matches) {
+          const num = parseInt(m.replace(/\D/g, ""), 10)
+          if (!isNaN(num)) machineryCount += num
+        }
+      }
+    }
+
+    // 1. Create DailyLog record in Prisma
+    const dailyLog = await prisma.dailyLog.create({
+      data: {
+        projectId,
+        date: logDate,
+        weather: weatherSummary,
+        machineryCount,
+        workDone: `[İmalatlar]: ${completedWorks.trim()}${equipment ? `\n[Kullanılan Ekipmanlar]: ${equipment}` : ""}${staffCount > 0 || subcontractorCount > 0 ? `\n[Personel]: Kendi: ${staffCount}, Taşeron: ${subcontractorCount} (Toplam: ${totalWorkers})` : ""}${safetyAndDelayNotes.trim() ? `\n[İSG ve Notlar]: ${safetyAndDelayNotes.trim()}` : ""}`,
+        photoUrls: []
+      }
+    })
+
+    // 2. Also sync to DailyJournal for unified enterprise reporting
+    try {
+      await prisma.dailyJournal.create({
+        data: {
+          projectId,
+          engineerId: userId,
+          date: logDate,
+          weather: {
+            condition: weatherCondition,
+            temperature: Number(temperature) || 22,
+            unit: "°C"
+          },
+          workerCount: totalWorkers,
+          consumedItems: [],
+          completedWorks: [
+            {
+              id: `work-${Date.now()}`,
+              title: completedWorks.slice(0, 100),
+              quantityText: completedWorks,
+              subcontractorName: "Saha İmalat Ekibi",
+              status: "APPROVED"
+            }
+          ],
+          ncrReports: safetyAndDelayNotes.trim() ? [{ id: `note-${Date.now()}`, description: safetyAndDelayNotes }] : [],
+          engineerNotes: `[Ekipmanlar: ${equipment || "Yok"}] [Personel: ${staffCount} Kadrolu, ${subcontractorCount} Taşeron] ${safetyAndDelayNotes || ""}`,
+          status: "SUBMITTED"
+        }
+      })
+    } catch (jErr) {
+      console.warn("DailyJournal sync warning:", jErr)
+    }
+
+    // 3. ActivityLog
+    try {
+      await prisma.activityLog.create({
+        data: {
+          action: "DAILY_LOG_CREATED",
+          details: `Şantiye Jurnali kaydedildi (${totalWorkers} Personel, ${machineryCount} Ekipman, ${weatherSummary})`,
+          userId
+        }
+      })
+    } catch (aErr) {
+      console.warn("ActivityLog write warning:", aErr)
+    }
+
+    revalidatePath("/personnel/daily-journal")
+    revalidatePath("/personnel/daily-log")
+    revalidatePath("/personnel")
+    revalidatePath("/admin/reports")
+    revalidatePath("/admin/daily-logs")
+    revalidatePath(`/admin/projects/${projectId}`)
+
+    return {
+      success: true,
+      dailyLogId: dailyLog.id,
+      message: "Şantiye jurnali başarıyla kaydedildi ve merkeze iletildi!"
+    }
+  } catch (error: any) {
+    console.error("createDailyLog error:", error)
+    return {
+      success: false,
+      error: error?.message || "Jurnal kaydedilirken bir hata oluştu."
+    }
+  }
+}
+

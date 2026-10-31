@@ -474,3 +474,6 @@ Meteorolojik risk değerlendirmesinde; ${weatherAlert} ${engineerNoteExcerpt} Ka
     }
   }
 }
+
+export { createDailyLog } from "@/app/[locale]/personnel/daily-journal/actions"
+
