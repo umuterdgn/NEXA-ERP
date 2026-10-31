@@ -6,9 +6,8 @@
  */
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
+import { Link, usePathname } from "@/i18n/routing"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import NotificationBell from "@/components/NotificationBell"
@@ -177,7 +176,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
   { href: "/admin/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ" },
   { href: "/admin/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ" },
-  { href: "/admin/projects", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ" },
+  { href: "/admin/boq", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ" },
   
   // YAPI DENETİM & KONTROL
   { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
@@ -276,7 +275,6 @@ export default function AdminSidebar({
     }
   }, [pathname])
 
-  const boqHref = activeProjectId ? `/admin/projects/${activeProjectId}/boq` : "/admin/projects"
   const stageGateHref = activeProjectId ? `/franchise/stage-gates/${activeProjectId}` : "/franchise/stage-gates"
 
   const userRole = session?.user?.role as string
@@ -397,9 +395,6 @@ export default function AdminSidebar({
   )
 
   const effectiveMenuItems = moduleFilteredItems.map((item) => {
-    if (item.label === "Keşif & Metraj (BoQ)") {
-      return { ...item, href: boqHref }
-    }
     if (item.label === "İdari İzinler" && activeProjectId) {
       return { ...item, href: stageGateHref }
     }
