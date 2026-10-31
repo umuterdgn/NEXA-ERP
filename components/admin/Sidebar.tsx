@@ -243,7 +243,20 @@ export default function AdminSidebar({
   const pathname = usePathname()
   const { isInstallable, promptInstall } = usePwaInstall()
   const { data: session } = useSession()
-  const t = useTranslations("Index")
+  const t = useTranslations("Sidebar")
+
+  const getLocalizedLabel = (item: MenuItem) => {
+    if (item.href === "/admin" || item.label === "Dashboard" || item.label === "Gösterge Paneli") {
+      return t("dashboard")
+    }
+    if (item.href === "/admin/projects" || item.label === "Projeler") {
+      return t("projects")
+    }
+    if (item.href === "/admin/boq" || item.label === "Keşif & Metraj (BoQ)") {
+      return t("boq")
+    }
+    return item.label
+  }
 
   useEffect(() => {
     // 1. URL'den aktif proje ID'sini al
@@ -416,6 +429,7 @@ export default function AdminSidebar({
     if (!searchQuery.trim()) return true
     const query = searchQuery.toLowerCase()
     return item.label.toLowerCase().includes(query) || 
+           getLocalizedLabel(item).toLowerCase().includes(query) ||
            item.category.toLowerCase().includes(query)
   })
 
@@ -578,7 +592,7 @@ export default function AdminSidebar({
                     {items.map((item) => {
                       const isActive = pathname === item.href || (item.label === "Keşif & Metraj (BoQ)" && pathname?.includes("/boq"))
                       const Icon = item.icon
-                      const displayLabel = item.label === "Dashboard" ? t("title") : item.label
+                      const displayLabel = getLocalizedLabel(item)
                       return (
                         <Link
                           key={item.href}

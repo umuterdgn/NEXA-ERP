@@ -14,6 +14,11 @@
     "settings": "Settings",
     "logout": "Sign Out"
   },
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "boq": "Bill of Quantities (BoQ)"
+  },
   "Language": {
     "turkish": "Türkçe",
     "english": "English",

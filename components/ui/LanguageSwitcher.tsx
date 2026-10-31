@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { useRouter, usePathname } from "@/i18n/routing";
 import { Globe, Check, ChevronDown } from "lucide-react";
 
 export type SupportedLocale = "tr" | "en" | "de" | "ru" | "ar";
@@ -22,13 +22,13 @@ const languages: LanguageOption[] = [
 ];
 
 export default function LanguageSwitcher({ className = "" }: { className?: string }) {
-  const currentLocale = useLocale() as SupportedLocale;
+  const locale = useLocale() as SupportedLocale;
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const activeLanguage = languages.find((lang) => lang.code === currentLocale) || languages[0];
+  const activeLanguage = languages.find((lang) => lang.code === locale) || languages[0];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -40,17 +40,22 @@ export default function LanguageSwitcher({ className = "" }: { className?: strin
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelectLanguage = (newLocale: SupportedLocale) => {
-    if (newLocale === currentLocale) {
+  const handleLanguageChange = (newLocale: SupportedLocale) => {
+    if (newLocale === locale) {
       setIsOpen(false);
       return;
     }
 
     // Persist choice to cookie
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-    
-    // Switch locale using next-intl router
-    router.replace(pathname, { locale: newLocale });
+
+    // Eğer url /tr/admin/dashboard ise, /en/admin/dashboard yapar
+    const newPath = pathname.startsWith(`/${locale}`)
+      ? pathname.replace(`/${locale}`, `/${newLocale}`)
+      : `/${newLocale}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
+
+    router.push(newPath);
+    router.refresh();
     setIsOpen(false);
   };
 
@@ -81,12 +86,12 @@ export default function LanguageSwitcher({ className = "" }: { className?: strin
           </div>
 
           {languages.map((lang) => {
-            const isSelected = lang.code === currentLocale;
+            const isSelected = lang.code === locale;
             return (
               <button
                 key={lang.code}
                 type="button"
-                onClick={() => handleSelectLanguage(lang.code)}
+                onClick={() => handleLanguageChange(lang.code)}
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md transition-colors ${
                   isSelected
                     ? "bg-blue-600/20 text-blue-400 font-semibold"

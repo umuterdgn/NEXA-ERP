@@ -14,6 +14,11 @@
     "settings": "الإعدادات",
     "logout": "تسجيل الخروج"
   },
+  "Sidebar": {
+    "dashboard": "لوحة القيادة",
+    "projects": "المشاريع",
+    "boq": "جدول الكميات (BoQ)"
+  },
   "Language": {
     "turkish": "Türkçe",
     "english": "English",

@@ -14,6 +14,11 @@
     "settings": "Настройки",
     "logout": "Выйти"
   },
+  "Sidebar": {
+    "dashboard": "Панель управления",
+    "projects": "Проекты",
+    "boq": "Ведомость объемов работ (BoQ)"
+  },
   "Language": {
     "turkish": "Türkçe",
     "english": "English",

@@ -14,6 +14,11 @@
     "settings": "Ayarlar",
     "logout": "Çıkış Yap"
   },
+  "Sidebar": {
+    "dashboard": "Gösterge Paneli",
+    "projects": "Projeler",
+    "boq": "Keşif & Metraj (BoQ)"
+  },
   "Language": {
     "turkish": "Türkçe",
     "english": "English",
