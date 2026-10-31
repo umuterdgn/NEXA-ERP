@@ -99,7 +99,8 @@ export default NextAuth(authConfig).auth((req) => {
   }
 
   // --- 0. OTOMATİK DİL ALGILAMA & YÖNLENDİRME (next-intl) ---
-  const isLocalePath = pathname.startsWith("/tr") || pathname.startsWith("/en")
+  const locales = routing.locales
+  const isLocalePath = locales.some((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`))
   if (!isLocalePath) {
     const intlResponse = intlMiddleware(req)
     if (intlResponse) {
@@ -108,7 +109,7 @@ export default NextAuth(authConfig).auth((req) => {
   }
 
   // Aktif locale ve normalize edilmiş (locale öneksiz) rota
-  const localeMatch = pathname.match(/^\/(tr|en)(\/.*)?$/)
+  const localeMatch = pathname.match(/^\/(tr|en|de|ru|ar)(\/.*)?$/)
   const currentLocale = localeMatch ? localeMatch[1] : routing.defaultLocale
   const normalizedPath = localeMatch ? (localeMatch[2] || "/") : pathname
 

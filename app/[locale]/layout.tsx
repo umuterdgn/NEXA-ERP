@@ -105,6 +105,9 @@ export const metadata: Metadata = {
     languages: {
       "tr": "https://www.nxerp.com.tr/tr",
       "en": "https://www.nxerp.com.tr/en",
+      "de": "https://www.nxerp.com.tr/de",
+      "ru": "https://www.nxerp.com.tr/ru",
+      "ar": "https://www.nxerp.com.tr/ar",
       "x-default": "https://www.nxerp.com.tr/tr",
     },
   },
@@ -138,11 +141,20 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
 
+  // RTL (Right-to-Left) Mimari Desteği:
+  // Arapça (ar) için HTML direction niteliği 'rtl', diğer diller için 'ltr' olarak ayarlanır.
+  // Tailwind CSS ile arayüz geliştirirken fiziksel yönler (ml-*, mr-*, pl-*, pr-*) yerine
+  // mantıksal yönlendirmeler (ms-*, me-*, ps-*, pe-*, start-*, end-*) kullanılması önerilir.
+  const direction = locale === "ar" ? "rtl" : "ltr";
+
   return (
-    <html lang={locale} className={`${inter.variable} antialiased`} suppressHydrationWarning>
+    <html lang={locale} dir={direction} className={`${inter.variable} antialiased`} suppressHydrationWarning>
       <head>
         <link rel="alternate" hrefLang="tr" href="https://www.nxerp.com.tr/tr" />
         <link rel="alternate" hrefLang="en" href="https://www.nxerp.com.tr/en" />
+        <link rel="alternate" hrefLang="de" href="https://www.nxerp.com.tr/de" />
+        <link rel="alternate" hrefLang="ru" href="https://www.nxerp.com.tr/ru" />
+        <link rel="alternate" hrefLang="ar" href="https://www.nxerp.com.tr/ar" />
         <link rel="alternate" hrefLang="x-default" href="https://www.nxerp.com.tr/tr" />
       </head>
       <body className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white" suppressHydrationWarning>

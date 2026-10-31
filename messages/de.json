@@ -1,0 +1,25 @@
+{
+  "Index": {
+    "title": "Dashboard",
+    "welcome": "Willkommen",
+    "overview": "Systemübersicht"
+  },
+  "Navigation": {
+    "dashboard": "Dashboard",
+    "projects": "Projekte",
+    "personnel": "Personal",
+    "finance": "Finanzen & Kasse",
+    "inspection": "Bauüberwachung",
+    "subcontractor": "Subunternehmer-Management",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "Language": {
+    "turkish": "Türkçe",
+    "english": "English",
+    "german": "Deutsch",
+    "russian": "Русский",
+    "arabic": "العربية",
+    "select": "Sprache wählen"
+  }
+}

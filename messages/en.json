@@ -17,6 +17,9 @@
   "Language": {
     "turkish": "Türkçe",
     "english": "English",
+    "german": "Deutsch",
+    "russian": "Русский",
+    "arabic": "العربية",
     "select": "Select Language"
   }
 }

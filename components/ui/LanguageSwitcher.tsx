@@ -5,8 +5,10 @@ import { useLocale } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/routing";
 import { Globe, Check, ChevronDown } from "lucide-react";
 
+export type SupportedLocale = "tr" | "en" | "de" | "ru" | "ar";
+
 interface LanguageOption {
-  code: "tr" | "en";
+  code: SupportedLocale;
   label: string;
   flag: string;
 }
@@ -14,10 +16,13 @@ interface LanguageOption {
 const languages: LanguageOption[] = [
   { code: "tr", label: "Türkçe", flag: "🇹🇷" },
   { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "ru", label: "Русский", flag: "🇷🇺" },
+  { code: "ar", label: "العربية", flag: "🇸🇦" },
 ];
 
 export default function LanguageSwitcher({ className = "" }: { className?: string }) {
-  const currentLocale = useLocale();
+  const currentLocale = useLocale() as SupportedLocale;
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -35,7 +40,7 @@ export default function LanguageSwitcher({ className = "" }: { className?: strin
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelectLanguage = (newLocale: "tr" | "en") => {
+  const handleSelectLanguage = (newLocale: SupportedLocale) => {
     if (newLocale === currentLocale) {
       setIsOpen(false);
       return;
@@ -69,7 +74,7 @@ export default function LanguageSwitcher({ className = "" }: { className?: strin
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1.5 w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-xl ring-1 ring-black/20 z-50 py-1 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-1.5 w-40 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-xl ring-1 ring-black/20 z-50 py-1 animate-in fade-in zoom-in-95 duration-150">
           <div className="px-2.5 py-1 text-[10px] font-semibold tracking-wider uppercase text-slate-400 flex items-center gap-1.5 border-b border-slate-800/80 mb-1">
             <Globe size={11} className="text-blue-400" />
             <span>Dil Seçimi</span>

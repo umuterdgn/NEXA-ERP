@@ -1,0 +1,25 @@
+{
+  "Index": {
+    "title": "Панель управления",
+    "welcome": "Добро пожаловать",
+    "overview": "Обзор системы"
+  },
+  "Navigation": {
+    "dashboard": "Панель управления",
+    "projects": "Проекты",
+    "personnel": "Персонал",
+    "finance": "Финансы и касса",
+    "inspection": "Строительный контроль",
+    "subcontractor": "Управление субподрядчиками",
+    "settings": "Настройки",
+    "logout": "Выйти"
+  },
+  "Language": {
+    "turkish": "Türkçe",
+    "english": "English",
+    "german": "Deutsch",
+    "russian": "Русский",
+    "arabic": "العربية",
+    "select": "Выберите язык"
+  }
+}

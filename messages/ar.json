@@ -1,0 +1,25 @@
+{
+  "Index": {
+    "title": "لوحة القيادة",
+    "welcome": "أهلاً بك",
+    "overview": "نظرة عامة على النظام"
+  },
+  "Navigation": {
+    "dashboard": "لوحة القيادة",
+    "projects": "المشاريع",
+    "personnel": "الموظفين",
+    "finance": "المالية والصندوق",
+    "inspection": "التفتيش والرقابة",
+    "subcontractor": "إدارة مقاولي الباطن",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج"
+  },
+  "Language": {
+    "turkish": "Türkçe",
+    "english": "English",
+    "german": "Deutsch",
+    "russian": "Русский",
+    "arabic": "العربية",
+    "select": "اختر اللغة"
+  }
+}
