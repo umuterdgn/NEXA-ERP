@@ -268,9 +268,128 @@ export async function getProjectLatestProgress(projectId: string) {
 }
 
 /**
+ * ADIM 1: getTodayPersonnelCount(projectId: string)
+ * İlgili şantiyenin bugünkü AttendanceRecord / Puantaj veritabanından aktif giriş yapan personel sayısını çeker.
+ * Kendi personelimiz ve taşeron personeli olarak gruplayıp döndürür.
+ */
+export async function getTodayPersonnelCount(projectId: string) {
+  try {
+    if (!projectId) {
+      return {
+        success: false,
+        total: 0,
+        staffCount: 0,
+        subcontractorCount: 0,
+        hasRecords: false,
+        error: "Lütfen bir şantiye projesi seçiniz."
+      }
+    }
+
+    const now = new Date()
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+
+    // Bugün ilgili şantiyede check-in yapmış veya yoklamada bulunan kayıtlar
+    const records = await prisma.attendanceRecord.findMany({
+      where: {
+        projectId,
+        OR: [
+          {
+            date: {
+              gte: startOfToday,
+              lte: endOfToday
+            }
+          },
+          {
+            checkIn: {
+              gte: startOfToday,
+              lte: endOfToday
+            }
+          }
+        ],
+        status: { in: ["PRESENT", "LATE"] }
+      },
+      include: {
+        personel: {
+          select: {
+            id: true,
+            role: true,
+            companyId: true,
+            company: {
+              select: {
+                id: true,
+                type: true,
+                name: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    const hasRecords = records.length > 0
+
+    if (!hasRecords) {
+      return {
+        success: true,
+        hasRecords: false,
+        total: 0,
+        staffCount: 0,
+        subcontractorCount: 0,
+        message: "Bugün için henüz puantaj/giriş kaydı bulunamadı, manuel girebilirsiniz."
+      }
+    }
+
+    const seenWorkers = new Set<string>()
+    let staffCount = 0
+    let subcontractorCount = 0
+
+    for (const record of records) {
+      const workerKey = record.personelId || record.workerName || record.id
+      if (seenWorkers.has(workerKey)) continue
+      seenWorkers.add(workerKey)
+
+      const p = record.personel
+      const isSubcontractor =
+        p?.role === "SUBCONTRACTOR" ||
+        p?.company?.type === "SUBCONTRACTOR" ||
+        (p?.companyId !== null && p?.companyId !== undefined)
+
+      if (isSubcontractor) {
+        subcontractorCount++
+      } else {
+        staffCount++
+      }
+    }
+
+    const uniqueTotal = seenWorkers.size
+
+    return {
+      success: true,
+      hasRecords: uniqueTotal > 0,
+      total: uniqueTotal,
+      staffCount,
+      subcontractorCount,
+      message: `Bugün kapı turnike/QR sisteminden ${uniqueTotal} aktif personel tespit edildi.`
+    }
+  } catch (error: any) {
+    console.error("getTodayPersonnelCount error:", error)
+    return {
+      success: false,
+      hasRecords: false,
+      total: 0,
+      staffCount: 0,
+      subcontractorCount: 0,
+      error: error?.message || "Puantaj verileri sorgulanırken hata oluştu."
+    }
+  }
+}
+
+/**
  * Dünkü Jurnali Kopyalama Yardımcısı
  */
 export async function getLatestLog(projectId: string) {
+
   try {
     if (!projectId) {
       return { success: false, error: "Lütfen bir şantiye projesi seçiniz." }

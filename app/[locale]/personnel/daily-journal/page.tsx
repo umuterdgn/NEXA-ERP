@@ -44,7 +44,7 @@ import {
   AlertTriangle
 } from "lucide-react"
 import { createDailyLog, getJournalInitialData } from "./actions"
-import { getLatestLog } from "@/app/actions/dailyLog"
+import { getLatestLog, getTodayPersonnelCount } from "@/app/actions/dailyLog"
 import { toast } from "react-hot-toast"
 
 interface HeavyEquipment {
@@ -116,9 +116,11 @@ export default function DailyLogEntryPage() {
   const [temperature, setTemperature] = useState<string>("24")
   const [windSpeed, setWindSpeed] = useState<number | null>(null)
 
-  // Card 2: Personel & Mevcut
+  // Card 2: Personel & Mevcut (Canlı Puantaj / Turnike QR Entegrasyonu)
   const [staffCount, setStaffCount] = useState<string>("12")
   const [subcontractorCount, setSubcontractorCount] = useState<string>("48")
+  const [syncingPersonnel, setSyncingPersonnel] = useState(false)
+  const [isPersonnelSyncedFromHr, setIsPersonnelSyncedFromHr] = useState(false)
 
   // Card 3: Kullanılan Ekipmanlar
   const [equipmentList, setEquipmentList] = useState<HeavyEquipment[]>(DEFAULT_EQUIPMENT)
@@ -159,6 +161,13 @@ export default function DailyLogEntryPage() {
     void loadInitialData()
   }, [])
 
+  // Şantiye projesi seçildiğinde veya değiştiğinde canlı puantaj mevcudunu arka planda kontrol et
+  useEffect(() => {
+    if (selectedProjectId) {
+      void handleSyncPersonnelCount(true)
+    }
+  }, [selectedProjectId])
+
   // Cleanup photo preview object URLs
   useEffect(() => {
     return () => {
@@ -167,6 +176,53 @@ export default function DailyLogEntryPage() {
       })
     }
   }, [photos])
+
+  // =========================================================================
+  // ADIM 2: Otomatik Puantaj & Canlı Personel Mevcudu Senkronizasyonu (Turnike / QR)
+  // =========================================================================
+  const handleSyncPersonnelCount = async (isSilent = false) => {
+    if (!selectedProjectId) {
+      if (!isSilent) toast.error("Lütfen önce bir şantiye projesi seçiniz.")
+      return
+    }
+
+    setSyncingPersonnel(true)
+    try {
+      const res = await getTodayPersonnelCount(selectedProjectId)
+      if (res.success) {
+        if (res.hasRecords) {
+          setStaffCount(String(res.staffCount))
+          setSubcontractorCount(String(res.subcontractorCount))
+          setIsPersonnelSyncedFromHr(true)
+          if (!isSilent) {
+            toast.success(
+              `Canlı Puantaj: ${res.total} aktif personel çekildi (${res.staffCount} Kendi, ${res.subcontractorCount} Taşeron).`,
+              { icon: "👥", duration: 4000 }
+            )
+          }
+        } else {
+          setIsPersonnelSyncedFromHr(false)
+          if (!isSilent) {
+            toast(
+              "Bugün için henüz puantaj/giriş kaydı bulunamadı, manuel girebilirsiniz.",
+              { icon: "⚠️", duration: 5000 }
+            )
+          }
+        }
+      } else {
+        if (!isSilent) {
+          toast.error(res.error || "Puantaj verileri sorgulanırken hata oluştu.")
+        }
+      }
+    } catch (err: any) {
+      console.error("Sync personnel count error:", err)
+      if (!isSilent) {
+        toast.error("Puantaj verileri alınırken bir hata oluştu.")
+      }
+    } finally {
+      setSyncingPersonnel(false)
+    }
+  }
 
   // =========================================================================
   // ADIM 1: "Dünkü Jurnali Kopyala" Otomasyonu
@@ -188,6 +244,7 @@ export default function DailyLogEntryPage() {
         if (d.temperature) setTemperature(d.temperature)
         if (d.weatherCondition) setWeatherCondition(d.weatherCondition)
         if (d.safetyAndDelayNotes) setSafetyAndDelayNotes(d.safetyAndDelayNotes)
+        setIsPersonnelSyncedFromHr(false)
 
         // Parse equipment counts (e.g. "Ekskavatör: 2, Vinç: 1")
         if (d.equipment) {
@@ -446,6 +503,7 @@ export default function DailyLogEntryPage() {
     setSafetyAndDelayNotes("")
     setEquipmentList(DEFAULT_EQUIPMENT)
     setPhotos([])
+    setIsPersonnelSyncedFromHr(false)
   }
 
   return (
@@ -552,27 +610,44 @@ export default function DailyLogEntryPage() {
         ) : (
           /* Form Content */
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Top Toolbar: ADIM 1 "Dünkü Jurnali Kopyala" Butonu */}
+            {/* Top Toolbar: ADIM 1 "Dünkü Jurnali Kopyala" & ADIM 2 "Canlı Puantajdan Çek" */}
             <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-slate-300">
                 <Compass className="w-4 h-4 text-orange-400" />
                 <span>
-                  Hızlı Veri Girişi: Önceki günün ekipman ve personel sayısını tek tıkla kopyalayabilirsiniz.
+                  Hızlı Veri Girişi: Puantaj/Turnike mevcudunu canlı çekebilir veya dünkü jurnali kopyalayabilirsiniz.
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={handleCopyYesterday}
-                disabled={copyingYesterday}
-                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-orange-600/90 to-amber-600/90 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-orange-600/20 flex items-center justify-center gap-2 transition disabled:opacity-50 shrink-0"
-              >
-                {copyingYesterday ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-                <span>📋 Dünkü Verileri Getir</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleSyncPersonnelCount(false)}
+                  disabled={syncingPersonnel}
+                  className="flex-1 sm:flex-none px-3.5 py-2 bg-gradient-to-r from-emerald-600/90 to-teal-600/90 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition disabled:opacity-50 shrink-0"
+                  title="Kapı turnike / QR sisteminden bugünün giriş yapan aktif personel mevcudunu çek"
+                >
+                  {syncingPersonnel ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Users className="w-3.5 h-3.5" />
+                  )}
+                  <span>👥 Canlı Puantajdan Çek</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyYesterday}
+                  disabled={copyingYesterday}
+                  className="flex-1 sm:flex-none px-3.5 py-2 bg-gradient-to-r from-orange-600/90 to-amber-600/90 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-orange-600/20 flex items-center justify-center gap-1.5 transition disabled:opacity-50 shrink-0"
+                >
+                  {copyingYesterday ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                  <span>📋 Dünkü Verileri Getir</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -678,9 +753,9 @@ export default function DailyLogEntryPage() {
                 )}
               </div>
 
-              {/* KART 2: Personel & Mevcut Kartı */}
+              {/* KART 2: Personel & Mevcut Kartı (Canlı Turnike / QR Puantaj) */}
               <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-800">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
                       <Users className="w-4 h-4" />
@@ -690,9 +765,27 @@ export default function DailyLogEntryPage() {
                       <p className="text-[11px] text-slate-400">Sahadaki toplam iş gücü puantajı</p>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-mono">
-                    Toplam: {activePersonnelTotal} Kişi
-                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSyncPersonnelCount(false)}
+                      disabled={syncingPersonnel}
+                      className="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold rounded-lg flex items-center gap-1.5 transition disabled:opacity-50"
+                      title="Bugünkü turnike / QR puantaj sisteminden anlık mevcudu çek"
+                    >
+                      {syncingPersonnel ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-emerald-400" />
+                      ) : (
+                        <Users className="w-3 h-3 text-emerald-400" />
+                      )}
+                      <span>👥 Canlı Puantajdan Çek</span>
+                    </button>
+
+                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-mono">
+                      Toplam: {activePersonnelTotal} Kişi
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -705,7 +798,10 @@ export default function DailyLogEntryPage() {
                         type="number"
                         min="0"
                         value={staffCount}
-                        onChange={(e) => setStaffCount(e.target.value)}
+                        onChange={(e) => {
+                          setStaffCount(e.target.value)
+                          setIsPersonnelSyncedFromHr(false)
+                        }}
                         placeholder="Örn: 12"
                         className="w-full bg-slate-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-orange-500"
                       />
@@ -724,7 +820,10 @@ export default function DailyLogEntryPage() {
                         type="number"
                         min="0"
                         value={subcontractorCount}
-                        onChange={(e) => setSubcontractorCount(e.target.value)}
+                        onChange={(e) => {
+                          setSubcontractorCount(e.target.value)
+                          setIsPersonnelSyncedFromHr(false)
+                        }}
                         placeholder="Örn: 48"
                         className="w-full bg-slate-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-orange-500"
                       />
@@ -734,6 +833,18 @@ export default function DailyLogEntryPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* ADIM 3: UX Geri Bildirimi */}
+                {isPersonnelSyncedFromHr ? (
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-2.5 flex items-center gap-2 text-xs text-emerald-400 font-medium">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <span>(Veriler kapı turnike/QR sisteminden anlık çekilmiştir ✅)</span>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500">
+                    (Bugün için henüz puantaj/giriş kaydı bulunamadıysa veya farklı bir sayı varsa manuel girebilirsiniz.)
+                  </p>
+                )}
 
                 <div className="bg-slate-950/70 border border-gray-800/80 rounded-xl p-3 flex items-center justify-between text-xs">
                   <span className="text-slate-400 flex items-center gap-1.5">
