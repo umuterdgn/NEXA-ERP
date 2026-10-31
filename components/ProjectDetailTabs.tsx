@@ -19,6 +19,7 @@ import { toast } from "react-hot-toast"
 import { jsPDF } from "jspdf"
 import * as htmlToImage from "html-to-image"
 import BimTabComponent from "@/components/BimTabComponent"
+import AdminLogHistory from "@/components/AdminLogHistory"
 
 // Leaflet SSR'da hata verdiği için dynamic import kullanıyoruz
 const MapLocationPicker = dynamic(() => import('@/components/MapLocationPicker'), { ssr: false })
@@ -109,6 +110,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
 
   const tabs = [
     { id: "canli-saha", label: "📡 Şantiye Özeti (Canlı)" },
+    { id: "jurnaller", label: "📋 Şantiye Defteri (Jurnaller)" },
     { id: "boq", label: "📊 Keşif & Metraj (BoQ)" },
     { id: "kunya", label: "Proje Künyesi" },
     { id: "arsiv", label: "Arşiv ve Evraklar" },
@@ -682,6 +684,12 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
         {activeTab === "arsiv" && (
           <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
             <ProjectFiles projectId={project.id} />
+          </div>
+        )}
+
+        {activeTab === "jurnaller" && (
+          <div className="space-y-4">
+            <AdminLogHistory projectId={project.id} />
           </div>
         )}
 

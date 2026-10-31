@@ -30,6 +30,7 @@ import {
   Bot
 } from "lucide-react"
 import { toast } from "react-hot-toast"
+import { getProjectLatestProgress } from "@/app/actions/dailyLog"
 
 export interface IsgViolationItem {
   id: string
@@ -69,6 +70,10 @@ interface LiveSiteDashboardProps {
 
 export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDashboardProps) {
   const [activePersonnel, setActivePersonnel] = useState(142)
+  const [latestActivities, setLatestActivities] = useState<string>(
+    "A Blok 3. Kat Kolon betonu döküldü (120 m³)"
+  )
+  const [latestLogDate, setLatestLogDate] = useState<Date | null>(null)
   const [violations, setViolations] = useState<IsgViolationItem[]>([
     {
       id: "mock-v1",
@@ -190,6 +195,25 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
         if (data.activePersonnelCount) setActivePersonnel(data.activePersonnelCount)
         if (Array.isArray(data.violations) && data.violations.length > 0) setViolations(data.violations)
         if (Array.isArray(data.logistics) && data.logistics.length > 0) setLogistics(data.logistics)
+      }
+
+      // 2. Sahadan girilen en son şantiye jurnali verileri
+      try {
+        const progressRes = await getProjectLatestProgress(projectId)
+        if (progressRes.success && progressRes.latestLog) {
+          const log = progressRes.latestLog
+          if (log.personnelCount && log.personnelCount > 0) {
+            setActivePersonnel(log.personnelCount)
+          }
+          if (log.activities || log.workDone) {
+            setLatestActivities(log.activities || log.workDone || "")
+          }
+          if (log.date) {
+            setLatestLogDate(new Date(log.date))
+          }
+        }
+      } catch (logErr) {
+        console.warn("Son jurnal verisi alınamadı:", logErr)
       }
 
       setLastUpdated(new Date())
@@ -342,13 +366,13 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
       {/* Grid: 4 Ana Komuta Kartı (Dengeli ve Boşluksuz 4'lü Grid) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
         {/* =================================================================== */}
-        {/* Kart 1: 👥 Anlık Aktif Personel                                     */}
+        {/* Kart 1: 👥 Bugünkü Saha Mevcudu                                     */}
         {/* =================================================================== */}
         <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800/50 rounded-2xl p-6 flex flex-col justify-between hover:border-slate-700/60 transition-all shadow-xl">
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Aktif Personel
+                Bugünkü Saha Mevcudu
               </span>
               <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
                 <Users className="w-4 h-4" />
@@ -363,7 +387,9 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
             </div>
             <p className="text-xs text-emerald-400 flex items-center gap-1.5 font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-              Turnike ve GPS aktif
+              {latestLogDate
+                ? `Son Jurnal: ${latestLogDate.toLocaleDateString("tr-TR")}`
+                : "Turnike ve Jurnal Senkron"}
             </p>
           </div>
 
@@ -501,13 +527,13 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
         </div>
 
         {/* =================================================================== */}
-        {/* Kart 4: 📈 Günlük Tamamlanan İmalat                                 */}
+        {/* Kart 4: 📈 Son Yapılan İmalat & Günlük İlerleme                    */}
         {/* =================================================================== */}
         <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800/50 rounded-2xl p-6 flex flex-col justify-between hover:border-slate-700/60 transition-all shadow-xl">
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Tamamlanan İmalat
+                Son Yapılan İmalat
               </span>
               <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
                 <TrendingUp className="w-4 h-4" />
@@ -520,18 +546,31 @@ export default function LiveSiteDashboard({ projectId, projectName }: LiveSiteDa
               </span>
               <span className="text-xs font-medium text-slate-300">Günlük İlerleme</span>
             </div>
-            <p className="text-xs text-slate-400">Hedef: %2.0 / Gün (%120 Hedef Tamamlama)</p>
+            <p className="text-xs text-slate-400">
+              {latestLogDate
+                ? `Jurnal Tarihi: ${latestLogDate.toLocaleDateString("tr-TR")}`
+                : "Hedef: %2.0 / Gün (%120 Hedef Tamamlama)"}
+            </p>
           </div>
 
           <div className="mt-5 pt-4 border-t border-slate-800/60 space-y-2 text-xs text-slate-300">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="truncate">B Blok 2. Kat Kalıbı (%100)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="truncate">Aks 3-4 Kiriş Donatısı (%85)</span>
-            </div>
+            {latestActivities ? (
+              latestActivities
+                .replace(/\[İmalatlar\]:\s*/g, "")
+                .split("\n")
+                .filter((line) => line.trim())
+                .slice(0, 3)
+                .map((line, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="line-clamp-1">{line.replace(/^[-•\s*]+/, "")}</span>
+                  </div>
+                ))
+            ) : (
+              <div className="flex items-center gap-2 text-slate-500">
+                <span>Henüz imalat kaydı girilmedi</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
