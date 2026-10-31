@@ -48,56 +48,128 @@ export default function PersonnelSidebar({
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const pathname = usePathname()
   const sessionContext = useSession()
   const session = sessionContext?.data
   const status = sessionContext?.status
   const { isInstallable, promptInstall } = usePwaInstall()
 
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }))
+  }
+
   const userRole = ((session?.user?.role as string) || "").toUpperCase()
   // Roles that have access to engineering & field supervision tools
   const isEngineerOrManager =
     !userRole || ["ENGINEER", "SITE_MANAGER", "STAFF", "ADMIN", "SUPER_ADMIN", "PROJECT_MANAGER"].includes(userRole)
 
-  const engineerItems = [
-    { href: "/personnel/bim-viewer", label: "3D BIM & AR Navigasyon", icon: Box },
-    { href: "/personnel/subcontractor-approvals", label: "Taşeron İş Kabulleri", icon: CheckSquare },
-    { href: "/personnel/ncr-request", label: "Saha Revizyon (DÖF) Aç", icon: AlertTriangle },
-    { href: "/personnel/daily-journal", label: "Günlük Şantiye Jurnali", icon: BookOpen },
-  ]
+  interface NavItem {
+    href: string
+    label: string
+    icon: React.ComponentType<{ className?: string }>
+  }
 
-  const baseNavItems = [
-    { href: "/personnel", label: "Ana Sayfa", icon: Home },
-    ...(isEngineerOrManager ? engineerItems : []),
-    { href: "/personnel/chat", label: "Mesajlar / Şantiye Chat", icon: MessageSquare },
-    { href: "/personnel/camera", label: "Saha Kamerası (İlerleme)", icon: Camera },
-    { href: "/personnel/qr-consume", label: "Malzeme Tüketimi (QR)", icon: QrCode },
-    { href: "/personnel/expenses", label: "Masraf & Fiş Bildirimi", icon: Receipt },
-    { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList },
-    { href: "/personnel/deliveries", label: "Malzeme Kabul & Teslimat", icon: Truck },
-    { href: "/personnel/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck },
-    { href: "/personnel/requests", label: "Malzeme Talepleri", icon: ShoppingCart },
-    { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
-    { href: "/personnel/qr-checkin", label: "QR Giriş/Çıkış", icon: QrCode },
-    { href: "/personnel/attendance", label: "Mesai Geçmişi", icon: Clock },
-    { href: "/personnel/salary", label: "Maaş ve Avans", icon: Wallet },
-    { href: "/personnel/equipment", label: "Zimmetli Ekipmanlar", icon: Package },
-    { href: "/personnel/audits", label: "Denetim Raporları", icon: ClipboardCheck },
-    { href: "/personnel/isg", label: "İSG Bildirimleri", icon: ShieldAlert },
-    { href: "/personnel/leave", label: "İzin Yönetimi", icon: Calendar },
-    { href: "/personnel/announcements", label: "Duyurular ve Belgeler", icon: Bell },
-  ]
+  interface NavGroup {
+    id: string
+    title: string
+    emoji: string
+    items: NavItem[]
+  }
 
   const isDriver = userRole === "DRIVER"
 
-  const driverNavItems = [
-    { href: "/personnel", label: "Aktif Seferlerim (GPS)", icon: Truck },
-    { href: "/personnel/chat", label: "Şantiye Chat / İletişim", icon: MessageSquare },
-    { href: "/personnel/expenses", label: "Yakıt & Masraflar", icon: Receipt },
-    { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
-  ]
-
-  const navItems = isDriver ? driverNavItems : baseNavItems
+  const navGroups: NavGroup[] = isDriver
+    ? [
+        {
+          id: "driver-ops",
+          title: "Sefer & Operasyon",
+          emoji: "🚚",
+          items: [
+            { href: "/personnel", label: "Aktif Seferlerim (GPS)", icon: Truck },
+            { href: "/personnel/chat", label: "Şantiye Chat / İletişim", icon: MessageSquare },
+            { href: "/personnel/expenses", label: "Yakıt & Masraflar", icon: Receipt },
+          ],
+        },
+        {
+          id: "account",
+          title: "Hesap",
+          emoji: "⚙️",
+          items: [
+            { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
+          ],
+        },
+      ]
+    : [
+        {
+          id: "field-ops",
+          title: "Saha Operasyonları",
+          emoji: "🏗️",
+          items: [
+            ...(isEngineerOrManager
+              ? [{ href: "/personnel/bim-viewer", label: "3D BIM & AR Navigasyon", icon: Box }]
+              : []),
+            ...(isEngineerOrManager
+              ? [{ href: "/personnel/daily-journal", label: "Şantiye Günlüğü (Jurnal)", icon: BookOpen }]
+              : []),
+            { href: "/personnel/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck },
+            ...(isEngineerOrManager
+              ? [{ href: "/personnel/ncr-request", label: "Saha Revizyon (DÖF) Aç", icon: AlertTriangle }]
+              : []),
+            ...(isEngineerOrManager
+              ? [{ href: "/personnel/subcontractor-approvals", label: "Taşeron İş Kabulleri", icon: CheckSquare }]
+              : []),
+            { href: "/personnel/camera", label: "Saha Kamerası (İlerleme)", icon: Camera },
+          ],
+        },
+        {
+          id: "logistics",
+          title: "Lojistik & Malzeme",
+          emoji: "📦",
+          items: [
+            { href: "/personnel/deliveries", label: "Malzeme Kabul & Teslimat", icon: Truck },
+            { href: "/personnel/qr-consume", label: "Malzeme Tüketimi (QR)", icon: QrCode },
+            { href: "/personnel/requests", label: "Malzeme Talepleri", icon: ShoppingCart },
+            { href: "/personnel/equipment", label: "Zimmetli Ekipmanlar", icon: Package },
+          ],
+        },
+        {
+          id: "hr-finance",
+          title: "İK & Finans",
+          emoji: "💰",
+          items: [
+            { href: "/personnel/qr-checkin", label: "QR Giriş/Çıkış", icon: QrCode },
+            { href: "/personnel/attendance", label: "Mesai Geçmişi", icon: Clock },
+            { href: "/personnel/leave", label: "İzin Yönetimi", icon: Calendar },
+            { href: "/personnel/salary", label: "Maaş ve Avans", icon: Wallet },
+            { href: "/personnel/expenses", label: "Masraf & Fiş Bildirimi", icon: Receipt },
+          ],
+        },
+        {
+          id: "communication-safety",
+          title: "İletişim & İSG",
+          emoji: "⚠️",
+          items: [
+            { href: "/personnel/chat", label: "Mesajlar / Şantiye Chat", icon: MessageSquare },
+            { href: "/personnel/isg", label: "İSG Bildirimleri", icon: ShieldAlert },
+            { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList },
+            { href: "/personnel/audits", label: "Denetim Raporları", icon: ClipboardCheck },
+            { href: "/personnel/announcements", label: "Duyurular ve Belgeler", icon: Bell },
+          ],
+        },
+        {
+          id: "account",
+          title: "Hesap",
+          emoji: "⚙️",
+          items: [
+            { href: "/personnel", label: "Ana Sayfa", icon: Home },
+            { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
+          ],
+        },
+      ]
 
   return (
     <>
@@ -163,25 +235,104 @@ export default function PersonnelSidebar({
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href
-              const Icon = item.icon
+          <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-1">
+            {navGroups.map((group) => {
+              const isGroupOpen = Boolean(openGroups[group.id])
+              const hasActiveItem = group.items.some((item) => pathname === item.href)
+
+              if (isCollapsed) {
+                // Collapsed sidebar (Desktop only): icon-only mode with tooltips
+                return (
+                  <div key={group.id} className="space-y-1 py-1">
+                    <div
+                      className="flex justify-center py-1 text-sm select-none border-b border-slate-100 dark:border-slate-800/80 mb-1"
+                      title={group.title}
+                    >
+                      <span className="opacity-80">{group.emoji}</span>
+                    </div>
+                    {group.items.map((item) => {
+                      const isActive = pathname === item.href
+                      const Icon = item.icon
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={`flex h-10 w-10 mx-auto items-center justify-center rounded-lg transition-colors ${
+                            isActive
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                              : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                          }`}
+                          title={item.label}
+                        >
+                          <Icon className="h-5 w-5 shrink-0" />
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )
+              }
+
+              // Normal / Mobile sidebar: Collapsible accordion category
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`flex min-h-[44px] items-center rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-blue-50 font-medium text-blue-600 dark:bg-slate-800 dark:text-white"
-                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                  } ${isCollapsed ? "justify-center px-0" : "justify-start gap-3 px-4"}`}
-                  title={isCollapsed ? item.label : undefined}
+                <div
+                  key={group.id}
+                  className="rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 overflow-hidden transition-all"
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className={`${isCollapsed ? "hidden" : "truncate"}`}>{item.label}</span>
-                </Link>
+                  {/* Category Header Button */}
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold transition-all select-none ${
+                      isGroupOpen
+                        ? "bg-slate-100 dark:bg-slate-800/70 text-slate-900 dark:text-white"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                    aria-expanded={isGroupOpen}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm shrink-0">{group.emoji}</span>
+                      <span className="truncate">{group.title}</span>
+                      {hasActiveItem && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 animate-pulse" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        {group.items.length}
+                      </span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                          isGroupOpen ? "rotate-0 text-slate-600 dark:text-slate-200" : "-rotate-90"
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {/* Accordion Body */}
+                  {isGroupOpen && (
+                    <div className="space-y-1 p-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/60 animate-in fade-in duration-150">
+                      {group.items.map((item) => {
+                        const isActive = pathname === item.href
+                        const Icon = item.icon
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setIsOpen(false)}
+                            className={`flex min-h-[40px] items-center gap-3 rounded-lg px-3 text-xs font-medium transition-colors ${
+                              isActive
+                                ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30 font-semibold"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                            }`}
+                          >
+                            <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-400 dark:text-slate-400"}`} />
+                            <span className="truncate">{item.label}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               )
             })}
           </nav>
