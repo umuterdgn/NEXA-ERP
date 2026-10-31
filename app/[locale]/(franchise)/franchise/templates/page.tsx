@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import {
   Box,
@@ -43,6 +44,7 @@ interface ConceptTemplateItem {
 }
 
 export default function FranchiseTemplatesPage() {
+  const t = useTranslations("FranchiseModule.templatesPage")
   const [templates, setTemplates] = useState<ConceptTemplateItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTemplate, setSelectedTemplate] = useState<ConceptTemplateItem | null>(null)
@@ -87,13 +89,13 @@ export default function FranchiseTemplatesPage() {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
             <Box className="w-4 h-4" />
-            <span>Tip Proje ve Konsept Standartizasyonu</span>
+            <span>{t("badge")}</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            Konsept Şablonları (Tip Mağaza)
+            {t("title")}
           </h1>
           <p className="text-sm text-slate-400">
-            Farklı metrekare ve lokasyonlar için standart BoQ (metraj), taban bütçe ve iş planı şablonlarını yönetin.
+            {t("description")}
           </p>
         </div>
 
@@ -102,7 +104,7 @@ export default function FranchiseTemplatesPage() {
             onClick={fetchTemplates}
             disabled={loading}
             className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-            title="Yenile"
+            title={t("refresh")}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -112,7 +114,7 @@ export default function FranchiseTemplatesPage() {
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-all shadow-md shadow-amber-600/20"
           >
             <Plus className="w-4 h-4" />
-            <span>Yeni Şablon Tanımla</span>
+            <span>{t("newTemplate")}</span>
           </button>
         </div>
       </div>

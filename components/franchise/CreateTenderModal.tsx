@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useTranslations } from "next-intl"
 import { ShoppingCart, X, Loader2, Plus } from "lucide-react"
 import { createConsolidatedTender } from "@/app/actions/franchise"
 
@@ -15,6 +16,7 @@ export default function CreateTenderModal({
   onClose,
   onSuccess,
 }: CreateTenderModalProps) {
+  const t = useTranslations("FranchiseModule.createTender")
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [title, setTitle] = useState("")
@@ -26,7 +28,7 @@ export default function CreateTenderModal({
     setError(null)
 
     if (!title.trim()) {
-      setError("Lütfen bir ihale paketi başlığı giriniz.")
+      setError(t("validationTitle"))
       return
     }
 
@@ -37,7 +39,7 @@ export default function CreateTenderModal({
 
         const res = await createConsolidatedTender(payload)
         if (!res.success) {
-          setError(res.error || "İhale paketi oluşturulamadı.")
+          setError(res.error || t("errorDefault"))
           return
         }
 
@@ -45,7 +47,7 @@ export default function CreateTenderModal({
         onClose()
         if (onSuccess) onSuccess()
       } catch (err: any) {
-        setError(err.message || "Beklenmedik bir hata oluştu.")
+        setError(err.message || t("errorDefault"))
       }
     })
   }
@@ -63,8 +65,8 @@ export default function CreateTenderModal({
               <ShoppingCart className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Toplu İhale Paketi Oluştur</h3>
-              <p className="text-xs text-slate-400">Konsolide satınalma ve tedarik havuzu başlatın</p>
+              <h3 className="text-base font-bold text-white">{t("title")}</h3>
+              <p className="text-xs text-slate-400">{t("subtitle")}</p>
             </div>
           </div>
           <button
@@ -87,23 +89,21 @@ export default function CreateTenderModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">
-              İhale Paketi Başlığı <span className="text-rose-500">*</span>
+              {t("tenderTitle")} <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
               name="title"
-              placeholder="Örn: 2026 Q4 Tüm Şubeler Seramik & Vitrifiye İhalesi"
+              placeholder={t("tenderTitlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
               required
               disabled={isPending}
             />
-            <p className="text-[11px] text-slate-500 mt-1.5">
-              Bu ihale paketi kiracınıza ait tüm aktif franchise ve şube açılışları için konsolide olarak teklif toplamaya açılacaktır.
-            </p>
           </div>
 
+          {/* Buttons */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
             <button
               type="button"
@@ -111,7 +111,7 @@ export default function CreateTenderModal({
               disabled={isPending}
               className="px-4 py-2.5 text-xs text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
             >
-              İptal
+              {t("cancel")}
             </button>
             <button
               type="submit"
@@ -121,12 +121,12 @@ export default function CreateTenderModal({
               {isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Oluşturuluyor...</span>
+                  <span>{t("saving")}</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  <span>İhaleyi Başlat</span>
+                  <span>{t("submit")}</span>
                 </>
               )}
             </button>

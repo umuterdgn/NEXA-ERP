@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import {
   ShieldCheck,
@@ -27,6 +28,7 @@ import {
 import { getRolloutProjects, updateStageGateApproval } from "@/app/actions/franchise"
 
 export default function StageGatesIndexPage() {
+  const t = useTranslations("FranchiseModule.stageGatesPage")
   const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingGateId, setUpdatingGateId] = useState<string | null>(null)
@@ -77,13 +79,13 @@ export default function StageGatesIndexPage() {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
             <ShieldCheck className="w-4 h-4" />
-            <span>İdari İzin & Kilit Yönetimi</span>
+            <span>{t("badge")}</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            Stage-Gate İdari Onaylar
+            {t("title")}
           </h1>
           <p className="text-sm text-slate-400">
-            Kiralama, lokasyon ve ruhsat onayı, şantiye izni ve itfaiye ruhsatlarını veritabanındaki mağaza kayıtları üzerinden yönetin.
+            {t("description")}
           </p>
         </div>
 
@@ -92,7 +94,7 @@ export default function StageGatesIndexPage() {
             onClick={fetchProjects}
             disabled={loading}
             className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors self-start sm:self-center"
-            title="Yenile"
+            title={t("refresh")}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>

@@ -5,11 +5,12 @@
  * Franchise & Zincir Mağaza Portalı - Özel Navigasyon Menüsü (Sidebar)
  */
 
-import React, { useState, useEffect } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import React, { useState } from "react"
+import { Link, usePathname } from "@/i18n/routing"
 import { signOut, useSession } from "next-auth/react"
+import { useTranslations } from "next-intl"
 import NotificationBell from "@/components/NotificationBell"
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher"
 import {
   LayoutDashboard,
   MapPin,
@@ -36,56 +37,53 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Sparkles,
-  ExternalLink,
-  ShieldAlert
 } from "lucide-react"
 
 interface MenuItem {
   href: string
-  label: string
+  labelKey: string
   icon: any
-  category: string
-  badge?: string
+  categoryKey: string
+  hasBadge?: boolean
 }
 
 const franchiseNavigation: MenuItem[] = [
   // ANA MENÜ
-  { href: "/franchise/dashboard", label: "Dashboard", icon: LayoutDashboard, category: "ANA MENÜ" },
-  { href: "/franchise/rollout-map", label: "Harita & Lokasyonlar", icon: MapPin, category: "ANA MENÜ" },
+  { href: "/franchise/dashboard", labelKey: "dashboard", icon: LayoutDashboard, categoryKey: "mainMenu" },
+  { href: "/franchise/rollout-map", labelKey: "locations", icon: MapPin, categoryKey: "mainMenu" },
 
   // FRANCHISE & ROLLOUT (Core)
-  { href: "/franchise/rollout-map", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT (Core)" },
-  { href: "/franchise/rollout", label: "Rollout Takip (Kanban)", icon: Kanban, category: "FRANCHISE & ROLLOUT (Core)" },
-  { href: "/franchise/stage-gates", label: "Stage-Gate Onayları", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT (Core)" },
-  { href: "/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT (Core)" },
-  { href: "/franchise/permits", label: "İdari İzinler", icon: FileCheck2, category: "FRANCHISE & ROLLOUT (Core)" },
-  { href: "/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT (Core)" },
+  { href: "/franchise/rollout-map", labelKey: "rolloutMap", icon: Map, categoryKey: "core" },
+  { href: "/franchise/rollout", labelKey: "rolloutKanban", icon: Kanban, categoryKey: "core" },
+  { href: "/franchise/stage-gates", labelKey: "stageGates", icon: ShieldCheck, categoryKey: "core" },
+  { href: "/franchise/templates", labelKey: "templates", icon: Box, categoryKey: "core" },
+  { href: "/franchise/permits", labelKey: "permits", icon: FileCheck2, categoryKey: "core" },
+  { href: "/franchise/punch-list", labelKey: "punchList", icon: ClipboardCheck, categoryKey: "core" },
 
   // PROJE & TASARIM
-  { href: "/franchise/bim", label: "BIM & 3D Modeller", icon: Boxes, category: "PROJE & TASARIM" },
-  { href: "/franchise/contracts", label: "Taşeron Sözleşmeleri", icon: FileSignature, category: "PROJE & TASARIM" },
-  { href: "/franchise/progress-payments", label: "Taşeron Hakedişleri", icon: Receipt, category: "PROJE & TASARIM" },
+  { href: "/franchise/bim", labelKey: "bim", icon: Boxes, categoryKey: "projectDesign" },
+  { href: "/franchise/contracts", labelKey: "contracts", icon: FileSignature, categoryKey: "projectDesign" },
+  { href: "/franchise/progress-payments", labelKey: "progressPayments", icon: Receipt, categoryKey: "projectDesign" },
 
   // FİNANS & TEDARİK
-  { href: "/franchise/finance", label: "Kasa & Bütçe", icon: DollarSign, category: "FİNANS & TEDARİK" },
-  { href: "/franchise/procurement/consolidated", label: "Konsolide Satınalma", icon: ShoppingCart, category: "FİNANS & TEDARİK" },
-  { href: "/franchise/logistics/rma", label: "Hasarlı Teslimat (RMA)", icon: AlertTriangle, category: "FİNANS & TEDARİK" },
-  { href: "/franchise/crm", label: "Tedarikçi Firmalar (CRM)", icon: Building2, category: "FİNANS & TEDARİK" },
+  { href: "/franchise/finance", labelKey: "finance", icon: DollarSign, categoryKey: "financeProcurement" },
+  { href: "/franchise/procurement/consolidated", labelKey: "consolidatedProcurement", icon: ShoppingCart, categoryKey: "financeProcurement" },
+  { href: "/franchise/logistics/rma", labelKey: "rma", icon: AlertTriangle, categoryKey: "financeProcurement" },
+  { href: "/franchise/crm", labelKey: "crm", icon: Building2, categoryKey: "financeProcurement" },
 
-  // MAĞAZA YÖNETİMİ (Yeni Eklentiler)
-  { href: "/franchise/stores/royalty", label: "Şube Ciro & Royalty", icon: TrendingUp, category: "MAĞAZA YÖNETİMİ", badge: "Yeni" },
-  { href: "/franchise/stores/audits", label: "Mağaza Denetim & Gizli Müşteri", icon: Store, category: "MAĞAZA YÖNETİMİ", badge: "Yeni" },
-  { href: "/franchise/stores/helpdesk", label: "Bakım Onarım (Helpdesk)", icon: Headphones, category: "MAĞAZA YÖNETİMİ", badge: "Yeni" },
+  // MAĞAZA YÖNETİMİ
+  { href: "/franchise/stores/royalty", labelKey: "storeRoyalty", icon: TrendingUp, categoryKey: "storeManagement", hasBadge: true },
+  { href: "/franchise/stores/audits", labelKey: "storeAudits", icon: Store, categoryKey: "storeManagement", hasBadge: true },
+  { href: "/franchise/stores/helpdesk", labelKey: "helpdesk", icon: Headphones, categoryKey: "storeManagement", hasBadge: true },
 
   // ARŞİV & İK
-  { href: "/franchise/documents", label: "Dijital Evrak (Kira/Ruhsat)", icon: Archive, category: "ARŞİV & İK" },
-  { href: "/franchise/personnel", label: "Personel Takibi", icon: Users, category: "ARŞİV & İK" },
-  { href: "/franchise/tasks", label: "Görevler & Takvim", icon: Calendar, category: "ARŞİV & İK" },
+  { href: "/franchise/documents", labelKey: "documents", icon: Archive, categoryKey: "archiveHr" },
+  { href: "/franchise/personnel", labelKey: "personnel", icon: Users, categoryKey: "archiveHr" },
+  { href: "/franchise/tasks", labelKey: "tasks", icon: Calendar, categoryKey: "archiveHr" },
 
   // AYARLAR
-  { href: "/franchise/settings", label: "Firma Ayarları", icon: Settings, category: "AYARLAR" },
-  { href: "/franchise/users", label: "Kullanıcılar", icon: Users, category: "AYARLAR" },
+  { href: "/franchise/settings", labelKey: "companySettings", icon: Settings, categoryKey: "settings" },
+  { href: "/franchise/users", labelKey: "users", icon: Users, categoryKey: "settings" },
 ]
 
 export default function FranchiseSidebar({
@@ -98,13 +96,14 @@ export default function FranchiseSidebar({
   const pathname = usePathname()
   const { data: session } = useSession()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const t = useTranslations("FranchiseModule.sidebar")
 
   // Oturum açan kullanıcının firma / marka bilgisi
   const user = session?.user as any
   const tenantName = user?.companyName || user?.name || "Franchise Portalı"
   const tenantLogo = user?.logoUrl || null
 
-  const categories = Array.from(new Set(franchiseNavigation.map((i) => i.category)))
+  const categoryKeys = Array.from(new Set(franchiseNavigation.map((i) => i.categoryKey)))
 
   return (
     <>
@@ -149,28 +148,32 @@ export default function FranchiseSidebar({
             )}
           </div>
 
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white transition"
-            title={isCollapsed ? "Menüyü Genişlet" : "Menüyü Daralt"}
-          >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {!isCollapsed && <LanguageSwitcher />}
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white transition"
+              title={isCollapsed ? t("expandMenu") : t("collapseMenu")}
+            >
+              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Navigation Menu */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-800">
-          {categories.map((category) => {
-            const items = franchiseNavigation.filter((i) => i.category === category)
+          {categoryKeys.map((catKey) => {
+            const items = franchiseNavigation.filter((i) => i.categoryKey === catKey)
             return (
-              <div key={category} className="space-y-1">
+              <div key={catKey} className="space-y-1">
                 {!isCollapsed && (
                   <h3 className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    {category}
+                    {t(catKey)}
                   </h3>
                 )}
                 {items.map((item, idx) => {
                   const Icon = item.icon
+                  const label = t(item.labelKey)
                   const isActive = pathname === item.href || (item.href !== "/franchise/dashboard" && pathname?.startsWith(item.href))
 
                   return (
@@ -183,7 +186,7 @@ export default function FranchiseSidebar({
                           ? "bg-gradient-to-r from-amber-500/20 to-rose-500/10 text-amber-300 border border-amber-500/30 shadow-sm shadow-amber-950/40"
                           : "text-slate-300 hover:bg-slate-900 hover:text-white border border-transparent"
                       }`}
-                      title={isCollapsed ? item.label : undefined}
+                      title={isCollapsed ? label : undefined}
                     >
                       <Icon
                         className={`h-4 w-4 shrink-0 transition-colors ${
@@ -195,10 +198,10 @@ export default function FranchiseSidebar({
 
                       {!isCollapsed && (
                         <div className="flex flex-1 items-center justify-between overflow-hidden">
-                          <span className="truncate">{item.label}</span>
-                          {item.badge && (
+                          <span className="truncate">{label}</span>
+                          {item.hasBadge && (
                             <span className="ml-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
-                              {item.badge}
+                              {t("badgeNew")}
                             </span>
                           )}
                         </div>
@@ -222,7 +225,7 @@ export default function FranchiseSidebar({
             {!isCollapsed && (
               <div className="overflow-hidden">
                 <span className="block truncate text-xs font-bold text-white">
-                  {user?.name || "Yönetici"}
+                  {user?.name || t("admin")}
                 </span>
                 <span className="block truncate text-[10px] text-slate-400">
                   {user?.email || "franchise@nexa.com"}
@@ -233,7 +236,7 @@ export default function FranchiseSidebar({
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 hover:bg-red-500/20 hover:border-red-500/30 text-slate-400 hover:text-red-400 transition"
-              title="Güvenli Çıkış"
+              title={t("logout")}
             >
               <LogOut className="h-4 w-4" />
             </button>
