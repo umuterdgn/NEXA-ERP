@@ -16,7 +16,15 @@ import path from "path"
 export async function getJournalInitialData(projectId?: string) {
   try {
     const projects = await prisma.project.findMany({
-      select: { id: true, name: true, title: true, city: true },
+      select: {
+        id: true,
+        name: true,
+        title: true,
+        city: true,
+        latitude: true,
+        longitude: true,
+        locationCity: true
+      },
       orderBy: { createdAt: "desc" }
     })
 
@@ -201,6 +209,31 @@ export async function createDailyLog(formData: FormData) {
       }
     }
 
+    // Handle photo file uploads
+    const photoFiles = formData.getAll("photos") as (File | string)[]
+    const photoUrls: string[] = []
+
+    for (const item of photoFiles) {
+      if (typeof item === "string") {
+        if (item.trim()) photoUrls.push(item)
+      } else if (item && typeof item === "object" && "arrayBuffer" in item && item.size > 0) {
+        try {
+          const bytes = await item.arrayBuffer()
+          const buffer = Buffer.from(bytes)
+          const uploadsDir = path.join(process.cwd(), "public", "uploads")
+          if (!existsSync(uploadsDir)) {
+            await mkdir(uploadsDir, { recursive: true })
+          }
+          const safeName = item.name.replace(/[^a-zA-Z0-9.-]/g, "_")
+          const filename = `journal-${Date.now()}-${safeName}`
+          await writeFile(path.join(uploadsDir, filename), buffer)
+          photoUrls.push(`/uploads/${filename}`)
+        } catch (fErr) {
+          console.error("Photo upload error:", fErr)
+        }
+      }
+    }
+
     // 1. Create DailyLog record in Prisma
     const dailyLog = await prisma.dailyLog.create({
       data: {
@@ -209,7 +242,7 @@ export async function createDailyLog(formData: FormData) {
         weather: weatherSummary,
         machineryCount,
         workDone: `[İmalatlar]: ${completedWorks.trim()}${equipment ? `\n[Kullanılan Ekipmanlar]: ${equipment}` : ""}${staffCount > 0 || subcontractorCount > 0 ? `\n[Personel]: Kendi: ${staffCount}, Taşeron: ${subcontractorCount} (Toplam: ${totalWorkers})` : ""}${safetyAndDelayNotes.trim() ? `\n[İSG ve Notlar]: ${safetyAndDelayNotes.trim()}` : ""}`,
-        photoUrls: []
+        photoUrls
       }
     })
 
@@ -250,7 +283,7 @@ export async function createDailyLog(formData: FormData) {
       await prisma.activityLog.create({
         data: {
           action: "DAILY_LOG_CREATED",
-          details: `Şantiye Jurnali kaydedildi (${totalWorkers} Personel, ${machineryCount} Ekipman, ${weatherSummary})`,
+          details: `Şantiye Jurnali kaydedildi (${totalWorkers} Personel, ${machineryCount} Ekipman, ${photoUrls.length} Fotoğraf, ${weatherSummary})`,
           userId
         }
       })
@@ -268,6 +301,7 @@ export async function createDailyLog(formData: FormData) {
     return {
       success: true,
       dailyLogId: dailyLog.id,
+      photoUrls,
       message: "Şantiye jurnali başarıyla kaydedildi ve merkeze iletildi!"
     }
   } catch (error: any) {
@@ -278,4 +312,7 @@ export async function createDailyLog(formData: FormData) {
     }
   }
 }
+
+export { getLatestLog } from "@/app/actions/dailyLog"
+
 

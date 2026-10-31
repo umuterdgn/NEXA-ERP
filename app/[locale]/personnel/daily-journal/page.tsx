@@ -4,6 +4,10 @@
  * Developer: Umut Erdoğan
  * Field Engineer Daily Construction Log (Günlük Şantiye Jurnali)
  * Clean, mobile-friendly card-based data entry form for field engineers
+ * Features:
+ * 1) Open-Meteo coordinate-based real-time weather integration
+ * 2) Mobile rear camera capture ("capture=environment") with thumbnail previews
+ * 3) "Dünkü Jurnali Kopyala" (Copy Yesterday's Log) automation
  */
 
 import React, { useState, useEffect } from "react"
@@ -30,15 +34,39 @@ import {
   Check,
   RefreshCw,
   HardHat,
-  Clock,
-  Sparkles
+  Camera,
+  X,
+  Copy,
+  Cloud,
+  ImageIcon,
+  UploadCloud,
+  Compass,
+  AlertTriangle
 } from "lucide-react"
-import { createDailyLog, getJournalInitialData } from "./actions"
+import { createDailyLog, getJournalInitialData, getLatestLog } from "./actions"
 import { toast } from "react-hot-toast"
 
 interface HeavyEquipment {
   name: string
   count: number
+}
+
+interface PhotoPreview {
+  id: string
+  file: File
+  url: string
+  name: string
+  sizeText: string
+}
+
+interface ProjectItem {
+  id: string
+  name?: string | null
+  title?: string | null
+  city?: string | null
+  locationCity?: string | null
+  latitude?: number | null
+  longitude?: number | null
 }
 
 const DEFAULT_EQUIPMENT: HeavyEquipment[] = [
@@ -55,7 +83,8 @@ const WEATHER_OPTIONS = [
   { value: "Parçalı Bulutlu", label: "Parçalı Bulutlu", icon: CloudSun },
   { value: "Yağmurlu", label: "Yağmurlu", icon: CloudRain },
   { value: "Karlı", label: "Karlı", icon: Snowflake },
-  { value: "Rüzgarlı / Fırtınalı", label: "Rüzgarlı / Fırtınalı", icon: Wind }
+  { value: "Rüzgarlı / Fırtınalı", label: "Rüzgarlı / Fırtınalı", icon: Wind },
+  { value: "Sisli", label: "Sisli", icon: Cloud }
 ]
 
 const QUICK_NOTES = [
@@ -73,15 +102,18 @@ export default function DailyLogEntryPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submittedSuccess, setSubmittedSuccess] = useState(false)
+  const [copyingYesterday, setCopyingYesterday] = useState(false)
+  const [fetchingWeather, setFetchingWeather] = useState(false)
 
   // Project selection
-  const [projects, setProjects] = useState<Array<{ id: string; name?: string | null; title?: string | null; city?: string | null }>>([])
+  const [projects, setProjects] = useState<ProjectItem[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string>("")
 
   // Card 1: Tarih & Hava Durumu
   const [logDate, setLogDate] = useState(() => new Date().toISOString().split("T")[0])
   const [weatherCondition, setWeatherCondition] = useState("Açık")
   const [temperature, setTemperature] = useState<string>("24")
+  const [windSpeed, setWindSpeed] = useState<number | null>(null)
 
   // Card 2: Personel & Mevcut
   const [staffCount, setStaffCount] = useState<string>("12")
@@ -96,7 +128,10 @@ export default function DailyLogEntryPage() {
     "A Blok 3. Kat Kolon betonu döküldü (120 m³).\nB Blok temel su izolasyonu membran serme işlemi tamamlandı.\nC Blok 1. kat elektrik tava montajı ve borulama sürdürüldü."
   )
 
-  // Card 5: İSG, Gecikme ve Ekstra Notlar
+  // Card 5: Saha Fotoğrafları (Mobil Kamera capture=environment)
+  const [photos, setPhotos] = useState<PhotoPreview[]>([])
+
+  // Card 6: İSG, Gecikme ve Ekstra Notlar
   const [safetyAndDelayNotes, setSafetyAndDelayNotes] = useState(
     "Hafif rüzgar sebebiyle kule vinç saat 12:00-13:30 arasında güvenlik amaçlı durduruldu. Herhangi bir ramak kala veya kaza yaşanmadı."
   )
@@ -122,6 +157,193 @@ export default function DailyLogEntryPage() {
   useEffect(() => {
     void loadInitialData()
   }, [])
+
+  // Cleanup photo preview object URLs
+  useEffect(() => {
+    return () => {
+      photos.forEach((p) => {
+        if (p.url.startsWith("blob:")) URL.revokeObjectURL(p.url)
+      })
+    }
+  }, [photos])
+
+  // =========================================================================
+  // ADIM 1: "Dünkü Jurnali Kopyala" Otomasyonu
+  // =========================================================================
+  const handleCopyYesterday = async () => {
+    if (!selectedProjectId) {
+      toast.error("Lütfen önce bir şantiye projesi seçiniz.")
+      return
+    }
+
+    setCopyingYesterday(true)
+    try {
+      const res = await getLatestLog(selectedProjectId)
+      if (res.success && res.data) {
+        const d = res.data
+
+        if (d.staffCount) setStaffCount(d.staffCount)
+        if (d.subcontractorCount) setSubcontractorCount(d.subcontractorCount)
+        if (d.temperature) setTemperature(d.temperature)
+        if (d.weatherCondition) setWeatherCondition(d.weatherCondition)
+        if (d.safetyAndDelayNotes) setSafetyAndDelayNotes(d.safetyAndDelayNotes)
+
+        // Parse equipment counts (e.g. "Ekskavatör: 2, Vinç: 1")
+        if (d.equipment) {
+          const parts = d.equipment.split(",")
+          const newEqList = DEFAULT_EQUIPMENT.map((eq) => ({ ...eq, count: 0 }))
+
+          for (const item of parts) {
+            const [rawName, rawCount] = item.split(":")
+            if (rawName && rawCount) {
+              const nameTrim = rawName.trim()
+              const countNum = parseInt(rawCount.trim(), 10) || 0
+              const existingIdx = newEqList.findIndex(
+                (e) => e.name.toLowerCase() === nameTrim.toLowerCase()
+              )
+              if (existingIdx !== -1) {
+                newEqList[existingIdx].count = countNum
+              } else if (countNum > 0) {
+                newEqList.push({ name: nameTrim, count: countNum })
+              }
+            }
+          }
+          setEquipmentList(newEqList)
+        }
+
+        // Sadece 'Yapılan İşler' kısmını boş veya editlenmeye hazır bırakıyoruz
+        setCompletedWorks("")
+
+        toast.success(
+          "Dünkü veriler başarıyla aktarıldı! (Personel mevcudu, ekipmanlar ve meteoroloji kopyalandı, yapılan işler alanı temizlendi)",
+          { icon: "📋", duration: 4000 }
+        )
+      } else {
+        toast.error(res.error || "Bu şantiye için daha önce kaydedilmiş bir jurnal bulunamadı.")
+      }
+    } catch (err: any) {
+      console.error("Copy yesterday error:", err)
+      toast.error("Dünkü veriler alınırken bir sorun oluştu.")
+    } finally {
+      setCopyingYesterday(false)
+    }
+  }
+
+  // =========================================================================
+  // ADIM 2: Otomatik Hava Durumu API Entegrasyonu (Open-Meteo)
+  // =========================================================================
+  const handleFetchWeather = async () => {
+    setFetchingWeather(true)
+    try {
+      const activeProject = projects.find((p) => p.id === selectedProjectId)
+      let lat = activeProject?.latitude
+      let lng = activeProject?.longitude
+
+      // Koordinat yoksa Geolocation veya varsayılan merkez şantiye koordinatları
+      if (!lat || !lng) {
+        if (typeof window !== "undefined" && navigator?.geolocation) {
+          try {
+            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                timeout: 6000,
+                enableHighAccuracy: true
+              })
+            })
+            lat = pos.coords.latitude
+            lng = pos.coords.longitude
+          } catch {
+            // İstanbul Merkez fallback
+            lat = 41.0082
+            lng = 28.9784
+          }
+        } else {
+          lat = 41.0082
+          lng = 28.9784
+        }
+      }
+
+      // Open-Meteo ücretsiz & api key gerektirmeyen istek
+      const res = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`
+      )
+
+      if (!res.ok) {
+        throw new Error("Open-Meteo hava durumu servisine bağlanılamadı.")
+      }
+
+      const weatherData = await res.json()
+      const current = weatherData?.current_weather
+
+      if (!current) {
+        throw new Error("Hava durumu verisi okunamadı.")
+      }
+
+      const tempVal = Math.round(current.temperature).toString()
+      const windVal = Math.round(current.windspeed)
+      const code = current.weathercode
+
+      setTemperature(tempVal)
+      setWindSpeed(windVal)
+
+      // WMO Weather code mapping
+      let condition = "Açık"
+      if (code === 0) condition = "Açık"
+      else if ([1, 2, 3].includes(code)) condition = "Parçalı Bulutlu"
+      else if ([71, 73, 75, 77, 85, 86].includes(code)) condition = "Karlı"
+      else if ([95, 96, 99].includes(code) || windVal >= 45) condition = "Rüzgarlı / Fırtınalı"
+      else if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) condition = "Yağmurlu"
+      else if ([45, 48].includes(code)) condition = "Sisli"
+
+      setWeatherCondition(condition)
+
+      if (windVal >= 50) {
+        toast(
+          `Hava Durumu: ${tempVal}°C, ${condition} (⚠️ Rüzgar: ${windVal} km/s - Kule vinç limitinde!)`,
+          { icon: "⚠️", duration: 5000 }
+        )
+      } else {
+        toast.success(
+          `Şantiye koordinatından çekildi: ${tempVal}°C, ${condition} (Rüzgar: ${windVal} km/s)`,
+          { icon: "☁️" }
+        )
+      }
+    } catch (err: any) {
+      console.error("Open-Meteo fetch error:", err)
+      toast.error(err?.message || "Hava durumu çekilemedi.")
+    } finally {
+      setFetchingWeather(false)
+    }
+  }
+
+  // =========================================================================
+  // ADIM 3: Mobil Fotoğraf Yükleme & Silme
+  // =========================================================================
+  const handlePhotoUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
+    const incomingFiles = Array.from(e.target.files)
+
+    const previews: PhotoPreview[] = incomingFiles.map((file) => ({
+      id: `${file.name}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      file,
+      url: URL.createObjectURL(file),
+      name: file.name,
+      sizeText: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+    }))
+
+    setPhotos((prev) => [...prev, ...previews])
+    toast.success(`${incomingFiles.length} adet saha fotoğrafı eklendi.`, { icon: "📸" })
+    e.target.value = ""
+  }
+
+  const handleRemovePhoto = (id: string) => {
+    setPhotos((prev) => {
+      const target = prev.find((p) => p.id === id)
+      if (target?.url.startsWith("blob:")) {
+        URL.revokeObjectURL(target.url)
+      }
+      return prev.filter((p) => p.id !== id)
+    })
+  }
 
   // Equipment counter handlers
   const handleUpdateCount = (index: number, delta: number) => {
@@ -154,9 +376,10 @@ export default function DailyLogEntryPage() {
     setCustomMachineName("")
   }
 
-  // Active heavy equipment calculation
+  // Active heavy equipment and personnel calculation
   const totalActiveMachinery = equipmentList.reduce((acc, curr) => acc + curr.count, 0)
-  const activePersonnelTotal = (parseInt(staffCount, 10) || 0) + (parseInt(subcontractorCount, 10) || 0)
+  const activePersonnelTotal =
+    (parseInt(staffCount, 10) || 0) + (parseInt(subcontractorCount, 10) || 0)
 
   // Submit handler calling server action createDailyLog
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -192,6 +415,11 @@ export default function DailyLogEntryPage() {
       formData.set("completedWorks", completedWorks.trim())
       formData.set("safetyAndDelayNotes", safetyAndDelayNotes.trim())
 
+      // Append photos to FormData for server-side upload
+      photos.forEach((photo) => {
+        formData.append("photos", photo.file)
+      })
+
       const res = await createDailyLog(formData)
 
       if (res.success) {
@@ -216,6 +444,7 @@ export default function DailyLogEntryPage() {
     setCompletedWorks("")
     setSafetyAndDelayNotes("")
     setEquipmentList(DEFAULT_EQUIPMENT)
+    setPhotos([])
   }
 
   return (
@@ -243,7 +472,7 @@ export default function DailyLogEntryPage() {
             </p>
           </div>
 
-          {/* Project Selector & Reload */}
+          {/* Project Selector & Refresh */}
           <div className="flex items-center gap-2">
             <div className="flex flex-col">
               <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">
@@ -288,6 +517,13 @@ export default function DailyLogEntryPage() {
                 Tarih: <strong className="text-white font-mono">{logDate}</strong> • Toplam Personel:{" "}
                 <strong className="text-emerald-400 font-mono">{activePersonnelTotal} Kişi</strong> • Aktif
                 Ekipman: <strong className="text-orange-400 font-mono">{totalActiveMachinery} Adet</strong>
+                {photos.length > 0 && (
+                  <span>
+                    {" "}
+                    • Fotoğraf:{" "}
+                    <strong className="text-cyan-400 font-mono">{photos.length} Adet</strong>
+                  </span>
+                )}
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 Girilen veriler merkez ofis ve proje yönetimi raporlama paneline anlık olarak iletilmiştir.
@@ -313,10 +549,33 @@ export default function DailyLogEntryPage() {
             </div>
           </div>
         ) : (
-          /* Form Content: Mobile flex-col, Desktop md:grid md:grid-cols-2 */
+          /* Form Content */
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Top Toolbar: ADIM 1 "Dünkü Jurnali Kopyala" Butonu */}
+            <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <Compass className="w-4 h-4 text-orange-400" />
+                <span>
+                  Hızlı Veri Girişi: Önceki günün ekipman ve personel sayısını tek tıkla kopyalayabilirsiniz.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyYesterday}
+                disabled={copyingYesterday}
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-orange-600/90 to-amber-600/90 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-orange-600/20 flex items-center justify-center gap-2 transition disabled:opacity-50 shrink-0"
+              >
+                {copyingYesterday ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+                <span>📋 Dünkü Verileri Getir</span>
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* KART 1: Tarih & Hava Durumu Kartı */}
+              {/* KART 1: Tarih & Hava Durumu Kartı (Open-Meteo Entegrasyonu) */}
               <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-800">
                   <div className="flex items-center gap-2">
@@ -328,9 +587,22 @@ export default function DailyLogEntryPage() {
                       <p className="text-[11px] text-slate-400">Şantiye tarihi ve meteorolojik koşul</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 font-mono">
-                    Kart 1/5
-                  </span>
+
+                  {/* ADIM 2: Otomatik Hava Durumu API Butonu */}
+                  <button
+                    type="button"
+                    onClick={handleFetchWeather}
+                    disabled={fetchingWeather}
+                    className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 text-[11px] font-bold rounded-lg flex items-center gap-1.5 transition disabled:opacity-50"
+                    title="Şantiye koordinatından canlı hava durumunu çek"
+                  >
+                    {fetchingWeather ? (
+                      <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
+                    ) : (
+                      <Cloud className="w-3 h-3 text-blue-400" />
+                    )}
+                    <span>Hava Durumunu Çek ☁️</span>
+                  </button>
                 </div>
 
                 {/* Tarih Seçimi */}
@@ -338,15 +610,13 @@ export default function DailyLogEntryPage() {
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                     Jurnal Tarihi
                   </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={logDate}
-                      onChange={(e) => setLogDate(e.target.value)}
-                      required
-                      className="w-full bg-slate-950 border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-medium focus:outline-none focus:border-orange-500 transition"
-                    />
-                  </div>
+                  <input
+                    type="date"
+                    value={logDate}
+                    onChange={(e) => setLogDate(e.target.value)}
+                    required
+                    className="w-full bg-slate-950 border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-medium focus:outline-none focus:border-orange-500 transition"
+                  />
                 </div>
 
                 {/* Hava Durumu ve Sıcaklık */}
@@ -386,6 +656,25 @@ export default function DailyLogEntryPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Windspeed Live Display if fetched */}
+                {windSpeed !== null && (
+                  <div
+                    className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
+                      windSpeed >= 50
+                        ? "bg-red-950/40 border-red-500/40 text-red-300"
+                        : "bg-slate-950 border-gray-800 text-slate-300"
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Wind className="w-3.5 h-3.5 text-blue-400" />
+                      Anlık Rüzgar Hızı (Open-Meteo):
+                    </span>
+                    <span className="font-bold font-mono">
+                      {windSpeed} km/s {windSpeed >= 50 && "⚠️ (Fırtına Eşiği)"}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* KART 2: Personel & Mevcut Kartı */}
@@ -515,7 +804,7 @@ export default function DailyLogEntryPage() {
                 ))}
               </div>
 
-              {/* Özel Ekipman Ekleme Formu */}
+              {/* Özel Ekipman Ekleme */}
               <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
                 <input
                   type="text"
@@ -564,7 +853,90 @@ export default function DailyLogEntryPage() {
               />
             </div>
 
-            {/* KART 5: İSG, Gecikme ve Ekstra Notlar Kartı */}
+            {/* ADIM 3: KART 5: Mobil Uyumlu Fotoğraf Ekleme Alanı (Capture: Environment) */}
+            <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center">
+                    <Camera className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-white">
+                      Saha Fotoğrafları (İmalat / DÖF)
+                    </h2>
+                    <p className="text-[11px] text-slate-400">
+                      Mobilde doğrudan arka kamerayı açar, imalat ve kalite kanıtı ekleyin
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 font-mono">
+                  {photos.length} Fotoğraf
+                </span>
+              </div>
+
+              {/* Gizli Kamera Inputu (capture="environment") */}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                capture="environment"
+                className="hidden"
+                id="photo-upload"
+                onChange={handlePhotoUploadChange}
+              />
+
+              {/* Özel Dropzone UI */}
+              <label
+                htmlFor="photo-upload"
+                className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-800 hover:border-orange-500/50 rounded-xl bg-slate-950/70 hover:bg-slate-950 cursor-pointer transition group text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-orange-600/10 text-orange-400 group-hover:scale-110 flex items-center justify-center transition mb-2 border border-orange-500/20">
+                  <Camera className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-bold text-white group-hover:text-orange-400 transition">
+                  Kamera ile Fotoğraf Çek veya Dosya Seç
+                </span>
+                <span className="text-[11px] text-slate-500 mt-1">
+                  Mobilde arka kamera doğrudan açılır • Birden fazla fotoğraf seçilebilir
+                </span>
+              </label>
+
+              {/* Önizleme Thumbnail Grid & Silme Butonları */}
+              {photos.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
+                  {photos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className="relative group rounded-xl overflow-hidden border border-gray-800 bg-slate-950 aspect-video"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.url}
+                        alt={photo.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90 p-2 flex flex-col justify-between">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto(photo.id)}
+                            className="w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition"
+                            title="Fotoğrafı Kaldır"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-slate-200 truncate font-mono">
+                          {photo.name} ({photo.sizeText})
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* KART 6: İSG, Gecikme ve Ekstra Notlar Kartı */}
             <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-800">
                 <div className="flex items-center gap-2">
@@ -608,7 +980,7 @@ export default function DailyLogEntryPage() {
               />
             </div>
 
-            {/* ADIM 3: Aksiyon Butonu - w-full, dikkat çekici & loading state */}
+            {/* Aksiyon Butonu - w-full, dikkat çekici & loading state */}
             <div className="pt-2">
               <button
                 type="submit"
