@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
 import { Calendar, ListTodo, Clock, MapPin, User } from "lucide-react"
+import { getProjectsForSelect, getPersonnelForSelect } from "@/app/actions/tasks"
 
 export default function TasksPage() {
   const [projects, setProjects] = useState<any[]>([])
@@ -42,11 +43,8 @@ export default function TasksPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch("/api/admin/projects")
-      if (response.ok) {
-        const data = await response.json()
-        setProjects(data)
-      }
+      const data = await getProjectsForSelect()
+      setProjects(data || [])
     } catch (error) {
       console.error("Failed to fetch projects:", error)
     } finally {
@@ -56,11 +54,8 @@ export default function TasksPage() {
 
   const fetchWorkers = async () => {
     try {
-      const response = await fetch("/api/admin/personnel")
-      if (response.ok) {
-        const data = await response.json()
-        setWorkers(data)
-      }
+      const data = await getPersonnelForSelect()
+      setWorkers(data || [])
     } catch (error) {
       console.error("Failed to fetch personnel:", error)
     }
@@ -905,7 +900,7 @@ export default function TasksPage() {
                   <option value="">Kişi Seçin</option>
                   {workers.map((worker) => (
                     <option key={worker.id} value={worker.id}>
-                      {worker.firstName} {worker.lastName}
+                      {worker.name || `${worker.firstName || ""} ${worker.lastName || ""}`.trim() || "İsimsiz"}
                     </option>
                   ))}
                 </select>

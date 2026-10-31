@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react"
 import { ClipboardList, Plus, User, AlertCircle, Calendar, Building2, X, CheckCircle, Clock, FileText } from "lucide-react"
 import { createWorkOrder, updateWorkOrderStatus, getWorkOrders } from "./actions"
+import { getProjectsForSelect, getPersonnelForSelect } from "@/app/actions/tasks"
 import { toast } from "react-hot-toast"
 
 type TaskStatus = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE"
@@ -74,34 +75,14 @@ export default function WorkOrdersPage() {
 
   useEffect(() => {
     fetchWorkOrders()
-    fetchProjects()
-    fetchPersonnel()
+    getProjectsForSelect().then(setProjects)
+    getPersonnelForSelect().then(setPersonnel)
   }, [])
 
   const fetchWorkOrders = async () => {
     const result = await getWorkOrders()
     if (result.success) {
       setWorkOrders(result.workOrders || [])
-    }
-  }
-
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch("/api/admin/projects")
-      const data = await response.json()
-      setProjects(data.projects || [])
-    } catch (error) {
-      console.error("Fetch projects error:", error)
-    }
-  }
-
-  const fetchPersonnel = async () => {
-    try {
-      const response = await fetch("/api/admin/personnel")
-      const data = await response.json()
-      setPersonnel(data.personnel || [])
-    } catch (error) {
-      console.error("Fetch personnel error:", error)
     }
   }
 

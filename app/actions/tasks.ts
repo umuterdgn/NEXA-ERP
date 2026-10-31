@@ -9,6 +9,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { auth } from "@/lib/auth"
 
 export interface WorkOrderItem {
   id: string
@@ -267,3 +268,129 @@ export async function updateWorkOrderStatus(
     }
   }
 }
+
+/**
+ * ADIM 1: getProjectsForSelect()
+ * "Yeni İş Emri / Görev Ekle" formundaki Proje dropdown'ını doldurmak için projeleri getirir.
+ */
+export async function getProjectsForSelect() {
+  try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    let tenantId = (session?.user as any)?.tenantId
+
+    if (!tenantId && session?.user?.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      tenantId = dbUser?.tenantId || null
+    }
+
+    const where: any = {
+      deletedAt: null
+    }
+
+    if (!isSuperAdmin && tenantId) {
+      where.tenantId = tenantId
+    }
+
+    const projects = await prisma.project.findMany({
+      where,
+      select: {
+        id: true,
+        title: true,
+        name: true
+      },
+      orderBy: { title: "asc" }
+    })
+
+    return projects.map((p) => ({
+      id: p.id,
+      title: p.title || p.name || "İsimsiz Proje",
+      name: p.name || p.title || "İsimsiz Proje"
+    }))
+  } catch (error) {
+    console.error("getProjectsForSelect error:", error)
+    return []
+  }
+}
+
+/**
+ * ADIM 1: getPersonnelForSelect()
+ * "Yeni İş Emri / Görev Ekle" formundaki Personel dropdown'ını doldurmak için kullanıcı ve personelleri getirir.
+ */
+export async function getPersonnelForSelect() {
+  try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    let tenantId = (session?.user as any)?.tenantId
+
+    if (!tenantId && session?.user?.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true }
+      })
+      tenantId = dbUser?.tenantId || null
+    }
+
+    const userWhere: any = {
+      role: {
+        in: [
+          "STAFF",
+          "ENGINEER",
+          "SITE_MANAGER",
+          "WORKER",
+          "PROJECT_MANAGER",
+          "ISG_EXPERT",
+          "ADMIN"
+        ]
+      }
+    }
+
+    if (!isSuperAdmin && tenantId) {
+      userWhere.tenantId = tenantId
+    }
+
+    const users = await prisma.user.findMany({
+      where: userWhere,
+      select: { id: true, name: true, role: true },
+      orderBy: { name: "asc" }
+    })
+
+    // Personel tablosundan da aktif saha personellerini getir
+    const personelWhere: any = {
+      status: "ACTIVE"
+    }
+    if (!isSuperAdmin && tenantId) {
+      personelWhere.tenantId = tenantId
+    }
+
+    const personels = await prisma.personel.findMany({
+      where: personelWhere,
+      select: { id: true, name: true, role: true },
+      orderBy: { name: "asc" }
+    })
+
+    // İsim veya ID bazında tekilleştir ve sırala
+    const map = new Map<string, { id: string; name: string; role: string }>()
+    for (const u of users) {
+      if (u.name) {
+        map.set(u.id, { id: u.id, name: u.name, role: String(u.role) })
+      }
+    }
+    for (const p of personels) {
+      if (p.name && !map.has(p.id)) {
+        map.set(p.id, { id: p.id, name: p.name, role: String(p.role) })
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "tr"))
+  } catch (error) {
+    console.error("getPersonnelForSelect error:", error)
+    return []
+  }
+}
+
