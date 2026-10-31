@@ -48,7 +48,7 @@ export default function MyTeamPage() {
     const isSubcontractor = userRole === "SUBCONTRACTOR"
     
     if (!isSubcontractor) {
-      router.push("/admin/dashboard")
+      router.push("/admin")
       toast.error("Bu sayfaya sadece taşeronlar erişebilir")
     }
   }, [status, session, router])

@@ -110,8 +110,10 @@ export default function TenantLoginClient({ company }: TenantLoginClientProps) {
             targetPath = "/admin/equipments";
           } else if (role === "ISG_EXPERT") {
             targetPath = "/admin/personel/alerts";
+          } else if (role === "SUPER_ADMIN" || role === "ADMIN") {
+            targetPath = "/admin";
           } else {
-            targetPath = "/admin/dashboard";
+            targetPath = "/admin";
           }
         }
       } catch (err) {

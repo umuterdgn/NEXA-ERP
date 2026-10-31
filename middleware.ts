@@ -121,9 +121,9 @@ export default NextAuth(authConfig).auth((req) => {
   if ((isOnLoginPage || pathname === "/") && session) {
     const redirectUrl = req.nextUrl.clone()
 
-    // 0. SUPER_ADMIN ➔ /superadmin/dashboard
+    // 0. SUPER_ADMIN ➔ /admin
     if (userRole === "SUPER_ADMIN") {
-      redirectUrl.pathname = "/superadmin/dashboard"
+      redirectUrl.pathname = "/admin"
       return NextResponse.redirect(redirectUrl)
     }
 

@@ -39,7 +39,7 @@ export default function FinancePage() {
     const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN"
     
     if (!isAdmin) {
-      router.push("/admin/dashboard")
+      router.push("/admin")
       toast.error("Bu sayfaya erişim yetkiniz yok")
     }
   }, [status, session, router])
