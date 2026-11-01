@@ -20,6 +20,7 @@ import { jsPDF } from "jspdf"
 import * as htmlToImage from "html-to-image"
 import BimTabComponent from "@/components/BimTabComponent"
 import AdminLogHistory from "@/components/AdminLogHistory"
+import ProjectGallery from "@/components/ProjectGallery"
 
 // Leaflet SSR'da hata verdiği için dynamic import kullanıyoruz
 const MapLocationPicker = dynamic(() => import('@/components/MapLocationPicker'), { ssr: false })
@@ -111,6 +112,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const tabs = [
     { id: "canli-saha", label: "📡 Şantiye Özeti (Canlı)" },
     { id: "jurnaller", label: "📋 Şantiye Defteri (Jurnaller)" },
+    { id: "saha-galerisi", label: "📸 Saha Galerisi" },
     { id: "boq", label: "📊 Keşif & Metraj (BoQ)" },
     { id: "kunya", label: "Proje Künyesi" },
     { id: "arsiv", label: "Arşiv ve Evraklar" },
@@ -690,6 +692,12 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
         {activeTab === "jurnaller" && (
           <div className="space-y-4">
             <AdminLogHistory projectId={project.id} />
+          </div>
+        )}
+
+        {activeTab === "saha-galerisi" && (
+          <div className="space-y-4">
+            <ProjectGallery projectId={project.id} />
           </div>
         )}
 

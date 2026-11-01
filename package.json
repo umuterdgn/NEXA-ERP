@@ -39,6 +39,7 @@
     "cloudinary": "^2.11.0",
     "convertapi": "^1.15.0",
     "crypto-js": "^4.2.0",
+    "date-fns": "^4.4.0",
     "dexie": "^4.4.5",
     "dotenv": "^17.4.2",
     "dxf-writer": "^1.18.4",

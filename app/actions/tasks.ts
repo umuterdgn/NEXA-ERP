@@ -431,3 +431,124 @@ export async function getPersonnelForSelect() {
   }
 }
 
+export interface ProjectMediaGalleryItem {
+  id: string
+  title: string
+  completionPhoto: string
+  updatedAt: Date | string
+  completedAt?: Date | string
+  assignedToName?: string | null
+  assignedTo?: {
+    name: string | null
+  } | null
+  source?: "work_order" | "task"
+}
+
+/**
+ * ADIM 1: getProjectMediaGallery(projectId: string)
+ * Projeye ait, durumu COMPLETED olan ve completionPhoto alanı null olmayan görevlerin kanıt fotoğraflarını çeker.
+ */
+export async function getProjectMediaGallery(projectId: string): Promise<ProjectMediaGalleryItem[]> {
+  try {
+    if (!projectId) return []
+
+    // 1. WorkOrder tablosundan kanıt fotoğraflı tamamlanmış iş emirlerini çek
+    let workOrders: any[] = []
+    try {
+      workOrders = await (prisma as any).workOrder.findMany({
+        where: {
+          projectId,
+          status: { in: ["COMPLETED", "DONE"] },
+          completionPhoto: { not: null }
+        },
+        include: {
+          assignedTo: {
+            select: { name: true }
+          }
+        },
+        orderBy: {
+          updatedAt: "desc"
+        }
+      })
+    } catch (woErr) {
+      console.warn("WorkOrder media gallery fetch error:", woErr)
+    }
+
+    // 2. Task tablosundan da kanıt fotoğraflı tamamlanan görevleri çek
+    let tasks: any[] = []
+    try {
+      tasks = await (prisma as any).task.findMany({
+        where: {
+          projectId,
+          status: { in: ["COMPLETED", "DONE"] },
+          completionPhoto: { not: null }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+    } catch (tErr) {
+      console.warn("Task media gallery fetch error:", tErr)
+    }
+
+    // Task'lar için personellerin isimlerini al
+    const assignedUserIds = tasks.map((t) => t.assignedTo).filter(Boolean)
+    const personMap = new Map<string, string>()
+
+    if (assignedUserIds.length > 0) {
+      try {
+        const users = await prisma.user.findMany({
+          where: { id: { in: assignedUserIds } },
+          select: { id: true, name: true }
+        })
+        users.forEach((u) => {
+          if (u.name) personMap.set(u.id, u.name)
+        })
+
+        const personels = await prisma.personel.findMany({
+          where: { id: { in: assignedUserIds } },
+          select: { id: true, name: true }
+        })
+        personels.forEach((p) => {
+          if (p.name) personMap.set(p.id, p.name)
+        })
+      } catch (pErr) {
+        console.warn("Assigned person resolution error:", pErr)
+      }
+    }
+
+    const mappedWorkOrders: ProjectMediaGalleryItem[] = workOrders.map((wo) => ({
+      id: wo.id,
+      title: wo.title,
+      completionPhoto: wo.completionPhoto!,
+      updatedAt: wo.updatedAt || wo.createdAt,
+      completedAt: wo.updatedAt || wo.createdAt,
+      assignedToName: wo.assignedTo?.name || null,
+      assignedTo: wo.assignedTo || null,
+      source: "work_order"
+    }))
+
+    const mappedTasks: ProjectMediaGalleryItem[] = tasks.map((t) => ({
+      id: t.id,
+      title: t.title,
+      completionPhoto: t.completionPhoto!,
+      updatedAt: (t as any).updatedAt || t.createdAt,
+      completedAt: (t as any).updatedAt || t.createdAt,
+      assignedToName: personMap.get(t.assignedTo) || null,
+      assignedTo: personMap.get(t.assignedTo) ? { name: personMap.get(t.assignedTo)! } : null,
+      source: "task"
+    }))
+
+    // Birleştir ve en yeniden eskiye doğru sırala
+    const combined = [...mappedWorkOrders, ...mappedTasks].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+
+    return combined
+  } catch (error) {
+    console.error("getProjectMediaGallery error:", error)
+    return []
+  }
+}
+
+
