@@ -12,7 +12,7 @@ import { createWorkOrder, updateWorkOrderStatus, getWorkOrders } from "./actions
 import { getProjectsForSelect, getPersonnelForSelect } from "@/app/actions/tasks"
 import { toast } from "react-hot-toast"
 
-type TaskStatus = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE"
+type TaskStatus = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE" | "COMPLETED" | "REJECTED"
 type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
 type Department = "MIMARI" | "MEKANIK" | "ELEKTRIK" | "INSAAT" | "GENEL"
 
@@ -41,7 +41,9 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   TODO: "Yapılacaklar",
   IN_PROGRESS: "Devam Edenler",
   REVIEW: "Kontrol Bekleyenler",
-  DONE: "Tamamlandı"
+  DONE: "Tamamlandı",
+  COMPLETED: "Tamamlandı",
+  REJECTED: "Reddedildi"
 }
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {

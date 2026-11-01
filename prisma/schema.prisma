@@ -1779,6 +1779,8 @@ enum TaskStatus {
   IN_PROGRESS
   REVIEW
   DONE
+  COMPLETED
+  REJECTED
 }
 
 enum TaskPriority {
@@ -2361,7 +2363,9 @@ model Task {
   tenantId      String? // SaaS: Kiracı ID
   title         String
   description   String?      @db.Text
-  status        String       @default("TODO") // TODO, IN_PROGRESS, IN_REVIEW, DONE
+  status        String       @default("TODO") // TODO, IN_PROGRESS, IN_REVIEW, DONE, COMPLETED, REJECTED
+  completionPhoto String?    @db.Text
+  rejectionReason String?    @db.Text
   projectId     String?
   project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   assignedTo    String?
@@ -3043,6 +3047,8 @@ model WorkOrder {
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
   department  Department   @default(GENEL)
+  completionPhoto String?  @db.Text
+  rejectionReason String?  @db.Text
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id])

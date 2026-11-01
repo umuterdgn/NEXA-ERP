@@ -15,7 +15,7 @@ export interface WorkOrderItem {
   id: string
   title: string
   description: string | null
-  status: "TODO" | "IN_PROGRESS" | "DONE" | string
+  status: "TODO" | "IN_PROGRESS" | "DONE" | "COMPLETED" | "REJECTED" | string
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT" | string
   dueDate: Date | null
   createdAt: Date
@@ -23,6 +23,8 @@ export interface WorkOrderItem {
   projectName?: string
   taskType?: string | null
   source: "task" | "work_order"
+  completionPhoto?: string | null
+  rejectionReason?: string | null
 }
 
 export interface GetMyWorkOrdersResponse {
@@ -133,7 +135,9 @@ export async function getMyWorkOrders(userId: string): Promise<GetMyWorkOrdersRe
         projectId: t.projectId,
         projectName: t.project?.name || t.project?.title || "Genel Şantiye",
         taskType: t.taskType || "Görev",
-        source: "task"
+        source: "task",
+        completionPhoto: (t as any).completionPhoto || null,
+        rejectionReason: (t as any).rejectionReason || null
       }
     })
 
@@ -148,7 +152,9 @@ export async function getMyWorkOrders(userId: string): Promise<GetMyWorkOrdersRe
       projectId: wo.projectId,
       projectName: wo.project?.name || wo.project?.title || "Genel Şantiye",
       taskType: wo.department || "İş Emri",
-      source: "work_order"
+      source: "work_order",
+      completionPhoto: wo.completionPhoto || null,
+      rejectionReason: wo.rejectionReason || null
     }))
 
     // İkisini birleştirip tarihe göre sırala
@@ -171,19 +177,21 @@ export async function getMyWorkOrders(userId: string): Promise<GetMyWorkOrdersRe
 }
 
 /**
- * ADIM 2: updateWorkOrderStatus(taskId: string, status: string)
- * Sahadaki personelin görevi "Tamamlandı" veya "Devam Ediyor" yapabilmesi için.
+ * ADIM 1: updateWorkOrderStatus(taskId: string, status: string, photoUrl?: string, rejectionReason?: string)
+ * Sahadaki personelin görevi "Tamamlandı" (fotoğraf kanıtlı) veya "Reddedildi" (gerekçeli) yapabilmesi için.
  */
 export async function updateWorkOrderStatus(
   taskId: string,
-  status: string
+  status: string,
+  photoUrl?: string,
+  rejectionReason?: string
 ): Promise<UpdateWorkOrderStatusResponse> {
   try {
     if (!taskId) {
       return { success: false, error: "Görev ID'si gereklidir." }
     }
 
-    // Durumu normalize et (TODO, IN_PROGRESS, DONE)
+    // Durumu normalize et (TODO, IN_PROGRESS, COMPLETED, REJECTED)
     let normalizedStatus = status.toUpperCase().trim()
     if (
       normalizedStatus === "TAMAMLANDI" ||
@@ -191,7 +199,14 @@ export async function updateWorkOrderStatus(
       normalizedStatus === "DONE" ||
       normalizedStatus === "COMPLETED"
     ) {
-      normalizedStatus = "DONE"
+      normalizedStatus = "COMPLETED"
+    } else if (
+      normalizedStatus === "REDDEDILDI" ||
+      normalizedStatus === "REDDEDİLDİ" ||
+      normalizedStatus === "REDDET" ||
+      normalizedStatus === "REJECTED"
+    ) {
+      normalizedStatus = "REJECTED"
     } else if (
       normalizedStatus === "DEVAM EDIYOR" ||
       normalizedStatus === "DEVAM EDİYOR" ||
@@ -207,6 +222,18 @@ export async function updateWorkOrderStatus(
       normalizedStatus = "TODO"
     }
 
+    const updatePayload: Record<string, any> = {
+      status: normalizedStatus
+    }
+
+    if (normalizedStatus === "COMPLETED" && photoUrl) {
+      updatePayload.completionPhoto = photoUrl
+    }
+
+    if (normalizedStatus === "REJECTED" && rejectionReason) {
+      updatePayload.rejectionReason = rejectionReason
+    }
+
     // 1. Önce Task tablosunu güncelle
     const existingTask = await prisma.task.findUnique({
       where: { id: taskId }
@@ -215,7 +242,7 @@ export async function updateWorkOrderStatus(
     if (existingTask) {
       const updated = await prisma.task.update({
         where: { id: taskId },
-        data: { status: normalizedStatus }
+        data: updatePayload
       })
 
       revalidatePath("/personnel/work-orders")
@@ -223,10 +250,15 @@ export async function updateWorkOrderStatus(
       revalidatePath("/admin/tasks")
       revalidatePath("/admin/my-tasks")
 
+      let statusMsg = "Yapılacak"
+      if (normalizedStatus === "COMPLETED") statusMsg = "Tamamlandı"
+      else if (normalizedStatus === "REJECTED") statusMsg = "Reddedildi"
+      else if (normalizedStatus === "IN_PROGRESS") statusMsg = "Devam Ediyor"
+
       return {
         success: true,
         data: updated,
-        message: `Görev durumu "${normalizedStatus === "DONE" ? "Tamamlandı" : normalizedStatus === "IN_PROGRESS" ? "Devam Ediyor" : "Yapılacak"}" olarak güncellendi.`
+        message: `Görev durumu "${statusMsg}" olarak güncellendi.`
       }
     }
 
@@ -239,17 +271,22 @@ export async function updateWorkOrderStatus(
       if (existingWorkOrder) {
         const updated = await (prisma as any).workOrder.update({
           where: { id: taskId },
-          data: { status: normalizedStatus }
+          data: updatePayload
         })
 
         revalidatePath("/personnel/work-orders")
         revalidatePath("/personnel/tasks")
         revalidatePath("/admin/work-orders")
 
+        let statusMsg = "Yapılacak"
+        if (normalizedStatus === "COMPLETED") statusMsg = "Tamamlandı"
+        else if (normalizedStatus === "REJECTED") statusMsg = "Reddedildi"
+        else if (normalizedStatus === "IN_PROGRESS") statusMsg = "Devam Ediyor"
+
         return {
           success: true,
           data: updated,
-          message: `İş emri durumu "${normalizedStatus === "DONE" ? "Tamamlandı" : normalizedStatus === "IN_PROGRESS" ? "Devam Ediyor" : "Yapılacak"}" olarak güncellendi.`
+          message: `İş emri durumu "${statusMsg}" olarak güncellendi.`
         }
       }
     } catch (woErr) {

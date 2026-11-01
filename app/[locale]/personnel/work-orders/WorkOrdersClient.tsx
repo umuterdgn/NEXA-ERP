@@ -3,7 +3,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Field Personnel Work Orders Client Component
- * Mobile-first responsive card layout with real-time status actions
+ * Mobile-first responsive card layout with proof capture (Camera) and rejection reason modal
  */
 
 import React, { useState } from "react"
@@ -25,7 +25,14 @@ import {
   Check,
   Flame,
   Hourglass,
-  Tag
+  Tag,
+  Camera,
+  X,
+  Upload,
+  Ban,
+  ExternalLink,
+  ShieldCheck,
+  AlertOctagon
 } from "lucide-react"
 import { toast } from "react-hot-toast"
 import { updateWorkOrderStatus, WorkOrderItem } from "@/app/actions/tasks"
@@ -41,22 +48,34 @@ export default function WorkOrdersClient({
 }: WorkOrdersClientProps) {
   const router = useRouter()
   const [workOrders, setWorkOrders] = useState<WorkOrderItem[]>(initialWorkOrders)
-  const [activeTab, setActiveTab] = useState<"ALL" | "IN_PROGRESS" | "TODO" | "DONE">("ALL")
+  const [activeTab, setActiveTab] = useState<"ALL" | "IN_PROGRESS" | "TODO" | "DONE" | "REJECTED">("ALL")
   const [searchQuery, setSearchQuery] = useState("")
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  // Status update handler
+  // Complete Modal State (Kamera Kanıtı)
+  const [completeModalTask, setCompleteModalTask] = useState<WorkOrderItem | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [isSubmittingComplete, setIsSubmittingComplete] = useState(false)
+
+  // Reject Modal State (Gerekçe Bildirimi)
+  const [rejectModalTask, setRejectModalTask] = useState<WorkOrderItem | null>(null)
+  const [rejectionReason, setRejectionReason] = useState("")
+  const [isSubmittingReject, setIsSubmittingReject] = useState(false)
+
+  // General Status update handler (for TODO / IN_PROGRESS transitions)
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     setUpdatingId(taskId)
     try {
       const res = await updateWorkOrderStatus(taskId, newStatus)
       if (res.success) {
         toast.success(res.message || "Görev durumu güncellendi!", {
-          icon: newStatus === "DONE" ? "✅" : "⚡"
+          icon: newStatus === "COMPLETED" || newStatus === "DONE" ? "✅" : "⚡"
         })
 
-        // Optimistically update local state
         setWorkOrders((prev) =>
           prev.map((item) =>
             item.id === taskId ? { ...item, status: newStatus } : item
@@ -71,6 +90,168 @@ export default function WorkOrdersClient({
       toast.error("İşlem sırasında bağlantı hatası oluştu.")
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  // Complete Modal Handlers
+  const openCompleteModal = (task: WorkOrderItem) => {
+    setCompleteModalTask(task)
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    setUploadedPhotoUrl(null)
+    setIsUploadingPhoto(false)
+  }
+
+  const closeCompleteModal = () => {
+    if (isSubmittingComplete) return
+    setCompleteModalTask(null)
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    setUploadedPhotoUrl(null)
+    setIsUploadingPhoto(false)
+  }
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Fotoğraf boyutu 20MB'den küçük olmalıdır.")
+      return
+    }
+
+    setPhotoFile(file)
+    const localPreview = URL.createObjectURL(file)
+    setPhotoPreview(localPreview)
+    setIsUploadingPhoto(true)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("sourceModule", "PERSONNEL_TASK_COMPLETION")
+      formData.append("category", "TASK_PROOF")
+      if (completeModalTask?.projectId) {
+        formData.append("projectId", completeModalTask.projectId)
+      }
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        throw new Error("Yükleme başarısız oldu")
+      }
+
+      const data = await res.json()
+      if (data.url) {
+        setUploadedPhotoUrl(data.url)
+        toast.success("Fotoğraf kanıtı yüklendi!")
+      } else {
+        throw new Error(data.error || "Sunucudan URL alınamadı")
+      }
+    } catch (err: any) {
+      console.error("Photo upload error:", err)
+      toast.error("Fotoğraf yüklenemedi. Lütfen tekrar deneyin.")
+      setUploadedPhotoUrl(null)
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
+
+  const handleFinishTask = async () => {
+    if (!completeModalTask) return
+    if (!uploadedPhotoUrl) {
+      toast.error("Lütfen önce yapılan işin fotoğrafını yükleyin!")
+      return
+    }
+
+    setIsSubmittingComplete(true)
+    try {
+      const res = await updateWorkOrderStatus(
+        completeModalTask.id,
+        "COMPLETED",
+        uploadedPhotoUrl
+      )
+
+      if (res.success) {
+        toast.success(res.message || "Görev başarıyla tamamlandı!", { icon: "📸" })
+        setWorkOrders((prev) =>
+          prev.map((item) =>
+            item.id === completeModalTask.id
+              ? {
+                  ...item,
+                  status: "COMPLETED",
+                  completionPhoto: uploadedPhotoUrl
+                }
+              : item
+          )
+        )
+        closeCompleteModal()
+        router.refresh()
+      } else {
+        toast.error(res.error || "İşlem tamamlanamadı.")
+      }
+    } catch (err) {
+      console.error("Task completion submit error:", err)
+      toast.error("Bağlantı hatası oluştu.")
+    } finally {
+      setIsSubmittingComplete(false)
+    }
+  }
+
+  // Reject Modal Handlers
+  const openRejectModal = (task: WorkOrderItem) => {
+    setRejectModalTask(task)
+    setRejectionReason("")
+  }
+
+  const closeRejectModal = () => {
+    if (isSubmittingReject) return
+    setRejectModalTask(null)
+    setRejectionReason("")
+  }
+
+  const handleRejectTask = async () => {
+    if (!rejectModalTask) return
+    const reason = rejectionReason.trim()
+    if (!reason) {
+      toast.error("Lütfen bu görevi neden tamamlayamadığınızı belirtin.")
+      return
+    }
+
+    setIsSubmittingReject(true)
+    try {
+      const res = await updateWorkOrderStatus(
+        rejectModalTask.id,
+        "REJECTED",
+        undefined,
+        reason
+      )
+
+      if (res.success) {
+        toast.success(res.message || "Görev iade edildi / reddedildi.", { icon: "ℹ️" })
+        setWorkOrders((prev) =>
+          prev.map((item) =>
+            item.id === rejectModalTask.id
+              ? {
+                  ...item,
+                  status: "REJECTED",
+                  rejectionReason: reason
+                }
+              : item
+          )
+        )
+        closeRejectModal()
+        router.refresh()
+      } else {
+        toast.error(res.error || "İşlem tamamlanamadı.")
+      }
+    } catch (err) {
+      console.error("Task rejection submit error:", err)
+      toast.error("Bağlantı hatası oluştu.")
+    } finally {
+      setIsSubmittingReject(false)
     }
   }
 
@@ -89,6 +270,7 @@ export default function WorkOrdersClient({
     if (activeTab === "TODO" && item.status !== "TODO") return false
     if (activeTab === "IN_PROGRESS" && item.status !== "IN_PROGRESS") return false
     if (activeTab === "DONE" && item.status !== "DONE" && item.status !== "COMPLETED") return false
+    if (activeTab === "REJECTED" && item.status !== "REJECTED") return false
 
     // Search filter
     if (searchQuery.trim()) {
@@ -109,6 +291,7 @@ export default function WorkOrdersClient({
   const doneCount = workOrders.filter(
     (o) => o.status === "DONE" || o.status === "COMPLETED"
   ).length
+  const rejectedCount = workOrders.filter((o) => o.status === "REJECTED").length
 
   const formatDate = (dateVal: Date | string | null) => {
     if (!dateVal) return null
@@ -125,7 +308,7 @@ export default function WorkOrdersClient({
   }
 
   const isOverdue = (dateVal: Date | string | null, status: string) => {
-    if (!dateVal || status === "DONE" || status === "COMPLETED") return false
+    if (!dateVal || status === "DONE" || status === "COMPLETED" || status === "REJECTED") return false
     try {
       const d = new Date(dateVal)
       const today = new Date()
@@ -172,7 +355,7 @@ export default function WorkOrdersClient({
       </div>
 
       {/* Stats Counters Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div
           onClick={() => setActiveTab("ALL")}
           className={`p-3.5 rounded-xl border transition cursor-pointer ${
@@ -182,7 +365,7 @@ export default function WorkOrdersClient({
           }`}
         >
           <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-[11px] font-medium">Toplam İş Emri</span>
+            <span className="text-[11px] font-medium">Toplam</span>
             <ClipboardList className="w-4 h-4 text-slate-400" />
           </div>
           <div className="text-xl font-extrabold text-white font-mono">{totalCount}</div>
@@ -197,7 +380,7 @@ export default function WorkOrdersClient({
           }`}
         >
           <div className="flex items-center justify-between text-blue-400 mb-1">
-            <span className="text-[11px] font-medium">Devam Edenler</span>
+            <span className="text-[11px] font-medium">Devam Eden</span>
             <PlayCircle className="w-4 h-4 text-blue-400" />
           </div>
           <div className="text-xl font-extrabold text-blue-400 font-mono">{inProgressCount}</div>
@@ -212,7 +395,7 @@ export default function WorkOrdersClient({
           }`}
         >
           <div className="flex items-center justify-between text-amber-400 mb-1">
-            <span className="text-[11px] font-medium">Yapılacaklar</span>
+            <span className="text-[11px] font-medium">Yapılacak</span>
             <Hourglass className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-xl font-extrabold text-amber-400 font-mono">{todoCount}</div>
@@ -231,6 +414,21 @@ export default function WorkOrdersClient({
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-xl font-extrabold text-emerald-400 font-mono">{doneCount}</div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab("REJECTED")}
+          className={`p-3.5 rounded-xl border transition cursor-pointer col-span-2 sm:col-span-1 ${
+            activeTab === "REJECTED"
+              ? "bg-slate-900 border-rose-500/50 shadow-md shadow-rose-500/10"
+              : "bg-gray-900/60 border-gray-800 hover:border-gray-700"
+          }`}
+        >
+          <div className="flex items-center justify-between text-rose-400 mb-1">
+            <span className="text-[11px] font-medium">İade / Reddedilen</span>
+            <Ban className="w-4 h-4 text-rose-400" />
+          </div>
+          <div className="text-xl font-extrabold text-rose-400 font-mono">{rejectedCount}</div>
         </div>
       </div>
 
@@ -289,6 +487,20 @@ export default function WorkOrdersClient({
             <span>Tamamlanan</span>
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-950 text-emerald-300">
               {doneCount}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("REJECTED")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1 ${
+              activeTab === "REJECTED"
+                ? "bg-rose-600 text-white shadow-md shadow-rose-600/30"
+                : "text-slate-400 hover:text-white hover:bg-gray-800"
+            }`}
+          >
+            <span>Reddedilen</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-950 text-rose-300">
+              {rejectedCount}
             </span>
           </button>
         </div>
@@ -387,6 +599,12 @@ export default function WorkOrdersClient({
                   ✅ Tamamlandı
                 </span>
               )
+            } else if (order.status === "REJECTED") {
+              statusBadge = (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono">
+                  ❌ Reddedildi
+                </span>
+              )
             }
 
             return (
@@ -452,9 +670,10 @@ export default function WorkOrdersClient({
                   </div>
 
                   {/* Action Buttons for Mobile / Desktop */}
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <div className="space-y-2 pt-1">
+                    {/* TODO Actions */}
                     {order.status === "TODO" && (
-                      <>
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => handleStatusChange(order.id, "IN_PROGRESS")}
@@ -466,34 +685,42 @@ export default function WorkOrdersClient({
                           ) : (
                             <PlayCircle className="w-3.5 h-3.5" />
                           )}
-                          <span>⚡ Göreve Başla</span>
+                          <span>⚡ Başla</span>
                         </button>
 
                         <button
                           type="button"
-                          onClick={() => handleStatusChange(order.id, "DONE")}
+                          onClick={() => openCompleteModal(order)}
                           disabled={isTaskUpdating}
                           className="flex-1 py-2 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
                         >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Tamamlandı</span>
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Tamamla</span>
                         </button>
-                      </>
-                    )}
 
-                    {order.status === "IN_PROGRESS" && (
-                      <>
                         <button
                           type="button"
-                          onClick={() => handleStatusChange(order.id, "DONE")}
+                          onClick={() => openRejectModal(order)}
+                          disabled={isTaskUpdating}
+                          className="py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                          title="Görevi iade et veya reddet"
+                        >
+                          <Ban className="w-3.5 h-3.5 text-rose-400" />
+                          <span>İade Et</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* IN_PROGRESS Actions */}
+                    {order.status === "IN_PROGRESS" && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openCompleteModal(order)}
                           disabled={isTaskUpdating}
                           className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition disabled:opacity-50"
                         >
-                          {isTaskUpdating ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          )}
+                          <Camera className="w-3.5 h-3.5" />
                           <span>✅ Görevi Tamamla</span>
                         </button>
 
@@ -507,23 +734,97 @@ export default function WorkOrdersClient({
                           <Hourglass className="w-3.5 h-3.5" />
                           <span>Duraklat</span>
                         </button>
-                      </>
-                    )}
 
-                    {(order.status === "DONE" || order.status === "COMPLETED") && (
-                      <div className="w-full flex items-center justify-between gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-1.5 text-xs text-emerald-400 font-medium">
-                        <span className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          Bu iş emri başarıyla tamamlandı.
-                        </span>
                         <button
                           type="button"
-                          onClick={() => handleStatusChange(order.id, "IN_PROGRESS")}
+                          onClick={() => openRejectModal(order)}
                           disabled={isTaskUpdating}
-                          className="text-[11px] text-slate-400 hover:text-white underline transition"
+                          className="py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                          title="Görevi iade et veya reddet"
                         >
-                          Yeniden Aç
+                          <Ban className="w-3.5 h-3.5 text-rose-400" />
+                          <span>İade Et</span>
                         </button>
+                      </div>
+                    )}
+
+                    {/* REJECTED Details & Action */}
+                    {order.status === "REJECTED" && (
+                      <div className="space-y-2">
+                        <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-xs text-rose-300 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-rose-200 flex items-center gap-1.5">
+                              <Ban className="w-3.5 h-3.5 text-rose-400" />
+                              Görev İade Edildi / Reddedildi
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(order.id, "IN_PROGRESS")}
+                              disabled={isTaskUpdating}
+                              className="text-[11px] text-slate-300 hover:text-white underline transition"
+                            >
+                              Yeniden Başla
+                            </button>
+                          </div>
+                          {order.rejectionReason && (
+                            <p className="text-[11px] text-rose-300/90 bg-rose-950/40 p-2 rounded-lg border border-rose-900/50">
+                              <strong className="text-rose-200">Gerekçe: </strong>
+                              {order.rejectionReason}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* DONE / COMPLETED Details & Action */}
+                    {(order.status === "DONE" || order.status === "COMPLETED") && (
+                      <div className="space-y-2">
+                        <div className="w-full flex items-center justify-between gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-emerald-400 font-medium">
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            Bu iş emri başarıyla tamamlandı.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleStatusChange(order.id, "IN_PROGRESS")}
+                            disabled={isTaskUpdating}
+                            className="text-[11px] text-slate-400 hover:text-white underline transition"
+                          >
+                            Yeniden Aç
+                          </button>
+                        </div>
+
+                        {order.completionPhoto && (
+                          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-950/80 border border-gray-800">
+                            <a
+                              href={order.completionPhoto}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative group shrink-0"
+                            >
+                              <img
+                                src={order.completionPhoto}
+                                alt="Kanıt"
+                                className="w-14 h-14 object-cover rounded-lg border border-gray-700 group-hover:scale-105 transition"
+                              />
+                            </a>
+                            <div className="text-[11px] min-w-0">
+                              <span className="font-bold text-slate-200 block truncate flex items-center gap-1">
+                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                                Saha Kanıt Fotoğrafı
+                              </span>
+                              <a
+                                href={order.completionPhoto}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 underline flex items-center gap-1 mt-1 font-medium"
+                              >
+                                <span>Büyük Boyutta Aç</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -531,6 +832,231 @@ export default function WorkOrdersClient({
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ADIM 2: TAMAMLAMA MODALİ (KAMERA KANITI)                 */}
+      {/* ======================================================== */}
+      {completeModalTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Görevi Tamamla (Kamera Kanıtı)</h3>
+                  <p className="text-xs text-slate-400 truncate max-w-[260px] sm:max-w-[340px]">
+                    {completeModalTask.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeCompleteModal}
+                disabled={isSubmittingComplete}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-gray-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Warning / Prompt Requirement */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3.5 text-xs text-blue-300 flex items-start gap-2.5">
+              <Camera className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <strong className="text-white block">Lütfen yapılan işin fotoğrafını yükleyin</strong>
+                <p className="text-blue-300/90 leading-relaxed">
+                  Saha kalite kontrol standartları gereği tamamlanan her iş için fotoğraflı kanıt zorunludur.
+                </p>
+              </div>
+            </div>
+
+            {/* Photo Capture & Preview Area */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-2">
+                İş Tamamlama Kanıtı <span className="text-emerald-400">* (Zorunlu)</span>
+              </label>
+
+              {/* Mobile Back Camera File Input: accept="image/*" capture="environment" */}
+              <input
+                id="camera-proof-input"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handlePhotoSelect}
+                disabled={isUploadingPhoto || isSubmittingComplete}
+                className="hidden"
+              />
+
+              {!photoPreview ? (
+                <label
+                  htmlFor="camera-proof-input"
+                  className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-700 hover:border-emerald-500 rounded-2xl cursor-pointer bg-slate-950/60 hover:bg-slate-900/60 transition group text-center space-y-3"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition">
+                    <Camera className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Fotoğraf Çek / Kamerayı Aç</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Mobilde doğrudan arka kamerayı açar</p>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-lg border border-emerald-500/30">
+                    <Upload className="w-3.5 h-3.5" /> Fotoğraf Yükle
+                  </span>
+                </label>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative rounded-2xl overflow-hidden border border-gray-700 bg-slate-950 aspect-video flex items-center justify-center">
+                    <img
+                      src={photoPreview}
+                      alt="Kanıt Önizleme"
+                      className="w-full h-full object-cover"
+                    />
+
+                    {isUploadingPhoto && (
+                      <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white">
+                        <Loader2 className="w-7 h-7 animate-spin text-emerald-400" />
+                        <span className="text-xs font-semibold">Fotoğraf yükleniyor, lütfen bekleyin...</span>
+                      </div>
+                    )}
+
+                    {uploadedPhotoUrl && !isUploadingPhoto && (
+                      <div className="absolute top-2 right-2 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-lg shadow-black/50">
+                        <Check className="w-3.5 h-3.5" /> Kanıt Hazır
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <label
+                      htmlFor="camera-proof-input"
+                      className="text-blue-400 hover:text-blue-300 font-semibold cursor-pointer underline flex items-center gap-1"
+                    >
+                      <Camera className="w-3.5 h-3.5" /> Farklı Fotoğraf Çek
+                    </label>
+
+                    {uploadedPhotoUrl && (
+                      <span className="text-emerald-400 font-medium flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> URL Doğrulandı
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-800">
+              <button
+                type="button"
+                onClick={closeCompleteModal}
+                disabled={isSubmittingComplete}
+                className="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-slate-300 text-xs font-semibold transition"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={handleFinishTask}
+                disabled={!uploadedPhotoUrl || isUploadingPhoto || isSubmittingComplete}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/20 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                title={!uploadedPhotoUrl ? "Fotoğraf yüklenmeden görev bitirilemez" : "Görevi Bitir"}
+              >
+                {isSubmittingComplete ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                <span>Görevi Bitir</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ADIM 3: REDDETME MODALİ (GEREKÇE BİLDİRİMİ)             */}
+      {/* ======================================================== */}
+      {rejectModalTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                  <AlertOctagon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Görevi İade Et / Reddet</h3>
+                  <p className="text-xs text-slate-400 truncate max-w-[260px] sm:max-w-[340px]">
+                    {rejectModalTask.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeRejectModal}
+                disabled={isSubmittingReject}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-gray-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Notice */}
+            <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3.5 text-xs text-rose-300">
+              Bu görevi sahada tamamlayamıyorsanız lütfen nedenini detaylıca belirtin. Gerekçe şantiye şefine anlık olarak iletilecektir.
+            </div>
+
+            {/* Mandatory Textarea */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-2">
+                İade / Red Gerekçesi <span className="text-rose-400">* (Zorunlu)</span>
+              </label>
+              <textarea
+                rows={4}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Lütfen bu görevi neden tamamlayamadığınızı belirtin (Örn: Malzeme eksik, vinç arızalı)..."
+                disabled={isSubmittingReject}
+                className="w-full bg-slate-950 border border-gray-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 resize-none leading-relaxed"
+              />
+              <div className="text-[11px] text-slate-500 mt-1.5 flex justify-between">
+                <span>* Gerekçe belirtilmeden görev reddedilemez.</span>
+                <span>{rejectionReason.trim().length} karakter</span>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-800">
+              <button
+                type="button"
+                onClick={closeRejectModal}
+                disabled={isSubmittingReject}
+                className="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-slate-300 text-xs font-semibold transition"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={handleRejectTask}
+                disabled={!rejectionReason.trim() || isSubmittingReject}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-bold transition shadow-lg shadow-rose-600/20 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                title={!rejectionReason.trim() ? "Lütfen gerekçe metni girin" : "Görevi Reddet"}
+              >
+                {isSubmittingReject ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Ban className="w-4 h-4" />
+                )}
+                <span>Reddet</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

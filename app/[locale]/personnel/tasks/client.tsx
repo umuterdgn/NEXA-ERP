@@ -10,7 +10,7 @@ import { useState } from "react"
 import { ClipboardList, Building2, AlertCircle, Clock, CheckCircle, FileText } from "lucide-react"
 import { toast } from "react-hot-toast"
 
-type TaskStatus = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE"
+type TaskStatus = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE" | "COMPLETED" | "REJECTED"
 type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
 
 interface WorkOrder {
@@ -35,14 +35,18 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   TODO: "Yapılacak",
   IN_PROGRESS: "Devam Ediyor",
   REVIEW: "Kontrol Bekliyor",
-  DONE: "Tamamlandı"
+  DONE: "Tamamlandı",
+  COMPLETED: "Tamamlandı",
+  REJECTED: "Reddedildi"
 }
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
   TODO: "bg-slate-500/20 text-slate-400 border-slate-500/50",
   IN_PROGRESS: "bg-blue-500/20 text-blue-400 border-blue-500/50",
   REVIEW: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
-  DONE: "bg-green-500/20 text-green-400 border-green-500/50"
+  DONE: "bg-green-500/20 text-green-400 border-green-500/50",
+  COMPLETED: "bg-green-500/20 text-green-400 border-green-500/50",
+  REJECTED: "bg-red-500/20 text-red-400 border-red-500/50"
 }
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
