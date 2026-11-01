@@ -48,19 +48,11 @@ export default function PersonnelSidebar({
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const pathname = usePathname()
   const sessionContext = useSession()
   const session = sessionContext?.data
   const status = sessionContext?.status
   const { isInstallable, promptInstall } = usePwaInstall()
-
-  const toggleGroup = (groupId: string) => {
-    setOpenGroups((prev) => ({
-      ...prev,
-      [groupId]: !prev[groupId],
-    }))
-  }
 
   const userRole = ((session?.user?.role as string) || "").toUpperCase()
   // Roles that have access to engineering & field supervision tools
@@ -238,11 +230,8 @@ export default function PersonnelSidebar({
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-1">
+          <nav className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-1">
             {navGroups.map((group) => {
-              const isGroupOpen = Boolean(openGroups[group.id])
-              const hasActiveItem = group.items.some((item) => pathname === item.href)
-
               if (isCollapsed) {
                 // Collapsed sidebar (Desktop only): icon-only mode with tooltips
                 return (
@@ -275,51 +264,23 @@ export default function PersonnelSidebar({
                 )
               }
 
-              // Normal / Mobile sidebar: Collapsible accordion category
+              // Normal / Mobile sidebar: Grouped static lists
               return (
-                <div
-                  key={group.id}
-                  className="rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 overflow-hidden transition-all"
-                >
-                  {/* Category Header Button */}
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(group.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold transition-all select-none ${
-                      isGroupOpen
-                        ? "bg-slate-100 dark:bg-slate-800/70 text-slate-900 dark:text-white"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-200"
-                    }`}
-                    aria-expanded={isGroupOpen}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm shrink-0">{group.emoji}</span>
-                      <span className="truncate">{group.title}</span>
-                      {hasActiveItem && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 animate-pulse" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                        {group.items.length}
-                      </span>
-                      <ChevronDown
-                        className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                          isGroupOpen ? "rotate-0 text-slate-600 dark:text-slate-200" : "-rotate-90"
-                        }`}
-                      />
-                    </div>
-                  </button>
+                <div key={group.id}>
+                  {/* Kategori Başlığı: Sadece görsel ayırıcı etiket */}
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6 px-3 flex items-center gap-1.5 select-none">
+                    <span>{group.emoji}</span>
+                    <span>{group.title}</span>
+                  </div>
 
-                  {/* Accordion Body */}
-                  {isGroupOpen && (
-                    <div className="space-y-1 p-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/60 animate-in fade-in duration-150">
-                      {group.items.map((item) => {
-                        const isActive = pathname === item.href
-                        const Icon = item.icon
-                        return (
+                  {/* Doğrudan başlığın altında her zaman görünür ul listesi */}
+                  <ul className="space-y-1">
+                    {group.items.map((item) => {
+                      const isActive = pathname === item.href
+                      const Icon = item.icon
+                      return (
+                        <li key={item.href}>
                           <Link
-                            key={item.href}
                             href={item.href}
                             onClick={() => setIsOpen(false)}
                             className={`flex min-h-[40px] items-center gap-3 rounded-lg px-3 text-xs font-medium transition-colors ${
@@ -328,13 +289,17 @@ export default function PersonnelSidebar({
                                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                             }`}
                           >
-                            <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-400 dark:text-slate-400"}`} />
+                            <Icon
+                              className={`h-4 w-4 shrink-0 ${
+                                isActive ? "text-white" : "text-slate-400 dark:text-slate-400"
+                              }`}
+                            />
                             <span className="truncate">{item.label}</span>
                           </Link>
-                        )
-                      })}
-                    </div>
-                  )}
+                        </li>
+                      )
+                    })}
+                  </ul>
                 </div>
               )
             })}
