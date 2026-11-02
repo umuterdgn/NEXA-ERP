@@ -524,3 +524,79 @@ async function recalculateProjectWeightedProgress(projectId: string) {
     console.error("recalculateProjectWeightedProgress hatası:", err)
   }
 }
+
+/**
+ * 7. createBoQAction - Yeni Keşif/Metraj Kalemi Ekleme (BoQ Modal Formu)
+ */
+export interface CreateBoQActionInput {
+  pozNo: string
+  description: string
+  unit: string
+  contractQuantity: number | string
+  unitPrice: number | string
+  projectId?: string
+}
+
+export async function createBoQAction(data: CreateBoQActionInput) {
+  try {
+    const unitPrice =
+      typeof data.unitPrice === "string"
+        ? parseFloat(data.unitPrice) || 0
+        : Number(data.unitPrice) || 0
+    const contractQuantity =
+      typeof data.contractQuantity === "string"
+        ? parseFloat(data.contractQuantity) || 0
+        : Number(data.contractQuantity) || 0
+    const totalAmount = Number((unitPrice * contractQuantity).toFixed(2))
+
+    // 1. BoQItem tablosuna kayıt
+    const boqItem = await prisma.boQItem.create({
+      data: {
+        itemCode: data.pozNo?.trim() || `POZ-${Date.now().toString().slice(-4)}`,
+        description: data.description?.trim() || "Yeni Keşif Kalemi",
+        unit: data.unit?.trim() || "m²",
+        unitPrice,
+        contractQuantity,
+        completedQuantity: 0,
+        totalAmount,
+        projectId: data.projectId || null,
+      },
+    })
+
+    // 2. Eğer projectId sağlanmışsa ilişkili boqItem tablosunu da senkronize et
+    if (data.projectId) {
+      try {
+        await prisma.boqItem.create({
+          data: {
+            projectId: data.projectId,
+            pozNo: data.pozNo?.trim() || boqItem.itemCode,
+            description: data.description?.trim() || boqItem.description,
+            unit: data.unit?.trim() || boqItem.unit,
+            plannedQuantity: contractQuantity,
+            unitPrice,
+            totalPrice: totalAmount,
+            actualQuantity: 0,
+          },
+        })
+        await recalculateProjectWeightedProgress(data.projectId)
+      } catch (syncErr) {
+        console.warn("boqItem sync error (optional):", syncErr)
+      }
+    }
+
+    revalidatePath("/admin/boq")
+    revalidatePath("/admin/projects/boq")
+    if (data.projectId) {
+      revalidatePath(`/admin/projects/${data.projectId}/boq`)
+    }
+
+    return { success: true, data: boqItem }
+  } catch (error: any) {
+    console.error("createBoQAction hatası:", error)
+    return {
+      success: false,
+      error: error?.message || "Keşif kalemi eklenirken bir hata oluştu",
+    }
+  }
+}
+
