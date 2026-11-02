@@ -1,13 +1,19 @@
 {
   "expo": {
-    "name": "nexa-mobile",
-    "slug": "nexa-mobile",
+    "name": "Nexa ERP",
+    "slug": "nexa-erp-mobile",
     "scheme": "nexa-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#090d16"
+    },
     "ios": {
+      "bundleIdentifier": "com.nexa.erp",
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Nexa ERP malzeme barkod/QR tarama ve şantiye fotoğraf kanıtı için kamera izni gereklidir.",
@@ -20,6 +26,7 @@
       }
     },
     "android": {
+      "package": "com.nexa.erp",
       "adaptiveIcon": {
         "backgroundColor": "#090d16",
         "foregroundImage": "./assets/android-icon-foreground.png",
