@@ -626,6 +626,23 @@
     }
     animate();
 
+    // URL parametreleri ile çevrimdışı model kontrolü
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const modelUrlParam = urlParams.get('modelUrl');
+      const isOfflineParam = urlParams.get('offline') === 'true';
+
+      if (isOfflineParam || modelUrlParam) {
+        const titleSpan = document.querySelector('.project-title');
+        if (titleSpan) {
+          titleSpan.innerHTML = 'Vadi Evleri | <span style="color: #10B981; font-weight: 800;">🟢 Çevrimdışı (Yerel IFC)</span>';
+        }
+        console.log('[BIM Viewer] Çevrimdışı yerel model yüklendi:', modelUrlParam || 'Yerel Hafıza');
+      }
+    } catch (e) {
+      // url parse error fallback
+    }
+
     // Mobil uygulamaya hazır olduğunu bildir
     if (window.ReactNativeWebView) {
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'BIM_VIEWER_READY' }));

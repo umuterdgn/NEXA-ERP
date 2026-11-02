@@ -22,6 +22,7 @@ import {
   ActivityIndicator,
   Platform,
   Dimensions,
+  Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,6 +31,8 @@ import { CameraView, useCameraPermissions, CameraType } from "expo-camera";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import MapView, { Marker, Circle, Callout, PROVIDER_DEFAULT } from "react-native-maps";
 import { useAuth } from "../../src/hooks/useAuth";
+import { useNetworkSync } from "../../src/hooks/useNetworkSync";
+import { useOfflineBIM } from "../../src/hooks/useOfflineBIM";
 import { api, API_BASE_URL } from "../../src/lib/api";
 import { locationSocket } from "../../src/services/LocationSocket";
 
@@ -83,6 +86,30 @@ export default function EngineeringScreen() {
   const webViewRef = useRef<any>(null);
   const [isWebViewLoading, setIsWebViewLoading] = useState<boolean>(true);
   const [selectedBimElement, setSelectedBimElement] = useState<any | null>(null);
+
+  // ADIM 1 & 2: Çevrimdışı BIM & Ağ Durumu
+  const { isConnected } = useNetworkSync();
+  const {
+    isDownloaded,
+    isDownloading,
+    downloadProgress,
+    localModelUri,
+    fileSizeMB,
+    downloadModel,
+    deleteLocalModel,
+  } = useOfflineBIM();
+
+  // ADIM 2: Dinamik WebView URL'si
+  // Eğer cihazda internet yoksa ve model önceden indirilmişse, yerel URI'yi (file://...) parametre olarak bas
+  const dynamicBimViewerUrl = React.useMemo(() => {
+    if (!isConnected && isDownloaded && localModelUri) {
+      return `${BIM_VIEWER_URL}?modelUrl=${encodeURIComponent(localModelUri)}&offline=true`;
+    }
+    if (isDownloaded && localModelUri) {
+      return `${BIM_VIEWER_URL}?modelUrl=${encodeURIComponent(localModelUri)}&offline=false`;
+    }
+    return BIM_VIEWER_URL;
+  }, [isConnected, isDownloaded, localModelUri]);
 
   // 3. Canlı Saha Radarı (Harita) Durumu
   const [isRadarModalOpen, setIsRadarModalOpen] = useState<boolean>(false);
@@ -358,13 +385,17 @@ export default function EngineeringScreen() {
       <View style={[StyleSheet.absoluteFill, styles.webViewContainer]}>
         <WebViewComponent
           ref={webViewRef}
-          source={{ uri: BIM_VIEWER_URL }}
+          source={{ uri: dynamicBimViewerUrl }}
           style={styles.transparentWebView}
           containerStyle={styles.transparentWebView}
           opaque={false}
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
+          allowFileAccess={true}
+          allowFileAccessFromFileURLs={true}
+          allowUniversalAccessFromFileURLs={true}
+          originWhitelist={["*"]}
           scrollEnabled={false}
           bounces={false}
           onMessage={handleWebViewMessage}
@@ -405,6 +436,73 @@ export default function EngineeringScreen() {
             <Text style={styles.openMapButtonIcon}>🗺️</Text>
             <Text style={styles.openMapButtonText}>Canlı Haritayı Aç</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* ADIM 2: Çevrimdışı BIM Modeli İndirme & Ağ Durumu Çubuğu */}
+        <View style={styles.offlineStatusBarRow}>
+          <TouchableOpacity
+            style={[
+              styles.downloadOfflineBtn,
+              isDownloaded && styles.downloadOfflineBtnDone,
+              isDownloading && styles.downloadOfflineBtnLoading,
+              !isConnected && styles.downloadOfflineBtnOffline,
+            ]}
+            activeOpacity={0.85}
+            disabled={isDownloading}
+            onPress={() => {
+              if (isDownloaded) {
+                Alert.alert(
+                  "Çevrimdışı BIM Modeli",
+                  `Model cihaz hafızasında kayıtlı (${fileSizeMB || 3.5} MB).\n\nTekrar indirmek veya silmek ister misiniz?`,
+                  [
+                    { text: "Kapat", style: "cancel" },
+                    {
+                      text: "Modeli Sil",
+                      style: "destructive",
+                      onPress: () => deleteLocalModel(),
+                    },
+                    {
+                      text: "Tekrar İndir",
+                      onPress: () => downloadModel(),
+                    },
+                  ]
+                );
+              } else {
+                downloadModel();
+              }
+            }}
+          >
+            {isDownloading ? (
+              <View style={styles.downloadProgressContent}>
+                <ActivityIndicator size="small" color="#38BDF8" style={{ marginRight: 8 }} />
+                <Text style={styles.downloadProgressText}>
+                  ☁️ İndiriliyor... %{Math.round(downloadProgress * 100)}
+                </Text>
+              </View>
+            ) : isDownloaded ? (
+              <View style={styles.downloadDoneContent}>
+                <Feather name="check-circle" size={15} color="#10B981" style={{ marginRight: 6 }} />
+                <Text style={styles.downloadDoneText}>
+                  ✅ Model İndirildi ({fileSizeMB || 3.5} MB • Offline Hazır)
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.downloadDefaultContent}>
+                <Feather name="download-cloud" size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.downloadDefaultText}>
+                  ☁️ Modeli Cihaza İndir (Offline İçin)
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Ağ Durumu İndikatörü */}
+          {!isConnected && (
+            <View style={styles.networkOfflineBadge}>
+              <Feather name="wifi-off" size={12} color="#F59E0B" />
+              <Text style={styles.networkOfflineBadgeText}>İnternet Yok</Text>
+            </View>
+          )}
         </View>
 
         {/* Sağ Taraf Hızlı Kamera Kontrolleri */}
@@ -866,9 +964,87 @@ const styles = StyleSheet.create({
   floatingToolColumn: {
     position: "absolute",
     right: 16,
-    top: 75,
+    top: 105,
     flexDirection: "column",
     gap: 12,
+  },
+  offlineStatusBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    gap: 8,
+  },
+  downloadOfflineBtn: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.88)",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(56, 189, 248, 0.35)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  downloadOfflineBtnDone: {
+    borderColor: "rgba(16, 185, 129, 0.5)",
+    backgroundColor: "rgba(6, 78, 59, 0.65)",
+  },
+  downloadOfflineBtnLoading: {
+    borderColor: "#38BDF8",
+    backgroundColor: "rgba(12, 74, 110, 0.8)",
+  },
+  downloadOfflineBtnOffline: {
+    borderColor: "#F59E0B",
+  },
+  downloadProgressContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  downloadProgressText: {
+    color: "#38BDF8",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  downloadDoneContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  downloadDoneText: {
+    color: "#A7F3D0",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  downloadDefaultContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  downloadDefaultText: {
+    color: "#F1F5F9",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  networkOfflineBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(245, 158, 11, 0.2)",
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.4)",
+  },
+  networkOfflineBadgeText: {
+    color: "#FBBF24",
+    fontSize: 10,
+    fontWeight: "800",
   },
   circleIconButton: {
     width: 42,
