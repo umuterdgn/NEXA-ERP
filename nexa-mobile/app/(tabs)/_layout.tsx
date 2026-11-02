@@ -23,6 +23,11 @@ export default function TabLayout() {
     role === "SUBCONTRACTOR" ||
     role === "ADMIN";
 
+  const canAccessEngineering =
+    role === "ENGINEER" ||
+    role === "FOREMAN" ||
+    role === "ADMIN";
+
   return (
     <Tabs
       screenOptions={{
@@ -134,7 +139,19 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 9. Profil */}
+      {/* 9. BIM & AR Saha Mühendisliği (ENGINEER & FOREMAN) */}
+      <Tabs.Screen
+        name="engineering"
+        options={{
+          title: "BIM AR",
+          href: canAccessEngineering ? "/engineering" : null,
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="box" size={size || 22} color={color as string} />
+          ),
+        }}
+      />
+
+      {/* 10. Profil */}
       <Tabs.Screen
         name="profile"
         options={{
