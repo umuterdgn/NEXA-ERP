@@ -19,6 +19,10 @@ export default function TabLayout() {
     role === "INSPECTOR" ||
     role === "ADMIN";
 
+  const canAccessSubcontractor =
+    role === "SUBCONTRACTOR" ||
+    role === "ADMIN";
+
   return (
     <Tabs
       screenOptions={{
@@ -118,7 +122,19 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 8. Profil */}
+      {/* 8. Taşeron Portalı & Hakediş (SUBCONTRACTOR) */}
+      <Tabs.Screen
+        name="subcontractor"
+        options={{
+          title: "Taşeron",
+          href: canAccessSubcontractor ? "/subcontractor" : null,
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="layers" size={size || 22} color={color as string} />
+          ),
+        }}
+      />
+
+      {/* 9. Profil */}
       <Tabs.Screen
         name="profile"
         options={{
