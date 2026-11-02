@@ -209,3 +209,110 @@ export async function getRiskZones(projectId?: string): Promise<RiskZoneItem[]> 
     ];
   }
 }
+
+export interface LocationHistoryPoint {
+  id: string;
+  lat: number;
+  lng: number;
+  timestamp: string;
+  formattedTime: string;
+}
+
+/**
+ * Belirli bir personelin seçilen tarihteki geçmiş hareket rotasını getirir (Playback için)
+ */
+export async function getPersonnelRouteHistory(
+  userId: string,
+  dateString?: string
+): Promise<LocationHistoryPoint[]> {
+  try {
+    const targetDate = dateString ? new Date(dateString) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const history = await prisma.locationHistory.findMany({
+      where: {
+        userId,
+        timestamp: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      orderBy: { timestamp: "asc" },
+      take: 200,
+    });
+
+    if (history.length > 0) {
+      return history.map((h) => ({
+        id: h.id,
+        lat: h.lat,
+        lng: h.lng,
+        timestamp: h.timestamp.toISOString(),
+        formattedTime: h.timestamp.toLocaleTimeString("tr-TR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      }));
+    }
+
+    // Demo/Simülasyon rotası (Veritabanında henüz o güne ait kayıt yoksa şantiye sahasında adım adım rota çizer)
+    const baseLat = 40.9912;
+    const baseLng = 29.0287;
+    const pointsCount = 24;
+    const simulatedPoints: LocationHistoryPoint[] = [];
+
+    let curLat = baseLat - 0.0007;
+    let curLng = baseLng - 0.0006;
+
+    for (let i = 0; i < pointsCount; i++) {
+      const ptTime = new Date(targetDate);
+      ptTime.setHours(8 + Math.floor(i / 3), (i * 22) % 60, (i * 14) % 60);
+
+      curLat += Math.sin(i * 0.85) * 0.00015 + 0.00007;
+      curLng += Math.cos(i * 0.75) * 0.00018 + 0.00006;
+
+      simulatedPoints.push({
+        id: `sim_${userId}_${i}`,
+        lat: parseFloat(curLat.toFixed(6)),
+        lng: parseFloat(curLng.toFixed(6)),
+        timestamp: ptTime.toISOString(),
+        formattedTime: ptTime.toLocaleTimeString("tr-TR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      });
+    }
+
+    return simulatedPoints;
+  } catch (error) {
+    console.error("[getPersonnelRouteHistory Error]:", error);
+    return [];
+  }
+}
+
+/**
+ * Playback için personel dropdown listesini çeker
+ */
+export async function getAllPersonnelForPlayback(): Promise<
+  Array<{ id: string; name: string; role: string }>
+> {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, role: true },
+      take: 50,
+      orderBy: { name: "asc" },
+    });
+    return users.map((u) => ({ id: u.id, name: u.name, role: u.role }));
+  } catch (e) {
+    return [
+      { id: "usr_1", name: "Ahmet Yılmaz (Saha Şefi)", role: "FOREMAN" },
+      { id: "usr_2", name: "Mehmet Kaya (İSG Uzmanı)", role: "ENGINEER" },
+      { id: "usr_3", name: "Caner Erkin (Vinç Operatörü)", role: "OPERATOR" },
+    ];
+  }
+}

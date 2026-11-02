@@ -51,13 +51,19 @@ export default async function RiskMapPage() {
       {/* 1. SAYFA BAŞLIĞI VE ÖZET BİLGİ */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/30">
               İSG Canlı Güvenlik Radarı
             </span>
             <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Real-time GPS Aktif
+              Real-time Socket.io
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+              🚁 FPV Drone Ortofoto (22x Zoom)
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-300 border border-blue-500/20">
+              🎬 Geçmiş Rota Playback
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
