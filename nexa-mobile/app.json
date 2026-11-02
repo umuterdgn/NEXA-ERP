@@ -15,6 +15,7 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Nexa ERP şoför sevkiyat rotalarında arka planda canlı konum takibi için konum erişimi gereklidir.",
         "NSLocationAlwaysUsageDescription": "Nexa ERP şoför sevkiyat rotalarında arka planda canlı konum takibi için konum erişimi gereklidir.",
         "NFCReaderUsageDescription": "Nexa ERP akıllı puantaj, personel yaka kartı ve baret etiketi okutmak için NFC erişimi gereklidir.",
+        "NSFaceIDUsageDescription": "Nexa ERP hesabınıza hızlı ve güvenli biyometrik giriş yapmak için Face ID izni gereklidir.",
         "UIBackgroundModes": ["location"]
       }
     },
