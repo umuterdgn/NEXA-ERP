@@ -574,7 +574,7 @@ export async function createBoQAction(data: CreateBoQActionInput) {
         await prisma.boqItem.create({
           data: {
             projectId: data.projectId,
-            pozNo: data.pozNo?.trim() || boqItem.itemCode,
+            pozNo: data.pozNo?.trim() || boqItem.itemCode || "POZ-001",
             description: data.description?.trim() || boqItem.description,
             unit: data.unit?.trim() || boqItem.unit,
             plannedQuantity: contractQuantity,
@@ -604,4 +604,96 @@ export async function createBoQAction(data: CreateBoQActionInput) {
     }
   }
 }
+
+/**
+ * 8. importBoQFromIfcAction - IFC Modelinden Çıkarılan Metrajları Otonom Kaydetme
+ */
+export interface IfcImportItemPayload {
+  pozNo: string
+  description: string
+  unit: string
+  plannedQuantity: number
+  unitPrice: number
+  bimElementId?: string
+}
+
+export async function importBoQFromIfcAction(
+  items: IfcImportItemPayload[],
+  projectId?: string
+) {
+  try {
+    if (!items || items.length === 0) {
+      return { success: false, error: "Kaydedilecek metraj kalemi bulunamadı." }
+    }
+
+    const createdItems: any[] = []
+
+    for (const item of items) {
+      const plannedQuantity = Number(item.plannedQuantity) || 0
+      const unitPrice = Number(item.unitPrice) || 0
+      const totalPrice = Number((plannedQuantity * unitPrice).toFixed(2))
+
+      const boqItem = await prisma.boQItem.create({
+        data: {
+          pozNo: item.pozNo.trim(),
+          itemCode: item.pozNo.trim(),
+          description: item.description.trim(),
+          unit: item.unit.trim(),
+          plannedQuantity,
+          contractQuantity: plannedQuantity,
+          completedQuantity: 0,
+          unitPrice,
+          totalPrice,
+          totalAmount: totalPrice,
+          bimElementId: item.bimElementId?.trim() || null,
+          projectId: projectId || null,
+        },
+      })
+      createdItems.push(boqItem)
+
+      if (projectId) {
+        try {
+          await prisma.boqItem.create({
+            data: {
+              projectId,
+              pozNo: item.pozNo.trim(),
+              description: item.description.trim(),
+              unit: item.unit.trim(),
+              plannedQuantity,
+              unitPrice,
+              totalPrice,
+              actualQuantity: 0,
+            },
+          })
+        } catch (syncErr) {
+          console.warn("boqItem sync warning:", syncErr)
+        }
+      }
+    }
+
+    if (projectId) {
+      await recalculateProjectWeightedProgress(projectId).catch(() => {})
+    }
+
+    revalidatePath("/admin/boq")
+    revalidatePath("/admin/projects/boq")
+    if (projectId) {
+      revalidatePath(`/admin/projects/${projectId}/boq`)
+    }
+
+    return {
+      success: true,
+      count: createdItems.length,
+      items: createdItems,
+      message: `${createdItems.length} adet BoQ keşif kalemi IFC modelinden başarıyla çıkarıldı ve kaydedildi!`,
+    }
+  } catch (error: any) {
+    console.error("importBoQFromIfcAction hatası:", error)
+    return {
+      success: false,
+      error: error?.message || "IFC metraj kalemleri kaydedilirken hata oluştu.",
+    }
+  }
+}
+
 
