@@ -100,6 +100,8 @@ export default function TenantLoginClient({ company }: TenantLoginClientProps) {
             targetPath = "/subcontractor";
           } else if (role === "SUPPLIER") {
             targetPath = "/supplier";
+          } else if (role === "INVESTOR" || role === "CLIENT") {
+            targetPath = "/investor/dashboard";
           } else if (role === "HR_MANAGER") {
             targetPath = "/admin/personel";
           } else if (role === "FINANCE_MANAGER") {

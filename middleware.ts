@@ -38,6 +38,26 @@ const withAuth = (
       return NextResponse.redirect(signInUrl);
     }
 
+    // ADIM 1: INVESTOR / CLIENT Rolü Yönlendirmesi
+    const userRole = (req.auth?.user?.role as string)?.toUpperCase();
+    if (userRole === "INVESTOR" || userRole === "CLIENT") {
+      const pathname = req.nextUrl.pathname;
+      const isInvestorPath = pathname.includes('/investor');
+      const isIgnored =
+        pathname.startsWith('/api') ||
+        pathname.includes('/login') ||
+        pathname.includes('/register') ||
+        pathname.includes('/unauthorized');
+
+      if (!isInvestorPath && !isIgnored) {
+        const investorUrl = req.nextUrl.clone();
+        const localeMatch = pathname.match(new RegExp(`^/(${locales.join('|')})(/|$)`, 'i'));
+        const localePrefix = localeMatch ? `/${localeMatch[1]}` : '';
+        investorUrl.pathname = `${localePrefix}/investor/dashboard`;
+        return NextResponse.redirect(investorUrl);
+      }
+    }
+
     return onSuccess(req);
   });
 };

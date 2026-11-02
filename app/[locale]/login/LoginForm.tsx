@@ -132,6 +132,8 @@ export default function LoginForm({ tenant }: LoginFormProps) {
             role === "STAFF"
           ) {
             targetPath = "/personnel/dashboard";
+          } else if (role === "INVESTOR" || role === "CLIENT") {
+            targetPath = "/investor/dashboard";
           } else if (role === "HR_MANAGER") {
             targetPath = "/admin/personel";
           } else if (role === "FINANCE_MANAGER") {
