@@ -70,6 +70,12 @@ Nexa ERP kurumsal kaynak yönetimi, şantiye jurnali ve lojistik operasyonları 
   - **Ceza Tutarı:** Taşeron sözleşmesine yansıtılacak idari ceza miktarı
 - **Çevrimdışı (Offline) Destek:** İnternet yoksa `OfflineQueue` servisiyle cihazda kuyruğa alma, bağlantı sağlandığında backend `/api/safety/incidents` rotasına otomatik senkronizasyon
 
+### 10. Check-in Bağlantılı Sürekli Arka Plan GPS Takibi (`src/tasks/backgroundLocationTask.ts`)
+- Personel şantiyeye NFC veya QR ile giriş (Check-in) yaptığı anda başlatılan `BACKGROUND_LOCATION_TASK` görevi
+- Pili korumak için dengeli hassasiyet: `accuracy: Balanced`, `distanceInterval: 10m`, `deferredUpdatesInterval: 15000ms`
+- Uygulama kapalıyken bile şantiye sınırları içindeki acil durum ve İSG güvenliği için koordinatları `/api/location/live-update` rotasına aktarma
+- Personel çıkış (Check-out) yaptığında `Location.stopLocationUpdatesAsync('BACKGROUND_LOCATION_TASK')` ile takibi tamamen sonlandırma
+
 ---
 
 ## 📁 Dizin Yapısı

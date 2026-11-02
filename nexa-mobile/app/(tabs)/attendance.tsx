@@ -22,6 +22,11 @@ import { useNetworkSync } from "../../src/hooks/useNetworkSync";
 import { QRScanner } from "../../src/components/scanner";
 import { OfflineQueue } from "../../src/services/OfflineQueue";
 import { api } from "../../src/lib/api";
+import {
+  BACKGROUND_LOCATION_TASK,
+  startAttendanceLocationTracking,
+  stopAttendanceLocationTracking,
+} from "../../src/tasks/backgroundLocationTask";
 
 /**
  * Şantiye Geofence (Coğrafi Sınır) Yapılandırması
@@ -72,6 +77,7 @@ export default function AttendanceScreen() {
   const [currentDistance, setCurrentDistance] = useState<number | null>(null);
   const [isInGeofence, setIsInGeofence] = useState<boolean | null>(null);
   const [isDemoGeofenceOverride, setIsDemoGeofenceOverride] = useState(false);
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
 
   // Modaller
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -114,6 +120,16 @@ export default function AttendanceScreen() {
 
     // İlk açılışta GPS konumunu ve şantiye mesafesini doğrula
     verifyGeofenceLocation();
+
+    // Arka plan GPS görevinin çalışıp çalışmadığını kontrol et
+    Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK)
+      .then((active) => {
+        if (active) {
+          setIsCheckedIn(true);
+          setIsTrackingActive(true);
+        }
+      })
+      .catch((e) => console.log("[Attendance] Görev durumu okunamadı:", e));
   }, []);
 
   // 1. GPS Konum Doğrulaması (Geofencing)
@@ -279,14 +295,90 @@ export default function AttendanceScreen() {
       setIsCheckedIn(true);
       setCheckInTime(currentTimeStr);
 
+      // ADIM 2: Kullanıcı NFC/QR ile başarıyla giriş yaptığında:
+      // Location.startLocationUpdatesAsync('BACKGROUND_LOCATION_TASK', { accuracy: Location.Accuracy.Balanced, distanceInterval: 10, deferredUpdatesInterval: 15000 })
+      try {
+        await Location.requestForegroundPermissionsAsync();
+        await Location.requestBackgroundPermissionsAsync();
+
+        const isStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+        if (!isStarted) {
+          await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
+            accuracy: Location.Accuracy.Balanced,
+            distanceInterval: 10, // 10 metrede bir
+            deferredUpdatesInterval: 15000, // 15 saniyede bir
+            showsBackgroundLocationIndicator: true,
+            pausesUpdatesAutomatically: false,
+            foregroundService: {
+              notificationTitle: "Nexa ERP - Şantiye Güvenlik Takibi",
+              notificationBody: "Şantiye mesai ve İSG güvenliğiniz için arka planda canlı konumunuz aktarılıyor.",
+              notificationColor: "#2563EB",
+            },
+          });
+          console.log("[Attendance] BACKGROUND_LOCATION_TASK başarıyla başlatıldı (10m / 15s).");
+        }
+        setIsTrackingActive(true);
+        await startAttendanceLocationTracking({
+          userId: user?.name ? `usr_${user.name.toLowerCase().replace(/\s+/g, "_")}` : "usr_personel_01",
+          userName: user?.name || "Personel",
+          personelId: identifier,
+          projectId: "PRJ-2026-A",
+          projectName: ACTIVE_SITE_GEOFENCE.name,
+        });
+      } catch (locErr: any) {
+        console.warn("[Attendance] Arka plan konum görevi başlatılamadı:", locErr);
+      }
+
       Alert.alert(
         "🎉 Puantaj Başlatıldı",
-        `Tebrikler ${user?.name || "Personel"}, şantiye turnike girişi onaylandı!\n\nKart UID: ${identifier}\nSaat: ${currentTimeStr}\nŞantiye: ${ACTIVE_SITE_GEOFENCE.name}`,
+        `Tebrikler ${user?.name || "Personel"}, şantiye turnike girişi onaylandı!\n\n🛰️ İSG Canlı GPS Takibi: Aktif (10m / 15s)\nKart UID: ${identifier}\nSaat: ${currentTimeStr}\nŞantiye: ${ACTIVE_SITE_GEOFENCE.name}`,
         [{ text: "Harika" }]
       );
     } catch (err: any) {
       Alert.alert("Puantaj Hatası", err?.message || "Giriş işlemi tamamlanamadı.");
     }
+  };
+
+  // ADIM 2: Çıkış (Check-out) Tetikleyicisi
+  // Location.stopLocationUpdatesAsync('BACKGROUND_LOCATION_TASK') ile takibi tamamen durdur.
+  const handleCheckOutPress = async () => {
+    Alert.alert(
+      "🛑 Şantiyeden Çıkış Yap",
+      "Mesaiyi sonlandırmak ve arka plan GPS konum takibini tamamen durdurmak istiyor musunuz?",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Çıkış Yap ve Takibi Kapat",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const isStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+              if (isStarted) {
+                await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+                console.log("[Attendance] BACKGROUND_LOCATION_TASK durduruldu.");
+              }
+              await stopAttendanceLocationTracking();
+
+              setIsCheckedIn(false);
+              setIsTrackingActive(false);
+              setCheckInTime(null);
+
+              if (Platform.OS !== "web") {
+                Vibration.vibrate(100);
+              }
+
+              setStatusMessage(
+                "🛑 Şantiye çıkışı yapıldı. Arka plan GPS takibi tamamen durduruldu."
+              );
+              setTimeout(() => setStatusMessage(null), 5000);
+            } catch (err: any) {
+              console.error("[Attendance] Çıkış durdurma hatası:", err);
+              Alert.alert("Hata", "Çıkış yapılırken konum takibi durdurulamadı: " + err.message);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -432,24 +524,56 @@ export default function AttendanceScreen() {
 
           <Text className="text-gray-400 text-xs text-center mt-6 px-6">
             {isCheckedIn
-              ? "Bugünkü şantiye mesainiz başarıyla kayıt altına alındı."
+              ? "Bugünkü şantiye mesainiz kayıt altında. Arka plan GPS görevi aktiftir."
               : "Butona basınız, GPS doğrulandıktan sonra baretinizi veya personel kartınızı yaklaştırınız."}
           </Text>
         </View>
 
-        {/* Alternatif: QR Yaka Kartı Butonu */}
-        <View className="mt-2 mb-6">
-          <TouchableOpacity
-            onPress={() => setShowQRScanner(true)}
-            activeOpacity={0.8}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gray-900 border border-gray-800 flex-row items-center justify-center gap-2 shadow-sm"
-          >
-            <Ionicons name="qr-code-outline" size={18} color="#60A5FA" />
-            <Text className="text-blue-400 text-xs font-bold">
-              📷 QR Yaka Kartı ile Giriş Yap (Kamera)
+        {/* Canlı İSG Arka Plan Takip Durumu & Çıkış Yap Butonu */}
+        {isCheckedIn ? (
+          <View className="mb-6 p-4 rounded-3xl bg-blue-950/70 border border-blue-500/40 shadow-lg">
+            <View className="flex-row items-center justify-between mb-2">
+              <View className="flex-row items-center gap-2">
+                <View className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                <Text className="text-white text-xs font-bold uppercase tracking-wider">
+                  Canlı İSG Arka Plan Takibi Aktif
+                </Text>
+              </View>
+              <View className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30">
+                <Text className="text-[10px] text-blue-300 font-bold">10m / 15s</Text>
+              </View>
+            </View>
+            <Text className="text-blue-200 text-xs leading-4 mb-3">
+              Uygulama kapalı olsa dahi şantiye alanındaki iş güvenliğiniz için GPS koordinatları merkeze (/api/location/live-update) aktarılıyor.
             </Text>
-          </TouchableOpacity>
-        </View>
+
+            {/* ADIM 2: Çıkış (Check-out) Butonu */}
+            <TouchableOpacity
+              onPress={handleCheckOutPress}
+              activeOpacity={0.85}
+              className="w-full py-3.5 px-4 rounded-2xl bg-red-600 border border-red-500 flex-row items-center justify-center gap-2 shadow-md"
+            >
+              <Feather name="log-out" size={16} color="#FFFFFF" />
+              <Text className="text-white text-xs font-black tracking-wide">
+                🛑 Şantiyeden Çıkış Yap (Mesaiyi Bitir & Takibi Durdur)
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          /* Alternatif: QR Yaka Kartı Butonu */
+          <View className="mt-2 mb-6">
+            <TouchableOpacity
+              onPress={() => setShowQRScanner(true)}
+              activeOpacity={0.8}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gray-900 border border-gray-800 flex-row items-center justify-center gap-2 shadow-sm"
+            >
+              <Ionicons name="qr-code-outline" size={18} color="#60A5FA" />
+              <Text className="text-blue-400 text-xs font-bold">
+                📷 QR Yaka Kartı ile Giriş Yap (Kamera)
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Puantaj Özet Kartları */}
         <View className="bg-gray-900/90 rounded-3xl p-5 border border-gray-800">

@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Notifications from "expo-notifications";
 import "../src/tasks/locationTask";
+import "../src/tasks/backgroundLocationTask";
 
 /**
  * ADIM 3: Foreground (Ön Plan) Bildirim Yöneticisi
