@@ -11,7 +11,10 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Nexa ERP malzeme barkod/QR tarama ve şantiye fotoğraf kanıtı için kamera izni gereklidir.",
-        "NSLocationWhenInUseUsageDescription": "Nexa ERP şantiye jurnali ve hava durumu tespiti için konum erişimi gereklidir."
+        "NSLocationWhenInUseUsageDescription": "Nexa ERP şantiye jurnali ve hava durumu tespiti için konum erişimi gereklidir.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Nexa ERP şoför sevkiyat rotalarında arka planda canlı konum takibi için konum erişimi gereklidir.",
+        "NSLocationAlwaysUsageDescription": "Nexa ERP şoför sevkiyat rotalarında arka planda canlı konum takibi için konum erişimi gereklidir.",
+        "UIBackgroundModes": ["location"]
       }
     },
     "android": {
@@ -25,7 +28,10 @@
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "web": {
@@ -43,7 +49,10 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Nexa ERP şantiye jurnali ve hava durumu tespiti için konum erişimi gereklidir."
+          "locationWhenInUsePermission": "Nexa ERP şantiye jurnali ve hava durumu tespiti için konum erişimi gereklidir.",
+          "locationAlwaysAndWhenInUsePermission": "Nexa ERP şoför sevkiyat rotalarında arka planda canlı konum takibi için konum erişimi gereklidir.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ]
     ]

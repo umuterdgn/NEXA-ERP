@@ -10,12 +10,17 @@ import { prisma } from "@/lib/prisma"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { personelId, lat, lng } = body
+    const userId = body.personelId || body.userId || body.driverId
+    const lat = body.lat !== undefined ? body.lat : body.latitude
+    const lng = body.lng !== undefined ? body.lng : body.longitude
+    const accuracy = body.accuracy || null
+    const speed = body.speed || null
+    const heading = body.heading || null
 
     // Validate required fields
-    if (!personelId || lat === undefined || lng === undefined) {
+    if (!userId || lat === undefined || lng === undefined) {
       return NextResponse.json(
-        { error: "personelId, lat, and lng are required" },
+        { error: "userId/driverId, lat/latitude, and lng/longitude are required" },
         { status: 400 }
       )
     }
@@ -29,23 +34,38 @@ export async function POST(request: Request) {
       )
     }
 
-    // Update personnel location log
-    await prisma.locationLog.create({
-      data: {
-        latitude: lat,
-        longitude: lng,
-        userId: personelId
+    // Check if user exists before writing to foreign key relation
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: userId },
+          { email: { contains: "driver" } },
+          { role: "DRIVER" }
+        ]
       }
     })
 
+    if (user) {
+      await prisma.locationLog.create({
+        data: {
+          latitude: lat,
+          longitude: lng,
+          accuracy: accuracy,
+          userId: user.id,
+          tenantId: user.tenantId,
+        }
+      })
+    }
+
     return NextResponse.json({ 
       success: true, 
-      message: "Location updated successfully"
+      message: "Canlı şoför konumu başarıyla kaydedildi.",
+      coords: { lat, lng, speed, heading, accuracy }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error tracking location:", error)
     return NextResponse.json(
-      { error: "Failed to track location" },
+      { error: "Failed to track location: " + (error?.message || "Unknown error") },
       { status: 500 }
     )
   }

@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "../src/tasks/locationTask";
 
 /**
  * Nexa ERP Mobil - Kök Düzen (Root Layout)

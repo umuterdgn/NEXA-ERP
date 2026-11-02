@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,22 @@ import {
   ActivityIndicator,
   Platform,
   Vibration,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useAuth } from "../../src/hooks/useAuth";
 import { LogisticsScanner } from "../../src/components/scanner";
 import api from "../../src/lib/api";
+import {
+  startBackgroundLocationTracking,
+  stopBackgroundLocationTracking,
+  isLocationTrackingActive,
+  getActiveDeliveryTracking,
+  LOCATION_TRACKING_TASK_NAME,
+  DeliveryTrackingState,
+} from "../../src/tasks/locationTask";
 
 export interface ReceivedItem {
   id: string;
@@ -44,7 +54,7 @@ const RECENT_RECEIVALS: ReceivedItem[] = [
 ];
 
 /**
- * Nexa ERP Mobil - Malzeme Kabul Ekranı
+ * Nexa ERP Mobil - Malzeme Kabul & Şoför Canlı Sevkiyat Takip Ekranı
  * Sadece DRIVER ve WAREHOUSE (Lojistik) rollerine özel ekran. Yetkisiz ise 'return null'.
  */
 export default function LogisticsScreen() {
@@ -53,13 +63,37 @@ export default function LogisticsScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [receivals, setReceivals] = useState<ReceivedItem[]>(RECENT_RECEIVALS);
 
+  // Arka Plan Canlı GPS Takip Durumu
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
+  const [isTrackingLoading, setIsTrackingLoading] = useState(false);
+  const [trackingInfo, setTrackingInfo] =
+    useState<DeliveryTrackingState | null>(null);
+
   // Yeşil Toast Bildirimi State'i
   const [toast, setToast] = useState<{
     visible: boolean;
+    title?: string;
     code: string;
     material: string;
     quantity: string;
   } | null>(null);
+
+  // Başlangıçta arka plan takibinin açık olup olmadığını kontrol et
+  useEffect(() => {
+    (async () => {
+      try {
+        const active = await isLocationTrackingActive();
+        setIsTrackingActive(active);
+
+        const info = await getActiveDeliveryTracking();
+        if (info && info.isActive) {
+          setTrackingInfo(info);
+        }
+      } catch (err) {
+        console.warn("[Logistics] Takip durumu sorgulama hatası:", err);
+      }
+    })();
+  }, []);
 
   // ADIM 2: ROL BAZLI KORUMA
   // Sadece DRIVER, WAREHOUSE veya LOGISTICS rollerine izin ver. Değilse ekran boş dönsün (return null).
@@ -73,12 +107,104 @@ export default function LogisticsScreen() {
     return null;
   }
 
+  // ADIM 2: Arka Plan GPS Canlı Takip Başlat / Durdur Tetikleyicisi
+  const handleToggleTracking = async () => {
+    setIsTrackingLoading(true);
+
+    try {
+      if (!isTrackingActive) {
+        // --- SEVKİYATA BAŞLA (Arka Plan Görevini Başlat) ---
+        console.log(
+          "[Logistics] Location.startLocationUpdatesAsync arka plan takibi başlatılıyor..."
+        );
+
+        const result = await startBackgroundLocationTracking({
+          deliveryId: "DEL-2026-98421",
+          driverId: user?.id || "usr_driver_01",
+          driverName: user?.name || "Mehmet Demir",
+          waybillNo: "IRS-98421",
+        });
+
+        if (!result.success) {
+          Alert.alert("Konum İzni Gerekli", result.error);
+          setIsTrackingLoading(false);
+          return;
+        }
+
+        setIsTrackingActive(true);
+        setTrackingInfo({
+          isActive: true,
+          deliveryId: "DEL-2026-98421",
+          driverName: user?.name,
+          waybillNo: "IRS-98421",
+          startedAt: new Date().toLocaleTimeString("tr-TR"),
+        });
+
+        if (Platform.OS !== "web") {
+          Vibration.vibrate([0, 100, 100, 150]);
+        }
+
+        Alert.alert(
+          "🚚 Sevkiyat Başlatıldı",
+          "Canlı GPS takibi devrede. Telefon kilitli veya uygulama arka planda olsa bile koordinatlarınız Merkez'e iletilmeye devam edecektir.",
+          [{ text: "Tamam" }]
+        );
+      } else {
+        // --- TESLİMATI BİTİR (Arka Plan Görevini Durdur) ---
+        Alert.alert(
+          "🛑 Teslimatı Bitir",
+          "Rotayı tamamlayıp canlı konum paylaşımını kapatmak istiyor musunuz?",
+          [
+            {
+              text: "Vazgeç",
+              style: "cancel",
+              onPress: () => setIsTrackingLoading(false),
+            },
+            {
+              text: "Evet, Bitir",
+              style: "destructive",
+              onPress: async () => {
+                console.log(
+                  "[Logistics] Location.stopLocationUpdatesAsync arka plan takibi durduruluyor..."
+                );
+                await stopBackgroundLocationTracking();
+                setIsTrackingActive(false);
+                setTrackingInfo(null);
+                setIsTrackingLoading(false);
+
+                if (Platform.OS !== "web") {
+                  Vibration.vibrate(120);
+                }
+
+                Alert.alert(
+                  "Teslimat Tamamlandı",
+                  "Arka plan konum paylaşımı kapatıldı. İmalat ve şantiye depolarına teslimat kaydedilebilir."
+                );
+              },
+            },
+          ]
+        );
+        return;
+      }
+    } catch (err: any) {
+      console.error("[Logistics] Takip butonu hatası:", err);
+      Alert.alert(
+        "Hata",
+        "Takip işlemi gerçekleştirilemedi: " + (err?.message || "Bilinmeyen hata")
+      );
+    } finally {
+      setIsTrackingLoading(false);
+    }
+  };
+
   // QR / Barkod okunduğunda backend'e (/api/logistics/receive) gönder
   const handleCodeScanned = async (scannedCode: string, codeType?: string) => {
     setIsLoading(true);
 
     try {
-      console.log(`[Logistics] Backend'e gönderiliyor: /api/logistics/receive -> ${scannedCode}`);
+      console.log(
+        `[Logistics] Backend'e gönderiliyor: /api/logistics/receive -> ${scannedCode}`
+      );
 
       // Axios backend API isteği
       const response = await api.post("/logistics/receive", {
@@ -107,6 +233,7 @@ export default function LogisticsScreen() {
       // Yeşil "Stoka Eklendi" Toast mesajı
       setToast({
         visible: true,
+        title: "Stoka Eklendi",
         code: scannedCode,
         material: materialName,
         quantity,
@@ -135,6 +262,7 @@ export default function LogisticsScreen() {
 
       setToast({
         visible: true,
+        title: "Stoka Eklendi (Yerel)",
         code: scannedCode,
         material: fallbackItem.materialName,
         quantity: fallbackItem.quantity,
@@ -154,10 +282,10 @@ export default function LogisticsScreen() {
       <View className="px-6 pt-4 pb-3 bg-gray-900/90 border-b border-gray-800 flex-row items-center justify-between">
         <View>
           <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-            Lojistik & Depo Girişi
+            Lojistik & Sevkiyat Yönetimi
           </Text>
           <Text className="text-2xl font-black text-white tracking-tight">
-            Malzeme Kabul
+            Malzeme & Sevkiyat
           </Text>
         </View>
 
@@ -183,7 +311,7 @@ export default function LogisticsScreen() {
                   <Feather name="check" size={14} color="#090d16" />
                 </View>
                 <Text className="text-emerald-400 text-sm font-black tracking-wide">
-                  Stoka Eklendi
+                  {toast.title || "Stoka Eklendi"}
                 </Text>
               </View>
 
@@ -200,6 +328,107 @@ export default function LogisticsScreen() {
             </Text>
           </View>
         )}
+
+        {/* ============================================================ */}
+        {/* ADIM 2: CANLI SEVKİYAT TAKİP BUTONU (Şoför Özel Ekranı)       */}
+        {/* ============================================================ */}
+        <View className="mb-6 rounded-3xl p-5 bg-gray-900 border border-gray-800 shadow-xl overflow-hidden relative">
+          {/* Durum Rozeti */}
+          <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center gap-2">
+              <View
+                className={`w-3 h-3 rounded-full ${
+                  isTrackingActive
+                    ? "bg-rose-500 shadow-md shadow-rose-500"
+                    : "bg-emerald-400"
+                }`}
+              />
+              <Text className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+                {isTrackingActive ? "CANLI GPS DEVREDE" : "SEVKİYAT DURUMU"}
+              </Text>
+            </View>
+
+            <View
+              className={`px-2.5 py-0.5 rounded-full border ${
+                isTrackingActive
+                  ? "bg-rose-500/10 border-rose-500/40"
+                  : "bg-gray-800 border-gray-700"
+              }`}
+            >
+              <Text
+                className={`text-[10px] font-bold ${
+                  isTrackingActive ? "text-rose-400" : "text-gray-400"
+                }`}
+              >
+                {isTrackingActive ? "YOLDA / KİLİTLİ TAKİP" : "BEKLEMEDE"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Sevkiyat Detay Kutusu */}
+          <View className="p-3.5 bg-gray-950/80 rounded-2xl border border-gray-800 mb-4 gap-1.5">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-gray-400 text-xs">Aktif Rota:</Text>
+              <Text className="text-white text-xs font-bold">
+                Dilovası Fabrika ➔ Kadıköy Merkez
+              </Text>
+            </View>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-gray-400 text-xs">İrsaliye No:</Text>
+              <Text className="text-blue-400 text-xs font-mono font-semibold">
+                #IRS-98421 (32 Ton Demir)
+              </Text>
+            </View>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-gray-400 text-xs">Arka Plan Takibi:</Text>
+              <Text
+                className={`text-xs font-semibold ${
+                  isTrackingActive ? "text-emerald-400" : "text-gray-500"
+                }`}
+              >
+                {isTrackingActive
+                  ? "Telefon Kilitli Mod Aktif"
+                  : "Henüz Başlatılmadı"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Sevkiyata Başla / Teslimatı Bitir Dinamik Butonu */}
+          <TouchableOpacity
+            onPress={handleToggleTracking}
+            disabled={isTrackingLoading}
+            activeOpacity={0.85}
+            className={`w-full py-4 rounded-2xl flex-row items-center justify-center gap-2.5 shadow-lg ${
+              isTrackingActive
+                ? "bg-rose-600 shadow-rose-600/30 border border-rose-400/30"
+                : "bg-emerald-600 shadow-emerald-600/30 border border-emerald-400/30"
+            }`}
+          >
+            {isTrackingLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : isTrackingActive ? (
+              <>
+                <Feather name="stop-circle" size={20} color="#FFFFFF" />
+                <Text className="text-white text-base font-black tracking-tight">
+                  🛑 Teslimatı Bitir (Konum Paylaşımını Kapat)
+                </Text>
+              </>
+            ) : (
+              <>
+                <Feather name="navigation" size={20} color="#FFFFFF" />
+                <Text className="text-white text-base font-black tracking-tight">
+                  🚚 Sevkiyata Başla (Rotaya Çık)
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <Text className="text-gray-500 text-[11px] text-center mt-2.5">
+            {isTrackingActive
+              ? "Merkez operasyon paneline her 5 saniyede bir anlık GPS koordinatı aktarılıyor."
+              : "Rotaya çıktığınızda butona basarak canlı arka plan konum servisini başlatın."}
+          </Text>
+        </View>
 
         {/* ============================================================ */}
         {/* Devasa "📷 İrsaliye / Malzeme Okut" Butonu                   */}

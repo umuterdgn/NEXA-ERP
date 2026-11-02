@@ -36,6 +36,12 @@ Nexa ERP kurumsal kaynak yönetimi, şantiye jurnali ve lojistik operasyonları 
 - İmzayı şeffaf/temiz Base64 PNG data-uri formatında dışa aktarma
 - Yasal mevzuat dipnotu ve imza kılavuz çizgisi
 
+### 5. Arka Plan Canlı GPS Takip Servisi (`src/tasks/locationTask.ts`)
+- `expo-task-manager` ve `expo-location` ile telefon kilitliyken bile çalışan arka plan görevi (`UIBackgroundModes: ["location"]`)
+- Şoför sevkiyat rotasına başladığında (`Location.startLocationUpdatesAsync`) periyodik olarak koordinatları backend'e (`/api/location/track`) aktarma
+- Şoför ekranında "🚚 Sevkiyata Başla" ve "🛑 Teslimatı Bitir" dinamik durumu
+- iOS arka plan konum göstergesi ve Android Foreground Bildirimi desteği
+
 ---
 
 ## 📁 Dizin Yapısı
