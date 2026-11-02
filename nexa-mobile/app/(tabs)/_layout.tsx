@@ -96,7 +96,18 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 6. Profil */}
+      {/* 6. Akıllı Puantaj (NFC & Geofence) */}
+      <Tabs.Screen
+        name="attendance"
+        options={{
+          title: "Puantaj",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="clock" size={size || 22} color={color as string} />
+          ),
+        }}
+      />
+
+      {/* 7. Profil */}
       <Tabs.Screen
         name="profile"
         options={{

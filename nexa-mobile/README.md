@@ -54,6 +54,12 @@ Nexa ERP kurumsal kaynak yönetimi, şantiye jurnali ve lojistik operasyonları 
 - Ekranda yeşil bildirim: *"İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."*
 - `isConnected: true` olduğunda `OfflineQueue.processQueue()` fonksiyonunu tetikleyerek bekleyen tüm istekleri Axios ile sırayla merkeze iletme
 
+### 8. NFC ve Geofence Doğrulamalı Akıllı Puantaj (`src/hooks/useNFCScanner.ts` & `app/(tabs)/attendance.tsx`)
+- `react-native-nfc-manager` ile Ndef, NfcA ve Mifare kart / baret çip okuyucu
+- Haversine formülü ile GPS Geofencing (500m şantiye sınır doğrulaması)
+- Devasa animasyonlu dairesel "Giriş Yap" butonu ve alternatif kamera QR yaka kartı okuyucu
+- `/api/attendance/check-in` rotasına anlık check-in ve çevrimdışı kuyruk yedeklemesi
+
 ---
 
 ## 📁 Dizin Yapısı
@@ -69,6 +75,7 @@ nexa-mobile/
 │       ├── tasks.tsx         # Saha İş Emirleri (Swipe-to-complete)
 │       ├── logistics.tsx     # Malzeme Kabul (Şoför & Depo Özel Ekranı)
 │       ├── inspections.tsx   # Yapı Denetim Kritik İmalat & e-İmza (INSPECTOR Rolü)
+│       ├── attendance.tsx    # Akıllı Puantaj Turnike (NFC & GPS Geofencing)
 │       └── profile.tsx       # Kullanıcı Profili & Çıkış
 ├── src/
 │   ├── components/
