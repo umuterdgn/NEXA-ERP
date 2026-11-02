@@ -12,6 +12,7 @@ import * as TaskManager from "expo-task-manager";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../lib/api";
+import { locationSocket } from "../services/LocationSocket";
 
 export const BACKGROUND_LOCATION_TASK = "BACKGROUND_LOCATION_TASK";
 export const ATTENDANCE_TRACKING_KEY = "@nexa_attendance_tracking_active";
@@ -79,24 +80,40 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
         })
       );
 
-      // Backend API rotasına Axios ile gönder: /api/location/live-update
-      await api.post("/location/live-update", {
+      // ADIM 2: Mobilden gelen arka plan konum verileri socket.emit('updateLocation', { lat, lng, userId }) üzerinden akar
+      const socketSuccess = locationSocket.emitLocation({
         userId,
-        personelId,
-        projectId,
         lat: latitude,
         lng: longitude,
-        latitude,
-        longitude,
+        projectId,
         accuracy: accuracy ? Math.round(accuracy) : null,
         speed: speed ? Math.round(speed * 3.6) : null,
         altitude: altitude ? Math.round(altitude) : null,
         timestamp,
-        source: "ATTENDANCE_BACKGROUND_GEOFENCE",
       });
 
+      // Socket bağlantısı olmaması durumunda HTTP fallback
+      if (!socketSuccess) {
+        await api.post("/location/live-update", {
+          userId,
+          personelId,
+          projectId,
+          lat: latitude,
+          lng: longitude,
+          latitude,
+          longitude,
+          accuracy: accuracy ? Math.round(accuracy) : null,
+          speed: speed ? Math.round(speed * 3.6) : null,
+          altitude: altitude ? Math.round(altitude) : null,
+          timestamp,
+          source: "ATTENDANCE_BACKGROUND_GEOFENCE",
+        }).catch((err) => {
+          console.warn("[BackgroundLocationTask] HTTP fallback uyarısı:", err?.message);
+        });
+      }
+
       console.log(
-        `[BackgroundLocationTask] Canlı İSG konumu merkeze iletildi: ${latitude.toFixed(
+        `[BackgroundLocationTask] 🛰️ Canlı İSG konumu Socket.io ile iletildi: ${latitude.toFixed(
           5
         )}, ${longitude.toFixed(5)} (Hassasiyet: ±${accuracy ? Math.round(accuracy) : 5}m)`
       );

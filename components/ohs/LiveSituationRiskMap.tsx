@@ -114,6 +114,8 @@ interface LiveSituationRiskMapProps {
   projectName?: string;
 }
 
+import { io as socketIOClient } from "socket.io-client";
+
 export default function LiveSituationRiskMap({
   initialPersonnel = [],
   initialRiskZones = [],
@@ -123,9 +125,77 @@ export default function LiveSituationRiskMap({
   const [personnelList, setPersonnelList] = useState<LivePersonnel[]>(initialPersonnel);
   const [riskZones, setRiskZones] = useState<RiskZoneItem[]>(initialRiskZones);
   const [isLiveActive, setIsLiveActive] = useState<boolean>(true);
+  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [selectedPersonnel, setSelectedPersonnel] = useState<LivePersonnel | null>(null);
+
+  // ADIM 2: Socket.io Dinleyicisi - 'locationUpdated' yayınını dinle ve haritayı anlık güncelle
+  useEffect(() => {
+    let socket: any = null;
+    try {
+      const socketUrl = typeof window !== "undefined" ? window.location.origin : "";
+      socket = socketIOClient(socketUrl, {
+        transports: ["websocket", "polling"],
+        reconnection: true,
+      });
+
+      socket.on("connect", () => {
+        setIsSocketConnected(true);
+      });
+
+      socket.on("locationUpdated", (data: any) => {
+        if (!data || data.lat === undefined || data.lng === undefined) return;
+
+        setPersonnelList((prev) => {
+          const index = prev.findIndex((p) => p.id === data.userId);
+          const updateTimeStr = data.timestamp
+            ? new Date(data.timestamp).toLocaleTimeString("tr-TR")
+            : new Date().toLocaleTimeString("tr-TR");
+
+          if (index !== -1) {
+            const updated = [...prev];
+            updated[index] = {
+              ...updated[index],
+              currentLat: data.lat,
+              currentLng: data.lng,
+              lastLocationUpdate: updateTimeStr,
+              isOnline: true,
+            };
+            return updated;
+          } else {
+            return [
+              ...prev,
+              {
+                id: data.userId,
+                name: data.userName || `Personel (${data.userId.slice(-4)})`,
+                email: "saha@nexa.com",
+                role: "WORKER",
+                currentLat: data.lat,
+                currentLng: data.lng,
+                lastLocationUpdate: updateTimeStr,
+                isOnline: true,
+              },
+            ];
+          }
+        });
+
+        setLastRefreshedAt(new Date().toLocaleTimeString("tr-TR"));
+      });
+
+      socket.on("disconnect", () => {
+        setIsSocketConnected(false);
+      });
+    } catch (e) {
+      console.warn("[LiveRiskMap] Socket.io bağlantı uyarısı:", e);
+    }
+
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  }, []);
 
   // Canlı Konumları ve Risk Alanlarını Güncelleme Fonksiyonu
   const refreshLiveFeed = async () => {
@@ -176,7 +246,11 @@ export default function LiveSituationRiskMap({
               <span className={`relative inline-flex rounded-full h-3 w-3 ${isLiveActive ? "bg-emerald-500" : "bg-gray-500"}`}></span>
             </span>
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-              {isLiveActive ? "CANLI GPS RADARI AKTİF (5s)" : "DURAKLATILDI"}
+              {isSocketConnected
+                ? "⚡ SOCKET.IO CANLI AKIŞ AKTİF (REAL-TIME)"
+                : isLiveActive
+                ? "CANLI GPS RADARI AKTİF (5s)"
+                : "DURAKLATILDI"}
             </span>
             <span className="text-slate-500 text-xs">|</span>
             <span className="text-slate-400 text-xs font-medium">

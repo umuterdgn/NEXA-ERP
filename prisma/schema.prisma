@@ -47,6 +47,7 @@ model User {
   uploadedDocs             Document[]
   auditLogs                AuditLog[]
   locationLogs             LocationLog[]
+  locationHistories        LocationHistory[]
   attachments              Attachment[]
   digitalArchives          DigitalArchive[]
   projectRevisions         ProjectRevision[]
@@ -656,6 +657,24 @@ model LocationLog {
 
   @@index([userId, timestamp])
   @@index([tenantId])
+}
+
+// ============================================================================
+// LOCATION HISTORY (Playback Rota Geçmişi)
+// ============================================================================
+
+model LocationHistory {
+  id          String   @id @default(cuid())
+  lat         Float
+  lng         Float
+  timestamp   DateTime @default(now())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String
+
+  @@index([userId, timestamp])
+  @@index([projectId, timestamp])
 }
 
 // ============================================================================
