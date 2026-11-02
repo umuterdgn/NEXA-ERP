@@ -107,7 +107,18 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 7. Profil */}
+      {/* 7. İSG & Güvenlik Raporlama */}
+      <Tabs.Screen
+        name="safety"
+        options={{
+          title: "İSG",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="alert-triangle" size={size || 22} color={color as string} />
+          ),
+        }}
+      />
+
+      {/* 8. Profil */}
       <Tabs.Screen
         name="profile"
         options={{

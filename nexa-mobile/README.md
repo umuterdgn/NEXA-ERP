@@ -60,6 +60,16 @@ Nexa ERP kurumsal kaynak yönetimi, şantiye jurnali ve lojistik operasyonları 
 - Devasa animasyonlu dairesel "Giriş Yap" butonu ve alternatif kamera QR yaka kartı okuyucu
 - `/api/attendance/check-in` rotasına anlık check-in ve çevrimdışı kuyruk yedeklemesi
 
+### 9. İSG Güvenlik İhlali & Ramak Kala Raporlama (`app/(tabs)/safety.tsx`)
+- Kırmızı "⚠️ İhlal / Ceza Bildir" ve "🛑 Ramak Kala Olayı Bildir" acil bildirim butonları
+- Dokunulduğunda `OfflineCamera` bileşeni otomatik açılarak baretsiz çalışan veya güvenlik açığını anında fotoğraflama
+- Fotoğraf çekimi sonrası ekranın altından açılan modern **Bottom Sheet / Kayıt Formu**:
+  - **İhlal Türü:** KKD eksikliği, yüksekte çalışma, elektrik, iskele vb. modal picker seçici
+  - **Sorumlu Taşeron:** Sistemden çekilen taşeron firma seçici (Zirve Yapı, Ege İnşaat, vb.)
+  - **Konum:** Otomatik GPS (Lat/Lng) doğrulama + serbest metin saha açıklaması
+  - **Ceza Tutarı:** Taşeron sözleşmesine yansıtılacak idari ceza miktarı
+- **Çevrimdışı (Offline) Destek:** İnternet yoksa `OfflineQueue` servisiyle cihazda kuyruğa alma, bağlantı sağlandığında backend `/api/safety/incidents` rotasına otomatik senkronizasyon
+
 ---
 
 ## 📁 Dizin Yapısı
@@ -76,6 +86,7 @@ nexa-mobile/
 │       ├── logistics.tsx     # Malzeme Kabul (Şoför & Depo Özel Ekranı)
 │       ├── inspections.tsx   # Yapı Denetim Kritik İmalat & e-İmza (INSPECTOR Rolü)
 │       ├── attendance.tsx    # Akıllı Puantaj Turnike (NFC & GPS Geofencing)
+│       ├── safety.tsx        # İSG Güvenlik & Ramak Kala Raporlama (Offline Kamera & Ceza)
 │       └── profile.tsx       # Kullanıcı Profili & Çıkış
 ├── src/
 │   ├── components/
