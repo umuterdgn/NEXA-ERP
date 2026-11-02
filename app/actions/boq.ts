@@ -552,12 +552,15 @@ export async function createBoQAction(data: CreateBoQActionInput) {
     // 1. BoQItem tablosuna kayıt
     const boqItem = await prisma.boQItem.create({
       data: {
+        pozNo: data.pozNo?.trim() || `POZ-${Date.now().toString().slice(-4)}`,
         itemCode: data.pozNo?.trim() || `POZ-${Date.now().toString().slice(-4)}`,
         description: data.description?.trim() || "Yeni Keşif Kalemi",
         unit: data.unit?.trim() || "m²",
         unitPrice,
+        plannedQuantity: contractQuantity,
         contractQuantity,
         completedQuantity: 0,
+        totalPrice: totalAmount,
         totalAmount,
         projectId: data.projectId || null,
       },

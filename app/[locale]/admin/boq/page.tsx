@@ -72,46 +72,59 @@ export default async function BoQPage() {
                     <th className="px-4 py-3">Poz No</th>
                     <th className="px-4 py-3">İş Kalemi / Tanım</th>
                     <th className="px-4 py-3">Birim</th>
-                    <th className="px-4 py-3 text-right">Sözleşme Miktarı</th>
+                    <th className="px-4 py-3 text-right">Planlanan Miktar</th>
+                    <th className="px-4 py-3 text-right">Tamamlanan</th>
                     <th className="px-4 py-3 text-right">Birim Fiyat</th>
                     <th className="px-4 py-3 text-right">Toplam Tutar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-slate-800/40 transition-colors"
-                    >
-                      <td className="px-4 py-3 font-semibold text-blue-400">
-                        {item.itemCode}
-                      </td>
-                      <td className="px-4 py-3 text-white font-sans text-sm">
-                        {item.description}
-                      </td>
-                      <td className="px-4 py-3 text-slate-400 font-sans">
-                        {item.unit}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-200">
-                        {item.contractQuantity.toLocaleString("tr-TR")}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-200">
-                        {item.unitPrice.toLocaleString("tr-TR", {
-                          minimumFractionDigits: 2,
-                        })}{" "}
-                        ₺
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-emerald-400">
-                        {(
-                          item.totalAmount ||
-                          item.contractQuantity * item.unitPrice
-                        ).toLocaleString("tr-TR", {
-                          minimumFractionDigits: 2,
-                        })}{" "}
-                        ₺
-                      </td>
-                    </tr>
-                  ))}
+                  {items.map((item) => {
+                    const planned = item.plannedQuantity || item.contractQuantity || 0
+                    const completed = item.completedQuantity || 0
+                    const progressPercent = planned > 0 ? Math.min(100, Math.round((completed / planned) * 100)) : 0
+                    const total = item.totalPrice || item.totalAmount || planned * item.unitPrice
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-slate-800/40 transition-colors"
+                      >
+                        <td className="px-4 py-3 font-semibold text-blue-400">
+                          {item.pozNo || item.itemCode || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-white font-sans text-sm">
+                          {item.description}
+                        </td>
+                        <td className="px-4 py-3 text-slate-400 font-sans">
+                          {item.unit}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-200">
+                          {planned.toLocaleString("tr-TR")}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-emerald-400 font-semibold">
+                            {completed.toLocaleString("tr-TR")}
+                          </span>
+                          <span className="text-[10px] text-slate-500 ml-1.5 font-sans">
+                            (%{progressPercent})
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-200">
+                          {item.unitPrice.toLocaleString("tr-TR", {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          ₺
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-emerald-400">
+                          {total.toLocaleString("tr-TR", {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          ₺
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

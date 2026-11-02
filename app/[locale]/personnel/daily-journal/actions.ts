@@ -234,17 +234,63 @@ export async function createDailyLog(formData: FormData) {
       }
     }
 
-    // 1. Create DailyLog record in Prisma
-    const dailyLog = await prisma.dailyLog.create({
-      data: {
-        projectId,
-        date: logDate,
-        weather: weatherSummary,
-        machineryCount,
-        workDone: `[İmalatlar]: ${completedWorks.trim()}${equipment ? `\n[Kullanılan Ekipmanlar]: ${equipment}` : ""}${staffCount > 0 || subcontractorCount > 0 ? `\n[Personel]: Kendi: ${staffCount}, Taşeron: ${subcontractorCount} (Toplam: ${totalWorkers})` : ""}${safetyAndDelayNotes.trim() ? `\n[İSG ve Notlar]: ${safetyAndDelayNotes.trim()}` : ""}`,
-        photoUrls
+    // Parse boqUpdates
+    let boqUpdates: Array<{ boqId: string; addedQuantity: number }> = []
+    const rawBoqUpdates = formData.get("boqUpdates")
+    if (rawBoqUpdates) {
+      try {
+        const parsed = typeof rawBoqUpdates === "string" ? JSON.parse(rawBoqUpdates) : rawBoqUpdates
+        if (Array.isArray(parsed)) boqUpdates = parsed
+      } catch (e) {
+        console.error("Failed to parse boqUpdates:", e)
       }
-    })
+    }
+
+    const logData: any = {
+      projectId,
+      date: logDate,
+      weather: weatherSummary,
+      machineryCount,
+      workDone: `[İmalatlar]: ${completedWorks.trim()}${equipment ? `\n[Kullanılan Ekipmanlar]: ${equipment}` : ""}${staffCount > 0 || subcontractorCount > 0 ? `\n[Personel]: Kendi: ${staffCount}, Taşeron: ${subcontractorCount} (Toplam: ${totalWorkers})` : ""}${safetyAndDelayNotes.trim() ? `\n[İSG ve Notlar]: ${safetyAndDelayNotes.trim()}` : ""}`,
+      photoUrls,
+      boqUpdates: boqUpdates.length > 0 ? boqUpdates : undefined,
+    }
+
+    let dailyLog: any
+    if (boqUpdates && boqUpdates.length > 0) {
+      dailyLog = await prisma.$transaction(async (tx) => {
+        const created = await tx.dailyLog.create({
+          data: logData,
+        })
+        for (const update of boqUpdates) {
+          const qty = Number(update.addedQuantity) || 0
+          if (update.boqId && qty > 0) {
+            try {
+              await tx.boQItem.update({
+                where: { id: update.boqId },
+                data: {
+                  completedQuantity: { increment: qty },
+                },
+              })
+            } catch {
+              await tx.boqItem
+                .update({
+                  where: { id: update.boqId },
+                  data: {
+                    actualQuantity: { increment: qty },
+                  },
+                })
+                .catch(() => {})
+            }
+          }
+        }
+        return created
+      })
+    } else {
+      dailyLog = await prisma.dailyLog.create({
+        data: logData,
+      })
+    }
 
     // 2. Also sync to DailyJournal for unified enterprise reporting
     try {

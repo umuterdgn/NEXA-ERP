@@ -2220,6 +2220,7 @@ model DailyLog {
   machineryCount Int      @default(0) // Sahadaki aktif iş makinesi sayısı
   workDone       String   @default("") // Geriye dönük uyumluluk
   photoUrls      String[] // Geriye dönük uyumluluk
+  boqUpdates     Json?    // Sahadan girilen işlerin BoQ güncellemeleri [{ boqId, addedQuantity }]
   projectId      String
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdById    String?
@@ -3851,15 +3852,19 @@ model WorkPackage {
 }
 
 model BoQItem {
-  id                String  @id @default(cuid())
-  tenantId          String? // SaaS: Kiracı ID
-  itemCode          String // Poz Numarası (Örn: "15.120.1001")
-  description       String // Poz Açıklaması
-  unit              String // m2, m3, ton, adet
-  unitPrice         Float   @default(0)
-  contractQuantity  Float   @default(0)
-  completedQuantity Float   @default(0)
-  totalAmount       Float   @default(0)
+  id                String   @id @default(cuid())
+  tenantId          String?  // SaaS: Kiracı ID
+  pozNo             String   @default("") // Örn: 15.100.1001
+  itemCode          String?  // Geriye dönük uyumluluk (Poz Kodu)
+  description       String   // İş tanımı / Poz Açıklaması
+  unit              String   // m2, m3, ton, adet
+  plannedQuantity   Float    @default(0) // Planlanan Miktar
+  completedQuantity Float    @default(0) // Sahadan girildikçe artacak
+  unitPrice         Float    @default(0) // Birim Fiyat
+  totalPrice        Float    @default(0) // plannedQuantity * unitPrice
+  contractQuantity  Float    @default(0) // Geriye dönük uyumluluk (Sözleşme Miktarı)
+  totalAmount       Float    @default(0) // Geriye dönük uyumluluk (Toplam Tutar)
+  bimElementId      String?  // 3D Model Eşleştirmesi İçin (IfcGuid)
 
   // BoQ 2.0 İnovatif Alanlar
   theoreticalQuantity Float? // BIM'den gelen saf teorik miktar
@@ -3867,11 +3872,11 @@ model BoQItem {
   actualOrderQty      Float? // Fire dahil gerçek sipariş edilmesi gereken miktar
   carbonEmission      Float? // Birim başına CO2 Karbon Ayak İzi (kg)
   totalCarbon         Float? // Toplam CO2 salınımı
-  version             Int    @default(1) // Revizyon takibi için (Delta BoQ)
+  version             Int      @default(1) // Revizyon takibi için (Delta BoQ)
   previousQuantity    Float? // Mimari değişim öncesi miktar (Etki hesabı için)
 
   // Dinamik Fiyatlandırma & Enflasyon Simülatörü
-  baseCurrency      String? @default("TRY") // Orijinal para birimi
+  baseCurrency      String?  @default("TRY") // Orijinal para birimi
   exchangeRateAtBid Float? // İhale tarihindeki kur
   currentUnitPrice  Float? // Güncel API'den çekilen birim fiyat
   inflationImpact   Float? // Enflasyon/Kur kaynaklı maliyet artışı
@@ -3890,6 +3895,7 @@ model BoQItem {
   @@index([workPackageId])
   @@index([projectId])
   @@index([itemCode])
+  @@index([pozNo])
   @@index([tenantId])
 }
 

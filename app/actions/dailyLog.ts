@@ -13,21 +13,53 @@ import { writeFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
 import path from "path"
 
-export async function createDailyLog(formData: FormData) {
+export interface BoqDailyLogUpdate {
+  boqId: string
+  addedQuantity: number
+}
+
+export async function createDailyLog(formData: FormData | any) {
   try {
     const session = await auth()
     let userId = session?.user?.id
 
-    let projectId = (formData.get("projectId") as string) || ""
-    const dateStr = (formData.get("date") as string) || ""
-    const weatherCondition = (formData.get("weatherCondition") as string) || "Açık"
-    const temperature = (formData.get("temperature") as string) || "22"
-    const windSpeedStr = (formData.get("windSpeed") as string) || ""
-    const staffCountStr = (formData.get("staffCount") as string) || "0"
-    const subcontractorCountStr = (formData.get("subcontractorCount") as string) || "0"
-    const equipment = (formData.get("equipment") as string) || ""
-    const completedWorks = (formData.get("completedWorks") as string) || ""
-    const safetyAndDelayNotes = (formData.get("safetyAndDelayNotes") as string) || ""
+    const isFormData = typeof FormData !== "undefined" && formData instanceof FormData
+
+    const getField = (name: string, fallback = ""): string => {
+      if (isFormData) {
+        return (formData.get(name) as string) || fallback
+      }
+      return formData?.[name] !== undefined && formData?.[name] !== null
+        ? String(formData[name])
+        : fallback
+    }
+
+    let projectId = getField("projectId")
+    const dateStr = getField("date")
+    const weatherCondition = getField("weatherCondition", "Açık")
+    const temperature = getField("temperature", "22")
+    const windSpeedStr = getField("windSpeed")
+    const staffCountStr = getField("staffCount", "0")
+    const subcontractorCountStr = getField("subcontractorCount", "0")
+    const equipment = getField("equipment")
+    const completedWorks = getField("completedWorks")
+    const safetyAndDelayNotes = getField("safetyAndDelayNotes")
+
+    // Parse boqUpdates: { boqId: string, addedQuantity: number }[]
+    let boqUpdates: BoqDailyLogUpdate[] = []
+    if (isFormData) {
+      const raw = formData.get("boqUpdates")
+      if (raw) {
+        try {
+          const parsed = typeof raw === "string" ? JSON.parse(raw) : raw
+          if (Array.isArray(parsed)) boqUpdates = parsed
+        } catch (e) {
+          console.error("Failed to parse boqUpdates from formData:", e)
+        }
+      }
+    } else if (formData && Array.isArray(formData.boqUpdates)) {
+      boqUpdates = formData.boqUpdates
+    }
 
     const staffCount = parseInt(staffCountStr, 10) || 0
     const subcontractorCount = parseInt(subcontractorCountStr, 10) || 0
@@ -72,7 +104,11 @@ export async function createDailyLog(formData: FormData) {
     }
 
     // Handle photo file uploads
-    const photoFiles = formData.getAll("photos") as (File | string)[]
+    const photoFiles = isFormData
+      ? (formData.getAll("photos") as (File | string)[])
+      : Array.isArray(formData?.photos)
+      ? formData.photos
+      : []
     const photoUrls: string[] = []
 
     for (const item of photoFiles) {
@@ -96,25 +132,69 @@ export async function createDailyLog(formData: FormData) {
       }
     }
 
-    // 1. Create DailyLog in DB with all new schema fields
-    const dailyLog = await prisma.dailyLog.create({
-      data: {
-        projectId,
-        date: logDate,
-        weather: weatherSummary,
-        weatherTemp,
-        windSpeed,
-        personnelCount: totalWorkers,
-        equipmentData,
-        activities: completedWorks.trim(),
-        notes: safetyAndDelayNotes.trim() || null,
-        photos: photoUrls,
-        machineryCount,
-        workDone: `[İmalatlar]: ${completedWorks.trim()}${equipment ? `\n[Kullanılan Ekipmanlar]: ${equipment}` : ""}${staffCount > 0 || subcontractorCount > 0 ? `\n[Personel]: Kendi: ${staffCount}, Taşeron: ${subcontractorCount} (Toplam: ${totalWorkers})` : ""}${safetyAndDelayNotes.trim() ? `\n[İSG ve Notlar]: ${safetyAndDelayNotes.trim()}` : ""}`,
-        photoUrls,
-        createdById: userId || null
-      }
-    })
+    const logData: any = {
+      projectId,
+      date: logDate,
+      weather: weatherSummary,
+      weatherTemp,
+      windSpeed,
+      personnelCount: totalWorkers,
+      equipmentData,
+      activities: completedWorks.trim(),
+      notes: safetyAndDelayNotes.trim() || null,
+      photos: photoUrls,
+      machineryCount,
+      workDone: `[İmalatlar]: ${completedWorks.trim()}${equipment ? `\n[Kullanılan Ekipmanlar]: ${equipment}` : ""}${staffCount > 0 || subcontractorCount > 0 ? `\n[Personel]: Kendi: ${staffCount}, Taşeron: ${subcontractorCount} (Toplam: ${totalWorkers})` : ""}${safetyAndDelayNotes.trim() ? `\n[İSG ve Notlar]: ${safetyAndDelayNotes.trim()}` : ""}`,
+      photoUrls,
+      boqUpdates: boqUpdates.length > 0 ? boqUpdates : undefined,
+      createdById: userId || null,
+    }
+
+    // ADIM 2: boqUpdates geliyorsa Prisma $transaction başlat
+    let dailyLog: any
+    if (boqUpdates && boqUpdates.length > 0) {
+      dailyLog = await prisma.$transaction(async (tx) => {
+        // 1. Jurnali kaydet
+        const createdLog = await tx.dailyLog.create({
+          data: logData,
+        })
+
+        // 2. prisma.boQItem.update ile ilgili keşif kaleminin completedQuantity değerini addedQuantity kadar artır
+        for (const update of boqUpdates) {
+          const addedQty = Number(update.addedQuantity) || 0
+          if (update.boqId && addedQty > 0) {
+            try {
+              await tx.boQItem.update({
+                where: { id: update.boqId },
+                data: {
+                  completedQuantity: {
+                    increment: addedQty,
+                  },
+                },
+              })
+            } catch (updateErr) {
+              // Fallback: boqItem modelini de kontrol et
+              await tx.boqItem
+                .update({
+                  where: { id: update.boqId },
+                  data: {
+                    actualQuantity: {
+                      increment: addedQty,
+                    },
+                  },
+                })
+                .catch(() => {})
+            }
+          }
+        }
+
+        return createdLog
+      })
+    } else {
+      dailyLog = await prisma.dailyLog.create({
+        data: logData,
+      })
+    }
 
     // 2. Also sync to DailyJournal for unified enterprise reporting
     try {
