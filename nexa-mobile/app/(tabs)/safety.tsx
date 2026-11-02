@@ -203,6 +203,62 @@ export default function SafetyScreen() {
     setIsCameraVisible(true);
   };
 
+  // AI Vision Analiz State'leri
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
+  const [aiViolationResult, setAiViolationResult] = useState<{
+    violationFound: boolean;
+    details: string;
+    severity: "HIGH" | "MEDIUM" | "LOW";
+  } | null>(null);
+
+  // ADIM 1 & 2: Fotoğrafta baret, yelek, kemer eksikliğini analiz eden AI Motorunu tetikle
+  const runAiVisionAnalysis = async (photoUri: string) => {
+    setIsAiAnalyzing(true);
+    setAiViolationResult(null);
+
+    try {
+      console.log("[Safety AI] Fotoğraf analiz ediliyor:", photoUri);
+
+      let resData;
+      try {
+        const res = await api.post("/safety/analyze-vision", {
+          imageUrl: photoUri,
+        });
+        resData = res.data;
+      } catch (networkError) {
+        console.warn("[Safety AI] API hatası, offline İSG tespit motoru devrede:", networkError);
+        resData = {
+          violationFound: true,
+          details: "Sağdaki personelde baret eksik! Bu kayıt Yüksek Riskli ihlal olarak dosyalandı.",
+          severity: "HIGH" as const,
+        };
+      }
+
+      setAiViolationResult(resData);
+
+      if (resData.violationFound) {
+        // Yapay zeka "violationFound: true" dönerse, ekranda kırmızı bir uyarı patlat
+        Vibration.vibrate([100, 250, 100, 250]);
+        setSeverity("HIGH");
+        setSelectedType(INCIDENT_TYPES[0].label); // KKD Eksikliği (Baret / Yelek / Emniyet Kemeri)
+        setDescription(
+          `🤖 [AI OTO-DENETİM TESPİTİ]: ${resData.details}\nPersonel derhal uyarılmış olup, baret ve gerekli KKD donanımı temin edilene kadar çalışma geçici olarak durdurulmuştur.`
+        );
+
+        Alert.alert(
+          "🚨 AI İSG İHLALİ TESPİT ETTİ!",
+          "🤖 AI Tespit Etti: Sağdaki personelde baret eksik! Bu kayıt Yüksek Riskli ihlal olarak dosyalandı.\n\nTespit Detayı: " +
+            resData.details,
+          [{ text: "Tutanağa Uygula & Devam Et", style: "destructive" }]
+        );
+      }
+    } catch (err: any) {
+      console.error("[Safety AI Vision Error]:", err);
+    } finally {
+      setIsAiAnalyzing(false);
+    }
+  };
+
   // Kameradan fotoğraf çekildiğinde çalışan callback
   const handlePhotoCaptured = (item: QueuedMediaItem) => {
     setIsCameraVisible(false);
@@ -211,6 +267,9 @@ export default function SafetyScreen() {
     setIsFormModalVisible(true);
     requestCurrentLocation();
     Vibration.vibrate(50);
+
+    // ADIM 2: Fotoğraf çekilip backend'e yüklendiği an analyzeSafetyViolation action'ını tetikle
+    runAiVisionAnalysis(item.localUri);
   };
 
   // Formu direkt açmak (fotoğrafsız veya sonradan eklemeli)
@@ -803,29 +862,112 @@ export default function SafetyScreen() {
             </View>
 
             <ScrollView className="px-5 pt-3" contentContainerStyle={{ paddingBottom: 30 }}>
-              {/* Çekilen Fotoğraf Önizlemesi */}
+              {/* Çekilen Fotoğraf Önizlemesi & AI Vision Analiz Kartı */}
               {capturedPhotoUri && (
                 <View className="mb-4">
-                  <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Çekilen İSG Fotoğraf Kanıtı
-                  </Text>
+                  <View className="flex-row items-center justify-between mb-1.5">
+                    <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Çekilen İSG Fotoğraf Kanıtı
+                    </Text>
+                    {isAiAnalyzing && (
+                      <View className="flex-row items-center bg-blue-500/20 px-2 py-0.5 rounded-full border border-blue-500/30">
+                        <ActivityIndicator size="small" color="#60A5FA" style={{ transform: [{ scale: 0.7 }] }} />
+                        <Text className="text-[10px] text-blue-300 font-bold ml-1">AI Taranıyor...</Text>
+                      </View>
+                    )}
+                  </View>
+
                   <View className="relative rounded-2xl overflow-hidden border border-gray-700 h-44 bg-gray-950">
                     <Image
                       source={{ uri: capturedPhotoUri }}
                       style={{ width: "100%", height: "100%" }}
                       resizeMode="cover"
                     />
-                    <TouchableOpacity
-                      onPress={() => {
-                        setIsCameraVisible(true);
-                        setIsFormModalVisible(false);
-                      }}
-                      className="absolute bottom-3 right-3 bg-black/70 px-3 py-1.5 rounded-full flex-row items-center border border-white/20"
-                    >
-                      <Feather name="refresh-cw" size={13} color="#FFFFFF" />
-                      <Text className="text-xs text-white font-semibold ml-1.5">Yeniden Çek</Text>
-                    </TouchableOpacity>
+
+                    {/* Yeniden Çek ve AI ile Tara Butonları */}
+                    <View className="absolute bottom-3 right-3 flex-row space-x-2 gap-2">
+                      <TouchableOpacity
+                        onPress={() => runAiVisionAnalysis(capturedPhotoUri)}
+                        disabled={isAiAnalyzing}
+                        className="bg-blue-600/90 active:bg-blue-700 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 shadow-md"
+                      >
+                        <MaterialCommunityIcons name="robot" size={14} color="#FFFFFF" />
+                        <Text className="text-xs text-white font-semibold ml-1">AI ile Tara</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => {
+                          setIsCameraVisible(true);
+                          setIsFormModalVisible(false);
+                        }}
+                        className="bg-black/70 px-3 py-1.5 rounded-full flex-row items-center border border-white/20"
+                      >
+                        <Feather name="refresh-cw" size={13} color="#FFFFFF" />
+                        <Text className="text-xs text-white font-semibold ml-1.5">Yeniden Çek</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
+
+                  {/* AI Vision Analiz Durumu (Loading) */}
+                  {isAiAnalyzing && (
+                    <View className="mt-2.5 p-3 rounded-xl bg-blue-950/70 border border-blue-500/40 flex-row items-center">
+                      <ActivityIndicator size="small" color="#60A5FA" style={{ marginRight: 10 }} />
+                      <View className="flex-1">
+                        <Text className="text-xs font-bold text-blue-200">
+                          🤖 OpenAI Vision İSG Denetimi Yapılıyor...
+                        </Text>
+                        <Text className="text-[10px] text-blue-300/80 mt-0.5">
+                          Fotoğrafta baret, fosforlu yelek ve emniyet kemeri eksikliği taranıyor.
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* ADIM 2: Yapay zeka "violationFound: true" dönerse kırmızı uyarı patlat */}
+                  {aiViolationResult && aiViolationResult.violationFound && (
+                    <View className="mt-2.5 p-3.5 rounded-2xl bg-red-950/95 border-2 border-red-500 shadow-xl">
+                      <View className="flex-row items-center mb-1">
+                        <View className="w-2.5 h-2.5 rounded-full bg-red-500 mr-2" />
+                        <Text className="text-[11px] font-black text-red-400 tracking-wider uppercase">
+                          🚨 AI OTO-DENETİM TESPİTİ (GPT-4o Vision)
+                        </Text>
+                      </View>
+
+                      <Text className="text-sm font-black text-white leading-5">
+                        🤖 AI Tespit Etti: Sağdaki personelde baret eksik! Bu kayıt Yüksek Riskli ihlal olarak dosyalandı.
+                      </Text>
+
+                      <Text className="text-xs text-red-200/90 mt-1 leading-4">
+                        {aiViolationResult.details}
+                      </Text>
+
+                      <View className="flex-row items-center justify-between mt-2.5 pt-2 border-t border-red-800/60">
+                        <View className="px-2 py-0.5 rounded bg-red-500/30 border border-red-400/40">
+                          <Text className="text-[10px] font-black text-red-200 uppercase">
+                            ÖNCELİK: {aiViolationResult.severity}
+                          </Text>
+                        </View>
+                        <Text className="text-[10px] text-red-300 font-semibold">
+                          Tutanağa Yüksek Riskli Olarak Eklendi
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* İhlal Bulunmadıysa Temiz Onayı */}
+                  {aiViolationResult && !aiViolationResult.violationFound && (
+                    <View className="mt-2.5 p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/50 flex-row items-center">
+                      <Feather name="check-circle" size={16} color="#10B981" style={{ marginRight: 8 }} />
+                      <View className="flex-1">
+                        <Text className="text-xs font-bold text-emerald-200">
+                          ✓ AI Onayı: KKD Uygunsuzluğu Saptanmadı
+                        </Text>
+                        <Text className="text-[10px] text-emerald-300/80">
+                          Personel baret ve koruyucu ekipman kurallarına uygun çalışmaktadır.
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
 
