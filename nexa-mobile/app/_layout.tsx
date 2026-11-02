@@ -21,12 +21,17 @@ Notifications.setNotificationHandler({
   }),
 });
 
+import { useNetworkSync } from "../src/hooks/useNetworkSync";
+
 /**
  * Nexa ERP Mobil - Kök Düzen (Root Layout)
- * Global stiller, Dark Mode, Push Bildirimler ve Navigasyon Yığını
+ * Global stiller, Dark Mode, Push Bildirimler, Çevrimdışı Senkronizasyon ve Navigasyon Yığını
  */
 export default function RootLayout() {
   const router = useRouter();
+
+  // ADIM 3: Global Ağ Durumu ve Otomatik Offline Kuyruk Senkronizasyonu
+  useNetworkSync();
 
   useEffect(() => {
     // ADIM 3: Bildirime tıklandığında (Response listener) ilgili sayfaya yönlendirme (Deep Link / Routing)

@@ -48,6 +48,12 @@ Nexa ERP kurumsal kaynak yönetimi, şantiye jurnali ve lojistik operasyonları 
 - Ön planda (foreground) sesli ve üstten banner ile bildirim gösterimi (`Notifications.setNotificationHandler`)
 - Bildirime dokunulduğunda ilgili sekmeye (İş Emirleri, Jurnal, Yapı Denetim, Lojistik) akıllı yönlendirme (Deep Link)
 
+### 7. Çevrimdışı Senkronizasyon (`src/services/OfflineQueue.ts` & `src/hooks/useNetworkSync.ts`)
+- `expo-network` ile internet bağlantısı denetimi (`Network.getNetworkStateAsync()`)
+- Bodrum katlar gibi internetin olmadığı şantiye sahalarında Jurnal ve İmza verilerini `OFFLINE_TASKS` kuyruğuna otomatik kaydetme
+- Ekranda yeşil bildirim: *"İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."*
+- `isConnected: true` olduğunda `OfflineQueue.processQueue()` fonksiyonunu tetikleyerek bekleyen tüm istekleri Axios ile sırayla merkeze iletme
+
 ---
 
 ## 📁 Dizin Yapısı

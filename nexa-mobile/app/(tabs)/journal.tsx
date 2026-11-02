@@ -15,7 +15,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { useLocationWeather } from "../../src/hooks";
+import * as Network from "expo-network";
+import { useLocationWeather, useNetworkSync } from "../../src/hooks";
+import { OfflineQueue } from "../../src/services/OfflineQueue";
+import { api } from "../../src/lib/api";
 
 export interface JournalRecord {
   id: string;
@@ -86,6 +89,10 @@ export default function JournalScreen() {
     fetchLocationAndWeather,
   } = useLocationWeather();
 
+  // Çevrimdışı Senkronizasyon & Ağ Durumu
+  const { isConnected, queueCount } = useNetworkSync();
+  const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
+
   // Bottom Sheet açıldığında konumu ve hava durumunu otomatik sorgula
   useEffect(() => {
     if (isSheetOpen) {
@@ -93,7 +100,7 @@ export default function JournalScreen() {
     }
   }, [isSheetOpen, fetchLocationAndWeather]);
 
-  // Jurnali Kaydet
+  // Jurnali Kaydet (ADIM 4 Entegrasyonu)
   const handleSaveJournal = async () => {
     if (!worksDone.trim()) {
       Alert.alert("Eksik Bilgi", "Lütfen bugün yapılan imalat özetini giriniz.");
@@ -104,6 +111,74 @@ export default function JournalScreen() {
     try {
       if (Platform.OS !== "web") {
         Vibration.vibrate(100);
+      }
+
+      const journalPayload = {
+        projectId: "prj_active_01",
+        projectName: project,
+        block,
+        activities: `${block} - ${worksDone}`,
+        weather: `${weather?.description || "Açık"}, ${weather?.temperature || 18}°C`,
+        personnelCount: parseInt(personnelCount, 10) || 0,
+        equipmentData: { equipment: equipment || "1 Kule Vinç" },
+        notes: isgNotes || "Uygunsuzluk tespit edilmedi.",
+      };
+
+      // ADIM 4: İstek atılmadan önce interneti kontrol et
+      const netState = await Network.getNetworkStateAsync();
+      const hasInternet = Boolean(netState.isConnected);
+
+      if (!hasInternet) {
+        // İnternet yok: OfflineQueue.addToQueue ile cihaza kaydet ve yeşil uyarı bas
+        await OfflineQueue.addToQueue(
+          "/site-diary/logs",
+          journalPayload,
+          "POST",
+          {
+            type: "JOURNAL",
+            title: `${project} • ${block}`,
+          }
+        );
+
+        setOfflineNotice(
+          "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+        );
+        setTimeout(() => setOfflineNotice(null), 6000);
+
+        Alert.alert(
+          "🌐 Çevrimdışı Kayıt",
+          "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+        );
+      } else {
+        // İnternet var: Doğrudan backend API'ye ilet
+        try {
+          await api.post("/site-diary/logs", journalPayload);
+          Alert.alert(
+            "📝 Jurnal Kaydedildi",
+            "Günlük şantiye jurnali başarıyla kaydedildi ve şirket merkezine iletildi."
+          );
+        } catch (apiErr: any) {
+          console.warn("[Journal] API hatası, offline kuyruğa aktarılıyor:", apiErr?.message);
+          await OfflineQueue.addToQueue(
+            "/site-diary/logs",
+            journalPayload,
+            "POST",
+            {
+              type: "JOURNAL",
+              title: `${project} • ${block}`,
+            }
+          );
+
+          setOfflineNotice(
+            "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+          );
+          setTimeout(() => setOfflineNotice(null), 6000);
+
+          Alert.alert(
+            "🌐 Çevrimdışı Kayıt",
+            "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+          );
+        }
       }
 
       const newRecord: JournalRecord = {
@@ -117,7 +192,7 @@ export default function JournalScreen() {
         worksDone,
         equipment: equipment || "1 Kule Vinç",
         isgNotes: isgNotes || "Uygunsuzluk tespit edilmedi.",
-        status: "TASLAK",
+        status: hasInternet ? "TASLAK" : "İNCELENİYOR",
       };
 
       setJournals([newRecord, ...journals]);
@@ -125,11 +200,9 @@ export default function JournalScreen() {
       setWorksDone("");
       setEquipment("");
       setIsgNotes("");
-
-      Alert.alert(
-        "📝 Jurnal Kaydedildi",
-        "Günlük şantiye jurnali başarıyla kaydedildi ve şirket merkezine iletildi."
-      );
+    } catch (err: any) {
+      console.error("[Journal] Hata:", err);
+      Alert.alert("Hata", "Jurnal kaydedilirken bir hata oluştu.");
     } finally {
       setIsSubmitting(false);
     }
@@ -148,16 +221,42 @@ export default function JournalScreen() {
           </Text>
         </View>
 
-        {/* Yeni Jurnal Açma Butonu */}
-        <TouchableOpacity
-          onPress={() => setIsSheetOpen(true)}
-          activeOpacity={0.8}
-          className="px-4 py-2.5 bg-blue-600 rounded-2xl flex-row items-center gap-1.5 shadow-md shadow-blue-500/30"
-        >
-          <Feather name="plus" size={16} color="#FFFFFF" />
-          <Text className="text-white text-xs font-bold">Yeni Jurnal</Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-2">
+          {queueCount > 0 && (
+            <View className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 flex-row items-center gap-1.5">
+              <Feather name="refresh-cw" size={10} color="#FBBF24" />
+              <Text className="text-amber-400 text-[10px] font-bold">
+                {queueCount} Kuyrukta
+              </Text>
+            </View>
+          )}
+
+          {/* Yeni Jurnal Açma Butonu */}
+          <TouchableOpacity
+            onPress={() => setIsSheetOpen(true)}
+            activeOpacity={0.8}
+            className="px-4 py-2.5 bg-blue-600 rounded-2xl flex-row items-center gap-1.5 shadow-md shadow-blue-500/30"
+          >
+            <Feather name="plus" size={16} color="#FFFFFF" />
+            <Text className="text-white text-xs font-bold">Yeni Jurnal</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Yeşil Çevrimdışı Bildirim Toast'ı */}
+      {offlineNotice && (
+        <View className="mx-6 mt-3 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 flex-row items-center justify-between">
+          <View className="flex-row items-center gap-2 flex-1 mr-2">
+            <Feather name="check-circle" size={16} color="#34D399" />
+            <Text className="text-emerald-300 text-xs font-semibold leading-4">
+              {offlineNotice}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => setOfflineNotice(null)}>
+            <Feather name="x" size={16} color="#6EE7B7" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView className="flex-1 px-6 pt-5" showsVerticalScrollIndicator={false}>
         {/* En Son Jurnal Vurgu Kartı */}

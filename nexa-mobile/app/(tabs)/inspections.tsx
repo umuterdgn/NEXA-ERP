@@ -13,8 +13,11 @@ import {
   ScrollView,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import * as Network from "expo-network";
 import { useAuth } from "../../src/hooks/useAuth";
+import { useNetworkSync } from "../../src/hooks";
 import { api } from "../../src/lib/api";
+import { OfflineQueue } from "../../src/services/OfflineQueue";
 import { SignaturePad } from "../../src/components/inspections/SignaturePad";
 
 /**
@@ -194,32 +197,75 @@ export default function InspectionsScreen() {
     setSelectedItem(null);
   };
 
-  // Dijital İmza Onaylandı: Backend DailyLog'a inspectorSignature olarak PATCH et
+  // Dijital İmza Onaylandı: Backend DailyLog'a inspectorSignature olarak PATCH et (ADIM 4)
   const handleConfirmSignature = async (base64Signature: string) => {
     if (!selectedItem) return;
 
     try {
       setIsSubmitting(true);
 
-      // Backend API İsteği: DailyLog kaydını güncelle
-      try {
-        await api.patch(`/site-diary/logs/${selectedItem.id}`, {
-          inspectorSignature: base64Signature,
-          inspectorId: user?.id,
-          notes: selectedItem.notes
-            ? `${selectedItem.notes} (Denetçi e-İmzası alındı)`
-            : "Yapı denetim döküm onayı verildi.",
-        });
-      } catch (apiErr) {
-        // Alternatif /api/inspection/sign rotasını dene
+      const signaturePayload = {
+        inspectorSignature: base64Signature,
+        inspectorId: user?.id,
+        notes: selectedItem.notes
+          ? `${selectedItem.notes} (Denetçi e-İmzası alındı)`
+          : "Yapı denetim döküm onayı verildi.",
+      };
+
+      // ADIM 4: İstek atılmadan önce interneti kontrol et
+      const netState = await Network.getNetworkStateAsync();
+      const hasInternet = Boolean(netState.isConnected);
+
+      if (!hasInternet) {
+        // İnternet yok: OfflineQueue.addToQueue ile cihaza kaydet ve yeşil uyarı bas
+        await OfflineQueue.addToQueue(
+          `/site-diary/logs/${selectedItem.id}`,
+          signaturePayload,
+          "PATCH",
+          {
+            type: "SIGNATURE",
+            title: `e-İmza: ${selectedItem.element}`,
+          }
+        );
+
+        setSuccessMessage(
+          "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+        );
+        setTimeout(() => setSuccessMessage(null), 6000);
+
+        Alert.alert(
+          "🌐 Çevrimdışı Kayıt",
+          "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+        );
+      } else {
+        // İnternet var: Backend API İsteği gönder
         try {
-          await api.post("/inspection/sign", {
-            dailyLogId: selectedItem.id,
-            inspectorSignature: base64Signature,
-            inspectorId: user?.id,
-          });
-        } catch {
-          console.warn("[Inspections] API isteği başarısız oldu, offline kayıt ediliyor.");
+          await api.patch(`/site-diary/logs/${selectedItem.id}`, signaturePayload);
+          setSuccessMessage(
+            `✅ ${selectedItem.element} için dijital onay imzalandı ve sisteme işlendi.`
+          );
+          setTimeout(() => setSuccessMessage(null), 4500);
+        } catch (apiErr: any) {
+          console.warn("[Inspections] API hatası, offline kuyruğa aktarılıyor:", apiErr?.message);
+          await OfflineQueue.addToQueue(
+            `/site-diary/logs/${selectedItem.id}`,
+            signaturePayload,
+            "PATCH",
+            {
+              type: "SIGNATURE",
+              title: `e-İmza: ${selectedItem.element}`,
+            }
+          );
+
+          setSuccessMessage(
+            "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+          );
+          setTimeout(() => setSuccessMessage(null), 6000);
+
+          Alert.alert(
+            "🌐 Çevrimdışı Kayıt",
+            "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+          );
         }
       }
 
@@ -245,18 +291,12 @@ export default function InspectionsScreen() {
         )
       );
 
-      // Başarılı bildirim mesajı göster
-      setSuccessMessage(
-        `✅ ${selectedItem.element} için dijital onay imzalandı ve sisteme işlendi.`
-      );
-      setTimeout(() => setSuccessMessage(null), 4500);
-
       // Bottom Sheet'i kapat
       handleCloseSheet();
     } catch (err: any) {
       Alert.alert(
         "İmza Hatası",
-        "İmza backend sistemine kaydedilirken bir hata oluştu: " +
+        "İmza işlenirken bir hata oluştu: " +
           (err?.message || "Lütfen tekrar deneyiniz.")
       );
     } finally {
