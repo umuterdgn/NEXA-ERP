@@ -15,6 +15,10 @@ export default function TabLayout() {
     role === "LOGISTICS" ||
     role === "ADMIN";
 
+  const canAccessInspections =
+    role === "INSPECTOR" ||
+    role === "ADMIN";
+
   return (
     <Tabs
       screenOptions={{
@@ -80,7 +84,19 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 4. Profil */}
+      {/* 5. Yapı Denetim (INSPECTOR) */}
+      <Tabs.Screen
+        name="inspections"
+        options={{
+          title: "Denetim",
+          href: canAccessInspections ? "/inspections" : null,
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="check-circle" size={size || 22} color={color as string} />
+          ),
+        }}
+      />
+
+      {/* 6. Profil */}
       <Tabs.Screen
         name="profile"
         options={{

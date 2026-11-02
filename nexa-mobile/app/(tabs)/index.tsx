@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import { useRouter } from "expo-router";
 import { useAuth, UserRole } from "../../src/hooks/useAuth";
 import { QRScanner } from "../../src/components/scanner";
 
@@ -19,6 +20,7 @@ import { QRScanner } from "../../src/components/scanner";
  * Kullanıcı rolüne (ENGINEER, DRIVER, SUBCONTRACTOR, INSPECTOR) göre özelleşen Frosted Glass Widget'lar
  */
 export default function DynamicHomeScreen() {
+  const router = useRouter();
   const { user, role, setRole } = useAuth();
   const [showQRScanner, setShowQRScanner] = useState(false);
 
@@ -576,12 +578,13 @@ export default function DynamicHomeScreen() {
               </View>
 
               <TouchableOpacity
+                onPress={() => router.push("/(tabs)/inspections")}
                 activeOpacity={0.8}
                 className="w-full mt-2 py-3 bg-rose-600 rounded-2xl items-center flex-row justify-center gap-2 shadow-md shadow-rose-500/25"
               >
                 <Feather name="check-square" size={15} color="#FFFFFF" />
                 <Text className="text-white text-xs font-bold">
-                  Bakanlık YİBF Onayını İmzala
+                  Bakanlık YİBF Onayını İmzala (e-İmza)
                 </Text>
               </TouchableOpacity>
             </View>

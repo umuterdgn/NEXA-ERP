@@ -2227,6 +2227,9 @@ model DailyLog {
   workDone       String   @default("") // Geriye dönük uyumluluk
   photoUrls      String[] // Geriye dönük uyumluluk
   boqUpdates     Json?    // Sahadan girilen işlerin BoQ güncellemeleri [{ boqId, addedQuantity }]
+  inspectorSignature String?  @db.Text // Yapı Denetim dijital e-imzası (Base64 PNG)
+  inspectorSignedAt  DateTime? // İmzalandığı tarih
+  inspectorId        String?  // İmzayı atan denetçi ID'si
   projectId      String
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdById    String?

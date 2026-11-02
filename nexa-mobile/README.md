@@ -30,11 +30,11 @@ Nexa ERP kurumsal kaynak yönetimi, şantiye jurnali ve lojistik operasyonları 
 - **Güvenlik Kilidi:** `location.mocked === true` durumunda sahte konumu (Fake GPS spoofing) tespit eder ve işlemi derhal durdurarak hata fırlatır
 - Gerçek koordinatlarla Open-Meteo API'ye sorgu atarak sıcaklık (°C), rüzgar hızı (km/h) ve hava durumu tanımını döner
 
-### 3. Çevrimdışı Kamera & Medya Kuyruğu (`src/components/media/OfflineCamera.tsx`)
-- Sahada internet bağlantısı olmasa dahi görev kanıtı fotoğraflarını çeker
-- Fotoğrafı `FileSystem.documentDirectory` içinde `nexa_media/` klasörüne kalıcı olarak kopyalar
-- Fotoğraf metaverilerini ve yerel URI'sini AsyncStorage içinde `@nexa_offline_upload_queue` kuyruğuna kaydeder
-- İnternet bağlantısı sağlandığında sunucuya toplu yüklenmeye hazır bekletir
+### 4. Yapı Denetim Dijital e-İmza (`src/components/inspections/SignaturePad.tsx`)
+- `react-native-signature-canvas` ve `react-native-webview` üzerinde çalışan donanım duyarlı çizim tuvali
+- Beyaz çizim alanı, "Temizle" ve "Onayla ve İmzala" butonları
+- İmzayı şeffaf/temiz Base64 PNG data-uri formatında dışa aktarma
+- Yasal mevzuat dipnotu ve imza kılavuz çizgisi
 
 ---
 
@@ -44,15 +44,19 @@ nexa-mobile/
 ├── app/                      # Expo Router sayfaları
 │   ├── _layout.tsx           # Global Kök Düzen & Dark Mode sağlayıcısı
 │   ├── index.tsx             # Nexa ERP Mobil Giriş & Saha Test Paneli
-│   └── (tabs)/               # 4 Sekmeli Alt Navigasyon (Bottom Tab Bar)
+│   └── (tabs)/               # Rol Tabanlı Alt Navigasyon (Bottom Tab Bar)
 │       ├── _layout.tsx       # Tab Bar Koyu Tema & Feather İkonları
 │       ├── index.tsx         # Ana Sayfa (Dashboard & Özet)
 │       ├── journal.tsx       # Şantiye Günlük Jurnali (iOS Bottom Sheet)
 │       ├── tasks.tsx         # Saha İş Emirleri (Swipe-to-complete)
 │       ├── logistics.tsx     # Malzeme Kabul (Şoför & Depo Özel Ekranı)
+│       ├── inspections.tsx   # Yapı Denetim Kritik İmalat & e-İmza (INSPECTOR Rolü)
 │       └── profile.tsx       # Kullanıcı Profili & Çıkış
 ├── src/
 │   ├── components/
+│   │   ├── inspections/      # Dijital e-İmza Tuvali (SignaturePad)
+│   │   │   ├── SignaturePad.tsx
+│   │   │   └── index.ts
 │   │   ├── scanner/          # QR & Barkod Tarayıcı (CameraView & Vizör)
 │   │   │   ├── QRScanner.tsx
 │   │   │   ├── LogisticsScanner.tsx
