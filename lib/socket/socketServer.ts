@@ -146,6 +146,53 @@ export function initLocationSocketServer(httpServer: HTTPServer) {
       }
     });
 
+    // ADIM 3: Şantiye İç Haberleşme (iMessage & Telsiz) Olayları
+    socket.on("sendMessage", async (data: any) => {
+      try {
+        const { channelId, content, audioUrl, imageUrl, senderId, senderName, senderRole } = data || {};
+        if (!channelId || !senderId) return;
+
+        let savedMsg: any;
+        try {
+          savedMsg = await prisma.message.create({
+            data: {
+              content: content || null,
+              audioUrl: audioUrl || null,
+              imageUrl: imageUrl || null,
+              channelId,
+              senderId,
+            },
+            include: {
+              sender: {
+                select: { id: true, name: true, role: true, profileImage: true },
+              },
+            },
+          });
+        } catch (dbErr: any) {
+          console.warn("[Socket.io] DB Mesaj kaydı uyarısı (fallback kullanılıyor):", dbErr.message);
+          savedMsg = {
+            id: "msg_" + Date.now(),
+            content: content || null,
+            audioUrl: audioUrl || null,
+            imageUrl: imageUrl || null,
+            channelId,
+            senderId,
+            createdAt: new Date().toISOString(),
+            sender: {
+              id: senderId,
+              name: senderName || "Personel",
+              role: senderRole || "ENGINEER",
+            },
+          };
+        }
+
+        console.log(`[Socket.io Chat] 💬 Mesaj Yayınlandı [Kanal: ${channelId}]:`, content || (audioUrl ? "🎙️ Telsiz Ses Kaydı" : "Fotoğraf"));
+        io.emit("receiveMessage", savedMsg);
+      } catch (err: any) {
+        console.error("[Socket.io Chat] sendMessage hatası:", err.message);
+      }
+    });
+
     socket.on("disconnect", () => {
       // Bağlantı koptu
     });

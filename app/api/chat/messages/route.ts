@@ -1,161 +1,109 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * This code is the property of NXA Software.
+ * Nexa ERP - Şantiye Mesajları API'si (Hem ChatChannel hem de Conversation uyumlu)
  */
 
-import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
-import { pusherServer } from "@/lib/pusher"
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const conversationId = searchParams.get("conversationId")
+    const { searchParams } = new URL(request.url);
+    const channelId = searchParams.get("channelId");
+    const conversationId = searchParams.get("conversationId");
 
-    if (!conversationId) {
-      return NextResponse.json({ error: "Conversation ID required" }, { status: 400 })
+    if (!channelId && !conversationId) {
+      return NextResponse.json(
+        { error: "channelId veya conversationId parametresi zorunludur" },
+        { status: 400 }
+      );
     }
 
-    const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Verify user is participant in this conversation
-    const participant = await prisma.conversationParticipant.findFirst({
-      where: {
-        conversationId,
-        OR: [
-          { userId: session.user.id },
-          { personelId: session.user.id }
-        ]
-      }
-    })
-
-    if (!participant) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+    const whereClause: any = channelId ? { channelId } : { conversationId };
 
     const messages = await prisma.message.findMany({
-      where: { conversationId },
+      where: whereClause,
+      orderBy: { createdAt: "asc" },
+      take: 60,
       include: {
         sender: {
           select: {
             id: true,
             name: true,
-            email: true
-          }
+            role: true,
+            profileImage: true,
+          },
         },
-        personelSender: {
-          select: {
-            id: true,
-            name: true,
-            username: true
-          }
-        }
       },
-      orderBy: { createdAt: 'asc' }
-    })
+    });
 
-    return NextResponse.json(messages)
-  } catch (error) {
-    console.error("Error fetching messages:", error)
-    return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 })
+    return NextResponse.json({
+      success: true,
+      messages,
+    });
+  } catch (error: any) {
+    console.error("[Chat Messages GET Error]:", error);
+    return NextResponse.json(
+      { error: "Mesajlar getirilemedi: " + error.message },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const body = await request.json();
+    const { channelId, conversationId, content, body: legacyBody, audioUrl, imageUrl, senderId } =
+      body || {};
+
+    if ((!channelId && !conversationId) || !senderId) {
+      return NextResponse.json(
+        { error: "channelId/conversationId ve senderId zorunludur" },
+        { status: 400 }
+      );
     }
 
-    const body = await request.json()
-    const { body: messageBody, conversationId, senderId, personelSenderId } = body
+    // Kullanıcı kontrolü
+    const user = await prisma.user.findUnique({
+      where: { id: senderId },
+      select: { id: true, name: true, role: true, profileImage: true },
+    });
 
-    if (!messageBody || !conversationId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
-
-    // Verify sender (either user or worker)
-    if (senderId && senderId !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    // Verify user is participant in this conversation
-    const participant = await prisma.conversationParticipant.findFirst({
-      where: {
-        conversationId,
-        OR: [
-          { userId: session.user.id },
-          { personelId: session.user.id }
-        ]
-      }
-    })
-
-    if (!participant) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    // Create message with appropriate sender
-    const messageData: any = {
-      body: messageBody,
-      conversationId
-    }
-
-    if (senderId) {
-      messageData.senderId = senderId
-    } else if (personelSenderId) {
-      messageData.personelSenderId = personelSenderId
-    } else {
-      messageData.senderId = session.user.id
-    }
+    const effectiveSenderId = user ? user.id : (await prisma.user.findFirst())?.id || senderId;
+    const effectiveContent = content || legacyBody || null;
 
     const message = await prisma.message.create({
-      data: messageData,
+      data: {
+        channelId: channelId || null,
+        conversationId: conversationId || null,
+        content: effectiveContent,
+        body: effectiveContent,
+        audioUrl: audioUrl || null,
+        imageUrl: imageUrl || null,
+        senderId: effectiveSenderId,
+      },
       include: {
         sender: {
           select: {
             id: true,
             name: true,
-            email: true
-          }
+            role: true,
+            profileImage: true,
+          },
         },
-        personelSender: {
-          select: {
-            id: true,
-            name: true,
-            username: true
-          }
-        }
-      }
-    })
+      },
+    });
 
-    // Trigger Pusher event for real-time updates
-    try {
-      await pusherServer.trigger(`conversation-${conversationId}`, 'new-message', message)
-    } catch (pusherError) {
-      console.error("Pusher trigger failed:", pusherError)
-      // Continue without failing - message is still saved to database
-      // This allows the chat to work even if Pusher credentials are not configured
-    }
-
-    return NextResponse.json(message)
-  } catch (error) {
-    console.error("Error creating message:", error)
-    
-    // Distinguish between Prisma errors and other errors
-    if (error instanceof Error) {
-      console.error("Error message:", error.message)
-      console.error("Error stack:", error.stack)
-    }
-    
-    return NextResponse.json({ 
-      error: "Failed to create message", 
-      message: error instanceof Error ? error.message : "Unknown error" 
-    }, { status: 500 })
+    return NextResponse.json({
+      success: true,
+      message,
+    });
+  } catch (error: any) {
+    console.error("[Chat Messages POST Error]:", error);
+    return NextResponse.json(
+      { error: "Mesaj gönderilemedi: " + error.message },
+      { status: 500 }
+    );
   }
 }

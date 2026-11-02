@@ -2443,6 +2443,24 @@ enum ContractType {
 // CHAT (Mesajlaşma Sistemi)
 // ============================================================================
 
+// ============================================================================
+// ŞANTİYE İÇ HABERLEŞME & CHAT KANALLARI (TELSİZ / IMESSAGE)
+// ============================================================================
+
+model ChatChannel {
+  id          String    @id @default(cuid())
+  name        String    // Örn: "Şantiye Genel (Telsiz)", "A Blok Kaba Yapı", "İSG & Acil"
+  description String?
+  projectId   String?
+  tenantId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  messages    Message[]
+  @@index([projectId])
+  @@index([tenantId])
+}
+
 model Conversation {
   id             String   @id @default(cuid())
   tenantId     String?   // SaaS: Kiracı ID
@@ -2457,17 +2475,23 @@ model Conversation {
 }
 
 model Message {
-  id               String       @id @default(cuid())
-  tenantId     String?   // SaaS: Kiracı ID
-  body             String
-  conversationId   String
-  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId         String?
-  sender           User?        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  id               String        @id @default(cuid())
+  tenantId         String?       // SaaS: Kiracı ID
+  content          String?       // Mesaj metni
+  body             String?       // Geriye dönük uyumluluk
+  audioUrl         String?       // Telsiz ses kayıtları için
+  imageUrl         String?       // Saha fotoğrafları için
+  channelId        String?
+  channel          ChatChannel?  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  conversationId   String?
+  conversation     Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId         String
+  sender           User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
   personelSenderId String?
-  personelSender   Personel?    @relation("PersonelSender", fields: [personelSenderId], references: [id], onDelete: Cascade)
-  createdAt        DateTime     @default(now())
+  personelSender   Personel?     @relation("PersonelSender", fields: [personelSenderId], references: [id], onDelete: Cascade)
+  createdAt        DateTime      @default(now())
 
+  @@index([channelId])
   @@index([conversationId])
   @@index([senderId])
   @@index([personelSenderId])

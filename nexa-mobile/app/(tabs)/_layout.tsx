@@ -151,7 +151,18 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 10. Profil */}
+      {/* 10. Şantiye İç Haberleşme & Telsiz (iMessage) */}
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "Telsiz & Chat",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="message-circle" size={size || 22} color={color as string} />
+          ),
+        }}
+      />
+
+      {/* 11. Profil */}
       <Tabs.Screen
         name="profile"
         options={{
