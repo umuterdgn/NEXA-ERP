@@ -23,6 +23,7 @@ model User {
   role                     UserRole                  @default(ADMIN)
   permissions              String[]                  @default([]) // Modül yetkileri
   profileImage             String?
+  pushToken                String?                   // Expo Push Notification Cihaz Token'ı
   companyType              CompanyType?              @default(MAIN_CONTRACTOR) // SaaS: Firma türü
   companyId                String? // SaaS: Firma / Organizasyon ID
   company                  Company?                  @relation(fields: [companyId], references: [id], onDelete: SetNull)

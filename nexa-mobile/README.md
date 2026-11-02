@@ -42,6 +42,12 @@ Nexa ERP kurumsal kaynak yönetimi, şantiye jurnali ve lojistik operasyonları 
 - Şoför ekranında "🚚 Sevkiyata Başla" ve "🛑 Teslimatı Bitir" dinamik durumu
 - iOS arka plan konum göstergesi ve Android Foreground Bildirimi desteği
 
+### 6. Anlık Push Bildirimleri & Deep Link (`src/hooks/usePushNotifications.ts`)
+- `expo-notifications` ve `expo-device` ile benzersiz cihaz token'ı alma (`Notifications.getExpoPushTokenAsync()`)
+- Giriş yapıldığında token'ı backend User modeline (`/api/user/push-token`) otomatik kaydetme
+- Ön planda (foreground) sesli ve üstten banner ile bildirim gösterimi (`Notifications.setNotificationHandler`)
+- Bildirime dokunulduğunda ilgili sekmeye (İş Emirleri, Jurnal, Yapı Denetim, Lojistik) akıllı yönlendirme (Deep Link)
+
 ---
 
 ## 📁 Dizin Yapısı

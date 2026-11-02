@@ -16,7 +16,7 @@ import { useRouter } from "expo-router";
 import { authService, API_BASE_URL } from "../src/lib/api";
 import { QRScanner } from "../src/components/scanner";
 import { OfflineCamera, getOfflineUploadQueue, QueuedMediaItem } from "../src/components/media";
-import { useLocationWeather } from "../src/hooks";
+import { useLocationWeather, registerForPushNotificationsAsync } from "../src/hooks";
 
 /**
  * Nexa ERP - Mobil Giriş & Saha Operasyonları Ekranı
@@ -80,6 +80,11 @@ export default function LoginScreen() {
       });
 
       console.log("[Nexa Mobile] Giriş başarılı:", response);
+
+      // Cihaz push token'ını alıp backend'deki User modeline kaydet
+      registerForPushNotificationsAsync(response.user).catch((err) => {
+        console.warn("[Login] Push token kaydı uyarısı:", err);
+      });
 
       // Başarılı Login işleminden sonra (tabs) grubuna yönlendir
       router.replace("/(tabs)");
