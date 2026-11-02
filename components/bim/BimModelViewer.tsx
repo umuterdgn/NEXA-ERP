@@ -683,6 +683,124 @@ export default function BimModelViewer({
     }
   }
 
+  // ADIM 3: Global BIM State / Event Tetikleyicisi ile Elemanı Kırmızıya Boyama
+  const originalMaterialsRef = useRef<Map<THREE.Mesh, THREE.Material | THREE.Material[]>>(new Map())
+  const highlightedMeshRef = useRef<THREE.Mesh | null>(null)
+
+  const highlightElementById = useCallback((elementId: string, colorHex: number = 0xef4444) => {
+    if (!sceneRef.current) return false
+
+    let foundMesh: THREE.Mesh | null = null
+
+    const checkMesh = (child: any) => {
+      if (child.isMesh && child.userData) {
+        const uId = child.userData.id || child.userData.ifcGuid || child.userData.expressID
+        if (
+          uId &&
+          (String(uId).toLowerCase() === String(elementId).toLowerCase() ||
+            String(uId).toLowerCase().includes(String(elementId).toLowerCase()))
+        ) {
+          foundMesh = child as THREE.Mesh
+        }
+      }
+    }
+
+    if (modelGroupRef.current) modelGroupRef.current.traverse(checkMesh)
+
+    if (!foundMesh) {
+      const allGroups = [
+        statikGroupRef.current,
+        mimariGroupRef.current,
+        mekanikGroupRef.current,
+        customModelGroupRef.current,
+      ]
+      for (const grp of allGroups) {
+        if (grp) grp.traverse(checkMesh)
+        if (foundMesh) break
+      }
+    }
+
+    if (foundMesh) {
+      const mesh = foundMesh as THREE.Mesh
+      // Revert previous highlighted mesh
+      if (highlightedMeshRef.current && originalMaterialsRef.current.has(highlightedMeshRef.current)) {
+        highlightedMeshRef.current.material = originalMaterialsRef.current.get(highlightedMeshRef.current)!
+      }
+
+      // Save original material
+      if (!originalMaterialsRef.current.has(mesh)) {
+        originalMaterialsRef.current.set(mesh, mesh.material)
+      }
+      highlightedMeshRef.current = mesh
+
+      // Paint red (0xef4444)
+      const redMaterial = new THREE.MeshStandardMaterial({
+        color: colorHex,
+        emissive: 0x991b1b,
+        roughness: 0.35,
+        metalness: 0.2,
+      })
+      mesh.material = redMaterial
+
+      // Add wireframe bounding box
+      if (highlightMeshRef.current && sceneRef.current) {
+        sceneRef.current.remove(highlightMeshRef.current)
+        highlightMeshRef.current.geometry.dispose()
+        highlightMeshRef.current = null
+      }
+      const box = new THREE.BoxHelper(mesh, colorHex)
+      highlightMeshRef.current = box as any
+      sceneRef.current.add(box)
+
+      // Set selected element details in panel
+      if (mesh.userData && mesh.userData.id) {
+        setSelectedElement(mesh.userData as SelectedElementInfo)
+      }
+
+      // Center camera on the highlighted element
+      const targetPos = new THREE.Vector3()
+      mesh.getWorldPosition(targetPos)
+      cameraTargetRef.current.copy(targetPos)
+      updateCameraPosition()
+
+      return true
+    }
+    return false
+  }, [updateCameraPosition])
+
+  useEffect(() => {
+    const handleSelectEvent = (e: any) => {
+      const elementId = e.detail?.elementId
+      if (elementId) {
+        const color = e.detail?.color ? parseInt(e.detail.color.replace("#", "0x"), 16) : 0xef4444
+        const success = highlightElementById(elementId, color)
+        if (success) {
+          toast.success(`BIM Elemanı [${elementId}] kırmızı ile vurgulandı 🎯`, { id: "bim-highlight" })
+        }
+      }
+    }
+
+    const handleClearEvent = () => {
+      if (highlightedMeshRef.current && originalMaterialsRef.current.has(highlightedMeshRef.current)) {
+        highlightedMeshRef.current.material = originalMaterialsRef.current.get(highlightedMeshRef.current)!
+        highlightedMeshRef.current = null
+      }
+      if (highlightMeshRef.current && sceneRef.current) {
+        sceneRef.current.remove(highlightMeshRef.current)
+        highlightMeshRef.current.geometry.dispose()
+        highlightMeshRef.current = null
+      }
+      setSelectedElement(null)
+    }
+
+    window.addEventListener("nexa:bim:select-element", handleSelectEvent)
+    window.addEventListener("nexa:bim:clear-selection", handleClearEvent)
+    return () => {
+      window.removeEventListener("nexa:bim:select-element", handleSelectEvent)
+      window.removeEventListener("nexa:bim:clear-selection", handleClearEvent)
+    }
+  }, [highlightElementById])
+
   // Viewpoint Presets
   const setPresetView = (preset: "TOP" | "FRONT" | "ISO" | "RESET") => {
     if (preset === "TOP") {

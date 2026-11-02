@@ -11,7 +11,6 @@ import Image from "next/image"
 import { signOut, useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import NotificationBell from "@/components/NotificationBell"
-import LanguageSwitcher from "@/components/ui/LanguageSwitcher"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { isMenuItemAllowed } from "@/lib/utils/module-permissions"
 import { 
@@ -545,7 +544,6 @@ export default function AdminSidebar({
                 )
               )}
               <div className="flex items-center gap-2">
-                {!isCollapsed && <LanguageSwitcher />}
                 {!isCollapsed && <NotificationBell />}
                 <button
                   type="button"

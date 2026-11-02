@@ -22,12 +22,14 @@ import {
   ArrowRight,
   Palette,
   Upload,
-  Check
+  Check,
+  Globe
 } from "lucide-react"
 import { toast } from "react-hot-toast"
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher"
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"branding" | "api-keys" | "drive" | "tcmb">("branding")
+  const [activeTab, setActiveTab] = useState<"branding" | "preferences" | "api-keys" | "drive" | "tcmb">("branding")
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isTestingKey, setIsTestingKey] = useState(false)
@@ -272,6 +274,18 @@ export default function AdminSettingsPage() {
           {isWhiteLabelActive && (
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="White-Label Aktif" />
           )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab("preferences")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === "preferences"
+              ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+              : "bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800"
+          }`}
+        >
+          <Globe className="w-4 h-4 text-emerald-400" />
+          <span>Sistem Tercihleri (System Preferences)</span>
         </button>
 
         <button
@@ -752,6 +766,101 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </form>
+      )}
+
+      {/* ==================================================================== */}
+      {/* TAB: SİSTEM TERCİHLERİ (SYSTEM PREFERENCES & DİL SEÇİCİ) */}
+      {/* ==================================================================== */}
+      {activeTab === "preferences" && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                <Globe className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>Sistem Tercihleri & Dil Ayarları</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    System Preferences
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Nexa ERP arayüz dili, bölgesel formatlar, para birimi ve yerelleştirme ayarları.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Dil Seçimi Kartı */}
+              <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>Aktif Arayüz Dili</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Tüm modüllerde geçerli olacak sistemi ve çevirileri belirleyin.
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    <LanguageSwitcher className="bg-slate-900 border-slate-700" />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800/80">
+                  <span className="text-[11px] font-semibold text-slate-400 block mb-2">
+                    Desteklenen Diller & Lokalizasyon:
+                  </span>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-1.5">
+                      <span>🇹🇷</span> Türkçe (TR)
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-1.5">
+                      <span>🇬🇧</span> English (EN)
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-1.5">
+                      <span>🇩🇪</span> Deutsch (DE)
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-1.5">
+                      <span>🇷🇺</span> Русский (RU)
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-1.5">
+                      <span>🇸🇦</span> العربية (AR)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bölgesel Tercihler Kartı */}
+              <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+                <div>
+                  <h4 className="text-sm font-bold text-white">Bölgesel Format & Para Birimi</h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Hakediş, metraj hesaplamaları ve finansal raporlamalar için varsayılanlar.
+                  </p>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                    <span className="text-slate-400">Varsayılan Para Birimi:</span>
+                    <span className="font-bold text-emerald-400 font-mono">TRY (₺ - Türk Lirası)</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                    <span className="text-slate-400">Saat Dilimi (Timezone):</span>
+                    <span className="font-bold text-white font-mono">Europe/Istanbul (UTC+3)</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                    <span className="text-slate-400">Sayı ve Ondalık Ayracı:</span>
+                    <span className="font-bold text-white font-mono">1.250.000,00 ₺ (tr-TR)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

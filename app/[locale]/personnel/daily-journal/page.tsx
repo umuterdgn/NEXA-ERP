@@ -41,11 +41,31 @@ import {
   ImageIcon,
   UploadCloud,
   Compass,
-  AlertTriangle
+  AlertTriangle,
+  Layers,
+  Trash2
 } from "lucide-react"
-import { createDailyLog, getJournalInitialData } from "./actions"
+import { createDailyLog, getJournalInitialData, getProjectBoqItems } from "./actions"
 import { getLatestLog, getTodayPersonnelCount } from "@/app/actions/dailyLog"
 import { toast } from "react-hot-toast"
+
+export interface BoqItemOption {
+  id: string
+  pozNo: string
+  description: string
+  unit: string
+  plannedQuantity?: number
+  completedQuantity?: number
+}
+
+export interface SelectedBoqEntry {
+  id: string
+  boqId: string
+  pozNo: string
+  description: string
+  unit: string
+  quantity: number
+}
 
 interface HeavyEquipment {
   name: string
@@ -126,10 +146,16 @@ export default function DailyLogEntryPage() {
   const [equipmentList, setEquipmentList] = useState<HeavyEquipment[]>(DEFAULT_EQUIPMENT)
   const [customMachineName, setCustomMachineName] = useState("")
 
-  // Card 4: Yapılan İmalatlar
+  // Card 4: Yapılan İmalatlar & BoQ Keşif Entegrasyonu (ADIM 4)
   const [completedWorks, setCompletedWorks] = useState(
     "A Blok 3. Kat Kolon betonu döküldü (120 m³).\nB Blok temel su izolasyonu membran serme işlemi tamamlandı.\nC Blok 1. kat elektrik tava montajı ve borulama sürdürüldü."
   )
+  const [boqList, setBoqList] = useState<BoqItemOption[]>([])
+  const [selectedBoqEntries, setSelectedBoqEntries] = useState<SelectedBoqEntry[]>([])
+  const [showAddBoqRow, setShowAddBoqRow] = useState(false)
+  const [selectedBoqId, setSelectedBoqId] = useState("")
+  const [selectedBoqQty, setSelectedBoqQty] = useState("")
+  const [loadingBoqs, setLoadingBoqs] = useState(false)
 
   // Card 5: Saha Fotoğrafları (Mobil Kamera capture=environment)
   const [photos, setPhotos] = useState<PhotoPreview[]>([])
@@ -139,15 +165,21 @@ export default function DailyLogEntryPage() {
     "Hafif rüzgar sebebiyle kule vinç saat 12:00-13:30 arasında güvenlik amaçlı durduruldu. Herhangi bir ramak kala veya kaza yaşanmadı."
   )
 
-  // Load project list
+  // Load project list & initial BoQ items
   const loadInitialData = async () => {
     setLoading(true)
     try {
       const data = await getJournalInitialData()
       if (data.success && data.projects.length > 0) {
         setProjects(data.projects)
+        const targetPid = selectedProjectId || data.selectedProjectId || data.projects[0].id
         if (!selectedProjectId) {
-          setSelectedProjectId(data.selectedProjectId || data.projects[0].id)
+          setSelectedProjectId(targetPid)
+        }
+        if (data.boqItems && data.boqItems.length > 0) {
+          setBoqList(data.boqItems)
+        } else if (targetPid) {
+          void fetchProjectBoqs(targetPid)
         }
       }
     } catch (err) {
@@ -157,14 +189,29 @@ export default function DailyLogEntryPage() {
     }
   }
 
+  const fetchProjectBoqs = async (pId: string) => {
+    setLoadingBoqs(true)
+    try {
+      const res = await getProjectBoqItems(pId)
+      if (res.success && res.items) {
+        setBoqList(res.items)
+      }
+    } catch (e) {
+      console.error("fetchProjectBoqs error:", e)
+    } finally {
+      setLoadingBoqs(false)
+    }
+  }
+
   useEffect(() => {
     void loadInitialData()
   }, [])
 
-  // Şantiye projesi seçildiğinde veya değiştiğinde canlı puantaj mevcudunu arka planda kontrol et
+  // Şantiye projesi seçildiğinde veya değiştiğinde canlı puantaj ve BoQ kalemlerini güncelle
   useEffect(() => {
     if (selectedProjectId) {
       void handleSyncPersonnelCount(true)
+      void fetchProjectBoqs(selectedProjectId)
     }
   }, [selectedProjectId])
 
@@ -473,6 +520,19 @@ export default function DailyLogEntryPage() {
       formData.set("completedWorks", completedWorks.trim())
       formData.set("safetyAndDelayNotes", safetyAndDelayNotes.trim())
 
+      // ADIM 4: Jurnal ile BoQ Senkronizasyonu (boqUpdates payload)
+      if (selectedBoqEntries.length > 0) {
+        formData.set(
+          "boqUpdates",
+          JSON.stringify(
+            selectedBoqEntries.map((e) => ({
+              boqId: e.boqId,
+              addedQuantity: e.quantity,
+            }))
+          )
+        )
+      }
+
       // Append photos to FormData for server-side upload
       photos.forEach((photo) => {
         formData.append("photos", photo.file)
@@ -500,10 +560,59 @@ export default function DailyLogEntryPage() {
   const resetForm = () => {
     setSubmittedSuccess(false)
     setCompletedWorks("")
+    setSelectedBoqEntries([])
     setSafetyAndDelayNotes("")
     setEquipmentList(DEFAULT_EQUIPMENT)
     setPhotos([])
     setIsPersonnelSyncedFromHr(false)
+  }
+
+  // ADIM 4: Keşiften İmalat Ekleme Fonksiyonu
+  const handleAddBoqItemToLog = () => {
+    if (!selectedBoqId) {
+      toast.error("Lütfen bir BoQ (Keşif) kalemi seçiniz.")
+      return
+    }
+
+    const qty = parseFloat(selectedBoqQty)
+    if (!qty || qty <= 0) {
+      toast.error("Lütfen geçerli bir tamamlanan miktar giriniz (Örn: 150).")
+      return
+    }
+
+    const found = boqList.find((b) => b.id === selectedBoqId)
+    if (!found) {
+      toast.error("Seçilen keşif kalemi bulunamadı.")
+      return
+    }
+
+    const newEntry: SelectedBoqEntry = {
+      id: Math.random().toString(),
+      boqId: found.id,
+      pozNo: found.pozNo,
+      description: found.description,
+      unit: found.unit,
+      quantity: qty,
+    }
+
+    setSelectedBoqEntries((prev) => [...prev, newEntry])
+
+    // Otomatik olarak metin alanına da ekle
+    const autoLine = `• [${found.pozNo}] ${found.description}: ${qty} ${found.unit} imalatı tamamlandı.`
+    setCompletedWorks((prev) => (prev.trim() ? `${prev.trim()}\n${autoLine}` : autoLine))
+
+    toast.success(`"${found.description}" (${qty} ${found.unit}) jurnale ve hakedişe eklendi! 🏗️`, {
+      icon: "✅",
+    })
+
+    setSelectedBoqId("")
+    setSelectedBoqQty("")
+    setShowAddBoqRow(false)
+  }
+
+  const handleRemoveBoqEntry = (id: string) => {
+    setSelectedBoqEntries((prev) => prev.filter((e) => e.id !== id))
+    toast("İmalat kalem güncellemesi çıkarıldı.", { icon: "🗑️" })
   }
 
   return (
@@ -933,9 +1042,9 @@ export default function DailyLogEntryPage() {
               </div>
             </div>
 
-            {/* KART 4: Yapılan İmalatlar (İşler) Kartı */}
-            <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-800">
+            {/* KART 4: Yapılan İmalatlar (İşler) & BoQ Keşif Entegrasyonu (ADIM 4) */}
+            <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-800">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center">
                     <FileText className="w-4 h-4" />
@@ -943,23 +1052,148 @@ export default function DailyLogEntryPage() {
                   <div>
                     <h2 className="text-sm font-bold text-white">Yapılan İmalatlar (İşler)</h2>
                     <p className="text-[11px] text-slate-400">
-                      Günün teknik imalat detaylarını ve tamamlanan işleri madde madde belirtiniz
+                      Keşif kalemlerini seçip miktar girerek hakedişi otomatik güncelleyin
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-semibold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                  Zorunlu Alan
-                </span>
+
+                {/* ADIM 4: "+ İmalat Ekle" Butonu */}
+                <button
+                  type="button"
+                  onClick={() => setShowAddBoqRow(!showAddBoqRow)}
+                  className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-cyan-600/20 flex items-center justify-center gap-1.5 transition shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ İmalat Ekle (BoQ)</span>
+                </button>
               </div>
 
-              <textarea
-                value={completedWorks}
-                onChange={(e) => setCompletedWorks(e.target.value)}
-                required
-                rows={5}
-                placeholder="Örn:&#10;• A Blok 3. Kat Kolon betonu döküldü (120 m³)&#10;• B Blok temel izolasyon membranı tamamlandı&#10;• 2. Kat iç duvar gazbeton örümü 150 m² yapıldı"
-                className="w-full bg-slate-950 border border-gray-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 leading-relaxed font-sans transition resize-y min-h-[120px]"
-              />
+              {/* ADIM 4: Açılır BoQ Seçim Menüsü ve Miktar Girişi Panel */}
+              {showAddBoqRow && (
+                <div className="bg-slate-950 p-4 rounded-xl border border-cyan-500/30 space-y-3 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5" />
+                      Proje Keşif / BoQ Kaleminden İmalat Ekle:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddBoqRow(false)}
+                      className="text-slate-400 hover:text-white p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    {/* Keşif Kalemi Seçimi (<Select>) */}
+                    <div className="sm:col-span-7">
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Keşif Kalemi (BoQ)
+                      </label>
+                      <select
+                        value={selectedBoqId}
+                        onChange={(e) => setSelectedBoqId(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-medium"
+                      >
+                        <option value="">-- İmalat Seçiniz (Örn: C30 Beton) --</option>
+                        {boqList.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            [{item.pozNo}] {item.description} ({item.unit})
+                          </option>
+                        ))}
+                      </select>
+                      {boqList.length === 0 && (
+                        <p className="text-[10px] text-amber-400 mt-1">
+                          ⚠️ Bu proje için kayıtlı BoQ pozu yüklenemedi veya henüz poz eklenmedi.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Miktar Girişi (Örn: 150 m3) */}
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Miktar {selectedBoqId && boqList.find((b) => b.id === selectedBoqId)?.unit ? `(${boqList.find((b) => b.id === selectedBoqId)?.unit})` : ""}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={selectedBoqQty}
+                        onChange={(e) => setSelectedBoqQty(e.target.value)}
+                        placeholder="Örn: 150"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+
+                    {/* Ekle Butonu */}
+                    <div className="sm:col-span-2 flex items-end">
+                      <button
+                        type="button"
+                        onClick={handleAddBoqItemToLog}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Ekle</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Seçilen BoQ İmalatları Listesi (Hakediş Otomasyonu Önizlemesi) */}
+              {selectedBoqEntries.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-[11px] font-semibold text-slate-400 block">
+                    Bu Jurnal İle Otomatik Güncellenecek BoQ Kalemleri ({selectedBoqEntries.length}):
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {selectedBoqEntries.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="p-2.5 rounded-xl bg-slate-950 border border-emerald-500/30 flex items-center justify-between text-xs"
+                      >
+                        <div className="min-w-0 pr-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-cyan-400 font-bold">
+                              [{entry.pozNo}]
+                            </span>
+                            <span className="text-white font-medium truncate">
+                              {entry.description}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-emerald-400 font-mono font-bold mt-0.5">
+                            +{entry.quantity} {entry.unit} (Tamamlanan Miktara Eklenecek ⚡)
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBoqEntry(entry.id)}
+                          className="text-slate-500 hover:text-red-400 p-1 transition"
+                          title="Listeden Çıkar"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Serbest Metin İmalat Alanı */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  İmalat Detay Açıklaması / Günlük Özet
+                </label>
+                <textarea
+                  value={completedWorks}
+                  onChange={(e) => setCompletedWorks(e.target.value)}
+                  required
+                  rows={4}
+                  placeholder="Örn:&#10;• A Blok 3. Kat Kolon betonu döküldü (120 m³)&#10;• B Blok temel izolasyon membranı tamamlandı&#10;• 2. Kat iç duvar gazbeton örümü 150 m² yapıldı"
+                  className="w-full bg-slate-950 border border-gray-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 leading-relaxed font-sans transition resize-y min-h-[100px]"
+                />
+              </div>
             </div>
 
             {/* ADIM 3: KART 5: Mobil Uyumlu Fotoğraf Ekleme Alanı (Capture: Environment) */}

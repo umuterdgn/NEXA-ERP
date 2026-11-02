@@ -535,6 +535,7 @@ export interface CreateBoQActionInput {
   contractQuantity: number | string
   unitPrice: number | string
   projectId?: string
+  bimElementId?: string
 }
 
 export async function createBoQAction(data: CreateBoQActionInput) {
@@ -562,6 +563,7 @@ export async function createBoQAction(data: CreateBoQActionInput) {
         completedQuantity: 0,
         totalPrice: totalAmount,
         totalAmount,
+        bimElementId: data.bimElementId?.trim() || null,
         projectId: data.projectId || null,
       },
     })

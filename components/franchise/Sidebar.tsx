@@ -10,7 +10,6 @@ import { Link, usePathname } from "@/i18n/routing"
 import { signOut, useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import NotificationBell from "@/components/NotificationBell"
-import LanguageSwitcher from "@/components/ui/LanguageSwitcher"
 import {
   LayoutDashboard,
   MapPin,
@@ -149,7 +148,6 @@ export default function FranchiseSidebar({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {!isCollapsed && <LanguageSwitcher />}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white transition"

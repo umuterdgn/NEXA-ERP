@@ -33,11 +33,13 @@ export default function CreateBoQModal({
     unit: "m²",
     contractQuantity: "",
     unitPrice: "",
+    bimElementId: "",
   })
 
-  const calculatedTotal =
-    (parseFloat(formData.contractQuantity) || 0) *
-    (parseFloat(formData.unitPrice) || 0)
+  // ADIM 2: Anlık JS Matematiği (Miktar * Fiyat)
+  const quantityNum = parseFloat(formData.contractQuantity) || 0
+  const unitPriceNum = parseFloat(formData.unitPrice) || 0
+  const calculatedTotal = quantityNum * unitPriceNum
 
   const handleReset = () => {
     setFormData({
@@ -46,6 +48,7 @@ export default function CreateBoQModal({
       unit: "m²",
       contractQuantity: "",
       unitPrice: "",
+      bimElementId: "",
     })
   }
 
@@ -68,6 +71,7 @@ export default function CreateBoQModal({
         unit: formData.unit,
         contractQuantity: parseFloat(formData.contractQuantity) || 0,
         unitPrice: parseFloat(formData.unitPrice) || 0,
+        bimElementId: formData.bimElementId.trim() || undefined,
         projectId,
       })
 
@@ -234,19 +238,51 @@ export default function CreateBoQModal({
                   </div>
                 </div>
 
-                {/* Toplam Tutar Önizleme Kartı */}
-                <div className="bg-slate-950/70 rounded-xl p-3.5 border border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-slate-400 text-xs">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                    <span>Hesaplanan Toplam Tutar:</span>
+                {/* Toplam Tutar Otomatik Hesaplama Önizleme Kartı (ADIM 2) */}
+                <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 rounded-xl p-4 border border-emerald-500/30 flex items-center justify-between shadow-lg">
+                  <div className="flex items-center gap-2.5 text-slate-300 text-xs">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                      <FileSpreadsheet className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-white block">Hesaplanan Toplam Maliyet:</span>
+                      <span className="text-[11px] text-slate-400">
+                        {quantityNum > 0 && unitPriceNum > 0
+                          ? `${quantityNum.toLocaleString("tr-TR")} ${formData.unit} × ${unitPriceNum.toLocaleString("tr-TR")} ₺`
+                          : "Miktar ve birim fiyat giriniz"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-sm font-bold text-emerald-400 font-mono">
-                    {calculatedTotal.toLocaleString("tr-TR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}{" "}
-                    ₺
+                  <div className="text-right">
+                    <div className="text-base font-black text-emerald-400 font-mono tracking-tight">
+                      {calculatedTotal.toLocaleString("tr-TR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      ₺
+                    </div>
+                    <span className="text-[10px] text-emerald-500 font-semibold uppercase">Anlık Otomatik Hesaplama</span>
                   </div>
+                </div>
+
+                {/* 6. 3D BIM Eleman Eşleştirmesi (ADIM 3) */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                    <span>3D BIM / IFC Eleman Eşleştirmesi (Opsiyonel)</span>
+                    <span className="text-[10px] text-blue-400">IfcGuid / Model ID</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.bimElementId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bimElementId: e.target.value })
+                    }
+                    placeholder="Örn: COL-K-11-FL1 veya IfcWallStandardCase GUID"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors font-mono text-xs"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Bu poz 3D BIM modelindeki bir kolon, kiriş veya duvara bağlanır ve modelde kırmızı renkle vurgulanır.
+                  </p>
                 </div>
               </div>
 

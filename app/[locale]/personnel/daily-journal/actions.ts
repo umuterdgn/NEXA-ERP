@@ -32,21 +32,108 @@ export async function getJournalInitialData(projectId?: string) {
 
     let boqItems: any[] = []
     if (targetProjectId) {
-      boqItems = await prisma.boqItem.findMany({
-        where: { projectId: targetProjectId },
-        orderBy: { pozNo: "asc" }
-      })
+      try {
+        const qItems = await prisma.boQItem.findMany({
+          where: {
+            OR: [
+              { projectId: targetProjectId },
+              { projectId: null },
+            ],
+          },
+          orderBy: { createdAt: "desc" },
+        })
+        boqItems = qItems.map((item) => ({
+          id: item.id,
+          pozNo: item.pozNo || item.itemCode || "POZ",
+          description: item.description,
+          unit: item.unit,
+          plannedQuantity: item.plannedQuantity || item.contractQuantity || 0,
+          completedQuantity: item.completedQuantity || 0,
+          unitPrice: item.unitPrice,
+        }))
+      } catch (e) {
+        console.error("Failed to fetch boQItem in getJournalInitialData:", e)
+      }
+
+      if (!boqItems || boqItems.length === 0) {
+        try {
+          const lowerItems = await prisma.boqItem.findMany({
+            where: { projectId: targetProjectId },
+            orderBy: { pozNo: "asc" },
+          })
+          boqItems = lowerItems.map((item) => ({
+            id: item.id,
+            pozNo: item.pozNo,
+            description: item.description,
+            unit: item.unit,
+            plannedQuantity: item.plannedQuantity,
+            completedQuantity: item.actualQuantity,
+            unitPrice: item.unitPrice,
+          }))
+        } catch {}
+      }
     }
 
     return {
       success: true,
       projects,
       boqItems,
-      selectedProjectId: targetProjectId
+      selectedProjectId: targetProjectId,
     }
   } catch (error: any) {
     console.error("getJournalInitialData error:", error)
     return { success: false, projects: [], boqItems: [], error: error?.message }
+  }
+}
+
+/**
+ * Projeye ait BoQ (Keşif & Metraj) listesini getiren Server Action
+ */
+export async function getProjectBoqItems(projectId: string) {
+  try {
+    let items: any[] = []
+    try {
+      const qItems = await prisma.boQItem.findMany({
+        where: {
+          OR: [
+            { projectId },
+            { projectId: null },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      })
+      items = qItems.map((item) => ({
+        id: item.id,
+        pozNo: item.pozNo || item.itemCode || "POZ",
+        description: item.description,
+        unit: item.unit,
+        plannedQuantity: item.plannedQuantity || item.contractQuantity || 0,
+        completedQuantity: item.completedQuantity || 0,
+        unitPrice: item.unitPrice,
+      }))
+    } catch {}
+
+    if (items.length === 0) {
+      try {
+        const lowerItems = await prisma.boqItem.findMany({
+          where: { projectId },
+          orderBy: { pozNo: "asc" },
+        })
+        items = lowerItems.map((item) => ({
+          id: item.id,
+          pozNo: item.pozNo,
+          description: item.description,
+          unit: item.unit,
+          plannedQuantity: item.plannedQuantity,
+          completedQuantity: item.actualQuantity,
+          unitPrice: item.unitPrice,
+        }))
+      } catch {}
+    }
+
+    return { success: true, items }
+  } catch (err: any) {
+    return { success: false, items: [], error: err?.message }
   }
 }
 

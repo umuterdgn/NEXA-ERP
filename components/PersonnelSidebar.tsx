@@ -10,7 +10,6 @@ import { useState } from "react"
 import { Link, usePathname } from "@/i18n/routing"
 import { signOut, useSession } from "next-auth/react"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
-import LanguageSwitcher from "@/components/ui/LanguageSwitcher"
 import { 
   Home,
   User,
@@ -202,7 +201,6 @@ export default function PersonnelSidebar({
                   <h1 className="text-lg font-bold text-slate-900 dark:text-white">Şantiye Asistanı</h1>
                   <p className="text-xs text-slate-600 dark:text-slate-400">Nexa ERP</p>
                 </div>
-                <LanguageSwitcher />
               </div>
             )}
             <button
