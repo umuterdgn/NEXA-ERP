@@ -346,6 +346,29 @@ export async function createDailyLog(formData: FormData) {
     let dailyLog: any
     if (boqUpdates && boqUpdates.length > 0) {
       dailyLog = await prisma.$transaction(async (tx) => {
+        // ADIM 2: Bütçe Sapma Güvenlik Kilidi (Over-budget Strict Check)
+        for (const update of boqUpdates) {
+          const addedQty = Number(update.addedQuantity) || 0
+          if (update.boqId && addedQty > 0) {
+            let boq: any = await tx.boQItem.findUnique({ where: { id: update.boqId } }).catch(() => null)
+            if (!boq) {
+              boq = await tx.boqItem.findUnique({ where: { id: update.boqId } }).catch(() => null)
+            }
+
+            if (boq) {
+              const currentCompleted = Number(boq.completedQuantity ?? boq.actualQuantity ?? 0)
+              const plannedQty = Number(boq.plannedQuantity ?? boq.contractQuantity ?? 0)
+
+              // Eğer (mevcut completedQuantity + sahadanGelenMiktar) > plannedQuantity ise işlemi durdur ve HATA fırlat
+              if (plannedQty > 0 && currentCompleted + addedQty > plannedQty) {
+                throw new Error(
+                  "BÜTÇE AŞIMI RİSKİ: Planlanan metraj sınırına ulaşıldı. Fazla imalat için Admin/Şef onayı (DÖF) gereklidir!"
+                )
+              }
+            }
+          }
+        }
+
         const created = await tx.dailyLog.create({
           data: logData,
         })

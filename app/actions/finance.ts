@@ -319,3 +319,238 @@ export async function updateEInvoiceStatusAction(
     return { success: false, error: error.message || "E-Fatura durumu güncellenemedi." }
   }
 }
+
+// ============================================================================
+// ADIM 3: OTOMATİK TAŞERON HAKEDİŞ HESAPLAMA MOTORU (PROGRESS PAYMENT)
+// ============================================================================
+
+export interface GeneratePaymentResult {
+  success: boolean
+  payment?: any
+  totalAmount?: number
+  totalMetraj?: number
+  logCount?: number
+  breakdownDetails?: Array<{
+    boqId: string
+    pozNo: string
+    description: string
+    unit: string
+    quantity: number
+    unitPrice: number
+    total: number
+  }>
+  error?: string
+  message?: string
+}
+
+/**
+ * Belirtilen ay içinde o taşeron tarafından girilen DailyLog'ları (ve içindeki boqUpdates verilerini) toplar,
+ * yapılan metrajı BoQ'daki unitPrice ile çarpıp o ayki "Hak Edilen Tutarı" hesaplar ve
+ * ProgressPayment (DRAFT) tablosuna kaydeder.
+ *
+ * @param projectId - Proje Kimliği
+ * @param subcontractorId - Taşeron Kullanıcı / Firma ID'si
+ * @param month - Hakediş Dönemi (Örn: "2026-11")
+ */
+export async function generateSubcontractorPayment(
+  projectId: string,
+  subcontractorId: string,
+  month: string
+): Promise<GeneratePaymentResult> {
+  try {
+    if (!projectId || !month) {
+      return {
+        success: false,
+        error: "Proje kimliği ve hakediş dönemi (ay) zorunludur.",
+      }
+    }
+
+    // 1. Ay Tarih Aralığı Hesaplama (Örn: "2026-11" -> 01.11.2026 00:00 - 30.11.2026 23:59:59)
+    const [yearStr, monthStr] = month.split("-")
+    const year = parseInt(yearStr, 10)
+    const monthNum = parseInt(monthStr, 10)
+
+    if (isNaN(year) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      return {
+        success: false,
+        error: "Geçersiz dönem formatı. Beklenen format: YYYY-MM (Örn: '2026-11')",
+      }
+    }
+
+    const startDate = new Date(year, monthNum - 1, 1, 0, 0, 0, 0)
+    const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999)
+
+    // 2. Belirtilen ay içinde o taşeron tarafından girilen DailyLog'ları sorgula
+    let logs = await prisma.dailyLog.findMany({
+      where: {
+        projectId,
+        createdById: subcontractorId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+    })
+
+    // Fallback: createdById eşleşmesi yoksa o tarihteki proje günlüklerini kontrol et
+    if (logs.length === 0) {
+      const allProjectLogs = await prisma.dailyLog.findMany({
+        where: {
+          projectId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      })
+      if (allProjectLogs.length > 0) {
+        logs = allProjectLogs
+      }
+    }
+
+    // 3. Jurnaller içindeki boqUpdates verilerini topla
+    const boqQuantities: Record<string, number> = {}
+    for (const log of logs) {
+      if (log.boqUpdates) {
+        let updates: Array<{ boqId: string; addedQuantity: number }> = []
+        try {
+          updates = typeof log.boqUpdates === "string" ? JSON.parse(log.boqUpdates) : log.boqUpdates
+        } catch {
+          // ignore parse errors
+        }
+
+        if (Array.isArray(updates)) {
+          for (const u of updates) {
+            const bId = u.boqId
+            const qty = Number(u.addedQuantity) || 0
+            if (bId && qty > 0) {
+              boqQuantities[bId] = (boqQuantities[bId] || 0) + qty
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Yapılan metrajı BoQ'daki unitPrice ile çarpıp o ayki "Hak Edilen Tutarı" hesapla
+    const boqIds = Object.keys(boqQuantities)
+    let totalGrossAmount = 0
+    let totalMetraj = 0
+    const breakdownDetails: Array<{
+      boqId: string
+      pozNo: string
+      description: string
+      unit: string
+      quantity: number
+      unitPrice: number
+      total: number
+    }> = []
+
+    if (boqIds.length > 0) {
+      const boqItems = await prisma.boQItem.findMany({
+        where: { id: { in: boqIds } },
+      })
+
+      for (const item of boqItems) {
+        const qty = boqQuantities[item.id] || 0
+        const price = Number(item.unitPrice) || 0
+        const subtotal = Number((qty * price).toFixed(2))
+        totalGrossAmount += subtotal
+        totalMetraj += qty
+
+        breakdownDetails.push({
+          boqId: item.id,
+          pozNo: item.pozNo || item.itemCode || "-",
+          description: item.description,
+          unit: item.unit,
+          quantity: qty,
+          unitPrice: price,
+          total: subtotal,
+        })
+      }
+
+      // boqItem (küçük harfli) modelini de tamamlayıcı olarak kontrol et
+      const foundIds = new Set(boqItems.map((b) => b.id))
+      const missingIds = boqIds.filter((id) => !foundIds.has(id))
+      if (missingIds.length > 0) {
+        const lowerBoqItems = await prisma.boqItem.findMany({
+          where: { id: { in: missingIds } },
+        })
+
+        for (const item of lowerBoqItems) {
+          const qty = boqQuantities[item.id] || 0
+          const price = Number(item.unitPrice) || 0
+          const subtotal = Number((qty * price).toFixed(2))
+          totalGrossAmount += subtotal
+          totalMetraj += qty
+
+          breakdownDetails.push({
+            boqId: item.id,
+            pozNo: item.pozNo,
+            description: item.description,
+            unit: item.unit,
+            quantity: qty,
+            unitPrice: price,
+            total: subtotal,
+          })
+        }
+      }
+    }
+
+    totalGrossAmount = Number(totalGrossAmount.toFixed(2))
+
+    // 5. Taşeron kullanıcısının veritabanında varlığını kontrol et
+    const user = await prisma.user.findUnique({
+      where: { id: subcontractorId },
+      select: { id: true, name: true },
+    })
+
+    // 6. ProgressPayment tablosuna (Taslak / DRAFT olarak) kaydet
+    const payment = await prisma.progressPayment.create({
+      data: {
+        period: month,
+        totalAmount: totalGrossAmount,
+        status: "DRAFT",
+        title: `${month} Dönemi Taşeron Hakedişi`,
+        description: `${month} döneminde sahadan girilen ${logs.length} adet jurnale ait ${breakdownDetails.length} keşif kaleminin otomatik hakediş dökümü. Toplam İmalat: ${totalMetraj} birim.`,
+        quantity: totalMetraj,
+        unit: "Karma",
+        unitPrice: totalMetraj > 0 ? Number((totalGrossAmount / totalMetraj).toFixed(2)) : 0,
+        totalPrice: totalGrossAmount,
+        amount: totalGrossAmount,
+        netAmount: totalGrossAmount,
+        netPayableAmount: totalGrossAmount,
+        projectId,
+        subcontractorId: user ? subcontractorId : undefined,
+      },
+      include: {
+        project: {
+          select: { id: true, name: true, title: true },
+        },
+        subcontractor: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    })
+
+    revalidatePath("/admin/finance")
+    revalidatePath("/admin/finance/progress-payments")
+    revalidatePath(`/admin/projects/${projectId}`)
+
+    return {
+      success: true,
+      payment,
+      totalAmount: totalGrossAmount,
+      totalMetraj,
+      logCount: logs.length,
+      breakdownDetails,
+      message: `${month} dönemi için ${totalGrossAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺ tutarında taslak hakediş (DRAFT) oluşturuldu!`,
+    }
+  } catch (error: any) {
+    console.error("generateSubcontractorPayment error:", error)
+    return {
+      success: false,
+      error: error?.message || "Hakediş hesaplanırken beklenmedik bir hata oluştu.",
+    }
+  }
+}
+

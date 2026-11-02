@@ -66,6 +66,9 @@ model User {
   regionalRollouts         RolloutProject[]          @relation("RegionalManagerRollouts")
   branchRollouts           RolloutProject[]          @relation("BranchManagerRollouts")
   dailyLogs                DailyLog[]
+  contactName              String?
+  taxNumber                String?
+  progressPayments         ProgressPayment[]
 
   @@index([companyId])
   @@index([organizationId])
@@ -2692,14 +2695,16 @@ model AttachmentEvidence {
 model ProgressPayment {
   id               String   @id @default(cuid())
   tenantId         String? // SaaS: Kiracı ID
-  title            String // Örn: "B Blok 3. Kat Boya İşlemi"
+  title            String   @default("Taşeron Hakedişi") // Örn: "B Blok 3. Kat Boya İşlemi"
   description      String?
-  quantity         Float // Örn: 150 (Metraj)
-  unit             String // Örn: "m2", "m3", "Adet"
-  unitPrice        Float? // Birim Fiyat (Örn: 120 TL)
-  totalPrice       Float? // quantity * unitPrice
+  period           String   @default("2026-11") // Örn: "2026-11" (Kasım 2026 Hakedişi)
+  totalAmount      Float    @default(0) // Toplam Kesilen Tutar
+  quantity         Float    @default(0) // Örn: 150 (Metraj)
+  unit             String   @default("Adet") // Örn: "m2", "m3", "Adet"
+  unitPrice        Float?   @default(0) // Birim Fiyat (Örn: 120 TL)
+  totalPrice       Float?   @default(0) // quantity * unitPrice
   amount           Float?   @default(0) // Toplam Tutar
-  status           String   @default("BEKLIYOR") // BEKLIYOR, ONAYLANDI, ODENDI, PENDING, APPROVED, BLOCKED
+  status           String   @default("DRAFT") // DRAFT, APPROVED, PAID, BEKLIYOR, ONAYLANDI, ODENDI, PENDING, BLOCKED
   date             DateTime @default(now())
   penaltyDeduction Float?   @default(0) // Ceza / Kusur kesintileri
   netAmount        Float?   @default(0) // Net ödenecek tutar
@@ -2714,8 +2719,11 @@ model ProgressPayment {
   contractId String?
   contract   Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
 
-  subcontractorId String?
-  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id], onDelete: SetNull)
+  subcontractorId String? // Taşeron Firma / Kullanıcı ID
+  subcontractor   User?   @relation(fields: [subcontractorId], references: [id], onDelete: SetNull)
+
+  subcontractorCompanyId String?
+  subcontractorCompany   Subcontractor? @relation(fields: [subcontractorCompanyId], references: [id], onDelete: SetNull)
 
   workPackageId String?
   workPackage   WorkPackage? @relation(fields: [workPackageId], references: [id], onDelete: SetNull)
