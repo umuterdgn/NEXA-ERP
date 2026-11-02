@@ -24,6 +24,9 @@ model User {
   permissions              String[]                  @default([]) // Modül yetkileri
   profileImage             String?
   pushToken                String?                   // Expo Push Notification Cihaz Token'ı
+  currentLat               Float?                    // Canlı İSG/Puantaj GPS Enlemi
+  currentLng               Float?                    // Canlı İSG/Puantaj GPS Boylamı
+  lastLocationUpdate       DateTime?                 // Son GPS güncelleme zamanı
   companyType              CompanyType?              @default(MAIN_CONTRACTOR) // SaaS: Firma türü
   companyId                String? // SaaS: Firma / Organizasyon ID
   company                  Company?                  @relation(fields: [companyId], references: [id], onDelete: SetNull)
@@ -4181,9 +4184,15 @@ model RiskZone {
   id          String   @id @default(cuid())
   tenantId    String? // SaaS: Kiracı ID
   projectId   String
-  zoneName    String // Örn: "A Blok İskele (Yüksekte Çalışma)", "Kule Vinç Altı"
-  dangerLevel String // "HIGH", "CRITICAL"
-  requiredPpe String[] // Örn: ["BARET", "EMNIYET_KEMERI"]
+  name        String   @default("İSG Risk Bölgesi") // Örn: "Vinç Çalışma Alanı"
+  zoneName    String?  // Örn: "A Blok İskele (Yüksekte Çalışma)", "Kule Vinç Altı"
+  radius      Float    @default(30.0) // Yarıçap (Metre)
+  centerLat   Float    @default(40.9912)
+  centerLng   Float    @default(29.0287)
+  dangerLevel String?  @default("HIGH") // "HIGH", "CRITICAL"
+  requiredPpe String[] @default([]) // Örn: ["BARET", "EMNIYET_KEMERI"]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@index([projectId])
   @@index([tenantId])
