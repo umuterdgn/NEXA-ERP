@@ -12,6 +12,7 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { authService, API_BASE_URL } from "../src/lib/api";
 import { QRScanner } from "../src/components/scanner";
 import { OfflineCamera, getOfflineUploadQueue, QueuedMediaItem } from "../src/components/media";
@@ -22,6 +23,7 @@ import { useLocationWeather } from "../src/hooks";
  * Next.js Backend bağlantısı, QR Lojistik Tarayıcı, Anti-Fake GPS Hava Durumu ve Offline Medya Kuyruğu
  */
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -79,11 +81,8 @@ export default function LoginScreen() {
 
       console.log("[Nexa Mobile] Giriş başarılı:", response);
 
-      Alert.alert(
-        "Giriş Başarılı",
-        `Hoş geldiniz ${response.user?.name || email}! Nexa ERP Mobil paneline yönlendiriliyorsunuz.`,
-        [{ text: "Devam Et", onPress: () => console.log("Yönlendiriliyor...") }]
-      );
+      // Başarılı Login işleminden sonra (tabs) grubuna yönlendir
+      router.replace("/(tabs)");
     } catch (error: any) {
       console.error("[Nexa Mobile] Giriş hatası:", error);
       const serverMsg =
@@ -363,6 +362,17 @@ export default function LoginScreen() {
                     Giriş Yap
                   </Text>
                 )}
+              </TouchableOpacity>
+
+              {/* Hızlı Demo Girişi (Sekmeleri İnceleme) */}
+              <TouchableOpacity
+                onPress={() => router.replace("/(tabs)")}
+                activeOpacity={0.7}
+                className="w-full mt-2.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950/60 items-center justify-center flex-row gap-2"
+              >
+                <Text className="text-slate-400 text-xs font-semibold">
+                  Demo Olarak Giriş Yap & Sekmelere Geç →
+                </Text>
               </TouchableOpacity>
             </View>
 

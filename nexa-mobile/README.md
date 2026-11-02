@@ -43,7 +43,13 @@ Nexa ERP kurumsal kaynak yönetimi, şantiye jurnali ve lojistik operasyonları 
 nexa-mobile/
 ├── app/                      # Expo Router sayfaları
 │   ├── _layout.tsx           # Global Kök Düzen & Dark Mode sağlayıcısı
-│   └── index.tsx             # Nexa ERP Mobil Giriş & Saha Test Paneli
+│   ├── index.tsx             # Nexa ERP Mobil Giriş & Saha Test Paneli
+│   └── (tabs)/               # 4 Sekmeli Alt Navigasyon (Bottom Tab Bar)
+│       ├── _layout.tsx       # Tab Bar Koyu Tema & Feather İkonları
+│       ├── index.tsx         # Ana Sayfa (Dashboard & Özet)
+│       ├── journal.tsx       # Şantiye Günlük Jurnali
+│       ├── tasks.tsx         # Saha İş Emirleri
+│       └── profile.tsx       # Kullanıcı Profili & Çıkış
 ├── src/
 │   ├── components/
 │   │   ├── scanner/          # QR & Barkod Tarayıcı (CameraView)

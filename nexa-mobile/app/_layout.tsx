@@ -28,6 +28,12 @@ export default function RootLayout() {
             title: "Nexa ERP Giriş",
           }}
         />
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
     </SafeAreaProvider>
   );
