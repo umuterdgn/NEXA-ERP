@@ -237,7 +237,7 @@ export async function getTodaySummary(projectId?: string): Promise<{
       materialName: item.materialName || item.name || "Malzeme",
       quantity: item.quantity,
       unit: item.unit || "Birim",
-      qrCode: item.qrCode,
+      qrCode: item.qrCode || "",
       zone: item.currentZone || "Ana Depo",
       consumedAt: (item.consumedAt || item.createdAt).toLocaleTimeString("tr-TR", {
         hour: "2-digit",

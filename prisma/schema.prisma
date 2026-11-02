@@ -69,6 +69,7 @@ model User {
   contactName              String?
   taxNumber                String?
   progressPayments         ProgressPayment[]
+  inventoryTransactions    InventoryTransaction[]
 
   @@index([companyId])
   @@index([organizationId])
@@ -375,6 +376,7 @@ model Project {
   projectTasks             ProjectTask[]
   projectDocuments         ProjectDocument[]
   inventoryItems           InventoryItem[]
+  inventoryTransactions    InventoryTransaction[]
   siteZones                SiteZone[]
   workOrders               WorkOrder[]
   droneMedia               DroneMedia[]
@@ -2806,7 +2808,8 @@ model InventoryItem {
   tenantId     String? // SaaS: Kiracı ID
   materialName String    @default("") // Malzeme Adı (Örn: Çimento, Demir)
   name         String? // Alternatif / Eski ad
-  qrCode       String    @unique // Eşsiz QR Kod
+  qrCode       String?   @unique // Eşsiz QR Kod
+  barcode      String?   @unique // Eşsiz Barkod
   quantity     Float
   currentZone  String    @default("MAIN_WAREHOUSE") // Örn: MAIN_WAREHOUSE, A_BLOK_KAT_3
   status       String    @default("IN_STOCK") // IN_STOCK, DISPATCHED, CONSUMED
@@ -2825,15 +2828,42 @@ model InventoryItem {
   lastSeenLng    Float? // BLE / Son ping boylam
   lastSeenAt     DateTime? @default(now())
 
-  project  Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  boqItems BoqItem[]
+  project      Project?               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  boqItems     BoqItem[]
+  transactions InventoryTransaction[]
 
   @@index([projectId])
   @@index([qrCode])
+  @@index([barcode])
   @@index([currentZone])
   @@index([status])
   @@index([locationStatus])
   @@index([bleMacAddress])
+  @@index([tenantId])
+}
+
+model InventoryTransaction {
+  id              String         @id @default(cuid())
+  tenantId        String?        // SaaS: Kiracı ID
+  inventoryItemId String
+  inventoryItem   InventoryItem  @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  type            String         @default("IN") // IN (Giriş/Kabul), OUT (Çıkış/Sarfiyat), TRANSFER
+  quantity        Float          // Hareket Miktarı
+  unit            String?        @default("Adet")
+  source          String?        // İrsaliye No, Tedarikçi veya Kaynak Depo
+  destination     String?        @default("MAIN_WAREHOUSE") // Hedef Depo / Bölge
+  scannedCode     String?        // Okutulan QR veya Barkod Değeri
+  notes           String?
+  performedById   String?
+  performedBy     User?          @relation(fields: [performedById], references: [id], onDelete: SetNull)
+  projectId       String?
+  project         Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
+
+  @@index([inventoryItemId])
+  @@index([projectId])
+  @@index([type])
+  @@index([createdAt])
   @@index([tenantId])
 }
 
