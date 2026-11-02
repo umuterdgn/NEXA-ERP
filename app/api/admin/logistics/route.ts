@@ -110,17 +110,21 @@ export async function POST(request: Request) {
       projectId
     } = body
 
-    if (!title || !scheduledAt || !timeSlot || !vehiclePlate || !driverName) {
+    const effectiveDriverName = driverName || body.supplierName || "Şoför Belirtilmedi"
+    const effectiveTimeSlot = timeSlot || "GÜN BOYU"
+    const effectiveVehiclePlate = vehiclePlate || "34-NX-1001"
+
+    if (!title || !scheduledAt) {
       return NextResponse.json(
-        { error: "Required fields are missing" },
+        { error: "Required fields are missing: title and scheduledAt are required" },
         { status: 400 }
       )
     }
 
     // Default to PENDING if invalid status provided
-    const validStatus = ["PENDING", "APPROVED", "REJECTED", "DELIVERED"].includes(status)
+    const validStatus = ["PENDING", "APPROVED", "REJECTED", "DELIVERED", "PLANNED"].includes(status)
       ? status
-      : "PENDING"
+      : "PLANNED"
 
     const schedule = await prisma.logisticsSchedule.create({
       data: {
@@ -128,12 +132,13 @@ export async function POST(request: Request) {
         type: body.type || "MALZEME_TESLİMAT",
         location: body.location || "Şantiye",
         scheduledAt: new Date(scheduledAt),
-        timeSlot,
-        vehiclePlate,
-        driverName,
-        driverContact,
+        timeSlot: effectiveTimeSlot,
+        vehiclePlate: effectiveVehiclePlate,
+        driverName: effectiveDriverName,
+        supplierName: body.supplierName || effectiveDriverName,
+        driverContact: driverContact || null,
         notes,
-        status: validStatus,
+        status: validStatus as any,
         projectId: projectId || null,
         tenantId: tenantId || null,
       },
