@@ -3,6 +3,7 @@ import React from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 /**
  * Nexa ERP Mobil - Kök Düzen (Root Layout)
@@ -10,8 +11,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
  */
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -36,5 +38,6 @@ export default function RootLayout() {
         />
       </Stack>
     </SafeAreaProvider>
+  </GestureHandlerRootView>
   );
 }
