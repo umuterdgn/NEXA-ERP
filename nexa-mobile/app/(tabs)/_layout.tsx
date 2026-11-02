@@ -1,12 +1,20 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { useAuth } from "../../src/hooks/useAuth";
 
 /**
  * Nexa ERP Mobil - Alt Sekme Navigasyonu (Bottom Tab Bar Layout)
  * Koyu tema (Dark Mode), gray-900 zemin, gray-800 border ve blue-500 aktif vurgu
  */
 export default function TabLayout() {
+  const { role } = useAuth();
+  const canAccessLogistics =
+    role === "DRIVER" ||
+    role === "WAREHOUSE" ||
+    role === "LOGISTICS" ||
+    role === "ADMIN";
+
   return (
     <Tabs
       screenOptions={{
@@ -56,6 +64,18 @@ export default function TabLayout() {
           title: "İş Emirleri",
           tabBarIcon: ({ color, size }) => (
             <Feather name="check-square" size={size || 22} color={color as string} />
+          ),
+        }}
+      />
+
+      {/* 4. Malzeme Kabul (Lojistik & Şoför) */}
+      <Tabs.Screen
+        name="logistics"
+        options={{
+          title: "Malzeme Kabul",
+          href: canAccessLogistics ? "/logistics" : null,
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="truck" size={size || 22} color={color as string} />
           ),
         }}
       />

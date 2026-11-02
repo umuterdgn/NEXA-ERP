@@ -47,13 +47,15 @@ nexa-mobile/
 │   └── (tabs)/               # 4 Sekmeli Alt Navigasyon (Bottom Tab Bar)
 │       ├── _layout.tsx       # Tab Bar Koyu Tema & Feather İkonları
 │       ├── index.tsx         # Ana Sayfa (Dashboard & Özet)
-│       ├── journal.tsx       # Şantiye Günlük Jurnali
-│       ├── tasks.tsx         # Saha İş Emirleri
+│       ├── journal.tsx       # Şantiye Günlük Jurnali (iOS Bottom Sheet)
+│       ├── tasks.tsx         # Saha İş Emirleri (Swipe-to-complete)
+│       ├── logistics.tsx     # Malzeme Kabul (Şoför & Depo Özel Ekranı)
 │       └── profile.tsx       # Kullanıcı Profili & Çıkış
 ├── src/
 │   ├── components/
-│   │   ├── scanner/          # QR & Barkod Tarayıcı (CameraView)
+│   │   ├── scanner/          # QR & Barkod Tarayıcı (CameraView & Vizör)
 │   │   │   ├── QRScanner.tsx
+│   │   │   ├── LogisticsScanner.tsx
 │   │   │   └── index.ts
 │   │   └── media/            # Offline Fotoğraf Çekim & Medya Kuyruğu
 │   │       ├── OfflineCamera.tsx

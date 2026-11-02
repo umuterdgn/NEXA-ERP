@@ -101,6 +101,7 @@ export default function DynamicHomeScreen() {
             {[
               { id: "ENGINEER", label: "Saha Ekibi", icon: "hard-hat" },
               { id: "DRIVER", label: "Şoför", icon: "truck" },
+              { id: "WAREHOUSE", label: "Depo Sorumlusu", icon: "package" },
               { id: "SUBCONTRACTOR", label: "Taşeron", icon: "briefcase" },
               { id: "INSPECTOR", label: "Yapı Denetim", icon: "check-circle" },
             ].map((tab) => {
@@ -281,9 +282,9 @@ export default function DynamicHomeScreen() {
           )}
 
           {/* ---------------------------------------------------------- */}
-          {/* ROL 2: DRIVER (Şoför)                                      */}
+          {/* ROL 2: DRIVER veya WAREHOUSE (Şoför / Lojistik Depo)       */}
           {/* ---------------------------------------------------------- */}
-          {role === "DRIVER" && (
+          {(role === "DRIVER" || role === "WAREHOUSE" || role === "LOGISTICS") && (
             <>
               {/* Kart 1: Sıradaki Teslimat / Rota */}
               <View className="bg-white dark:bg-gray-800/80 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative">

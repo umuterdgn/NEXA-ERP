@@ -6,6 +6,8 @@ export type UserRole =
   | "ENGINEER"
   | "FOREMAN"
   | "DRIVER"
+  | "WAREHOUSE"
+  | "LOGISTICS"
   | "SUBCONTRACTOR"
   | "INSPECTOR"
   | "ADMIN";
