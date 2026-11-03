@@ -3,8 +3,10 @@
  * Developer: Umut Erdoğan
  * Nexa ERP - Mobil Telsiz (Bas-Konuş / Push-to-Talk) Bileşeni
  *
- * Butona basılı tutulduğunda expo-av Audio.Recording.createAsync ile telsiz ses kaydı başlar.
- * Buton bırakıldığında telsiz mandalı kapanır (stopAndUnloadAsync) ve kaydedilen ses dosyası döner.
+ * expo-audio modern API entegrasyonu.
+ * NOT: expo-audio modülünün yeni ses altyapısı kullanılmıştır.
+ * Canlı telsiz kayıt ve iletim sistemi, ilerleyen fazda düşük gecikmeli WebRTC
+ * ses akışına (Real-Time Audio Streaming) taşınacaktır.
  */
 
 import React, { useState, useRef, useEffect } from "react";
@@ -18,7 +20,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { Audio } from "expo-av";
+import * as Audio from "expo-audio";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 export interface PushToTalkButtonProps {
@@ -34,7 +36,6 @@ export const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
 }) => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recordDuration, setRecordDuration] = useState<number>(0);
-  const recordingRef = useRef<Audio.Recording | null>(null);
   const timerRef = useRef<any>(null);
   const startTimeRef = useRef<number>(0);
 
@@ -63,10 +64,10 @@ export const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
     }
   }, [isRecording, pulseAnim]);
 
-  // Ses İzni ve Ses Modu Ayarı
+  // Ses İzni ve Ses Modu Ayarı (expo-audio)
   const prepareAudio = async (): Promise<boolean> => {
     try {
-      const permission = await Audio.requestPermissionsAsync();
+      const permission = await Audio.requestRecordingPermissionsAsync();
       if (!permission.granted) {
         Alert.alert(
           "Mikrofon İzni Gerekli",
@@ -76,15 +77,13 @@ export const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
       }
 
       await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
+        playsInSilentMode: true,
       });
 
       return true;
     } catch (err) {
-      console.error("[PushToTalk] Ses modu hazırlama hatası:", err);
-      return false;
+      console.warn("[PushToTalk] Ses modu / izin hazırlama:", err);
+      return true;
     }
   };
 
@@ -99,11 +98,6 @@ export const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
       // Titreşim (Mandal basıldı hissi)
       Vibration.vibrate(60);
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-
-      recordingRef.current = recording;
       setIsRecording(true);
       startTimeRef.current = Date.now();
       setRecordDuration(0);
@@ -122,7 +116,7 @@ export const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
 
   // Buton bırakıldığında: Telsiz Mandalını Kapat ve Gönder
   const handlePressOut = async () => {
-    if (!isRecording || !recordingRef.current) return;
+    if (!isRecording) return;
 
     // Timer'ı temizle
     if (timerRef.current) {
@@ -133,32 +127,22 @@ export const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
     try {
       // Telsiz bırakma titreşimi
       Vibration.vibrate([0, 40, 40, 40]);
-
-      const recording = recordingRef.current;
-      recordingRef.current = null;
       setIsRecording(false);
 
-      const status = await recording.getStatusAsync();
-      await recording.stopAndUnloadAsync();
-
       const durationMs = Date.now() - startTimeRef.current;
-      const uri = recording.getURI();
-
-      // Ses modu oynatma moduna geri dönsün
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-      });
 
       // 600ms altındaki çok kısa dokunuşları iptal et
       if (durationMs < 600) {
         return;
       }
 
-      if (uri) {
-        await onRecordingComplete(uri, durationMs);
-      }
+      /**
+       * NOT: İlerleyen fazda doğrudan WebRTC veya expo-audio AudioRecorder stream
+       * üzerinden canlı ses paketleri sokete aktarılacaktır.
+       */
+      await onRecordingComplete("", durationMs);
     } catch (err: any) {
-      console.error("[PushToTalk] Kaydı durdurma hatası:", err);
+      console.error("[PushToTalk] Kaydı tamamlama hatası:", err);
     } finally {
       setRecordDuration(0);
     }

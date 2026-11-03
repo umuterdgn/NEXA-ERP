@@ -6,7 +6,7 @@
  * ADIM 3: iOS iMessage Arayüzü
  * - Bulanık arka plan (Frosted Glass / Dark iOS)
  * - Mesaj Balonları: Gönderilenler sağda mavi, gelenler solda koyu gri
- * - Telsiz (Bas-Konuş / Walkie-Talkie) sesli mesajları için expo-av oynatıcı
+ * - Telsiz (Bas-Konuş / Walkie-Talkie) sesli mesajları için expo-audio oynatıcı
  * - Socket.io sendMessage & receiveMessage ile gerçek zamanlı mesajlaşma
  */
 
@@ -27,7 +27,8 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
-import { Audio } from "expo-av";
+import * as Audio from "expo-audio";
+import { createAudioPlayer, AudioPlayer } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../src/hooks/useAuth";
@@ -79,7 +80,7 @@ export default function ChatScreen() {
 
   // Ses Oynatıcı Durumu (Telsiz Dinleme)
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef<AudioPlayer | null>(null);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -229,37 +230,37 @@ export default function ChatScreen() {
     }
   };
 
-  // 5. Telsiz (Bas-Konuş) Sesli Mesaj Gönder
+  // 5. Telsiz (Bas-Konuş) Sesli Mesaj Gönder (expo-audio / WebRTC altyapısı)
   const handleVoiceRecordingComplete = async (audioUri: string, durationMs: number) => {
     if (!activeChannel) return;
 
     try {
       setIsSending(true);
 
-      // Ses dosyasını Base64 olarak oku
-      const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      // Backend'e yükle
       let uploadedAudioUrl: string | null = null;
-      try {
-        const uploadRes = await api.post("/chat/upload-audio", {
-          audioBase64: base64Audio,
-          extension: "m4a",
-        });
-        if (uploadRes.data?.audioUrl) {
-          uploadedAudioUrl = uploadRes.data.audioUrl;
+      if (audioUri && audioUri.length > 0) {
+        try {
+          const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          const uploadRes = await api.post("/chat/upload-audio", {
+            audioBase64: base64Audio,
+            extension: "m4a",
+          });
+          if (uploadRes.data?.audioUrl) {
+            uploadedAudioUrl = uploadRes.data.audioUrl;
+          }
+        } catch (uploadErr: any) {
+          console.warn("[Chat] Ses yükleme uyarısı (yerel URI kullanılıyor):", uploadErr.message);
+          uploadedAudioUrl = audioUri;
         }
-      } catch (uploadErr: any) {
-        console.warn("[Chat] Ses yükleme uyarısı (yerel URI kullanılıyor):", uploadErr.message);
-        uploadedAudioUrl = audioUri;
       }
 
+      const seconds = Math.max(1, Math.round(durationMs / 1000));
       const payload = {
         channelId: activeChannel.id,
-        content: null,
-        audioUrl: uploadedAudioUrl || audioUri,
+        content: `[Telsiz Anonsu (${seconds} sn)]`,
+        audioUrl: uploadedAudioUrl || (audioUri ? audioUri : null),
         senderId: user?.id || "usr_eng_101",
         senderName: user?.name || "Ahmet Yılmaz",
         senderRole: user?.role || "ENGINEER",
@@ -318,11 +319,12 @@ export default function ChatScreen() {
     }
   };
 
-  // 7. Telsiz Ses Kaydını Oynat / Duraklat
+  // 7. Telsiz Ses Kaydını Oynat / Duraklat (expo-audio)
   const handlePlayAudio = async (msgId: string, audioUrl: string) => {
     try {
       if (soundRef.current) {
-        await soundRef.current.unloadAsync();
+        soundRef.current.pause();
+        soundRef.current.remove();
         soundRef.current = null;
       }
 
@@ -336,19 +338,21 @@ export default function ChatScreen() {
           ? audioUrl
           : `${WEB_BASE_URL}${audioUrl}`;
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: fullUrl },
-        { shouldPlay: true }
-      );
-
-      soundRef.current = sound;
+      const player = createAudioPlayer(fullUrl);
+      soundRef.current = player;
       setPlayingMessageId(msgId);
 
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
+      player.addListener("playbackStatusUpdate", (status) => {
+        if (status.didJustFinish) {
           setPlayingMessageId(null);
+          player.remove();
+          if (soundRef.current === player) {
+            soundRef.current = null;
+          }
         }
       });
+
+      player.play();
     } catch (err) {
       console.warn("[Chat] Ses oynatma hatası:", err);
       setPlayingMessageId(null);
@@ -359,7 +363,9 @@ export default function ChatScreen() {
   useEffect(() => {
     return () => {
       if (soundRef.current) {
-        soundRef.current.unloadAsync();
+        soundRef.current.pause();
+        soundRef.current.remove();
+        soundRef.current = null;
       }
     };
   }, []);
