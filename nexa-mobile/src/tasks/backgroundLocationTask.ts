@@ -31,100 +31,116 @@ export interface AttendanceTrackingSession {
   lastUpdated?: string;
 }
 
+let isAttendanceTaskRegistered = false;
+
 /**
- * ADIM 1: Arka Plan Görev (Task) Tanımlaması
- * TaskManager.defineTask ile uygulamanın kök seviyesinde arka plan görevi kaydedilir.
+ * ADIM 1: Arka Plan Görev (Task) Tanımlaması (Güvenli Başlatma)
+ * Android WorkDatabase ve InitializationProvider çökmesini önlemek için doğrudan global scope yerine,
+ * React Native hazır olduğunda useEffect veya ilk check-in eylemiyle çağrılır.
  */
-TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
-  if (error) {
-    console.error("[BackgroundLocationTask] Arka plan GPS hatası:", error.message);
-    return;
-  }
+export function registerBackgroundLocationTask() {
+  if (isAttendanceTaskRegistered) return;
+  try {
+    if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK)) {
+      TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
+        if (error) {
+          console.error("[BackgroundLocationTask] Arka plan GPS hatası:", error.message);
+          return;
+        }
 
-  if (data) {
-    const { locations } = data as { locations: Location.LocationObject[] };
+        if (data) {
+          const { locations } = data as { locations: Location.LocationObject[] };
 
-    if (!locations || locations.length === 0) {
-      return;
-    }
+          if (!locations || locations.length === 0) {
+            return;
+          }
 
-    const latest = locations[locations.length - 1];
-    const { latitude, longitude, accuracy, speed, altitude, heading } = latest.coords;
-    const timestamp = latest.timestamp;
+          const latest = locations[locations.length - 1];
+          const { latitude, longitude, accuracy, speed, altitude, heading } = latest.coords;
+          const timestamp = latest.timestamp;
 
-    try {
-      // AsyncStorage'dan aktif puantaj oturumunu oku
-      let userId = "usr_personel_01";
-      let personelId = "PRS-2026-001";
-      let projectId = "PRJ-2026-A";
+          try {
+            // AsyncStorage'dan aktif puantaj oturumunu oku
+            let userId = "usr_personel_01";
+            let personelId = "PRS-2026-001";
+            let projectId = "PRJ-2026-A";
 
-      const sessionStr = await AsyncStorage.getItem(ATTENDANCE_TRACKING_KEY);
-      if (sessionStr) {
-        const session: AttendanceTrackingSession = JSON.parse(sessionStr);
-        if (session.userId) userId = session.userId;
-        if (session.personelId) personelId = session.personelId;
-        if (session.projectId) projectId = session.projectId;
-      }
+            const sessionStr = await AsyncStorage.getItem(ATTENDANCE_TRACKING_KEY);
+            if (sessionStr) {
+              const session: AttendanceTrackingSession = JSON.parse(sessionStr);
+              if (session.userId) userId = session.userId;
+              if (session.personelId) personelId = session.personelId;
+              if (session.projectId) projectId = session.projectId;
+            }
 
-      // Son konumu yerel depoya kaydet
-      await AsyncStorage.setItem(
-        LAST_ATTENDANCE_LOCATION_KEY,
-        JSON.stringify({
-          latitude,
-          longitude,
-          accuracy: accuracy ? Math.round(accuracy) : null,
-          speed: speed ? Math.round(speed * 3.6) : 0,
-          altitude: altitude ? Math.round(altitude) : null,
-          heading: heading || null,
-          timestamp,
-        })
-      );
+            // Son konumu yerel depoya kaydet
+            await AsyncStorage.setItem(
+              LAST_ATTENDANCE_LOCATION_KEY,
+              JSON.stringify({
+                latitude,
+                longitude,
+                accuracy: accuracy ? Math.round(accuracy) : null,
+                speed: speed ? Math.round(speed * 3.6) : 0,
+                altitude: altitude ? Math.round(altitude) : null,
+                heading: heading || null,
+                timestamp,
+              })
+            );
 
-      // ADIM 2: Mobilden gelen arka plan konum verileri socket.emit('updateLocation', { lat, lng, userId }) üzerinden akar
-      const socketSuccess = locationSocket.emitLocation({
-        userId,
-        lat: latitude,
-        lng: longitude,
-        projectId,
-        accuracy: accuracy ? Math.round(accuracy) : null,
-        speed: speed ? Math.round(speed * 3.6) : null,
-        altitude: altitude ? Math.round(altitude) : null,
-        timestamp,
+            // ADIM 2: Mobilden gelen arka plan konum verileri socket.emit('updateLocation', { lat, lng, userId }) üzerinden akar
+            const socketSuccess = locationSocket.emitLocation({
+              userId,
+              lat: latitude,
+              lng: longitude,
+              projectId,
+              accuracy: accuracy ? Math.round(accuracy) : null,
+              speed: speed ? Math.round(speed * 3.6) : null,
+              altitude: altitude ? Math.round(altitude) : null,
+              timestamp,
+            });
+
+            // Socket bağlantısı olmaması durumunda HTTP fallback
+            if (!socketSuccess) {
+              await api.post("/location/live-update", {
+                userId,
+                personelId,
+                projectId,
+                lat: latitude,
+                lng: longitude,
+                latitude,
+                longitude,
+                accuracy: accuracy ? Math.round(accuracy) : null,
+                speed: speed ? Math.round(speed * 3.6) : null,
+                altitude: altitude ? Math.round(altitude) : null,
+                timestamp,
+                source: "ATTENDANCE_BACKGROUND_GEOFENCE",
+              }).catch((err) => {
+                console.warn("[BackgroundLocationTask] HTTP fallback uyarısı:", err?.message);
+              });
+            }
+
+            console.log(
+              `[BackgroundLocationTask] 🛰️ Canlı İSG konumu Socket.io ile iletildi: ${latitude.toFixed(
+                5
+              )}, ${longitude.toFixed(5)} (Hassasiyet: ±${accuracy ? Math.round(accuracy) : 5}m)`
+            );
+          } catch (reqErr: any) {
+            console.warn(
+              "[BackgroundLocationTask] Konum merkeze iletilemedi (Ağ veya sunucu):",
+              reqErr?.message || reqErr
+            );
+          }
+        }
       });
-
-      // Socket bağlantısı olmaması durumunda HTTP fallback
-      if (!socketSuccess) {
-        await api.post("/location/live-update", {
-          userId,
-          personelId,
-          projectId,
-          lat: latitude,
-          lng: longitude,
-          latitude,
-          longitude,
-          accuracy: accuracy ? Math.round(accuracy) : null,
-          speed: speed ? Math.round(speed * 3.6) : null,
-          altitude: altitude ? Math.round(altitude) : null,
-          timestamp,
-          source: "ATTENDANCE_BACKGROUND_GEOFENCE",
-        }).catch((err) => {
-          console.warn("[BackgroundLocationTask] HTTP fallback uyarısı:", err?.message);
-        });
-      }
-
-      console.log(
-        `[BackgroundLocationTask] 🛰️ Canlı İSG konumu Socket.io ile iletildi: ${latitude.toFixed(
-          5
-        )}, ${longitude.toFixed(5)} (Hassasiyet: ±${accuracy ? Math.round(accuracy) : 5}m)`
-      );
-    } catch (reqErr: any) {
-      console.warn(
-        "[BackgroundLocationTask] Konum merkeze iletilemedi (Ağ veya sunucu):",
-        reqErr?.message || reqErr
-      );
+      isAttendanceTaskRegistered = true;
+      console.log("[BackgroundLocationTask] Arka plan İSG görevi güvenle kaydedildi.");
+    } else {
+      isAttendanceTaskRegistered = true;
     }
+  } catch (err: any) {
+    console.warn("[BackgroundLocationTask] TaskManager tanımlama hatası:", err?.message || err);
   }
-});
+}
 
 /**
  * ADIM 2: Puantaj Giriş (Check-in) yapıldığında arka plan konum takibini başlatır.
@@ -138,6 +154,9 @@ export async function startAttendanceLocationTracking(params?: {
   projectName?: string;
 }): Promise<boolean> {
   try {
+    // Görevin tanımlı olduğundan kesin emin ol
+    registerBackgroundLocationTask();
+
     // 1. Ön Plan Konum İzni Kontrolü
     const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
     if (fgStatus !== "granted") {

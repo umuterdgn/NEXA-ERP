@@ -25,80 +25,96 @@ export interface DeliveryTrackingState {
   lastUpdate?: string;
 }
 
+let isLocationTaskRegistered = false;
+
 /**
- * 1. Arka Planda Çalışacak TaskManager Tanımı
- * (Uygulama açılır açılmaz dosya seviyesinde defineTask çağrılmalıdır)
+ * 1. Arka Planda Çalışacak TaskManager Tanımı (Güvenli Başlatma)
+ * Android WorkDatabase ve InitializationProvider çökmesini önlemek için doğrudan global scope yerine,
+ * React Native hazır olduğunda useEffect veya ilk takip eylemiyle çağrılır.
  */
-TaskManager.defineTask(LOCATION_TRACKING_TASK_NAME, async ({ data, error }) => {
-  if (error) {
-    console.error("[LocationTask] Arka plan GPS hatası:", error.message);
-    return;
-  }
+export function registerLocationTask() {
+  if (isLocationTaskRegistered) return;
+  try {
+    if (!TaskManager.isTaskDefined(LOCATION_TRACKING_TASK_NAME)) {
+      TaskManager.defineTask(LOCATION_TRACKING_TASK_NAME, async ({ data, error }) => {
+        if (error) {
+          console.error("[LocationTask] Arka plan GPS hatası:", error.message);
+          return;
+        }
 
-  if (data) {
-    const { locations } = data as { locations: Location.LocationObject[] };
+        if (data) {
+          const { locations } = data as { locations: Location.LocationObject[] };
 
-    if (!locations || locations.length === 0) {
-      return;
-    }
+          if (!locations || locations.length === 0) {
+            return;
+          }
 
-    const latest = locations[locations.length - 1];
-    const { latitude, longitude, speed, heading, accuracy } = latest.coords;
-    const timestamp = latest.timestamp;
+          const latest = locations[locations.length - 1];
+          const { latitude, longitude, speed, heading, accuracy } = latest.coords;
+          const timestamp = latest.timestamp;
 
-    // Aktif teslimat ve şoför bilgilerini AsyncStorage'dan oku
-    try {
-      let driverId = "usr_driver_01";
-      let deliveryId = "DEL-2026-98421";
+          // Aktif teslimat ve şoför bilgilerini AsyncStorage'dan oku
+          try {
+            let driverId = "usr_driver_01";
+            let deliveryId = "DEL-2026-98421";
 
-      const storedSession = await AsyncStorage.getItem(TRACKING_STORAGE_KEY);
-      if (storedSession) {
-        const parsed: DeliveryTrackingState = JSON.parse(storedSession);
-        if (parsed.driverId) driverId = parsed.driverId;
-        if (parsed.deliveryId) deliveryId = parsed.deliveryId;
-      }
+            const storedSession = await AsyncStorage.getItem(TRACKING_STORAGE_KEY);
+            if (storedSession) {
+              const parsed: DeliveryTrackingState = JSON.parse(storedSession);
+              if (parsed.driverId) driverId = parsed.driverId;
+              if (parsed.deliveryId) deliveryId = parsed.deliveryId;
+            }
 
-      // Son konumu yerel önbelleğe kaydet
-      await AsyncStorage.setItem(
-        LAST_COORDS_STORAGE_KEY,
-        JSON.stringify({
-          latitude,
-          longitude,
-          speed: speed ? Math.round(speed * 3.6) : 0, // km/h
-          heading,
-          accuracy,
-          timestamp,
-        })
-      );
+            // Son konumu yerel önbelleğe kaydet
+            await AsyncStorage.setItem(
+              LAST_COORDS_STORAGE_KEY,
+              JSON.stringify({
+                latitude,
+                longitude,
+                speed: speed ? Math.round(speed * 3.6) : 0, // km/h
+                heading,
+                accuracy,
+                timestamp,
+              })
+            );
 
-      // Backend API'ye anlık koordinatları gönder (Axios isteği)
-      await api.post("/location/track", {
-        driverId,
-        personelId: driverId,
-        deliveryId,
-        lat: latitude,
-        lng: longitude,
-        latitude,
-        longitude,
-        speed: speed ? Math.round(speed * 3.6) : null,
-        heading: heading || null,
-        accuracy: accuracy ? Math.round(accuracy) : null,
-        timestamp,
+            // Backend API'ye anlık koordinatları gönder (Axios isteği)
+            await api.post("/location/track", {
+              driverId,
+              personelId: driverId,
+              deliveryId,
+              lat: latitude,
+              lng: longitude,
+              latitude,
+              longitude,
+              speed: speed ? Math.round(speed * 3.6) : null,
+              heading: heading || null,
+              accuracy: accuracy ? Math.round(accuracy) : null,
+              timestamp,
+            });
+
+            console.log(
+              `[LocationTask] Canlı konum merkeze iletildi: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (Hız: ${
+                speed ? Math.round(speed * 3.6) : 0
+              } km/h)`
+            );
+          } catch (reqErr: any) {
+            console.warn(
+              "[LocationTask] Merkeze konum iletme hatası (Ağ veya sunucu):",
+              reqErr?.message || reqErr
+            );
+          }
+        }
       });
-
-      console.log(
-        `[LocationTask] Canlı konum merkeze iletildi: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (Hız: ${
-          speed ? Math.round(speed * 3.6) : 0
-        } km/h)`
-      );
-    } catch (reqErr: any) {
-      console.warn(
-        "[LocationTask] Merkeze konum iletme hatası (Ağ veya sunucu):",
-        reqErr?.message || reqErr
-      );
+      isLocationTaskRegistered = true;
+      console.log("[LocationTask] Arka plan GPS görevi güvenle kaydedildi.");
+    } else {
+      isLocationTaskRegistered = true;
     }
+  } catch (err: any) {
+    console.warn("[LocationTask] TaskManager tanımlama hatası:", err?.message || err);
   }
-});
+}
 
 /**
  * 2. Arka Plan Konum Takibini Başlat
@@ -110,6 +126,9 @@ export async function startBackgroundLocationTracking(params?: {
   waybillNo?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
+    // Görevin tanımlı olduğundan kesin emin ol
+    registerLocationTask();
+
     // 1. Ön Plan (Foreground) Konum İzni İste
     const { status: fgStatus } =
       await Location.requestForegroundPermissionsAsync();

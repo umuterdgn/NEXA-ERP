@@ -5,8 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Notifications from "expo-notifications";
-import "../src/tasks/locationTask";
-import "../src/tasks/backgroundLocationTask";
+import { initializeBackgroundTasks } from "../src/tasks";
 
 /**
  * ADIM 3: Foreground (Ön Plan) Bildirim Yöneticisi
@@ -33,6 +32,19 @@ export default function RootLayout() {
 
   // ADIM 3: Global Ağ Durumu ve Otomatik Offline Kuyruk Senkronizasyonu
   useNetworkSync();
+
+  // WorkDatabase / WorkManager açılış çökmesini önlemek için arka plan görevlerini güvenli başlatma
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        initializeBackgroundTasks();
+      } catch (err) {
+        console.warn("[RootLayout] Arka plan görevleri başlatma uyarısı:", err);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // ADIM 3: Bildirime tıklandığında (Response listener) ilgili sayfaya yönlendirme (Deep Link / Routing)
