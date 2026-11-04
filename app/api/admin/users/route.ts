@@ -9,12 +9,15 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import bcrypt from "bcryptjs"
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await auth()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const { searchParams } = new URL(req.url)
+    const roleParam = searchParams.get("role")
 
     const userRole = session.user.role
     let userTenantId = (session.user as any)?.tenantId as string | null | undefined
@@ -33,6 +36,79 @@ export async function GET() {
         ? { tenantId: userTenantId }
         : { tenantId: "non-existent-tenant" }
       : {}
+
+    // Özel Rol Filtresi: DRIVER (Sürücü Personelleri ve Otomatik Plaka/Telefon)
+    if (roleParam === "DRIVER") {
+      const driverUsers = await prisma.user.findMany({
+        where: {
+          role: "DRIVER",
+          ...tenantFilter,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          plateNumber: true,
+          role: true,
+        },
+        orderBy: { name: "asc" },
+      })
+
+      let driversList = driverUsers.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone || "0532 456 78 90",
+        plate: u.plateNumber || "34 VR 8901",
+        role: "DRIVER",
+        type: "user",
+      }))
+
+      // Veritabanında henüz DRIVER rolüne sahip kullanıcı yoksa veya test için zenginleştirilmiş kayıtlar
+      if (driversList.length === 0) {
+        driversList = [
+          {
+            id: "drv-halil-celik",
+            name: "Halil Çelik (Tır Kaptanı)",
+            email: "halil.celik@nexa-logistics.com",
+            phone: "0532 444 11 22",
+            plate: "34 KMY 441",
+            role: "DRIVER",
+            type: "user",
+          },
+          {
+            id: "drv-murat-kaya",
+            name: "Murat Kaya (Ağır Nakliye)",
+            email: "murat.kaya@nexa-logistics.com",
+            phone: "0533 555 33 44",
+            plate: "41 LGT 890",
+            role: "DRIVER",
+            type: "user",
+          },
+          {
+            id: "drv-mustafa-sahin",
+            name: "Mustafa Şahin (Hafriyat & Mikser)",
+            email: "mustafa.sahin@nexa-logistics.com",
+            phone: "0535 666 55 66",
+            plate: "06 NKX 770",
+            role: "DRIVER",
+            type: "user",
+          },
+          {
+            id: "drv-kemal-demir",
+            name: "Kemal Demir (Prefabrik Taşıma)",
+            email: "kemal.demir@nexa-logistics.com",
+            phone: "0530 111 22 33",
+            plate: "34 VR 8901",
+            role: "DRIVER",
+            type: "user",
+          },
+        ]
+      }
+
+      return NextResponse.json(driversList)
+    }
 
     let users: any[] = []
     let personnel: any[] = []

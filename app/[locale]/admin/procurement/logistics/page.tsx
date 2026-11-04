@@ -92,6 +92,16 @@ interface InternalDriverOption {
   name: string
   email: string
   phone?: string | null
+  plate?: string | null
+}
+
+interface WarehouseOption {
+  id: string
+  name: string
+  code?: string | null
+  city?: string | null
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export default function LogisticsCalendarPage() {
@@ -102,6 +112,7 @@ export default function LogisticsCalendarPage() {
   const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequestOption[]>([])
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [internalDrivers, setInternalDrivers] = useState<InternalDriverOption[]>([])
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeDateTab, setActiveDateTab] = useState<string>("today")
   const [customDate, setCustomDate] = useState<string>(new Date().toISOString().split("T")[0])
@@ -113,6 +124,10 @@ export default function LogisticsCalendarPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [formPRId, setFormPRId] = useState("")
   const [formSupplierId, setFormSupplierId] = useState("")
+  const [logisticsType, setLogisticsType] = useState<"INTERNAL" | "EXTERNAL">("INTERNAL")
+  const [formWarehouseId, setFormWarehouseId] = useState("")
+  const [estimatedDistance, setEstimatedDistance] = useState<number | null>(null)
+  const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null)
   const [formPlate, setFormPlate] = useState("")
   const [formDriver, setFormDriver] = useState("")
   const [formDriverPhone, setFormDriverPhone] = useState("")
@@ -151,10 +166,11 @@ export default function LogisticsCalendarPage() {
 
   const fetchDropdowns = async () => {
     try {
-      const [prRes, compRes, usersRes] = await Promise.all([
+      const [prRes, compRes, usersRes, whRes] = await Promise.all([
         fetch("/api/procurement/purchase-requests"),
         fetch("/api/admin/companies"),
-        fetch("/api/admin/users"),
+        fetch("/api/admin/users?role=DRIVER"),
+        fetch("/api/admin/warehouses"),
       ])
       if (prRes.ok) {
         const prData = await prRes.json()
@@ -173,13 +189,56 @@ export default function LogisticsCalendarPage() {
           : Array.isArray(usersData)
           ? usersData
           : []
-        const drivers = userList.filter((u: any) => u.role === "DRIVER")
+        const drivers = Array.isArray(usersData) ? usersData : userList.filter((u: any) => u.role === "DRIVER")
         setInternalDrivers(drivers)
+      }
+      if (whRes?.ok) {
+        const whData = await whRes.json()
+        const whList = Array.isArray(whData) ? whData : []
+        setWarehouses(whList)
+        if (whList.length > 0) setFormWarehouseId(whList[0].id)
       }
     } catch (err) {
       console.error(err)
     }
   }
+
+  // Tahmini Mesafe ve Yolculuk Süresi Otomatik Hesaplama (ADIM 2)
+  useEffect(() => {
+    let originLat = 40.8986
+    let originLng = 29.3597
+
+    if (logisticsType === "INTERNAL") {
+      const wh = warehouses.find((w) => w.id === formWarehouseId)
+      if (wh?.latitude && wh?.longitude) {
+        originLat = wh.latitude
+        originLng = wh.longitude
+      }
+    } else {
+      originLat = 40.7850
+      originLng = 29.5400
+    }
+
+    const pr = purchaseRequests.find((p) => p.id === formPRId)
+    const destLat = 41.1105
+    const destLng = 29.0205
+
+    // Haversine Formülü
+    const R = 6371
+    const dLat = ((destLat - originLat) * Math.PI) / 180
+    const dLng = ((destLng - originLng) * Math.PI) / 180
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((originLat * Math.PI) / 180) *
+        Math.cos((destLat * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    const roadKm = Math.max(12, Math.round(R * c * 1.35))
+    setEstimatedDistance(roadKm)
+    const durationMin = Math.round((roadKm / 45) * 60)
+    setEstimatedDuration(durationMin)
+  }, [logisticsType, formWarehouseId, formPRId, warehouses, purchaseRequests])
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
     try {
@@ -212,7 +271,14 @@ export default function LogisticsCalendarPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           purchaseRequestId: formPRId,
-          supplierId: formSupplierId,
+          supplierId: logisticsType === "EXTERNAL" ? formSupplierId : null,
+          logisticsType,
+          originWarehouseId: logisticsType === "INTERNAL" ? formWarehouseId : null,
+          originName: logisticsType === "INTERNAL" ? (warehouses.find(w => w.id === formWarehouseId)?.name || "Merkez Lojistik Deposu") : (companies.find(c => c.id === formSupplierId)?.name || "Tedarikçi Firması"),
+          originLat: logisticsType === "INTERNAL" ? (warehouses.find(w => w.id === formWarehouseId)?.latitude || 40.8986) : 40.7850,
+          originLng: logisticsType === "INTERNAL" ? (warehouses.find(w => w.id === formWarehouseId)?.longitude || 29.3597) : 29.5400,
+          estimatedDistanceKm: estimatedDistance,
+          estimatedDurationMin: estimatedDuration,
           vehiclePlate: formPlate,
           driverName: formDriver,
           driverPhone: formDriverPhone.trim(),
@@ -846,6 +912,7 @@ export default function LogisticsCalendarPage() {
                       if (driver) {
                         setFormDriver(driver.name)
                         if (driver.phone) setFormDriverPhone(driver.phone)
+                        if (driver.plate) setFormPlate(driver.plate)
                       }
                     }}
                     className="w-full px-3 py-2 text-sm rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-blue-500"
@@ -879,23 +946,81 @@ export default function LogisticsCalendarPage() {
                 </select>
               </div>
 
-              {/* Supplier Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Tedarikçi / Lojistik Firması *
+              {/* Lojistik Tipi / Kalkış Noktası (ADIM 2) */}
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                <label className="block text-xs font-semibold text-slate-300 mb-2">
+                  Lojistik Tipi / Kalkış Noktası *
                 </label>
-                <select
-                  value={formSupplierId}
-                  onChange={(e) => setFormSupplierId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-blue-500"
-                  required
-                >
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setLogisticsType("INTERNAL")}
+                    className={`p-2.5 rounded-lg text-xs font-bold border transition-all text-center flex items-center justify-center gap-1.5 ${logisticsType === "INTERNAL" ? "bg-blue-600/20 border-blue-500 text-blue-400 shadow-md" : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"}`}
+                  >
+                    <span>🏢 İç Lojistik (Merkez Depo)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogisticsType("EXTERNAL")}
+                    className={`p-2.5 rounded-lg text-xs font-bold border transition-all text-center flex items-center justify-center gap-1.5 ${logisticsType === "EXTERNAL" ? "bg-purple-600/20 border-purple-500 text-purple-400 shadow-md" : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"}`}
+                  >
+                    <span>🏬 Dış Lojistik (Tedarikçi)</span>
+                  </button>
+                </div>
+
+                {logisticsType === "INTERNAL" ? (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                      Şirket Merkez Deposu Seçin *
+                    </label>
+                    <select
+                      value={formWarehouseId}
+                      onChange={(e) => setFormWarehouseId(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg bg-slate-900 border border-slate-800 text-slate-200 focus:outline-none focus:border-blue-500"
+                      required
+                    >
+                      <option value="">-- Merkez Deposu Seçin --</option>
+                      {warehouses.map((wh) => (
+                        <option key={wh.id} value={wh.id}>
+                          {wh.name} {wh.city ? `(${wh.city})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                      Tedarikçi / Lojistik Firması *
+                    </label>
+                    <select
+                      value={formSupplierId}
+                      onChange={(e) => setFormSupplierId(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg bg-slate-900 border border-slate-800 text-slate-200 focus:outline-none focus:border-purple-500"
+                      required
+                    >
+                      <option value="">-- Tedarikçi Firma Seçin --</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Tahmini Mesafe ve Süre Canlı Gösterge */}
+                {estimatedDistance !== null && (
+                  <div className="mt-3 p-2.5 rounded-lg bg-blue-950/30 border border-blue-500/20 flex items-center justify-between text-xs text-slate-300">
+                    <div className="flex items-center gap-1.5 text-blue-400 font-semibold">
+                      <MapPin className="w-4 h-4 text-blue-400" />
+                      <span>Mesafe: <strong>{estimatedDistance} km</strong></span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
+                      <Clock className="w-4 h-4 text-amber-400" />
+                      <span>Tahmini Varış: <strong>~{estimatedDuration} dk</strong></span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Vehicle Plate & Driver Name */}

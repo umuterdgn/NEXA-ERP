@@ -58,6 +58,7 @@ model User {
   documentRevisions        DocumentRevision[]
   coreSamplesTaken         CoreSample[]
   phone                    String?
+  plateNumber              String?
   leaveRequests            LeaveRequest[]
   advanceRequests          AdvanceRequest[]
   personnelDocuments       PersonnelDocument[]
@@ -1042,6 +1043,7 @@ model Personel {
   birthDate                DateTime
   gender                   Gender?
   phone                    String?
+  plateNumber              String?
   email                    String?
   address                  String?                   @db.Text
   department               String // Çalışılan birim
@@ -3782,6 +3784,13 @@ model LogisticsAppointment {
   driverPhone      String?  // Sürücü Telefonu (WhatsApp için KRİTİK)
   isInternalDriver Boolean  @default(false)
   driverUserId     String?  // Eğer iç şoförse User ID'si
+  logisticsType    String?  @default("INTERNAL") // INTERNAL (Merkez Depo), EXTERNAL (Tedarikçi/Taşeron)
+  originWarehouseId String? // İç Lojistik için seçilen depo ID
+  originName       String?  // Depo adı veya Tedarikçi adı
+  originLat        Float?   // Çıkış noktası enlemi
+  originLng        Float?   // Çıkış noktası boylamı
+  estimatedDistanceKm Float? // Tahmini mesafe (km)
+  estimatedDurationMin Int?  // Tahmini yolculuk süresi (dakika)
   appointmentDate  DateTime // Randevu Tarihi ve Saati
   status           String   @default("BEKLİYOR") // BEKLİYOR, KAPIDA, İÇERİDE, BOŞALTILDI, İPTAL, SCHEDULED, COMPLETED
   notes            String?  @db.Text
@@ -3799,6 +3808,28 @@ model LogisticsAppointment {
   @@index([tenantId])
   @@index([driverUserId])
   @@index([trackingToken])
+}
+
+// ============================================================================
+// WAREHOUSE (Merkez Depolar & Dağıtım Merkezleri)
+// ============================================================================
+
+model Warehouse {
+  id          String   @id @default(cuid())
+  tenantId    String?  // SaaS: Kiracı ID
+  name        String   // Örn: "Tuzla Merkez Lojistik Deposu", "Gebze BİM Fit-Out Deposu"
+  code        String?  // Örn: "DEP-01"
+  address     String?
+  city        String?
+  latitude    Float?   @default(40.8986)
+  longitude   Float?   @default(29.3597)
+  contactName String?
+  phone       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 // ============================================================================
