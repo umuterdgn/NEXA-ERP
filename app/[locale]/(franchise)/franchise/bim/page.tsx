@@ -21,7 +21,7 @@ export default async function FranchiseBimPage() {
   const tenantId = (session.user as any)?.tenantId
 
   // %100 Tenant İzolasyonu
-  const [projects, templates] = await Promise.all([
+  const [projects, templates, bimFiles] = await Promise.all([
     prisma.project.findMany({
       where: tenantId ? { tenantId } : {},
       select: {
@@ -48,6 +48,21 @@ export default async function FranchiseBimPage() {
         estimatedDays: true,
       },
     }),
+    prisma.bimFile.findMany({
+      where: tenantId ? { tenantId } : {},
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            title: true,
+            city: true,
+          },
+        },
+      },
+      orderBy: { uploadedAt: "desc" },
+      take: 30,
+    }).catch(() => []),
   ])
 
   const formattedProjects = projects.map((p) => ({
@@ -55,5 +70,11 @@ export default async function FranchiseBimPage() {
     name: p.name || "İsimsiz Şube / Mağaza",
   }))
 
-  return <BimPageClient projects={formattedProjects} templates={templates} />
+  return (
+    <BimPageClient
+      projects={formattedProjects}
+      templates={templates}
+      initialBimFiles={bimFiles}
+    />
+  )
 }

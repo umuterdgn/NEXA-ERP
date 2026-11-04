@@ -63,7 +63,8 @@
       "expandMenu": "Menüyü Genişlet",
       "collapseMenu": "Menüyü Daralt",
       "admin": "Yönetici",
-      "logout": "Güvenli Çıkış"
+      "logout": "Güvenli Çıkış",
+      "subcontractorAudits": "Taşeron Denetimleri"
     },
     "createRollout": {
       "title": "Yeni Mağaza Açılışı",

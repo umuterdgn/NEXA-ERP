@@ -21,9 +21,12 @@ import {
   Download,
   Search,
   Filter,
-  FileText
+  FileText,
+  Layers,
+  Percent
 } from "lucide-react"
 import { toast } from "react-hot-toast"
+import { useRouter } from "next/navigation"
 import CreateContractModal from "@/components/franchise/CreateContractModal"
 
 interface ContractsPageClientProps {
@@ -37,12 +40,12 @@ export default function ContractsPageClient({
   projects,
   totalValue,
 }: ContractsPageClientProps) {
+  const router = useRouter()
   const [contracts, setContracts] = useState(initialContracts)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleContractCreated = () => {
-    // Optimistic / visual refresh
-    toast.success("Sözleşme listesi güncellendi.")
+    router.refresh()
   }
 
   return (
@@ -59,7 +62,7 @@ export default function ContractsPageClient({
             Taşeron Sözleşmeleri & Taahhütler
           </h1>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Mağaza dekorasyon, mekanik ve elektrik taşeronlarınızın birim fiyatlı ve anahtar teslim sözleşmelerini yönetin.
+            Mağaza dekorasyon, kaba yapı, mekanik ve elektrik taşeronlarınızın birim fiyatlı ve anahtar teslim sözleşmelerini yönetin.
           </p>
         </div>
 
@@ -98,49 +101,49 @@ export default function ContractsPageClient({
 
         <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-xl">
           <div className="text-xs text-emerald-400 font-medium flex items-center justify-between">
-            <span>Toplam Taahhüt Hacmi</span>
+            <span>Toplam Taahhüt Tutarı</span>
             <DollarSign className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-black text-emerald-400 mt-2">
-            {totalValue > 0 ? `₺${totalValue.toLocaleString("tr-TR")}` : "₺12.450.000"}
+            ₺{(totalValue || 18500000).toLocaleString("tr-TR")}
           </div>
           <div className="text-[11px] text-emerald-500/80 mt-1">
-            Fit-out & ince işler bütçesi
+            Yürürlükteki sözleşmeler
           </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-xl">
           <div className="text-xs text-blue-400 font-medium flex items-center justify-between">
-            <span>Teminat Oranı</span>
-            <ShieldAlert className="w-4 h-4 text-blue-400" />
+            <span>Kesinti / Teminat Oranı</span>
+            <Percent className="w-4 h-4 text-blue-400" />
           </div>
-          <div className="text-2xl font-black text-blue-400 mt-2">
-            %6.0 <span className="text-xs text-slate-500 font-normal">kesinti</span>
+          <div className="text-2xl font-black text-white mt-2">
+            %5.0 <span className="text-xs text-slate-500 font-normal">kesin teminat</span>
           </div>
-          <div className="text-[11px] text-blue-400/80 mt-1">
-            Geçici kabul garanti bloke fonu
+          <div className="text-[11px] text-slate-400 mt-1">
+            Geçici kabul güvencesi
           </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-xl">
           <div className="text-xs text-amber-400 font-medium flex items-center justify-between">
-            <span>Gecikme Cezası Koşulu</span>
-            <Clock className="w-4 h-4 text-amber-400" />
+            <span>Gecikme Cezası</span>
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl font-black text-white mt-2">
-            %0.2 <span className="text-xs text-slate-500 font-normal">/ gün</span>
+            ₺2.500 <span className="text-xs text-slate-500 font-normal">/ gün</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Standart açılış gecikme maddesi
+            Açılış gecikme yaptırımı
           </div>
         </div>
       </div>
 
-      {/* Contract List */}
+      {/* Contract List Table */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Building2 className="w-5 h-5 text-amber-400" />
-          Şube Bazlı Taşeron Anlaşmaları
+          Şube Bazlı Taşeron Anlaşmaları & Kapsamları
         </h2>
 
         {contracts.length === 0 ? (
@@ -166,7 +169,10 @@ export default function ContractsPageClient({
                   <th className="p-4">Sözleşme Adı / No</th>
                   <th className="p-4">İlgili Mağaza</th>
                   <th className="p-4">Taşeron Firma</th>
+                  <th className="p-4">Kapsam</th>
                   <th className="p-4">Sözleşme Tutarı</th>
+                  <th className="p-4">Tarihler</th>
+                  <th className="p-4">Teminat</th>
                   <th className="p-4">Durum</th>
                   <th className="p-4 text-right">İşlemler</th>
                 </tr>
@@ -175,21 +181,39 @@ export default function ContractsPageClient({
                 {contracts.map((c: any) => (
                   <tr key={c.id} className="hover:bg-slate-800/40 transition-colors">
                     <td className="p-4 font-semibold text-white">
-                      {c.title || c.contractNumber || "Fit-Out Dekorasyon Sözleşmesi"}
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-amber-400" />
+                        <div>
+                          <div>{c.title || c.contractNumber || "Fit-Out Dekorasyon Sözleşmesi"}</div>
+                          <div className="text-[10px] text-slate-500 font-mono">ID: {c.id.slice(-6).toUpperCase()}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="p-4 text-slate-300">
                       {c.project?.name || "Merkez Mağaza"}
                     </td>
-                    <td className="p-4 text-slate-400">
-                      {c.subcontractor?.companyName || c.subcontractorName || "Genel Taşeron"}
+                    <td className="p-4 text-slate-300 font-medium">
+                      {c.subcontractor?.name || c.subcontractor?.companyName || c.subcontractorName || "Taşeron Firma"}
+                    </td>
+                    <td className="p-4">
+                      <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] text-slate-300 border border-slate-700">
+                        {c.scope || "Kaba & İnce İşler"}
+                      </span>
                     </td>
                     <td className="p-4 font-mono font-bold text-emerald-400">
                       ₺{Number(c.totalAmount || c.amount || 0).toLocaleString("tr-TR")}
                     </td>
+                    <td className="p-4 text-slate-400 text-[11px]">
+                      <div>{c.startDate ? new Date(c.startDate).toLocaleDateString("tr-TR") : "Başlangıç"}</div>
+                      <div className="text-slate-500">{c.endDate ? new Date(c.endDate).toLocaleDateString("tr-TR") : "Bitiş"}</div>
+                    </td>
+                    <td className="p-4 text-amber-400 font-mono font-semibold">
+                      %{((Number(c.retentionRate) || 0.05) * 100).toFixed(1)}
+                    </td>
                     <td className="p-4">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
                         <CheckCircle2 className="w-3 h-3" />
-                        {c.status || "YÜRÜRLÜKTE"}
+                        {c.status || "AKTİF"}
                       </span>
                     </td>
                     <td className="p-4 text-right">
@@ -218,4 +242,3 @@ export default function ContractsPageClient({
     </div>
   )
 }
-

@@ -63,7 +63,8 @@
       "expandMenu": "Expand Menu",
       "collapseMenu": "Collapse Menu",
       "admin": "Administrator",
-      "logout": "Sign Out"
+      "logout": "Sign Out",
+      "subcontractorAudits": "Subcontractor Audits"
     },
     "createRollout": {
       "title": "New Store Opening",

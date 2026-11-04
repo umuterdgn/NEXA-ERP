@@ -63,6 +63,7 @@ const franchiseNavigation: MenuItem[] = [
   { href: "/franchise/bim", labelKey: "bim", icon: Boxes, categoryKey: "projectDesign" },
   { href: "/franchise/contracts", labelKey: "contracts", icon: FileSignature, categoryKey: "projectDesign" },
   { href: "/franchise/progress-payments", labelKey: "progressPayments", icon: Receipt, categoryKey: "projectDesign" },
+  { href: "/franchise/subcontractor-audits", labelKey: "subcontractorAudits", icon: ShieldCheck, categoryKey: "projectDesign" },
 
   // FİNANS & TEDARİK
   { href: "/franchise/finance", labelKey: "finance", icon: DollarSign, categoryKey: "financeProcurement" },
