@@ -8,24 +8,10 @@
  */
 
 import React from "react";
-import dynamic from "next/dynamic";
+import DynamicRiskMapWrapper from "@/components/ohs/DynamicRiskMapWrapper";
 import { getLivePersonnelLocations, getRiskZones } from "@/app/actions/ohs";
 import { prisma } from "@/lib/prisma";
 import { ShieldAlert, Users, MapPin, Radio, Activity, AlertOctagon } from "lucide-react";
-
-// Leaflet SSR'da window hatası vermemesi için dynamic import ile ssr: false
-const LiveSituationRiskMap = dynamic(
-  () => import("@/components/ohs/LiveSituationRiskMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[620px] rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center text-slate-400 gap-3">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-semibold">Vaziyet Planı & Canlı GPS Haritası Yükleniyor...</p>
-      </div>
-    ),
-  }
-);
 
 export const metadata = {
   title: "Vaziyet ve İSG Risk Planı | Nexa ERP",
@@ -59,74 +45,65 @@ export default async function RiskMapPage() {
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Real-time Socket.io
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
-              🚁 FPV Drone Ortofoto (22x Zoom)
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-300 border border-blue-500/20">
-              🎬 Geçmiş Rota Playback
-            </span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-            Vaziyet ve İSG Risk Planı
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            Vaziyet & İSG Risk Planı
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Şantiye personellerinin anlık mobil konum takibi (Check-in GPS) ve yüksek riskli imalat çemberleri.
+            {projectName} • BLE Beacon, Akıllı Baret & GPS telemetrisi ile şantiye sahasındaki riskli bölgeleri harita üzerinde izleyin.
           </p>
         </div>
 
-        {/* Proje Bilgi Rozeti */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-            <MapPin className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">
-              Aktif Şantiye
-            </span>
-            <p className="text-sm font-bold text-white">{projectName}</p>
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl flex items-center gap-2.5">
+            <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+            <div className="text-left">
+              <span className="block text-[10px] text-slate-400 font-semibold uppercase">Aktif Uydu/Baz</span>
+              <span className="text-xs font-bold text-slate-200">9 GPS + 4 BLE Hub</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. DÖRT ANA İSTATİSTİK KARTI */}
+      {/* 2. HIZLI METRİK KARTLARI */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-4">
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
             <Users className="w-6 h-6" />
           </div>
           <div>
             <span className="text-xs text-slate-400 font-medium">Sahadaki Personel</span>
             <p className="text-2xl font-black text-white font-mono mt-0.5">
-              {initialPersonnel.length} <span className="text-xs text-slate-500 font-normal">Kişi</span>
+              {initialPersonnel.length} <span className="text-xs text-slate-400 font-normal">Kişi</span>
             </p>
           </div>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-4">
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
             <ShieldAlert className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs text-slate-400 font-medium">Tanımlı Risk Çemberi</span>
+            <span className="text-xs text-slate-400 font-medium">Aktif Tehlike Çemberi</span>
             <p className="text-2xl font-black text-rose-400 font-mono mt-0.5">
-              {initialRiskZones.length} <span className="text-xs text-rose-500/80 font-normal">Kritik Alan</span>
+              {initialRiskZones.length} <span className="text-xs text-rose-500/80 font-normal">Kritik Bölge</span>
             </p>
           </div>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-4">
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <Radio className="w-6 h-6" />
+            <AlertOctagon className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs text-slate-400 font-medium">GPS Sinyal Aralığı</span>
+            <span className="text-xs text-slate-400 font-medium">İhlal Bildirimi (Son 1s)</span>
             <p className="text-2xl font-black text-amber-400 font-mono mt-0.5">
-              5 sn <span className="text-xs text-slate-500 font-normal">Canlı Yenileme</span>
+              0 <span className="text-xs text-slate-400 font-normal">Uyarı</span>
             </p>
           </div>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-4">
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <Activity className="w-6 h-6" />
           </div>
@@ -141,7 +118,7 @@ export default async function RiskMapPage() {
 
       {/* 3. CANLI LEAFLET HARİTASI (REAL-TIME GPS & DANGER ZONES) */}
       <div className="flex-1 w-full min-h-[640px]">
-        <LiveSituationRiskMap
+        <DynamicRiskMapWrapper
           initialPersonnel={initialPersonnel}
           initialRiskZones={initialRiskZones}
           siteCoordinates={siteCoordinates}
