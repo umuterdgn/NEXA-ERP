@@ -25,6 +25,9 @@ import {
   driverApi,
   franchiseApi,
   inspectionApi,
+  revisionApi,
+  materialReceivingApi,
+  concreteCastingApi,
 } from "../../apiClient";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -968,12 +971,78 @@ function InspectionPortal() {
   const [inspectorPin, setInspectorPin] = useState("");
   const [isSigning, setIsSigning] = useState(false);
 
+  // Saha Senaryoları State
+  const [revisions, setRevisions] = useState<any[]>([]);
+  const [showConcreteModal, setShowConcreteModal] = useState(false);
+  const [showReceivingModal, setShowReceivingModal] = useState(false);
+
+  // Beton Döküm Tutanağı Form State
+  const [slumpCm, setSlumpCm] = useState("18");
+  const [concreteTemp, setConcreteTemp] = useState("22");
+  const [airTemp, setAirTemp] = useState("25");
+  const [transmixerPlate, setTransmixerPlate] = useState("");
+  const [waybillTime, setWaybillTime] = useState("10:00");
+  const [castStartTime, setCastStartTime] = useState("10:30");
+  const [labSampleTaken, setLabSampleTaken] = useState(true);
+  const [isSubmittingCast, setIsSubmittingCast] = useState(false);
+
+  // Malzeme Tesellüm Form State
+  const [recWaybillNo, setRecWaybillNo] = useState("");
+  const [recMaterialType, setRecMaterialType] = useState("C35 Hazır Beton");
+  const [recQuantity, setRecQuantity] = useState("12");
+  const [recRejectedQty, setRecRejectedQty] = useState("0");
+  const [isSubmittingRec, setIsSubmittingRec] = useState(false);
+
   useEffect(() => {
     (async () => {
       const data = await inspectionApi.getCriticalTasks();
       setTasks(data || []);
+      const revs = await revisionApi.getLatestRevisions();
+      setRevisions(revs || []);
     })();
   }, []);
+
+  const handleSubmitConcreteLog = async () => {
+    if (!transmixerPlate) {
+      Alert.alert("Eksik Bilgi", "Transmikser plakasını giriniz.");
+      return;
+    }
+    setIsSubmittingCast(true);
+    await concreteCastingApi.submitCastingLog({
+      concreteClass: "C35/45",
+      element: "1. Normal Kat Kolonları",
+      slumpCm: parseFloat(slumpCm) || 18,
+      concreteTemp: parseFloat(concreteTemp) || 22,
+      airTemp: parseFloat(airTemp) || 25,
+      transmixerPlate,
+      waybillTime,
+      castStartTime,
+      labSampleTaken,
+    });
+    setIsSubmittingCast(false);
+    setShowConcreteModal(false);
+    setTransmixerPlate("");
+    Alert.alert("Tutanak Kaydedildi", "Taze beton test verileri ve QA tutanağı sisteme işlendi.");
+  };
+
+  const handleSubmitReceivingLog = async () => {
+    if (!recWaybillNo) {
+      Alert.alert("Eksik Bilgi", "İrsaliye numarasını giriniz.");
+      return;
+    }
+    setIsSubmittingRec(true);
+    await materialReceivingApi.submitReceiving({
+      waybillNo: recWaybillNo,
+      materialType: recMaterialType,
+      receivedQuantity: parseFloat(recQuantity) || 0,
+      unit: "m³ / Ton",
+      rejectedQuantity: parseFloat(recRejectedQty) || 0,
+    });
+    setIsSubmittingRec(false);
+    setShowReceivingModal(false);
+    setRecWaybillNo("");
+    Alert.alert("Tesellüm Kaydedildi", "Malzeme kabul ve irsaliye kaydı sunucuya aktarıldı.");
+  };
 
   const handleOpenSignModal = (task: any) => {
     setSelectedTask(task);
@@ -1023,9 +1092,45 @@ function InspectionPortal() {
           <Ionicons name="shield-checkmark" size={20} color="#AF52DE" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.portalCardTitle}>Yapı Denetim Portalı</Text>
-          <Text style={styles.portalCardDesc}>Kritik imalat onayları, beton döküm izni ve e-imza vizesi</Text>
+          <Text style={styles.portalCardTitle}>Yapı Denetim & QA/QC Portalı</Text>
+          <Text style={styles.portalCardDesc}>Kritik imalat onayları, beton döküm tutanağı ve revizyon alarmları</Text>
         </View>
+      </View>
+
+      {/* KRİTİK PROJE REVİZYON UYARISI BANNER'I */}
+      {revisions.some((r) => r.isObsoleteWarning) && (
+        <View style={styles.obsoleteRevisionBanner}>
+          <Ionicons name="warning" size={22} color="#FF3B30" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.obsoleteRevisionTitle}>
+              KRİTİK REVİZYON UYARISI: {revisions.find((r) => r.isObsoleteWarning)?.revisionNo}
+            </Text>
+            <Text style={styles.obsoleteRevisionText}>
+              {revisions.find((r) => r.isObsoleteWarning)?.notes || "Eski proje paftaları iptal edilmiştir!"}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* SAHA QA & TESELLÜM HIZLI İŞLEM BUTONLARI */}
+      <View style={styles.qaActionRow}>
+        <TouchableOpacity
+          style={[styles.qaActionButton, { backgroundColor: "rgba(0, 199, 190, 0.15)", borderColor: "rgba(0, 199, 190, 0.3)" }]}
+          onPress={() => setShowConcreteModal(true)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="flask" size={16} color="#00C7BE" />
+          <Text style={[styles.qaActionText, { color: "#00C7BE" }]}>Beton Tutanağı (QA)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.qaActionButton, { backgroundColor: "rgba(10, 122, 255, 0.15)", borderColor: "rgba(10, 122, 255, 0.3)" }]}
+          onPress={() => setShowReceivingModal(true)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="cube" size={16} color="#0A7AFF" />
+          <Text style={[styles.qaActionText, { color: "#0A7AFF" }]}>Malzeme Tesellüm</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={{ gap: 12 }}>
@@ -1074,6 +1179,173 @@ function InspectionPortal() {
           </View>
         ))}
       </View>
+
+      {/* BETON DÖKÜM TUTANAĞI MODALI */}
+      <Modal visible={showConcreteModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Beton Döküm Tutanağı (QA)</Text>
+              <TouchableOpacity onPress={() => setShowConcreteModal(false)}>
+                <Ionicons name="close-circle" size={26} color="#8E8E93" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Transmikser Plakası</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={transmixerPlate}
+              onChangeText={setTransmixerPlate}
+              placeholder="34 VR 8901"
+              placeholderTextColor="#636366"
+              autoCapitalize="characters"
+            />
+
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Slump (cm)</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={slumpCm}
+                  onChangeText={setSlumpCm}
+                  placeholder="18"
+                  placeholderTextColor="#636366"
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Beton Sıcaklığı (°C)</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={concreteTemp}
+                  onChangeText={setConcreteTemp}
+                  placeholder="22"
+                  placeholderTextColor="#636366"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>İrsaliye Saati</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={waybillTime}
+                  onChangeText={setWaybillTime}
+                  placeholder="10:00"
+                  placeholderTextColor="#636366"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Döküm Başlama</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={castStartTime}
+                  onChangeText={setCastStartTime}
+                  placeholder="10:30"
+                  placeholderTextColor="#636366"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 4 }}
+              onPress={() => setLabSampleTaken(!labSampleTaken)}
+            >
+              <Ionicons
+                name={labSampleTaken ? "checkbox" : "square-outline"}
+                size={22}
+                color={labSampleTaken ? "#34C759" : "#8E8E93"}
+              />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>
+                6 Adet Küp Numune Alındı & Etiketlendi
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.submitPrimaryBtn, { backgroundColor: "#00C7BE" }]}
+              onPress={handleSubmitConcreteLog}
+              disabled={isSubmittingCast}
+            >
+              {isSubmittingCast ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitPrimaryBtnText}>Döküm Tutanağını Kaydet</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MALZEME TESELLÜM MODALI */}
+      <Modal visible={showReceivingModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Malzeme Kabul & Tesellüm</Text>
+              <TouchableOpacity onPress={() => setShowReceivingModal(false)}>
+                <Ionicons name="close-circle" size={26} color="#8E8E93" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>İrsaliye No</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={recWaybillNo}
+              onChangeText={setRecWaybillNo}
+              placeholder="IRS-99412"
+              placeholderTextColor="#636366"
+            />
+
+            <Text style={styles.fieldLabel}>Gelen Malzeme Tipi</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={recMaterialType}
+              onChangeText={setRecMaterialType}
+              placeholder="C35 Hazır Beton"
+              placeholderTextColor="#636366"
+            />
+
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Kabul Edilen Miktar</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={recQuantity}
+                  onChangeText={setRecQuantity}
+                  placeholder="12"
+                  placeholderTextColor="#636366"
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Hasarlı / Reddedilen</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={recRejectedQty}
+                  onChangeText={setRecRejectedQty}
+                  placeholder="0"
+                  placeholderTextColor="#636366"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.submitPrimaryBtn}
+              onPress={handleSubmitReceivingLog}
+              disabled={isSubmittingRec}
+            >
+              {isSubmittingRec ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitPrimaryBtnText}>Tesellüm Tutanağını Kaydet</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* E-İMZA & VİZE ONAY MODALI */}
       <Modal visible={showSignModal} animationType="slide" transparent>
@@ -1721,5 +1993,44 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "800",
     color: "#FFFFFF",
+  },
+  obsoleteRevisionBanner: {
+    backgroundColor: "rgba(255, 59, 48, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.4)",
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  obsoleteRevisionTitle: {
+    color: "#FF453A",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  obsoleteRevisionText: {
+    color: "#EBEBF5",
+    fontSize: 11,
+    marginTop: 3,
+  },
+  qaActionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  qaActionButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+  },
+  qaActionText: {
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

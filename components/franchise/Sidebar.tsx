@@ -110,13 +110,13 @@ export default function FranchiseSidebar({
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-[99] bg-black/60 backdrop-blur-sm lg:hidden"
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col border-r border-slate-800/80 bg-slate-950/95 backdrop-blur-xl text-slate-100 transition-all duration-300 ${
+        className={`fixed top-0 bottom-0 left-0 z-[100] lg:z-[100] flex flex-col border-r border-slate-800/80 bg-slate-950/95 backdrop-blur-xl text-slate-100 transition-all duration-300 ${
           isCollapsed ? "w-20" : "w-64"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >

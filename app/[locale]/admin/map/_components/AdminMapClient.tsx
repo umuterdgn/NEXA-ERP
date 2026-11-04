@@ -28,6 +28,7 @@ import type {
   GeofenceZoneItem 
 } from "@/components/map/BleEquipmentMap"
 import { formatTimeAgo } from "@/components/map/BleEquipmentMap"
+import NewDiscoveryModal from "@/components/discovery/NewDiscoveryModal"
 
 const BleEquipmentMap = dynamic(
   () => import("@/components/map/BleEquipmentMap"),
@@ -250,6 +251,13 @@ export default function AdminMapClient({
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-cyan-400" : ""}`} />
           </button>
 
+          {/* ADIM 2: Yeni Keşif Ekle Modülü */}
+          <NewDiscoveryModal
+            projects={projects}
+            defaultCoords={{ lat: mapCenter[0], lng: mapCenter[1] }}
+            onSuccess={handleRefresh}
+          />
+
           {/* Toggle Equipment List Drawer */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -266,7 +274,7 @@ export default function AdminMapClient({
       </header>
 
       {/* Main Map Body with Overlays */}
-      <div className="relative flex-1 w-full h-full min-h-0">
+      <div className="relative flex-1 w-full h-full min-h-0 z-0">
         {/* Empty State Banner (ADIM 3) */}
         {isCompletelyEmpty && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 max-w-lg w-[calc(100%-2rem)]">

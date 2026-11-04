@@ -108,7 +108,7 @@ export default function CreateBoQModal({
 
       {/* Modal Dialog */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-slate-900 rounded-2xl border border-slate-700/80 w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col relative shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 border-b border-slate-800 sticky top-0 bg-slate-900 z-20">
