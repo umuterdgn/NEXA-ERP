@@ -1,54 +1,42 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { useAuth } from "../../src/hooks/useAuth";
+import { Platform } from "react-native";
+import { iosColors } from "../../src/theme/iosTheme";
 
 /**
- * Nexa ERP Mobil - Alt Sekme Navigasyonu (Bottom Tab Bar Layout)
- * Koyu tema (Dark Mode), gray-900 zemin, gray-800 border ve blue-500 aktif vurgu
+ * Nexa ERP Mobil - Apple iOS Standartlarında Sadeleştirilmiş Alt Sekme (Bottom Tab Bar)
+ * Sadece 6 ana operasyonel sekme: Ana Sayfa, Jurnal, Puantaj, İSG, Telsiz, Profil.
+ * Koyu zemin (#0A0F1C), Frosted Glass border ve iOS Sistem Mavisi (#0A7AFF) aktif vurgu.
  */
 export default function TabLayout() {
-  const { role } = useAuth();
-  const canAccessLogistics =
-    role === "DRIVER" ||
-    role === "WAREHOUSE" ||
-    role === "LOGISTICS" ||
-    role === "ADMIN";
-
-  const canAccessInspections =
-    role === "INSPECTOR" ||
-    role === "ADMIN";
-
-  const canAccessSubcontractor =
-    role === "SUBCONTRACTOR" ||
-    role === "ADMIN";
-
-  const canAccessEngineering =
-    role === "ENGINEER" ||
-    role === "FOREMAN" ||
-    role === "ADMIN";
-
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#111827", // gray-900
-          borderTopColor: "#1F2937", // gray-800
+          backgroundColor: iosColors.background,
+          borderTopColor: iosColors.glassBorder,
           borderTopWidth: 1,
-          height: 65,
-          paddingBottom: 10,
+          height: Platform.OS === "ios" ? 88 : 68,
+          paddingBottom: Platform.OS === "ios" ? 28 : 10,
           paddingTop: 8,
+          elevation: 10,
+          shadowColor: "#000000",
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
         },
-        tabBarActiveTintColor: "#3B82F6", // blue-500
-        tabBarInactiveTintColor: "#9CA3AF", // gray-400
+        tabBarActiveTintColor: iosColors.systemBlue,
+        tabBarInactiveTintColor: iosColors.labelMuted,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "600",
+          letterSpacing: -0.2,
         },
       }}
     >
-      {/* 1. Ana Sayfa */}
+      {/* 1. Ana Sayfa (Role-Based Dynamic Dashboard) */}
       <Tabs.Screen
         name="index"
         options={{
@@ -70,42 +58,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 3. İş Emirleri */}
-      <Tabs.Screen
-        name="tasks"
-        options={{
-          title: "İş Emirleri",
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="check-square" size={size || 22} color={color as string} />
-          ),
-        }}
-      />
-
-      {/* 4. Malzeme Kabul (Lojistik & Şoför) */}
-      <Tabs.Screen
-        name="logistics"
-        options={{
-          title: "Malzeme Kabul",
-          href: canAccessLogistics ? "/logistics" : null,
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="truck" size={size || 22} color={color as string} />
-          ),
-        }}
-      />
-
-      {/* 5. Yapı Denetim (INSPECTOR) */}
-      <Tabs.Screen
-        name="inspections"
-        options={{
-          title: "Denetim",
-          href: canAccessInspections ? "/inspections" : null,
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="check-circle" size={size || 22} color={color as string} />
-          ),
-        }}
-      />
-
-      {/* 6. Akıllı Puantaj (NFC & Geofence) */}
+      {/* 3. Akıllı Puantaj (NFC & GPS Turnike) */}
       <Tabs.Screen
         name="attendance"
         options={{
@@ -116,7 +69,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 7. İSG & Güvenlik Raporlama */}
+      {/* 4. İSG & Güvenlik Raporlama */}
       <Tabs.Screen
         name="safety"
         options={{
@@ -127,42 +80,18 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 8. Taşeron Portalı & Hakediş (SUBCONTRACTOR) */}
-      <Tabs.Screen
-        name="subcontractor"
-        options={{
-          title: "Taşeron",
-          href: canAccessSubcontractor ? "/subcontractor" : null,
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="layers" size={size || 22} color={color as string} />
-          ),
-        }}
-      />
-
-      {/* 9. BIM & AR Saha Mühendisliği (ENGINEER & FOREMAN) */}
-      <Tabs.Screen
-        name="engineering"
-        options={{
-          title: "BIM AR",
-          href: canAccessEngineering ? "/engineering" : null,
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="box" size={size || 22} color={color as string} />
-          ),
-        }}
-      />
-
-      {/* 10. Şantiye İç Haberleşme & Telsiz (iMessage) */}
+      {/* 5. Şantiye Haberleşme & Telsiz (PTT) */}
       <Tabs.Screen
         name="chat"
         options={{
-          title: "Telsiz & Chat",
+          title: "Telsiz",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="message-circle" size={size || 22} color={color as string} />
+            <Feather name="radio" size={size || 22} color={color as string} />
           ),
         }}
       />
 
-      {/* 11. Profil */}
+      {/* 6. Profil */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -170,6 +99,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Feather name="user" size={size || 22} color={color as string} />
           ),
+        }}
+      />
+
+      {/* Arka plan / yedek sekmeler (Tab bar'da gizli) */}
+      <Tabs.Screen
+        name="tasks"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

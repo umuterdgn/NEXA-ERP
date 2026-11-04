@@ -74,3 +74,4 @@ export const mockBleEntities: BleEntity[] = [
     zone: 'Temel Kazı Çukuru',
   },
 ];
+

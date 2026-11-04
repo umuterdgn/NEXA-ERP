@@ -7,3 +7,4 @@ export default function SiteMapRoute() {
 
   return <SiteMapScreen onBackPress={() => router.back()} />;
 }
+

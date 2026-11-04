@@ -257,3 +257,4 @@ export default function BimPageClient({ projects, templates }: BimPageClientProp
     </div>
   )
 }
+

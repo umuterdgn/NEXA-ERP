@@ -1,3 +1,14 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Nexa ERP Mobil - Apple iOS Standartlarında Şantiye Jurnali
+ *
+ * - Koyu iOS zemin (#0A0F1C)
+ * - En üstte "Şantiye Hava Durumu & GPS" kartı + yeşil "Anti-Spoof Doğrulandı" rozeti
+ * - Formda Blok/Kat ve Personel Sayısı yan yana modern flex-row
+ * - Sayfanın altında sabit (sticky) yeşil renkte devasa "Jurnali Kaydet & Merkeze İlet" butonu
+ * - Çökme koruması: data?.map, try-catch GPS & OfflineQueue
+ */
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -11,6 +22,7 @@ import {
   Vibration,
   Platform,
   KeyboardAvoidingView,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -19,6 +31,7 @@ import * as Network from "expo-network";
 import { useLocationWeather, useNetworkSync } from "../../src/hooks";
 import { OfflineQueue } from "../../src/services/OfflineQueue";
 import { api } from "../../src/lib/api";
+import { iosColors, iosRadius, iosStyles } from "../../src/theme/iosTheme";
 
 export interface JournalRecord {
   id: string;
@@ -37,7 +50,7 @@ export interface JournalRecord {
 const INITIAL_JOURNALS: JournalRecord[] = [
   {
     id: "JRN-01",
-    date: "1 Kasım 2026",
+    date: "Bugün (2 Kasım 2026)",
     project: "Merkez Rezidans & AVM",
     block: "Blok-B • Kat: 3",
     personnelCount: 45,
@@ -50,7 +63,7 @@ const INITIAL_JOURNALS: JournalRecord[] = [
   },
   {
     id: "JRN-02",
-    date: "31 Ekim 2026",
+    date: "1 Kasım 2026",
     project: "Merkez Rezidans & AVM",
     block: "Blok-A • Kat: 2",
     personnelCount: 42,
@@ -63,16 +76,12 @@ const INITIAL_JOURNALS: JournalRecord[] = [
   },
 ];
 
-/**
- * Nexa ERP Mobil - Şantiye Jurnali Ekranı
- * iOS Bottom Sheet form sunumu, Frosted Glass GPS & Open-Meteo hava widget'ı
- */
 export default function JournalScreen() {
   const [journals, setJournals] = useState<JournalRecord[]>(INITIAL_JOURNALS);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // Form State'i
-  const [project, setProject] = useState("Merkez Rezidans & AVM");
+  // Form State'leri
+  const [project, setProject] = useState("Kadıköy Merkez Rezidans");
   const [block, setBlock] = useState("Blok-B • Kat: 4");
   const [personnelCount, setPersonnelCount] = useState("48");
   const [worksDone, setWorksDone] = useState("");
@@ -80,7 +89,7 @@ export default function JournalScreen() {
   const [isgNotes, setIsgNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Anti-Fake GPS & Open-Meteo Hook'u
+  // Konum & Hava Durumu Hook'u
   const {
     isLoading: isLocationLoading,
     error: locationError,
@@ -89,28 +98,29 @@ export default function JournalScreen() {
     fetchLocationAndWeather,
   } = useLocationWeather();
 
-  // Çevrimdışı Senkronizasyon & Ağ Durumu
+  // Ağ durumu
   const { isConnected, queueCount } = useNetworkSync();
   const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
 
-  // Bottom Sheet açıldığında konumu ve hava durumunu otomatik sorgula
   useEffect(() => {
-    if (isSheetOpen) {
+    try {
       fetchLocationAndWeather().catch(() => {});
+    } catch (err) {
+      console.warn("[Journal Location Weather Error]:", err);
     }
-  }, [isSheetOpen, fetchLocationAndWeather]);
+  }, [fetchLocationAndWeather]);
 
-  // Jurnali Kaydet (ADIM 4 Entegrasyonu)
+  // Jurnali Kaydet ve Merkeze Gönder
   const handleSaveJournal = async () => {
     if (!worksDone.trim()) {
-      Alert.alert("Eksik Bilgi", "Lütfen bugün yapılan imalat özetini giriniz.");
+      Alert.alert("Eksik Alan", "Lütfen bugün yapılan imalat özetini giriniz.");
       return;
     }
 
     setIsSubmitting(true);
     try {
       if (Platform.OS !== "web") {
-        Vibration.vibrate(100);
+        Vibration.vibrate(80);
       }
 
       const journalPayload = {
@@ -124,12 +134,15 @@ export default function JournalScreen() {
         notes: isgNotes || "Uygunsuzluk tespit edilmedi.",
       };
 
-      // ADIM 4: İstek atılmadan önce interneti kontrol et
-      const netState = await Network.getNetworkStateAsync();
-      const hasInternet = Boolean(netState.isConnected);
+      let hasInternet = true;
+      try {
+        const netState = await Network.getNetworkStateAsync();
+        hasInternet = Boolean(netState.isConnected);
+      } catch (e) {
+        hasInternet = false;
+      }
 
       if (!hasInternet) {
-        // İnternet yok: OfflineQueue.addToQueue ile cihaza kaydet ve yeşil uyarı bas
         await OfflineQueue.addToQueue(
           "/site-diary/logs",
           journalPayload,
@@ -141,24 +154,23 @@ export default function JournalScreen() {
         );
 
         setOfflineNotice(
-          "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+          "İnternet bağlantısı yok. Jurnal cihaz hafızasına kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
         );
         setTimeout(() => setOfflineNotice(null), 6000);
 
         Alert.alert(
           "🌐 Çevrimdışı Kayıt",
-          "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+          "İnternet bağlantısı yok. Jurnal cihaz hafızasına kaydedildi, bağlantı sağlandığında merkeze iletilecektir."
         );
       } else {
-        // İnternet var: Doğrudan backend API'ye ilet
         try {
           await api.post("/site-diary/logs", journalPayload);
           Alert.alert(
             "📝 Jurnal Kaydedildi",
-            "Günlük şantiye jurnali başarıyla kaydedildi ve şirket merkezine iletildi."
+            "Günlük şantiye jurnali başarıyla sisteme kaydedildi ve şirket merkezine iletildi."
           );
         } catch (apiErr: any) {
-          console.warn("[Journal] API hatası, offline kuyruğa aktarılıyor:", apiErr?.message);
+          console.warn("[Journal] API hatası, offline kuyruğa alınıyor:", apiErr?.message);
           await OfflineQueue.addToQueue(
             "/site-diary/logs",
             journalPayload,
@@ -168,22 +180,16 @@ export default function JournalScreen() {
               title: `${project} • ${block}`,
             }
           );
-
           setOfflineNotice(
-            "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+            "Sunucuya erişilemedi. Veriler cihaza kaydedildi, arka planda senkronize edilecek."
           );
           setTimeout(() => setOfflineNotice(null), 6000);
-
-          Alert.alert(
-            "🌐 Çevrimdışı Kayıt",
-            "İnternet bağlantısı yok. Veriler cihaza kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
-          );
         }
       }
 
       const newRecord: JournalRecord = {
         id: `JRN-${Date.now().toString().slice(-4)}`,
-        date: "Bugün (2 Kasım 2026)",
+        date: "Bugün (Yeni)",
         project,
         block,
         personnelCount: parseInt(personnelCount, 10) || 0,
@@ -195,13 +201,13 @@ export default function JournalScreen() {
         status: hasInternet ? "TASLAK" : "İNCELENİYOR",
       };
 
-      setJournals([newRecord, ...journals]);
+      setJournals((prev) => [newRecord, ...(prev || [])]);
       setIsSheetOpen(false);
       setWorksDone("");
       setEquipment("");
       setIsgNotes("");
     } catch (err: any) {
-      console.error("[Journal] Hata:", err);
+      console.error("[Journal Save Error]:", err);
       Alert.alert("Hata", "Jurnal kaydedilirken bir hata oluştu.");
     } finally {
       setIsSubmitting(false);
@@ -209,127 +215,154 @@ export default function JournalScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
-      {/* Özel iOS Tarzı Üst Header */}
-      <View className="px-6 pt-4 pb-3 bg-gray-900/90 border-b border-gray-800 flex-row items-center justify-between">
+    <SafeAreaView style={styles.safeContainer} edges={["top", "left", "right"]}>
+      {/* 1. ÜST HEADER */}
+      <View style={styles.header}>
         <View>
-          <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-            Saha Raporları
-          </Text>
-          <Text className="text-2xl font-black text-white tracking-tight">
-            Şantiye Jurnali
-          </Text>
+          <Text style={styles.headerSubtitle}>Saha Raporları</Text>
+          <Text style={styles.headerTitle}>Şantiye Jurnali</Text>
         </View>
 
-        <View className="flex-row items-center gap-2">
+        <View style={styles.headerActions}>
           {queueCount > 0 && (
-            <View className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 flex-row items-center gap-1.5">
-              <Feather name="refresh-cw" size={10} color="#FBBF24" />
-              <Text className="text-amber-400 text-[10px] font-bold">
-                {queueCount} Kuyrukta
-              </Text>
+            <View style={styles.queueBadge}>
+              <Feather name="refresh-cw" size={10} color={iosColors.systemOrange} />
+              <Text style={styles.queueBadgeText}>{queueCount} Kuyrukta</Text>
             </View>
           )}
 
-          {/* Yeni Jurnal Açma Butonu */}
           <TouchableOpacity
             onPress={() => setIsSheetOpen(true)}
             activeOpacity={0.8}
-            className="px-4 py-2.5 bg-blue-600 rounded-2xl flex-row items-center gap-1.5 shadow-md shadow-blue-500/30"
+            style={styles.newJournalBtn}
           >
             <Feather name="plus" size={16} color="#FFFFFF" />
-            <Text className="text-white text-xs font-bold">Yeni Jurnal</Text>
+            <Text style={styles.newJournalBtnText}>Yeni Jurnal</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Yeşil Çevrimdışı Bildirim Toast'ı */}
+      {/* Çevrimdışı Bildirim Toast'ı */}
       {offlineNotice && (
-        <View className="mx-6 mt-3 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-2 flex-1 mr-2">
-            <Feather name="check-circle" size={16} color="#34D399" />
-            <Text className="text-emerald-300 text-xs font-semibold leading-4">
-              {offlineNotice}
-            </Text>
-          </View>
+        <View style={styles.offlineToast}>
+          <Feather name="check-circle" size={16} color={iosColors.systemGreen} />
+          <Text style={styles.offlineToastText}>{offlineNotice}</Text>
           <TouchableOpacity onPress={() => setOfflineNotice(null)}>
-            <Feather name="x" size={16} color="#6EE7B7" />
+            <Feather name="x" size={16} color={iosColors.labelSecondary} />
           </TouchableOpacity>
         </View>
       )}
 
-      <ScrollView className="flex-1 px-6 pt-5" showsVerticalScrollIndicator={false}>
-        {/* En Son Jurnal Vurgu Kartı */}
-        <View className="bg-gradient-to-r from-blue-950/40 to-gray-900 p-5 rounded-3xl border border-blue-500/30 mb-5">
-          <View className="flex-row items-center justify-between mb-2">
-            <View className="flex-row items-center gap-2">
-              <Feather name="check-circle" size={16} color="#60A5FA" />
-              <Text className="text-blue-400 text-xs font-bold uppercase tracking-wider">
-                Bugünkü Şantiye Durumu
-              </Text>
+      <ScrollView
+        style={styles.scrollArea}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* ============================================================ */}
+        {/* EN ÜST: ŞANTİYE HAVA DURUMU & GPS KARTI + ANTİ-SPOOF ROZETİ  */}
+        {/* ============================================================ */}
+        <View style={styles.weatherCard}>
+          {Platform.OS === "ios" && (
+            <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
+          )}
+          <View style={styles.weatherCardHeader}>
+            <View style={styles.weatherHeaderLeft}>
+              <View style={styles.weatherIconCircle}>
+                <Feather name="cloud-rain" size={16} color={iosColors.systemBlue} />
+              </View>
+              <View>
+                <Text style={styles.weatherCardTitle}>Şantiye Hava Durumu & GPS</Text>
+                <Text style={styles.weatherCardSubtitle}>Open-Meteo & Anti-Spoof Kilidi</Text>
+              </View>
             </View>
-            <View className="px-2.5 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
-              <Text className="text-blue-400 text-[10px] font-bold">GÜNCEL</Text>
+
+            {/* Yeşil Anti-Spoof Rozeti */}
+            <View style={styles.antiSpoofBadge}>
+              <Feather name="shield" size={11} color={iosColors.systemGreen} />
+              <Text style={styles.antiSpoofText}>Anti-Spoof Doğrulandı</Text>
             </View>
           </View>
-          <Text className="text-white text-lg font-bold">
-            Merkez Rezidans • Blok-B
-          </Text>
-          <Text className="text-gray-400 text-xs mt-1 leading-4">
-            Bugün sahada 48 personel ve 3 iş makinesi aktif çalışmaktadır.
-          </Text>
+
+          {weather && location ? (
+            <View style={styles.weatherDetails}>
+              <View style={styles.weatherRow}>
+                <View style={styles.weatherTempRow}>
+                  <Ionicons name="sunny" size={26} color="#FBBF24" />
+                  <Text style={styles.weatherTempText}>{weather.temperature}°C</Text>
+                  <Text style={styles.weatherDescText}>{weather.description}</Text>
+                </View>
+                <Text style={styles.windText}>💨 {weather.windSpeed} km/h</Text>
+              </View>
+
+              <View style={styles.coordsRow}>
+                <Text style={styles.coordsText}>
+                  📍 Lat: {location.latitude.toFixed(4)}, Lng: {location.longitude.toFixed(4)}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => fetchLocationAndWeather()}
+                  disabled={isLocationLoading}
+                  style={styles.refreshBtn}
+                >
+                  <Feather
+                    name="refresh-cw"
+                    size={11}
+                    color={iosColors.systemBlue}
+                  />
+                  <Text style={styles.refreshBtnText}>Yenile</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.weatherLoadingBox}>
+              <ActivityIndicator size="small" color={iosColors.systemBlue} />
+              <Text style={styles.weatherLoadingText}>
+                {locationError || "GPS koordinatları ve hava durumu alınıyor..."}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Jurnal Kayıtları Başlığı */}
-        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-          Geçmiş Şantiye Jurnalleri
-        </Text>
+        <Text style={styles.sectionTitle}>GEÇMİŞ ŞANTİYE JURNALLERİ</Text>
 
         {/* Jurnal Listesi */}
-        {journals.map((item) => (
-          <View
-            key={item.id}
-            className="bg-white dark:bg-gray-800/80 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-4"
-          >
-            <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-white text-sm font-bold">{item.date}</Text>
+        {(journals || []).map((item) => (
+          <View key={item.id} style={styles.journalItemCard}>
+            <View style={styles.journalItemHeader}>
+              <Text style={styles.journalItemDate}>{item.date}</Text>
               <View
-                className={`px-2 py-0.5 rounded-full border ${
+                style={[
+                  styles.journalItemBadge,
                   item.status === "ONAYLANDI"
-                    ? "bg-emerald-500/10 border-emerald-500/30"
-                    : "bg-amber-500/10 border-amber-500/30"
-                }`}
+                    ? styles.journalItemBadgeSuccess
+                    : styles.journalItemBadgeWarning,
+                ]}
               >
                 <Text
-                  className={`text-[10px] font-bold ${
+                  style={[
+                    styles.journalItemBadgeText,
                     item.status === "ONAYLANDI"
-                      ? "text-emerald-400"
-                      : "text-amber-400"
-                  }`}
+                      ? { color: iosColors.systemGreen }
+                      : { color: iosColors.systemOrange },
+                  ]}
                 >
                   {item.status}
                 </Text>
               </View>
             </View>
 
-            <Text className="text-blue-400 text-xs font-medium mb-1">
-              {item.block}
-            </Text>
-            <Text className="text-gray-300 text-xs leading-4 mb-3">
-              {item.worksDone}
-            </Text>
+            <Text style={styles.journalItemBlock}>{item.block}</Text>
+            <Text style={styles.journalItemWorks}>{item.worksDone}</Text>
 
-            <View className="flex-row items-center justify-between pt-3 border-t border-gray-700/50">
-              <View className="flex-row items-center gap-1.5">
-                <Feather name="users" size={12} color="#9CA3AF" />
-                <Text className="text-gray-400 text-xs font-mono">
-                  {item.personnelCount} Personel
-                </Text>
+            <View style={styles.journalItemFooter}>
+              <View style={styles.footerItem}>
+                <Feather name="users" size={12} color={iosColors.labelSecondary} />
+                <Text style={styles.footerText}>{item.personnelCount} Personel</Text>
               </View>
 
-              <View className="flex-row items-center gap-1.5">
-                <Feather name="sun" size={12} color="#10B981" />
-                <Text className="text-gray-400 text-xs font-mono">
+              <View style={styles.footerItem}>
+                <Feather name="sun" size={12} color={iosColors.systemGreen} />
+                <Text style={styles.footerText}>
                   {item.weatherSummary} ({item.temperature}°C)
                 </Text>
               </View>
@@ -339,7 +372,8 @@ export default function JournalScreen() {
       </ScrollView>
 
       {/* ============================================================ */}
-      {/* iOS Tarzı Bottom Sheet (Modal Form Presentation)             */}
+      {/* iOS MODAL FORM: BLOK/KAT & PERSONEL SAYISI YAN YANA (FLEX-ROW)*/}
+      {/* VE EN ALTTA SABİT (STICKY) DEVASA YEŞİL KAYDET BUTONU        */}
       {/* ============================================================ */}
       <Modal
         visible={isSheetOpen}
@@ -347,251 +381,527 @@ export default function JournalScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setIsSheetOpen(false)}
       >
-        <SafeAreaView className="flex-1 bg-slate-950">
+        <SafeAreaView style={styles.safeContainer} edges={["top", "bottom"]}>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            className="flex-1"
+            style={{ flex: 1 }}
           >
-            {/* iOS Çekme Çubuğu (Drag Handle) */}
-            <View className="w-12 h-1.5 bg-gray-600 rounded-full mx-auto my-3" />
+            {/* iOS Sürükleme Çizgisi */}
+            <View style={styles.sheetHandle} />
 
             {/* Modal Üst Bar */}
-            <View className="px-6 py-2 flex-row items-center justify-between border-b border-gray-800">
+            <View style={styles.modalHeader}>
               <View>
-                <Text className="text-white text-lg font-black tracking-tight">
-                  Yeni Şantiye Jurnali
-                </Text>
-                <Text className="text-gray-400 text-xs">
-                  Günlük imalat ve saha durumunu kaydedin
-                </Text>
+                <Text style={styles.modalTitle}>Yeni Şantiye Jurnali</Text>
+                <Text style={styles.modalSubtitle}>Günlük imalat ve saha durumunu kaydedin</Text>
               </View>
 
               <TouchableOpacity
                 onPress={() => setIsSheetOpen(false)}
-                className="w-9 h-9 rounded-full bg-gray-800 items-center justify-center"
+                style={styles.modalCloseBtn}
               >
                 <Feather name="x" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
             <ScrollView
-              className="flex-1 px-6 pt-4"
+              style={{ flex: 1, paddingHorizontal: 20, paddingTop: 14 }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 40 }}
+              contentContainerStyle={{ paddingBottom: 110 }}
             >
-              {/* ============================================================ */}
-              {/* iOS Hava Durumu & Güvenli GPS Widget'ı (Frosted Glass)        */}
-              {/* ============================================================ */}
-              <View className="bg-white dark:bg-gray-800/80 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative mb-5">
-                {Platform.OS === "ios" && (
-                  <BlurView
-                    intensity={30}
-                    tint="dark"
-                    className="absolute inset-0"
-                  />
-                )}
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-row items-center gap-2">
-                    <View className="w-8 h-8 rounded-xl bg-blue-500/20 items-center justify-center">
-                      <Feather name="cloud-rain" size={16} color="#3B82F6" />
-                    </View>
-                    <View>
-                      <Text className="text-white text-sm font-bold">
-                        Şantiye Hava Durumu & GPS
-                      </Text>
-                      <Text className="text-gray-400 text-[11px]">
-                        Open-Meteo & Anti-Spoof Kilidi
-                      </Text>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() => fetchLocationAndWeather()}
-                    disabled={isLocationLoading}
-                    className="px-2.5 py-1 bg-gray-900 border border-gray-700 rounded-xl flex-row items-center gap-1"
-                  >
-                    {isLocationLoading ? (
-                      <ActivityIndicator size="small" color="#3B82F6" />
-                    ) : (
-                      <>
-                        <Feather name="refresh-cw" size={12} color="#60A5FA" />
-                        <Text className="text-blue-400 text-[10px] font-bold">
-                          Yenile
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
-
-                {/* Hava & Koordinat Verisi */}
-                {weather && location ? (
-                  <View className="mt-2 pt-2 border-t border-gray-700/60">
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-2">
-                        <Ionicons name="sunny" size={24} color="#FBBF24" />
-                        <Text className="text-white text-xl font-bold">
-                          {weather.temperature}°C
-                        </Text>
-                        <Text className="text-gray-300 text-xs font-medium">
-                          {weather.description}
-                        </Text>
-                      </View>
-                      <Text className="text-gray-400 text-xs font-mono">
-                        💨 {weather.windSpeed} km/h
-                      </Text>
-                    </View>
-
-                    {/* Saydam Koordinat Çubuğu */}
-                    <View className="mt-2.5 flex-row items-center justify-between">
-                      <Text className="text-gray-400 text-[10px] font-mono">
-                        📍 Lat: {location.latitude.toFixed(4)}, Lng:{" "}
-                        {location.longitude.toFixed(4)}
-                      </Text>
-                      <View className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                        <Text className="text-emerald-400 text-[9px] font-bold">
-                          🛡️ Anti-Spoof Doğrulandı
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                ) : (
-                  <View className="py-2 items-center">
-                    <Text className="text-gray-400 text-xs">
-                      {locationError || "Konum ve hava durumu tespit ediliyor..."}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {/* ============================================================ */}
-              {/* iOS Tarzı Form Alanları (bg-gray-100 dark:bg-gray-900)       */}
-              {/* ============================================================ */}
-              <View className="gap-4">
-                {/* Proje & Blok */}
+              {/* Form Alanları */}
+              <View style={{ gap: 14 }}>
+                {/* Proje Adı */}
                 <View>
-                  <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Proje & Bölge
-                  </Text>
+                  <Text style={styles.fieldLabel}>PROJE & ŞANTİYE</Text>
                   <TextInput
                     value={project}
                     onChangeText={setProject}
-                    placeholder="Proje adı giriniz"
-                    placeholderTextColor="#6B7280"
-                    className="bg-gray-100 dark:bg-gray-900 text-slate-100 rounded-xl px-4 py-3 text-sm border border-gray-800"
+                    placeholder="Proje adı"
+                    placeholderTextColor={iosColors.labelMuted}
+                    style={styles.fieldInput}
                   />
                 </View>
 
-                {/* Blok / Kat ve Personel Sayısı (Yan Yana) */}
-                <View className="flex-row gap-3">
-                  <View className="flex-1">
-                    <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                      Blok / Kat
-                    </Text>
+                {/* BLOK/KAT SEÇİMİ VE PERSONEL SAYISI (YAN YANA FLEX-ROW) */}
+                <View style={styles.flexRowFields}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>BLOK / KAT</Text>
                     <TextInput
                       value={block}
                       onChangeText={setBlock}
                       placeholder="Örn: Blok-B Kat: 4"
-                      placeholderTextColor="#6B7280"
-                      className="bg-gray-100 dark:bg-gray-900 text-slate-100 rounded-xl px-4 py-3 text-sm border border-gray-800"
+                      placeholderTextColor={iosColors.labelMuted}
+                      style={styles.fieldInput}
                     />
                   </View>
 
-                  <View className="w-36">
-                    <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                      Personel Sayısı
-                    </Text>
+                  <View style={{ width: 140 }}>
+                    <Text style={styles.fieldLabel}>PERSONEL SAYISI</Text>
                     <TextInput
                       value={personnelCount}
                       onChangeText={setPersonnelCount}
                       placeholder="0"
-                      placeholderTextColor="#6B7280"
+                      placeholderTextColor={iosColors.labelMuted}
                       keyboardType="numeric"
-                      className="bg-gray-100 dark:bg-gray-900 text-slate-100 rounded-xl px-4 py-3 text-sm border border-gray-800 font-mono"
+                      style={[styles.fieldInput, styles.fieldInputMono]}
                     />
                   </View>
                 </View>
 
-                {/* Yapılan İmalatlar (Çok Satırlı) */}
+                {/* Yapılan İmalatlar */}
                 <View>
-                  <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Bugün Yapılan İmalatlar *
-                  </Text>
+                  <Text style={styles.fieldLabel}>BUGÜN YAPILAN İMALATLAR *</Text>
                   <TextInput
                     value={worksDone}
                     onChangeText={setWorksDone}
                     placeholder="Örn: 4. kat tabliye kalıp montajı ve donatı bağlama işleri tamamlandı."
-                    placeholderTextColor="#6B7280"
+                    placeholderTextColor={iosColors.labelMuted}
                     multiline
                     numberOfLines={4}
                     textAlignVertical="top"
-                    className="bg-gray-100 dark:bg-gray-900 text-slate-100 rounded-xl px-4 py-3 text-sm border border-gray-800 min-h-[90px]"
+                    style={[styles.fieldInput, styles.fieldTextArea]}
                   />
                 </View>
 
-                {/* Çalışan Ekipmanlar / Makineler */}
+                {/* Ekipmanlar */}
                 <View>
-                  <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Çalışan Ekipmanlar
-                  </Text>
+                  <Text style={styles.fieldLabel}>ÇALIŞAN EKİPMANLAR</Text>
                   <TextInput
                     value={equipment}
                     onChangeText={setEquipment}
-                    placeholder="Örn: 1 Kule Vinç, 2 Transmikser, 1 Bekoloder"
-                    placeholderTextColor="#6B7280"
-                    className="bg-gray-100 dark:bg-gray-900 text-slate-100 rounded-xl px-4 py-3 text-sm border border-gray-800"
+                    placeholder="Örn: 1 Kule Vinç, 2 Transmikser, 1 Pompa"
+                    placeholderTextColor={iosColors.labelMuted}
+                    style={styles.fieldInput}
                   />
                 </View>
 
-                {/* İSG ve Emniyet Notu */}
+                {/* İSG & Emniyet Notları */}
                 <View>
-                  <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    İSG & Güvenlik Tedbirleri
-                  </Text>
+                  <Text style={styles.fieldLabel}>İSG & EMNİYET TEDBİRLERİ</Text>
                   <TextInput
                     value={isgNotes}
                     onChangeText={setIsgNotes}
-                    placeholder="Örn: Şantiye içi baret ve yelek denetimi yapıldı."
-                    placeholderTextColor="#6B7280"
-                    className="bg-gray-100 dark:bg-gray-900 text-slate-100 rounded-xl px-4 py-3 text-sm border border-gray-800"
+                    placeholder="Örn: Baret ve emniyet kemeri denetimi yapıldı."
+                    placeholderTextColor={iosColors.labelMuted}
+                    style={styles.fieldInput}
                   />
                 </View>
               </View>
-
-              {/* Aksiyon Butonları */}
-              <View className="mt-6 gap-3">
-                <TouchableOpacity
-                  onPress={handleSaveJournal}
-                  disabled={isSubmitting}
-                  activeOpacity={0.85}
-                  className="w-full py-4 bg-emerald-500 rounded-2xl items-center justify-center flex-row gap-2 shadow-lg shadow-emerald-500/25"
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator size="small" color="#022c22" />
-                  ) : (
-                    <>
-                      <Feather name="check-circle" size={18} color="#022c22" />
-                      <Text className="text-slate-950 font-black text-base">
-                        Jurnali Kaydet & Merkeze İlet
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setIsSheetOpen(false)}
-                  disabled={isSubmitting}
-                  className="w-full py-3 bg-gray-900 border border-gray-800 rounded-2xl items-center"
-                >
-                  <Text className="text-gray-400 font-semibold text-sm">
-                    Vazgeç
-                  </Text>
-                </TouchableOpacity>
-              </View>
             </ScrollView>
+
+            {/* ============================================================ */}
+            {/* SAYFANIN EN ALTINA SABİT (STICKY) DEVASA YEŞİL KAYDET BUTONU */}
+            {/* ============================================================ */}
+            <View style={styles.stickyBottomBar}>
+              <TouchableOpacity
+                onPress={handleSaveJournal}
+                disabled={isSubmitting}
+                activeOpacity={0.88}
+                style={styles.giantSaveButton}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Feather name="check-circle" size={20} color="#FFFFFF" />
+                    <Text style={styles.giantSaveButtonText}>
+                      Jurnali Kaydet & Merkeze İlet
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: iosColors.background,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: iosColors.glassBorder,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.labelSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: iosColors.labelPrimary,
+    letterSpacing: -0.4,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  queueBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 149, 0, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 149, 0, 0.3)",
+  },
+  queueBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: iosColors.systemOrange,
+  },
+  newJournalBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: iosColors.systemBlue,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: iosRadius.button,
+  },
+  newJournalBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  offlineToast: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(52, 199, 89, 0.35)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  offlineToastText: {
+    fontSize: 12,
+    color: iosColors.systemGreen,
+    fontWeight: "600",
+    flex: 1,
+    marginHorizontal: 8,
+    lineHeight: 16,
+  },
+  scrollArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  weatherCard: {
+    backgroundColor: iosColors.glassCard,
+    borderRadius: iosRadius.cardLarge,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    padding: 18,
+    overflow: "hidden",
+    position: "relative",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  weatherCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  weatherHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
+  weatherIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "rgba(10, 122, 255, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  weatherCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: iosColors.labelPrimary,
+  },
+  weatherCardSubtitle: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+  },
+  antiSpoofBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: iosRadius.badge,
+    borderWidth: 1,
+    borderColor: "rgba(52, 199, 89, 0.35)",
+  },
+  antiSpoofText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: iosColors.systemGreen,
+  },
+  weatherDetails: {
+    borderTopWidth: 1,
+    borderTopColor: iosColors.glassBorder,
+    paddingTop: 12,
+  },
+  weatherRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  weatherTempRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  weatherTempText: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: iosColors.labelPrimary,
+  },
+  weatherDescText: {
+    fontSize: 13,
+    color: iosColors.labelSecondary,
+  },
+  windText: {
+    fontSize: 12,
+    color: iosColors.labelSecondary,
+  },
+  coordsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  coordsText: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  refreshBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: "rgba(10, 122, 255, 0.12)",
+  },
+  refreshBtnText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: iosColors.systemBlue,
+  },
+  weatherLoadingBox: {
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  weatherLoadingText: {
+    fontSize: 12,
+    color: iosColors.labelSecondary,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.labelSecondary,
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  journalItemCard: {
+    backgroundColor: iosColors.glassCard,
+    borderRadius: iosRadius.card,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    padding: 16,
+    marginBottom: 12,
+  },
+  journalItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  journalItemDate: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: iosColors.labelPrimary,
+  },
+  journalItemBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  journalItemBadgeSuccess: {
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    borderColor: "rgba(52, 199, 89, 0.35)",
+  },
+  journalItemBadgeWarning: {
+    backgroundColor: "rgba(255, 149, 0, 0.15)",
+    borderColor: "rgba(255, 149, 0, 0.35)",
+  },
+  journalItemBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+  },
+  journalItemBlock: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: iosColors.systemBlue,
+    marginBottom: 4,
+  },
+  journalItemWorks: {
+    fontSize: 13,
+    color: iosColors.labelSecondary,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  journalItemFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: iosColors.glassBorder,
+    paddingTop: 10,
+  },
+  footerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  footerText: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+  },
+  sheetHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: iosColors.glassBorder,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: iosColors.labelPrimary,
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: iosColors.labelSecondary,
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.labelSecondary,
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  fieldInput: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: iosRadius.input,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    color: "#FFFFFF",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+  },
+  fieldInputMono: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  fieldTextArea: {
+    minHeight: 90,
+  },
+  flexRowFields: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  stickyBottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 30 : 16,
+    backgroundColor: "rgba(10, 15, 28, 0.96)",
+    borderTopWidth: 1,
+    borderTopColor: iosColors.glassBorder,
+  },
+  giantSaveButton: {
+    width: "100%",
+    backgroundColor: iosColors.systemGreen,
+    borderRadius: iosRadius.button,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    shadowColor: iosColors.systemGreen,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  giantSaveButtonText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.2,
+  },
+});

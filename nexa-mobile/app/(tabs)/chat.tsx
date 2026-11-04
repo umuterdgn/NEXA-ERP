@@ -1,13 +1,12 @@
 /**
  * © 2026 NXA Software. All rights reserved.
- * Developer: Umut Erdoğan
- * Nexa ERP - Mobil Şantiye İç Haberleşme & Telsiz (iOS iMessage Tasarımı)
+ * Nexa ERP Mobil - Apple iOS iMessage / WhatsApp Tasarımlı Şantiye Telsizi (PTT)
  *
- * ADIM 3: iOS iMessage Arayüzü
- * - Bulanık arka plan (Frosted Glass / Dark iOS)
- * - Mesaj Balonları: Gönderilenler sağda mavi, gelenler solda koyu gri
- * - Telsiz (Bas-Konuş / Walkie-Talkie) sesli mesajları için expo-audio oynatıcı
- * - Socket.io sendMessage & receiveMessage ile gerçek zamanlı mesajlaşma
+ * - Koyu iOS Zemin (#0A0F1C)
+ * - Akordiyon / Dropdown Kanal Seçici ("Şantiye Genel", "İSG & Acil Durum ⚠️")
+ * - Konuşma Balonları: Kendi mesajları sağda iOS Mavisi (#0A7AFF), karşı tarafın mesajları solda koyu gri (rgba(255, 255, 255, 0.08))
+ * - En altta bas-konuş (PTT) iOS mikrofon butonu ve metin giriş çubuğu
+ * - Çökme koruması: data?.map, try-catch ses & soket yönetimi
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -22,12 +21,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Dimensions,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
-import * as Audio from "expo-audio";
 import { createAudioPlayer, AudioPlayer } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
@@ -35,6 +32,7 @@ import { useAuth } from "../../src/hooks/useAuth";
 import { api, API_BASE_URL } from "../../src/lib/api";
 import { locationSocket } from "../../src/services/LocationSocket";
 import { PushToTalkButton } from "../../src/components/chat/PushToTalkButton";
+import { iosColors, iosRadius } from "../../src/theme/iosTheme";
 
 const WEB_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
@@ -64,7 +62,6 @@ export interface ChatMessage {
 }
 
 export default function ChatScreen() {
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
   // Kanallar ve Seçili Kanal
@@ -81,7 +78,6 @@ export default function ChatScreen() {
   // Ses Oynatıcı Durumu (Telsiz Dinleme)
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
   const soundRef = useRef<AudioPlayer | null>(null);
-
   const flatListRef = useRef<FlatList>(null);
 
   // 1. Kanalları Getir
@@ -93,15 +89,16 @@ export default function ChatScreen() {
         if (!activeChannel) {
           setActiveChannel(res.data.channels[0]);
         }
+      } else {
+        throw new Error("No channels found");
       }
     } catch (err: any) {
-      console.warn("[Chat] Kanal listesi çekilemedi:", err.message);
-      // Fallback varsayılan kanallar
+      console.warn("[Chat] Kanal listesi fallback:", err.message);
       const fallbackChannels: ChatChannel[] = [
-        { id: "ch_general", name: "Şantiye Genel (Telsiz)" },
-        { id: "ch_block_a", name: "A Blok Kaba Yapı" },
-        { id: "ch_safety", name: "İSG & Acil Durum ⚠️" },
-        { id: "ch_logistics", name: "Lojistik & Sevkiyat 🚚" },
+        { id: "ch_general", name: "Şantiye Genel (Telsiz)", description: "Tüm saha personeli ana frekansı" },
+        { id: "ch_safety", name: "İSG & Acil Durum ⚠️", description: "Acil durum ve iş güvenliği kanalı" },
+        { id: "ch_block_a", name: "A Blok Kaba Yapı", description: "Demir, kalıp ve beton ekipleri" },
+        { id: "ch_logistics", name: "Lojistik & Sevkiyat 🚚", description: "Transmikser ve malzeme kabul" },
       ];
       setChannels(fallbackChannels);
       if (!activeChannel) {
@@ -123,8 +120,7 @@ export default function ChatScreen() {
         setMessages(res.data.messages);
       }
     } catch (err: any) {
-      console.warn("[Chat] Mesajlar çekilemedi:", err.message);
-      // Demo mesajlar
+      console.warn("[Chat] Mesajlar fallback:", err.message);
       setMessages([
         {
           id: "m_1",
@@ -135,7 +131,7 @@ export default function ChatScreen() {
           sender: {
             id: "usr_foreman_01",
             name: "Ahmet Yılmaz",
-            role: "FOREMAN",
+            role: "ŞANTİYE ŞEFİ",
           },
         },
         {
@@ -147,7 +143,7 @@ export default function ChatScreen() {
           sender: {
             id: "usr_eng_02",
             name: "Mehmet Kaya",
-            role: "ENGINEER",
+            role: "MÜHENDİS",
           },
         },
         {
@@ -159,7 +155,7 @@ export default function ChatScreen() {
           sender: {
             id: "usr_driver_01",
             name: "Ali Demir",
-            role: "DRIVER",
+            role: "ŞOFÖR",
           },
         },
       ]);
@@ -174,32 +170,35 @@ export default function ChatScreen() {
     }
   }, [activeChannel?.id, fetchMessages]);
 
-  // 3. Socket.io Gerçek Zamanlı Mesajlaşma (receiveMessage)
+  // 3. Socket.io Gerçek Zamanlı Mesajlaşma
   useEffect(() => {
-    const socket = locationSocket.connect();
+    try {
+      const socket = locationSocket.connect();
 
-    const handleReceiveMessage = (incomingMsg: ChatMessage) => {
-      if (incomingMsg.channelId === activeChannel?.id) {
-        setMessages((prev) => {
-          // Mükerrer eklemeyi önle
-          if (prev.some((m) => m.id === incomingMsg.id)) return prev;
-          return [...prev, incomingMsg];
-        });
-        // En alta kaydır
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 150);
-      }
-    };
+      const handleReceiveMessage = (incomingMsg: ChatMessage) => {
+        if (incomingMsg?.channelId === activeChannel?.id) {
+          setMessages((prev) => {
+            const list = prev || [];
+            if (list.some((m) => m.id === incomingMsg.id)) return list;
+            return [...list, incomingMsg];
+          });
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 150);
+        }
+      };
 
-    socket.on("receiveMessage", handleReceiveMessage);
+      socket.on("receiveMessage", handleReceiveMessage);
 
-    return () => {
-      socket.off("receiveMessage", handleReceiveMessage);
-    };
+      return () => {
+        socket.off("receiveMessage", handleReceiveMessage);
+      };
+    } catch (sockErr) {
+      console.warn("[Chat Socket Error]:", sockErr);
+    }
   }, [activeChannel?.id]);
 
-  // 4. Metin Mesajı Gönder (sendMessage)
+  // 4. Metin Mesajı Gönder
   const handleSendMessage = async () => {
     const text = inputText.trim();
     if (!text || !activeChannel || isSending) return;
@@ -211,33 +210,30 @@ export default function ChatScreen() {
       channelId: activeChannel.id,
       content: text,
       senderId: user?.id || "usr_eng_101",
-      senderName: user?.name || "Ahmet Yılmaz",
+      senderName: user?.name || "Kullanıcı",
       senderRole: user?.role || "ENGINEER",
       createdAt: new Date().toISOString(),
     };
 
     try {
-      // 1. Socket.io üzerinden anında ilet
       const socket = locationSocket.connect();
       socket.emit("sendMessage", payload);
-
-      // 2. REST API yedeği
       await api.post("/chat/messages", payload);
     } catch (err: any) {
-      console.warn("[Chat] Mesaj API gönderim uyarısı:", err.message);
+      console.warn("[Chat Send Warning]:", err?.message);
     } finally {
       setIsSending(false);
     }
   };
 
-  // 5. Telsiz (Bas-Konuş) Sesli Mesaj Gönder (expo-audio / WebRTC altyapısı)
+  // 5. Telsiz (PTT) Ses Kaydı Gönder
   const handleVoiceRecordingComplete = async (audioUri: string, durationMs: number) => {
     if (!activeChannel) return;
 
     try {
       setIsSending(true);
-
       let uploadedAudioUrl: string | null = null;
+
       if (audioUri && audioUri.length > 0) {
         try {
           const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
@@ -251,7 +247,6 @@ export default function ChatScreen() {
             uploadedAudioUrl = uploadRes.data.audioUrl;
           }
         } catch (uploadErr: any) {
-          console.warn("[Chat] Ses yükleme uyarısı (yerel URI kullanılıyor):", uploadErr.message);
           uploadedAudioUrl = audioUri;
         }
       }
@@ -260,21 +255,18 @@ export default function ChatScreen() {
       const payload = {
         channelId: activeChannel.id,
         content: `[Telsiz Anonsu (${seconds} sn)]`,
-        audioUrl: uploadedAudioUrl || (audioUri ? audioUri : null),
+        audioUrl: uploadedAudioUrl || audioUri,
         senderId: user?.id || "usr_eng_101",
-        senderName: user?.name || "Ahmet Yılmaz",
+        senderName: user?.name || "Kullanıcı",
         senderRole: user?.role || "ENGINEER",
         createdAt: new Date().toISOString(),
       };
 
-      // Socket.io ile telsiz anonsunu tüm şantiyeye yayınla
       const socket = locationSocket.connect();
       socket.emit("sendMessage", payload);
-
-      // REST API
       await api.post("/chat/messages", payload);
     } catch (err: any) {
-      console.error("[Chat] Telsiz kaydı gönderme hatası:", err);
+      console.error("[Chat Voice Error]:", err);
     } finally {
       setIsSending(false);
     }
@@ -288,13 +280,10 @@ export default function ChatScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.7,
-        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const base64 = asset.base64;
-
         setIsSending(true);
 
         const payload = {
@@ -302,24 +291,23 @@ export default function ChatScreen() {
           content: "📷 [Saha Fotoğrafı]",
           imageUrl: asset.uri,
           senderId: user?.id || "usr_eng_101",
-          senderName: user?.name || "Ahmet Yılmaz",
+          senderName: user?.name || "Kullanıcı",
           senderRole: user?.role || "ENGINEER",
           createdAt: new Date().toISOString(),
         };
 
         const socket = locationSocket.connect();
         socket.emit("sendMessage", payload);
-
         await api.post("/chat/messages", payload);
       }
     } catch (err: any) {
-      console.error("[Chat] Fotoğraf gönderme hatası:", err);
+      console.error("[Chat Photo Error]:", err);
     } finally {
       setIsSending(false);
     }
   };
 
-  // 7. Telsiz Ses Kaydını Oynat / Duraklat (expo-audio)
+  // 7. Telsiz Ses Kaydını Çal (expo-audio)
   const handlePlayAudio = async (msgId: string, audioUrl: string) => {
     try {
       if (soundRef.current) {
@@ -354,12 +342,11 @@ export default function ChatScreen() {
 
       player.play();
     } catch (err) {
-      console.warn("[Chat] Ses oynatma hatası:", err);
+      console.warn("[Chat Audio Play Error]:", err);
       setPlayingMessageId(null);
     }
   };
 
-  // Ses oynatıcı unmount temizliği
   useEffect(() => {
     return () => {
       if (soundRef.current) {
@@ -375,103 +362,114 @@ export default function ChatScreen() {
       <StatusBar style="light" />
 
       {/* ============================================================ */}
-      {/* ÜST HEADER (iOS iMessage Stili + Telsiz Kanal Seçici)        */}
+      {/* 1. ÜST HEADER (Akordiyon Kanal Seçici)                       */}
       {/* ============================================================ */}
       <View style={styles.headerContainer}>
         <View style={styles.headerLeft}>
-          <View style={styles.radioIndicator}>
+          <View style={styles.liveRadioBadge}>
             <View style={styles.radioDot} />
-            <Text style={styles.radioStatusText}>CANLI TELSİZ</Text>
+            <Text style={styles.radioText}>CANLI TELSİZ</Text>
           </View>
+
           <TouchableOpacity
-            style={styles.channelTitleRow}
-            activeOpacity={0.7}
+            style={styles.channelPickerButton}
+            activeOpacity={0.75}
             onPress={() => setIsChannelSelectorOpen(!isChannelSelectorOpen)}
           >
             <Text style={styles.channelNameText}>
-              {activeChannel?.name || "Kanal Yükleniyor..."}
+              {activeChannel?.name || "Kanal Seçiniz"}
             </Text>
             <Feather
               name={isChannelSelectorOpen ? "chevron-up" : "chevron-down"}
               size={18}
-              color="#38BDF8"
+              color={iosColors.systemBlue}
             />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={styles.headerRightBtn}
+          style={styles.channelDropdownToggle}
           onPress={() => setIsChannelSelectorOpen(!isChannelSelectorOpen)}
+          activeOpacity={0.7}
         >
-          <MaterialCommunityIcons name="radio-tower" size={22} color="#60A5FA" />
+          <MaterialCommunityIcons
+            name="radio-tower"
+            size={22}
+            color={iosColors.systemBlue}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Kanal Değiştirme Açılır Listesi */}
+      {/* Akordiyon Kanal Dropdown Menüsü */}
       {isChannelSelectorOpen && (
         <View style={styles.channelDropdown}>
-          <Text style={styles.channelDropdownTitle}>Şantiyedeki Kanallar & Gruplar</Text>
-          {channels.map((ch) => (
-            <TouchableOpacity
-              key={ch.id}
-              style={[
-                styles.channelOption,
-                activeChannel?.id === ch.id && styles.channelOptionActive,
-              ]}
-              onPress={() => {
-                setActiveChannel(ch);
-                setIsChannelSelectorOpen(false);
-              }}
-            >
-              <MaterialCommunityIcons
-                name={
-                  ch.name.includes("Telsiz")
-                    ? "radio-handheld"
-                    : ch.name.includes("İSG")
-                    ? "alert-decagram"
-                    : "chat"
-                }
-                size={18}
-                color={activeChannel?.id === ch.id ? "#38BDF8" : "#94A3B8"}
-                style={{ marginRight: 10 }}
-              />
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[
-                    styles.channelOptionText,
-                    activeChannel?.id === ch.id && styles.channelOptionTextActive,
-                  ]}
-                >
-                  {ch.name}
-                </Text>
-                {ch.description && (
-                  <Text style={styles.channelOptionDesc}>{ch.description}</Text>
+          <Text style={styles.dropdownHeading}>Şantiyedeki Kanallar & Telsiz Grupları</Text>
+          {(channels || []).map((ch) => {
+            const isSelected = activeChannel?.id === ch.id;
+            return (
+              <TouchableOpacity
+                key={ch.id}
+                style={[
+                  styles.channelOption,
+                  isSelected && styles.channelOptionActive,
+                ]}
+                onPress={() => {
+                  setActiveChannel(ch);
+                  setIsChannelSelectorOpen(false);
+                }}
+              >
+                <MaterialCommunityIcons
+                  name={
+                    ch.name.includes("İSG")
+                      ? "alert-decagram"
+                      : ch.name.includes("Lojistik")
+                      ? "truck"
+                      : "radio-handheld"
+                  }
+                  size={20}
+                  color={isSelected ? iosColors.systemBlue : iosColors.labelSecondary}
+                  style={{ marginRight: 10 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.channelOptionTitle,
+                      isSelected && styles.channelOptionTitleActive,
+                    ]}
+                  >
+                    {ch.name}
+                  </Text>
+                  {ch.description && (
+                    <Text style={styles.channelOptionDesc}>{ch.description}</Text>
+                  )}
+                </View>
+                {isSelected && (
+                  <Feather name="check" size={16} color={iosColors.systemBlue} />
                 )}
-              </View>
-              {activeChannel?.id === ch.id && (
-                <Feather name="check" size={16} color="#38BDF8" />
-              )}
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
 
       {/* ============================================================ */}
-      {/* MESAJ LİSTESİ (iOS iMessage Balonları)                       */}
+      {/* 2. MESAJ LİSTESİ (iOS Balonları)                             */}
       {/* ============================================================ */}
-      <View style={styles.chatBody}>
+      <View style={styles.messagesContainer}>
         {isLoadingMessages ? (
           <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color="#3B82F6" />
+            <ActivityIndicator size="large" color={iosColors.systemBlue} />
             <Text style={styles.loadingText}>Telsiz mesajları alınıyor...</Text>
           </View>
         ) : (
           <FlatList
             ref={flatListRef}
-            data={messages}
+            data={messages || []}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.messageListContent}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            contentContainerStyle={styles.listContent}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
             renderItem={({ item }) => {
               const isMe = item.senderId === (user?.id || "usr_eng_101");
               const isVoice = Boolean(item.audioUrl);
@@ -484,15 +482,16 @@ export default function ChatScreen() {
                     isMe ? styles.messageRowMe : styles.messageRowOther,
                   ]}
                 >
-                  {/* Karşı tarafın avatarı veya baş harfi */}
+                  {/* Karşı tarafın avatarı */}
                   {!isMe && (
-                    <View style={styles.otherAvatar}>
-                      <Text style={styles.otherAvatarText}>
+                    <View style={styles.avatarCircle}>
+                      <Text style={styles.avatarLetter}>
                         {(item.sender?.name || "P").substring(0, 1).toUpperCase()}
                       </Text>
                     </View>
                   )}
 
+                  {/* Konuşma Baloncuğu */}
                   <View
                     style={[
                       styles.bubbleBase,
@@ -500,25 +499,30 @@ export default function ChatScreen() {
                       isVoice && styles.bubbleVoice,
                     ]}
                   >
-                    {/* Gelen mesajda gönderen adı & rol rozeti */}
+                    {/* Gelen mesajda kullanıcı adı ve rol rozeti */}
                     {!isMe && (
                       <View style={styles.senderHeader}>
-                        <Text style={styles.senderName}>{item.sender?.name || "Personel"}</Text>
+                        <Text style={styles.senderName}>
+                          {item.sender?.name || "Personel"}
+                        </Text>
                         <Text style={styles.senderRole}>
                           {item.sender?.role || "SAHA"}
                         </Text>
                       </View>
                     )}
 
-                    {/* 1. Telsiz Ses Kaydı Mesajı */}
+                    {/* 1. Telsiz Ses Kaydı */}
                     {isVoice && (
-                      <View style={styles.voiceMessageContainer}>
+                      <View style={styles.voiceContainer}>
                         <TouchableOpacity
                           style={[
                             styles.playPauseBtn,
                             isMe ? styles.playPauseBtnMe : styles.playPauseBtnOther,
                           ]}
-                          onPress={() => item.audioUrl && handlePlayAudio(item.id, item.audioUrl)}
+                          onPress={() =>
+                            item.audioUrl &&
+                            handlePlayAudio(item.id, item.audioUrl)
+                          }
                         >
                           <Ionicons
                             name={isPlaying ? "pause" : "play"}
@@ -527,23 +531,32 @@ export default function ChatScreen() {
                           />
                         </TouchableOpacity>
 
-                        <View style={styles.voiceWaveContainer}>
-                          {/* Ses dalga çizgileri */}
-                          <View style={styles.waveBarsRow}>
-                            {[14, 22, 10, 26, 18, 12, 28, 16, 20, 10, 24, 14].map((h, i) => (
-                              <View
-                                key={i}
-                                style={[
-                                  styles.waveBar,
-                                  { height: h },
-                                  isPlaying && {
-                                    backgroundColor: isMe ? "#FFFFFF" : "#38BDF8",
-                                  },
-                                ]}
-                              />
-                            ))}
+                        <View style={styles.voiceDetails}>
+                          {/* Ses Dalgası Barları */}
+                          <View style={styles.barsRow}>
+                            {[14, 22, 10, 26, 18, 12, 28, 16, 20, 10, 24, 14].map(
+                              (h, i) => (
+                                <View
+                                  key={i}
+                                  style={[
+                                    styles.waveBar,
+                                    { height: h },
+                                    isPlaying && {
+                                      backgroundColor: isMe
+                                        ? "#FFFFFF"
+                                        : iosColors.systemBlue,
+                                    },
+                                  ]}
+                                />
+                              )
+                            )}
                           </View>
-                          <Text style={[styles.voiceDurationText, isMe && { color: "#E0E7FF" }]}>
+                          <Text
+                            style={[
+                              styles.voiceStatusText,
+                              isMe && { color: "rgba(255, 255, 255, 0.85)" },
+                            ]}
+                          >
                             {isPlaying ? "Yürütülüyor..." : "🎙️ Telsiz Anonsu"}
                           </Text>
                         </View>
@@ -571,7 +584,7 @@ export default function ChatScreen() {
                       </Text>
                     )}
 
-                    {/* Zaman & İletildi Tikleri */}
+                    {/* Zaman & Tik */}
                     <View style={styles.metaRow}>
                       <Text
                         style={[
@@ -602,29 +615,29 @@ export default function ChatScreen() {
       </View>
 
       {/* ============================================================ */}
-      {/* ALT MESAJ GİRİŞ ÇUBUĞU (iOS iMessage + Telsiz Mandalı)       */}
+      {/* 3. ALT GİRİŞ ÇUBUĞU (PTT Bas-Konuş & iOS Metin Girişi)         */}
       {/* ============================================================ */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
-        <SafeAreaView edges={["bottom"]} style={styles.inputBarSafeArea}>
-          <View style={styles.inputBarContainer}>
-            {/* Fotoğraf Ekleme Butonu */}
+        <SafeAreaView edges={["bottom"]} style={styles.inputSafeArea}>
+          <View style={styles.inputBar}>
+            {/* Fotoğraf Butonu */}
             <TouchableOpacity
-              style={styles.attachButton}
+              style={styles.cameraButton}
               onPress={handlePickImage}
               activeOpacity={0.7}
             >
-              <Feather name="camera" size={20} color="#94A3B8" />
+              <Feather name="camera" size={20} color={iosColors.labelSecondary} />
             </TouchableOpacity>
 
             {/* iOS Kavisli Metin Girişi */}
-            <View style={styles.textInputWrapper}>
+            <View style={styles.inputFieldWrapper}>
               <TextInput
-                style={styles.textInputField}
-                placeholder="iMessage • Şantiye Telsizi..."
-                placeholderTextColor="#64748B"
+                style={styles.textInput}
+                placeholder="Mesaj yaz veya telsizle anons geç..."
+                placeholderTextColor={iosColors.labelMuted}
                 value={inputText}
                 onChangeText={setInputText}
                 multiline={false}
@@ -633,7 +646,7 @@ export default function ChatScreen() {
               />
             </View>
 
-            {/* Sağ Taraf: Metin varsa Gönder Butonu, Yoksa Telsiz Mandalı (Push-to-Talk) */}
+            {/* Metin varsa Gönder, yoksa Bas-Konuş Telsiz Mandalı */}
             {inputText.trim().length > 0 ? (
               <TouchableOpacity
                 style={styles.sendButton}
@@ -663,73 +676,73 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
-    backgroundColor: "#0B0F19", // Koyu Apple iOS teması
+    backgroundColor: iosColors.background,
   },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
-    backgroundColor: "rgba(15, 23, 42, 0.95)",
+    borderBottomColor: iosColors.glassBorder,
+    backgroundColor: "rgba(10, 15, 28, 0.95)",
   },
   headerLeft: {
     flex: 1,
   },
-  radioIndicator: {
+  liveRadioBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   radioDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#10B981",
+    backgroundColor: iosColors.systemGreen,
   },
-  radioStatusText: {
-    color: "#10B981",
+  radioText: {
+    color: iosColors.systemGreen,
     fontSize: 10,
     fontWeight: "800",
     letterSpacing: 0.8,
   },
-  channelTitleRow: {
+  channelPickerButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
   },
   channelNameText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: iosColors.labelPrimary,
+    fontSize: 17,
     fontWeight: "800",
   },
-  headerRightBtn: {
+  channelDropdownToggle: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(30, 41, 59, 0.8)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.3)",
+    borderColor: iosColors.glassBorder,
+    alignItems: "center",
+    justifyContent: "center",
   },
   channelDropdown: {
-    backgroundColor: "#111827",
-    padding: 12,
+    backgroundColor: iosColors.backgroundSecondary,
+    padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#1F2937",
+    borderBottomColor: iosColors.glassBorder,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
     elevation: 8,
     zIndex: 100,
   },
-  channelDropdownTitle: {
-    color: "#64748B",
+  dropdownHeading: {
+    color: iosColors.labelSecondary,
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
@@ -745,24 +758,24 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   channelOptionActive: {
-    backgroundColor: "rgba(37, 99, 235, 0.15)",
+    backgroundColor: "rgba(10, 122, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.4)",
+    borderColor: "rgba(10, 122, 255, 0.4)",
   },
-  channelOptionText: {
-    color: "#94A3B8",
+  channelOptionTitle: {
+    color: iosColors.labelSecondary,
     fontSize: 13,
     fontWeight: "700",
   },
-  channelOptionTextActive: {
-    color: "#38BDF8",
+  channelOptionTitleActive: {
+    color: iosColors.systemBlue,
   },
   channelOptionDesc: {
-    color: "#64748B",
+    color: iosColors.labelMuted,
     fontSize: 11,
     marginTop: 2,
   },
-  chatBody: {
+  messagesContainer: {
     flex: 1,
   },
   loadingBox: {
@@ -771,20 +784,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    color: "#64748B",
+    color: iosColors.labelSecondary,
     fontSize: 12,
     marginTop: 10,
-    fontWeight: "600",
+    fontWeight: "500",
   },
-  messageListContent: {
-    paddingHorizontal: 14,
-    paddingVertical: 16,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     gap: 8,
   },
   messageRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    marginVertical: 3,
+    marginVertical: 2,
   },
   messageRowMe: {
     justifyContent: "flex-end",
@@ -792,23 +805,25 @@ const styles = StyleSheet.create({
   messageRowOther: {
     justifyContent: "flex-start",
   },
-  otherAvatar: {
+  avatarCircle: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#334155",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 8,
     marginBottom: 2,
   },
-  otherAvatarText: {
+  avatarLetter: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "800",
   },
   bubbleBase: {
-    maxWidth: "76%",
+    maxWidth: "78%",
     paddingHorizontal: 14,
     paddingVertical: 9,
     shadowColor: "#000",
@@ -817,23 +832,23 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  // ADIM 3: Gönderilenler sağda mavi (rounded-l-2xl rounded-tr-2xl)
+  // Kendi mesajları sağda iOS mavisi (#0A7AFF)
   bubbleMe: {
-    backgroundColor: "#2563EB", // iOS iMessage Blue
+    backgroundColor: iosColors.systemBlue,
     borderTopLeftRadius: 18,
     borderBottomLeftRadius: 18,
     borderTopRightRadius: 18,
     borderBottomRightRadius: 4,
   },
-  // ADIM 3: Gelenler solda koyu gri (rounded-r-2xl rounded-tl-2xl)
+  // Karşı tarafın mesajları solda koyu gri (rgba(255, 255, 255, 0.08))
   bubbleOther: {
-    backgroundColor: "#1F2937", // Koyu gri iOS bubble
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     borderTopRightRadius: 18,
     borderBottomRightRadius: 18,
     borderTopLeftRadius: 18,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: iosColors.glassBorder,
   },
   bubbleVoice: {
     minWidth: 190,
@@ -845,32 +860,20 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   senderName: {
-    color: "#60A5FA",
+    color: iosColors.systemBlue,
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   senderRole: {
-    color: "#94A3B8",
+    color: iosColors.labelSecondary,
     fontSize: 9,
-    fontWeight: "700",
+    fontWeight: "800",
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
   },
-  messageText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  messageTextMe: {
-    color: "#FFFFFF",
-    fontWeight: "500",
-  },
-  messageTextOther: {
-    color: "#F1F5F9",
-    fontWeight: "500",
-  },
-  voiceMessageContainer: {
+  voiceContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -880,103 +883,109 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
   playPauseBtnMe: {
     backgroundColor: "rgba(255, 255, 255, 0.25)",
   },
   playPauseBtnOther: {
-    backgroundColor: "#2563EB",
+    backgroundColor: iosColors.systemBlue,
   },
-  voiceWaveContainer: {
+  voiceDetails: {
     flex: 1,
   },
-  waveBarsRow: {
+  barsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    height: 28,
+    height: 30,
   },
   waveBar: {
     width: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-    borderRadius: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.35)",
+    borderRadius: 1.5,
   },
-  voiceDurationText: {
-    color: "#94A3B8",
+  voiceStatusText: {
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: "600",
+    color: iosColors.labelSecondary,
     marginTop: 2,
   },
   messageImage: {
-    width: 200,
+    width: 210,
     height: 150,
     borderRadius: 12,
-    marginBottom: 6,
+    marginBottom: 4,
+  },
+  messageText: {
+    fontSize: 14,
+    lineHeight: 19,
+  },
+  messageTextMe: {
+    color: "#FFFFFF",
+  },
+  messageTextOther: {
+    color: iosColors.labelPrimary,
   },
   metaRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
     alignItems: "center",
+    justifyContent: "flex-end",
     marginTop: 3,
   },
   timestampText: {
     fontSize: 10,
-    fontWeight: "500",
   },
   timestampMe: {
     color: "rgba(255, 255, 255, 0.7)",
   },
   timestampOther: {
-    color: "#94A3B8",
+    color: iosColors.labelSecondary,
   },
-  // Alt Giriş Barı
-  inputBarSafeArea: {
-    backgroundColor: "#111827",
+  inputSafeArea: {
+    backgroundColor: iosColors.backgroundSecondary,
     borderTopWidth: 1,
-    borderTopColor: "#1F2937",
+    borderTopColor: iosColors.glassBorder,
   },
-  inputBarContainer: {
+  inputBar: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     gap: 8,
   },
-  attachButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#1E293B",
-    justifyContent: "center",
+  cameraButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     alignItems: "center",
+    justifyContent: "center",
   },
-  textInputWrapper: {
+  inputFieldWrapper: {
     flex: 1,
-    backgroundColor: "#1E293B",
-    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: Platform.OS === "ios" ? 8 : 4,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: iosColors.glassBorder,
   },
-  textInputField: {
+  textInput: {
     color: "#FFFFFF",
     fontSize: 14,
-    minHeight: 24,
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#2563EB",
-    justifyContent: "center",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: iosColors.systemBlue,
     alignItems: "center",
-    shadowColor: "#2563EB",
+    justifyContent: "center",
+    shadowColor: iosColors.systemBlue,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 4,
-    elevation: 4,
   },
 });

@@ -68,18 +68,6 @@ export default function RootLayout() {
             data?.screen === "journal"
           ) {
             router.push("/(tabs)/journal");
-          } else if (
-            data?.type === "INSPECTION" ||
-            data?.type === "CONCRETE" ||
-            data?.screen === "inspections"
-          ) {
-            router.push("/(tabs)/inspections");
-          } else if (
-            data?.type === "LOGISTICS" ||
-            data?.type === "DELIVERY" ||
-            data?.screen === "logistics"
-          ) {
-            router.push("/(tabs)/logistics");
           } else {
             router.push("/(tabs)");
           }

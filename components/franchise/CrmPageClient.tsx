@@ -212,3 +212,4 @@ export default function CrmPageClient({ initialSuppliers }: CrmPageClientProps) 
     </div>
   )
 }
+
