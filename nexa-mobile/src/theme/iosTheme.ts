@@ -218,3 +218,4 @@ export const iosStyles = StyleSheet.create({
     marginVertical: 12,
   },
 });
+

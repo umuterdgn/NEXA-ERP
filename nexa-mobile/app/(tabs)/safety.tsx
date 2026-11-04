@@ -3,9 +3,10 @@
  * Nexa ERP Mobil - Apple iOS Standartlarında İSG & Güvenlik Raporlama
  *
  * - Koyu iOS Zemin (#0A0F1C)
- * - En üstte devasa kırmızı (#FF3B30) "İhlal / Ceza Bildir" ve devasa turuncu (#FF9500) "Ramak Kala Olayı Bildir" butonları
+ * - Donanım: expo-camera ile "İhlal / Ceza Bildir" ve "Ramak Kala Olayı Bildir" butonlarından kamera vizörünü açma
+ * - GPS Anti-Spoofing: expo-location isMocked kontrolü (Fake GPS ise "GPS Doğrulaması Başarısız", değilse "Anti-Spoof Doğrulandı")
+ * - Çevrimdışı (Offline-First): @react-native-community/netinfo ile denetim, internet yoksa AsyncStorage OfflineQueue'ya "Senkronizasyon Bekliyor (Taslak)" olarak kayıt
  * - Alt kısımda iOS liste standartlarına uygun (divider çizgili, sade) ceza ve tutanak listesi
- * - Çökme koruması: data?.map, try-catch kamera, GPS ve senkronizasyon
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -27,7 +28,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import * as Network from "expo-network";
+import NetInfo from "@react-native-community/netinfo";
 import { useAuth } from "../../src/hooks/useAuth";
 import { useNetworkSync } from "../../src/hooks/useNetworkSync";
 import { OfflineCamera, QueuedMediaItem } from "../../src/components/media/OfflineCamera";
@@ -69,9 +70,10 @@ export interface SafetyIncidentItem {
   description: string;
   imageUrl?: string;
   severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  status: "PENDING_SYNC" | "SUBMITTED" | "RESOLVED";
+  status: "Senkronizasyon Bekliyor (Taslak)" | "SUBMITTED" | "RESOLVED";
   createdAt: string;
   reporterName: string;
+  isMockedGps?: boolean;
 }
 
 export default function SafetyScreen() {
@@ -94,6 +96,7 @@ export default function SafetyScreen() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [isMockedGps, setIsMockedGps] = useState<boolean>(false);
   const [penaltyAmount, setPenaltyAmount] = useState<string>("5000");
   const [description, setDescription] = useState<string>("");
   const [severity, setSeverity] = useState<"LOW" | "MEDIUM" | "HIGH" | "CRITICAL">("HIGH");
@@ -114,6 +117,7 @@ export default function SafetyScreen() {
       status: "SUBMITTED",
       createdAt: "Bugün, 10:45",
       reporterName: "Ahmet Yılmaz (İSG Uzmanı)",
+      isMockedGps: false,
     },
     {
       id: "INC-2026-080",
@@ -128,6 +132,7 @@ export default function SafetyScreen() {
       status: "SUBMITTED",
       createdAt: "Dün, 16:20",
       reporterName: "Mehmet Demir (Şantiye Şefi)",
+      isMockedGps: false,
     },
     {
       id: "INC-2026-079",
@@ -143,6 +148,7 @@ export default function SafetyScreen() {
       status: "SUBMITTED",
       createdAt: "01 Kas 2026, 14:10",
       reporterName: "Ahmet Yılmaz (İSG Uzmanı)",
+      isMockedGps: false,
     },
   ]);
 
@@ -154,14 +160,23 @@ export default function SafetyScreen() {
     message: string;
   } | null>(null);
 
-  // Konum Sorgusu
+  // ADIM 3: GPS Konumu & Anti-Spoofing (isMocked) Kontrolü
   const requestCurrentLocation = useCallback(async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") return;
+
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
+
+      const fakeDetected =
+        Boolean(loc.mocked) ||
+        Boolean((loc.coords as any)?.isMocked) ||
+        Boolean((loc.coords as any)?.mocked) ||
+        Boolean((loc as any)?.isFromMockProvider);
+
+      setIsMockedGps(fakeDetected);
       setLatitude(loc.coords.latitude);
       setLongitude(loc.coords.longitude);
       setLocationAccuracy(Math.round(loc.coords.accuracy || 5));
@@ -174,7 +189,7 @@ export default function SafetyScreen() {
     requestCurrentLocation().catch(() => {});
   }, [requestCurrentLocation]);
 
-  // "İhlal Bildir" Butonu
+  // "İhlal Bildir" Butonu (expo-camera Vizörünü Açar)
   const handleOpenViolationReporting = () => {
     setCameraMode("VIOLATION");
     setSelectedCategory("VIOLATION");
@@ -184,7 +199,7 @@ export default function SafetyScreen() {
     setIsCameraVisible(true);
   };
 
-  // "Ramak Kala Olayı Bildir" Butonu
+  // "Ramak Kala Olayı Bildir" Butonu (expo-camera Vizörünü Açar)
   const handleOpenNearMissReporting = () => {
     setCameraMode("NEAR_MISS");
     setSelectedCategory("NEAR_MISS");
@@ -195,7 +210,7 @@ export default function SafetyScreen() {
     setIsCameraVisible(true);
   };
 
-  // Fotoğraf Çekildiğinde
+  // Kameradan Fotoğraf Çekildiğinde
   const handlePhotoCaptured = (item: QueuedMediaItem) => {
     setIsCameraVisible(false);
     setCapturedPhotoUri(item.localUri);
@@ -206,7 +221,7 @@ export default function SafetyScreen() {
     }
   };
 
-  // Rapor Gönder
+  // ADIM 4: Rapor Gönder (Offline-First Entegrasyonu)
   const handleSubmitReport = async () => {
     if (!description.trim() && !locationText.trim()) {
       Alert.alert("Eksik Bilgi", "Lütfen konum açıklaması veya ihlal detayını belirtiniz.");
@@ -215,13 +230,8 @@ export default function SafetyScreen() {
 
     setIsSubmitting(true);
     try {
-      let online = isConnected;
-      try {
-        const netState = await Network.getNetworkStateAsync();
-        online = Boolean(netState.isConnected);
-      } catch (e) {
-        online = false;
-      }
+      const netState = await NetInfo.fetch();
+      const online = Boolean(netState.isConnected && netState.isInternetReachable !== false);
 
       const newIncidentId = `INC-${Date.now().toString().slice(-6)}`;
       const payload = {
@@ -239,9 +249,11 @@ export default function SafetyScreen() {
         severity: severity,
         reporterName: user?.name || "İSG Sorumlusu",
         createdAt: new Date().toISOString(),
+        isMockedGps,
       };
 
       if (!online) {
+        // İnternet yoksa: AsyncStorage içine "Senkronizasyon Bekliyor (Taslak)" statüsüyle kaydet
         await OfflineQueue.addToQueue(
           "/safety/incidents",
           payload,
@@ -264,15 +276,16 @@ export default function SafetyScreen() {
           description: payload.description,
           imageUrl: capturedPhotoUri || undefined,
           severity: severity,
-          status: "PENDING_SYNC",
-          createdAt: "Şimdi (Cihazda)",
+          status: "Senkronizasyon Bekliyor (Taslak)",
+          createdAt: "Şimdi (Taslak)",
           reporterName: user?.name || "İSG Uzmanı",
+          isMockedGps,
         };
 
         setIncidents((prev) => [localItem, ...(prev || [])]);
         setFeedbackBanner({
           type: "OFFLINE",
-          message: "İnternet bağlantısı yok. Güvenlik kaydı cihaza kaydedildi, bağlantı sağlandığında gönderilecek.",
+          message: "İnternet bağlantısı yok. Güvenlik kaydı cihaza kaydedildi: Senkronizasyon Bekliyor (Taslak)",
         });
       } else {
         try {
@@ -304,6 +317,7 @@ export default function SafetyScreen() {
           status: "SUBMITTED",
           createdAt: "Şimdi",
           reporterName: user?.name || "İSG Uzmanı",
+          isMockedGps,
         };
 
         setIncidents((prev) => [localItem, ...(prev || [])]);
@@ -411,7 +425,7 @@ export default function SafetyScreen() {
         }
       >
         {/* ============================================================ */}
-        {/* ADIM 4: DEVASA KIRMIZI (#FF3B30) VE TURUNCU (#FF9500) BUTONLAR*/}
+        {/* ADIM 3: DEVASA KIRMIZI (#FF3B30) VE TURUNCU (#FF9500) BUTONLAR*/}
         {/* ============================================================ */}
         <View style={styles.actionButtonsContainer}>
           {/* BUTON 1: DEVASA KIRMIZI "İHLAL / CEZA BİLDİR" */}
@@ -437,10 +451,22 @@ export default function SafetyScreen() {
             </View>
 
             <View style={styles.buttonBottomRow}>
+              {/* GPS Anti-Spoof Durumu Rozeti */}
               <View style={styles.gpsRow}>
-                <Feather name="map-pin" size={12} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.gpsText}>
-                  {latitude ? `GPS Aktif (±${locationAccuracy || 5}m)` : "GPS Alınıyor..."}
+                <Feather
+                  name={isMockedGps ? "alert-circle" : "shield"}
+                  size={12}
+                  color={isMockedGps ? "#FECACA" : "#D1FAE5"}
+                />
+                <Text
+                  style={[
+                    styles.gpsText,
+                    isMockedGps && { color: "#FEE2E2", fontWeight: "800" },
+                  ]}
+                >
+                  {isMockedGps
+                    ? "❌ GPS Doğrulaması Başarısız"
+                    : `🛡️ Anti-Spoof Doğrulandı (±${locationAccuracy || 5}m)`}
                 </Text>
               </View>
               <View style={styles.arrowRow}>
@@ -578,6 +604,7 @@ export default function SafetyScreen() {
             filteredIncidents.map((incident, index) => {
               const isViolation = incident.category === "VIOLATION";
               const isLast = index === filteredIncidents.length - 1;
+              const isDraft = incident.status === "Senkronizasyon Bekliyor (Taslak)";
 
               return (
                 <View
@@ -606,9 +633,11 @@ export default function SafetyScreen() {
                         </Text>
                       </View>
 
-                      {incident.status === "PENDING_SYNC" ? (
+                      {isDraft ? (
                         <View style={styles.syncBadgePending}>
-                          <Text style={styles.syncBadgePendingText}>⏳ Cihazda</Text>
+                          <Text style={styles.syncBadgePendingText}>
+                            ⏳ Senkronizasyon Bekliyor (Taslak)
+                          </Text>
                         </View>
                       ) : (
                         <View style={styles.syncBadgeDone}>
@@ -677,7 +706,7 @@ export default function SafetyScreen() {
         </View>
       </ScrollView>
 
-      {/* KAMERA MODALI */}
+      {/* KAMERA MODALI (expo-camera) */}
       <Modal
         visible={isCameraVisible}
         animationType="slide"
@@ -998,13 +1027,12 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
   actionButtonsContainer: {
     gap: 12,
     marginBottom: 20,
   },
-  // Devasa Kırmızı Buton (#FF3B30)
   giantViolationButton: {
     width: "100%",
     backgroundColor: iosColors.systemRed,
@@ -1016,7 +1044,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  // Devasa Turuncu Buton (#FF9500)
   giantNearMissButton: {
     width: "100%",
     backgroundColor: iosColors.systemOrange,
@@ -1237,9 +1264,11 @@ const styles = StyleSheet.create({
   },
   syncBadgePending: {
     backgroundColor: "rgba(255, 149, 0, 0.15)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255, 149, 0, 0.35)",
   },
   syncBadgePendingText: {
     fontSize: 9,
@@ -1248,9 +1277,11 @@ const styles = StyleSheet.create({
   },
   syncBadgeDone: {
     backgroundColor: "rgba(52, 199, 89, 0.15)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(52, 199, 89, 0.35)",
   },
   syncBadgeDoneText: {
     fontSize: 9,

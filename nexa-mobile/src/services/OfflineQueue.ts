@@ -9,8 +9,9 @@ export interface OfflineTask {
   endpoint: string;
   payload: any;
   method: "POST" | "PATCH" | "PUT" | "DELETE" | "GET";
-  type?: "JOURNAL" | "SIGNATURE" | "QR" | "INSPECTION" | "OTHER";
+  type?: "JOURNAL" | "SIGNATURE" | "QR" | "INSPECTION" | "SAFETY" | "OTHER";
   title?: string;
+  status: "Senkronizasyon Bekliyor (Taslak)" | "İNCELENİYOR" | "TAMAMLANDI";
   createdAt: string;
   attempts?: number;
   lastError?: string;
@@ -46,14 +47,15 @@ class OfflineQueueService {
   }
 
   /**
-   * ADIM 2: İnternet yoksa isteği AsyncStorage üzerindeki OFFLINE_TASKS kuyruğuna ekle
+   * ADIM 4: İnternet yoksa isteği AsyncStorage üzerindeki OFFLINE_TASKS kuyruğuna ekle
+   * Durum: "Senkronizasyon Bekliyor (Taslak)"
    */
   async addToQueue(
     endpoint: string,
     payload: any,
     method: "POST" | "PATCH" | "PUT" | "DELETE" | "GET" = "POST",
     options?: {
-      type?: "JOURNAL" | "SIGNATURE" | "QR" | "INSPECTION" | "OTHER";
+      type?: "JOURNAL" | "SIGNATURE" | "QR" | "INSPECTION" | "SAFETY" | "OTHER";
       title?: string;
     }
   ): Promise<OfflineTask> {
@@ -66,6 +68,7 @@ class OfflineQueueService {
       method,
       type: options?.type || "OTHER",
       title: options?.title || "Çevrimdışı İstek",
+      status: "Senkronizasyon Bekliyor (Taslak)",
       createdAt: new Date().toISOString(),
       attempts: 0,
     };
@@ -77,7 +80,7 @@ class OfflineQueueService {
     );
 
     console.log(
-      `[OfflineQueue] Görev kuyruğa eklendi: [${method}] ${endpoint} (Kuyruk Boyutu: ${updatedQueue.length})`
+      `[OfflineQueue] Taslak kuyruğa kaydedildi: [${method}] ${endpoint} (Kuyruk: ${updatedQueue.length})`
     );
 
     this.notifyListeners(updatedQueue);
@@ -85,7 +88,7 @@ class OfflineQueueService {
   }
 
   /**
-   * ADIM 2: Kuyruktaki tüm istekleri sırayla Axios ile backend'e at, başarılı olanları kuyruktan sil
+   * ADIM 4: Kuyruktaki tüm taslakları sırayla sunucuya gönder, başarılı olanları kaldır
    */
   async processQueue(): Promise<{
     processedCount: number;
@@ -104,7 +107,7 @@ class OfflineQueueService {
 
     this.isProcessing = true;
     console.log(
-      `[OfflineQueue] Otomatik senkronizasyon başladı: ${currentQueue.length} görev işlenecek...`
+      `[OfflineQueue] 🔄 Taslak senkronizasyonu başladı: ${currentQueue.length} görev sunucuya gönderiliyor...`
     );
 
     let successCount = 0;
@@ -115,7 +118,6 @@ class OfflineQueueService {
       try {
         console.log(`[OfflineQueue] Görev işleniyor: [${task.method}] ${task.endpoint}`);
 
-        // Axios isteğini tetikle
         switch (task.method) {
           case "PATCH":
             await api.patch(task.endpoint, task.payload);
@@ -135,25 +137,23 @@ class OfflineQueueService {
             break;
         }
 
-        console.log(`[OfflineQueue] Görev başarıyla gönderildi ve kuyruktan kaldırıldı: ${task.id}`);
+        console.log(`[OfflineQueue] ✅ Başarıyla sunucuya iletildi: ${task.id}`);
         successCount++;
       } catch (error: any) {
         console.warn(
-          `[OfflineQueue] Görev gönderilemedi (${task.id}):`,
+          `[OfflineQueue] ⚠️ Gönderilemedi, kuyrukta tutuluyor (${task.id}):`,
           error?.response?.data || error?.message || error
         );
 
-        // Ağ hatası veya sunucu geçici hatası: Kuyrukta tutmaya devam et
         remainingTasks.push({
           ...task,
           attempts: (task.attempts || 0) + 1,
-          lastError: error?.message || "Ağ hatası",
+          lastError: error?.message || "Bağlantı hatası",
         });
         failedCount++;
       }
     }
 
-    // Başarıyla iletilenler hariç, kalan görevleri kaydet
     await AsyncStorage.setItem(
       OFFLINE_STORAGE_KEY,
       JSON.stringify(remainingTasks)
@@ -173,17 +173,11 @@ class OfflineQueueService {
     };
   }
 
-  /**
-   * Kuyruğu tamamen temizler (Test / Sıfırlama için)
-   */
   async clearQueue(): Promise<void> {
     await AsyncStorage.removeItem(OFFLINE_STORAGE_KEY);
     this.notifyListeners([]);
   }
 
-  /**
-   * Kuyruk değişikliklerini dinleyen aboneleri haberdar et
-   */
   subscribe(listener: (queue: OfflineTask[]) => void): () => void {
     this.listeners.push(listener);
     return () => {
@@ -202,6 +196,5 @@ class OfflineQueueService {
   }
 }
 
-// Singleton Dışa Aktarımı
 export const OfflineQueue = new OfflineQueueService();
 export default OfflineQueue;

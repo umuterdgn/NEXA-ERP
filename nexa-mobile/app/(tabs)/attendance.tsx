@@ -2,10 +2,10 @@
  * © 2026 NXA Software. All rights reserved.
  * Nexa ERP Mobil - Apple iOS Standartlarında Akıllı Puantaj (NFC & Geofence)
  *
- * - Koyu iOS Zemin (#0A0F1C)
- * - Ekranın ortasında devasa mavi (#0A7AFF) radar/pulse animasyonlu "NFC & GPS Turnike" butonu
- * - Altında alternatif tam genişlik "QR Yaka Kartı ile Giriş Yap" butonu
- * - Çökme koruması: try-catch, data?.map
+ * - Donanım: react-native-nfc-manager ile "NFC & GPS Turnike" butonunda kart okuyucu polling + UI'da "Kart Okunuyor..." durumu
+ * - Donanım: expo-camera CameraView ile "QR Yaka Kartı ile Giriş Yap" vizör entegrasyonu
+ * - GPS Geofence Doğrulaması (Kadıköy Merkez Rezidans)
+ * - Çevrimdışı (Offline-First) AsyncStorage senkronizasyonu
  */
 
 import React, { useState, useEffect, useRef } from "react";
@@ -25,7 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import * as Network from "expo-network";
+import NetInfo from "@react-native-community/netinfo";
 import { useAuth } from "../../src/hooks/useAuth";
 import { useNFCScanner } from "../../src/hooks/useNFCScanner";
 import { useNetworkSync } from "../../src/hooks/useNetworkSync";
@@ -69,7 +69,7 @@ function getDistanceInMeters(
 
 export default function AttendanceScreen() {
   const { user, role } = useAuth();
-  const { isSupported: isNfcSupported, scanCard, cancelScan } = useNFCScanner();
+  const { isSupported: isNfcSupported, isScanning: isNfcHardwareScanning, scanCard, cancelScan } = useNFCScanner();
   const { isConnected } = useNetworkSync();
 
   const [isCheckingLocation, setIsCheckingLocation] = useState(false);
@@ -78,6 +78,7 @@ export default function AttendanceScreen() {
   const [lastCardUid, setLastCardUid] = useState<string | null>(null);
   const [currentDistance, setCurrentDistance] = useState<number | null>(null);
   const [isInGeofence, setIsInGeofence] = useState<boolean | null>(true);
+  const [isNfcReadingState, setIsNfcReadingState] = useState<boolean>(false);
 
   // Modaller
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -147,7 +148,7 @@ export default function AttendanceScreen() {
     verifyGeofenceLocation().catch(() => {});
   }, []);
 
-  // Giriş Butonu Tıklanması
+  // ADIM 3: NFC Donanım Tetikleyici (react-native-nfc-manager)
   const handleCheckInPress = async () => {
     try {
       if (Platform.OS !== "web") {
@@ -163,16 +164,22 @@ export default function AttendanceScreen() {
         return;
       }
 
+      setIsNfcReadingState(true);
       setShowNFCModal(true);
 
+      // NFC Polling başlat
       const cardResult = await scanCard();
+      setIsNfcReadingState(false);
       setShowNFCModal(false);
 
-      if (cardResult) {
-        setLastCardUid(cardResult);
-        await processCheckIn(cardResult, "NFC");
+      if (cardResult?.success && cardResult.uid) {
+        setLastCardUid(cardResult.uid);
+        await processCheckIn(cardResult.uid, "NFC");
+      } else if (cardResult?.error && cardResult.error !== "SCAN_CANCELLED") {
+        Alert.alert("NFC Hatası", cardResult.error);
       }
     } catch (err: any) {
+      setIsNfcReadingState(false);
       setShowNFCModal(false);
       if (err?.message !== "SCAN_CANCELLED") {
         Alert.alert("NFC Hatası", "Kart okunamadı: " + (err.message || "Bilinmeyen hata"));
@@ -180,7 +187,7 @@ export default function AttendanceScreen() {
     }
   };
 
-  // QR Tarandığında
+  // ADIM 3: QR Kamera Okuyucu (expo-camera CameraView)
   const handleQRScanned = async (qrData: string) => {
     setShowQRScanner(false);
     setLastCardUid(qrData);
@@ -207,13 +214,8 @@ export default function AttendanceScreen() {
         method,
       };
 
-      let hasInternet = true;
-      try {
-        const netState = await Network.getNetworkStateAsync();
-        hasInternet = Boolean(netState.isConnected);
-      } catch (e) {
-        hasInternet = false;
-      }
+      const netState = await NetInfo.fetch();
+      const hasInternet = Boolean(netState.isConnected && netState.isInternetReachable !== false);
 
       if (!hasInternet) {
         await OfflineQueue.addToQueue(
@@ -225,7 +227,7 @@ export default function AttendanceScreen() {
             title: `Puantaj Girişi (${method}): ${user?.name}`,
           }
         );
-        setStatusMessage("Çevrimdışı kaydedildi. Bağlantı sağlandığında iletilecek.");
+        setStatusMessage("Çevrimdışı kaydedildi: Senkronizasyon Bekliyor (Taslak)");
       } else {
         try {
           await api.post("/attendance/check-in", payload);
@@ -319,6 +321,8 @@ export default function AttendanceScreen() {
     );
   };
 
+  const isScanningActive = isCheckingLocation || isNfcReadingState || isNfcHardwareScanning;
+
   return (
     <SafeAreaView style={styles.safeContainer} edges={["top", "left", "right"]}>
       {/* 1. ÜST HEADER */}
@@ -391,7 +395,8 @@ export default function AttendanceScreen() {
         </View>
 
         {/* ============================================================ */}
-        {/* ORTADA DEVASA MAVİ (#0A7AFF) NFC & GPS TURNİKE BUTONU       */}
+        {/* ADIM 3: DEVASA MAVİ (#0A7AFF) "NFC & GPS TURNİKE" BUTONU     */}
+        {/* UI'DA "KART OKUNUYOR..." DURUMU                             */}
         {/* ============================================================ */}
         <View style={styles.giantButtonContainer}>
           <Animated.View
@@ -401,7 +406,7 @@ export default function AttendanceScreen() {
           >
             <TouchableOpacity
               onPress={handleCheckInPress}
-              disabled={isCheckingLocation || isCheckedIn}
+              disabled={isScanningActive || isCheckedIn}
               activeOpacity={0.88}
               style={[
                 styles.giantCircle,
@@ -414,8 +419,12 @@ export default function AttendanceScreen() {
                   isCheckedIn && { borderColor: "rgba(52, 199, 89, 0.5)" },
                 ]}
               >
-                {isCheckingLocation ? (
-                  <ActivityIndicator size="large" color="#FFFFFF" />
+                {isScanningActive ? (
+                  <>
+                    <ActivityIndicator size="large" color="#FFFFFF" />
+                    <Text style={styles.giantTitleReading}>KART OKUNUYOR...</Text>
+                    <Text style={styles.giantSubtitle}>Bareti veya kartı temas ettirin</Text>
+                  </>
                 ) : isCheckedIn ? (
                   <>
                     <Feather name="check" size={56} color="#FFFFFF" />
@@ -434,14 +443,16 @@ export default function AttendanceScreen() {
           </Animated.View>
 
           <Text style={styles.instructionText}>
-            {isCheckedIn
+            {isScanningActive
+              ? "NFC okuyucu aktif. Lütfen kartınızı veya baret çipinizi yaklaştırınız."
+              : isCheckedIn
               ? "Bugünkü şantiye mesainiz onaylandı. Arka plan GPS görevi aktiftir."
               : "Butona basınız, GPS doğrulandıktan sonra baretinizi veya personel kartınızı yaklaştırınız."}
           </Text>
         </View>
 
         {/* ============================================================ */}
-        {/* ALTERNATİF: QR YAKA KARTI İLE GİRİŞ YAP BUTONU               */}
+        {/* ADIM 3: ALTERNATİF: QR YAKA KARTI İLE GİRİŞ YAP BUTONU       */}
         {/* ============================================================ */}
         {isCheckedIn ? (
           <TouchableOpacity
@@ -491,20 +502,21 @@ export default function AttendanceScreen() {
                   isNfcSupported ? { color: iosColors.systemGreen } : { color: iosColors.labelSecondary },
                 ]}
               >
-                {isNfcSupported ? "Aktif & Uyumlu" : "Simülasyon / QR"}
+                {isNfcSupported ? "Aktif & Uyumlu (react-native-nfc-manager)" : "Simülasyon / QR"}
               </Text>
             </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* NFC Modal */}
+      {/* NFC Modal (Polling Sheet) */}
       <Modal
         visible={showNFCModal}
         transparent={true}
         animationType="slide"
         onRequestClose={() => {
           cancelScan();
+          setIsNfcReadingState(false);
           setShowNFCModal(false);
         }}
       >
@@ -515,18 +527,19 @@ export default function AttendanceScreen() {
               <View style={styles.nfcCircle}>
                 <MaterialCommunityIcons name="nfc" size={68} color={iosColors.systemBlue} />
               </View>
-              <Text style={styles.nfcModalTitle}>Kartı / Bareti Yaklaştırın</Text>
+              <Text style={styles.nfcModalTitle}>Kart Okunuyor...</Text>
               <Text style={styles.nfcModalSubtitle}>
                 NFC personel yaka kartınızı veya baret çipini telefonunuzun arka üst kısmına temas ettiriniz.
               </Text>
               <ActivityIndicator
-                size="small"
+                size="large"
                 color={iosColors.systemBlue}
                 style={{ marginTop: 18 }}
               />
               <TouchableOpacity
                 onPress={() => {
                   cancelScan();
+                  setIsNfcReadingState(false);
                   setShowNFCModal(false);
                 }}
                 style={styles.nfcCancelBtn}
@@ -538,7 +551,7 @@ export default function AttendanceScreen() {
         </View>
       </Modal>
 
-      {/* QR Scanner Modal */}
+      {/* ADIM 3: QR Scanner Modal (expo-camera CameraView) */}
       <Modal
         visible={showQRScanner}
         animationType="slide"
@@ -605,7 +618,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
   statusToast: {
     flexDirection: "row",
@@ -694,7 +707,6 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 12,
   },
-  // Devasa Mavi Buton (#0A7AFF)
   giantCircleActive: {
     backgroundColor: iosColors.systemBlue,
     shadowColor: iosColors.systemBlue,
@@ -723,6 +735,13 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginTop: 4,
     letterSpacing: -0.3,
+  },
+  giantTitleReading: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    marginTop: 8,
+    letterSpacing: -0.2,
   },
   giantSubtitle: {
     fontSize: 12,

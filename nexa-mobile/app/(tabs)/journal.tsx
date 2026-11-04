@@ -3,10 +3,10 @@
  * Nexa ERP Mobil - Apple iOS Standartlarında Şantiye Jurnali
  *
  * - Koyu iOS zemin (#0A0F1C)
- * - En üstte "Şantiye Hava Durumu & GPS" kartı + yeşil "Anti-Spoof Doğrulandı" rozeti
- * - Formda Blok/Kat ve Personel Sayısı yan yana modern flex-row
+ * - GPS Anti-Spoofing: expo-location isMocked kontrolü (Fake GPS ise kırmızı "GPS Doğrulaması Başarısız", değilse yeşil "Anti-Spoof Doğrulandı")
+ * - Çevrimdışı (Offline-First): @react-native-community/netinfo ile bağlantı denetimi, internet yoksa AsyncStorage OfflineQueue'ya "Senkronizasyon Bekliyor (Taslak)" olarak kayıt
+ * - Blok/Kat ve Personel Sayısı yan yana modern flex-row
  * - Sayfanın altında sabit (sticky) yeşil renkte devasa "Jurnali Kaydet & Merkeze İlet" butonu
- * - Çökme koruması: data?.map, try-catch GPS & OfflineQueue
  */
 
 import React, { useState, useEffect } from "react";
@@ -27,11 +27,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import * as Network from "expo-network";
+import NetInfo from "@react-native-community/netinfo";
 import { useLocationWeather, useNetworkSync } from "../../src/hooks";
 import { OfflineQueue } from "../../src/services/OfflineQueue";
 import { api } from "../../src/lib/api";
-import { iosColors, iosRadius, iosStyles } from "../../src/theme/iosTheme";
+import { iosColors, iosRadius } from "../../src/theme/iosTheme";
 
 export interface JournalRecord {
   id: string;
@@ -44,7 +44,7 @@ export interface JournalRecord {
   worksDone: string;
   equipment: string;
   isgNotes: string;
-  status: "ONAYLANDI" | "TASLAK" | "İNCELENİYOR";
+  status: "ONAYLANDI" | "Senkronizasyon Bekliyor (Taslak)" | "İNCELENİYOR";
 }
 
 const INITIAL_JOURNALS: JournalRecord[] = [
@@ -89,12 +89,13 @@ export default function JournalScreen() {
   const [isgNotes, setIsgNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Konum & Hava Durumu Hook'u
+  // Konum & Hava Durumu Hook'u (Anti-Spoofing destekli)
   const {
     isLoading: isLocationLoading,
     error: locationError,
     location,
     weather,
+    isMocked,
     fetchLocationAndWeather,
   } = useLocationWeather();
 
@@ -132,17 +133,15 @@ export default function JournalScreen() {
         personnelCount: parseInt(personnelCount, 10) || 0,
         equipmentData: { equipment: equipment || "1 Kule Vinç" },
         notes: isgNotes || "Uygunsuzluk tespit edilmedi.",
+        isMockedGps: isMocked,
       };
 
-      let hasInternet = true;
-      try {
-        const netState = await Network.getNetworkStateAsync();
-        hasInternet = Boolean(netState.isConnected);
-      } catch (e) {
-        hasInternet = false;
-      }
+      // ADIM 4: Önce NetInfo ile internet bağlantısını denetle
+      const netState = await NetInfo.fetch();
+      const hasInternet = Boolean(netState.isConnected && netState.isInternetReachable !== false);
 
       if (!hasInternet) {
+        // İnternet yoksa: AsyncStorage içine "Senkronizasyon Bekliyor (Taslak)" olarak kaydet
         await OfflineQueue.addToQueue(
           "/site-diary/logs",
           journalPayload,
@@ -154,13 +153,13 @@ export default function JournalScreen() {
         );
 
         setOfflineNotice(
-          "İnternet bağlantısı yok. Jurnal cihaz hafızasına kaydedildi, bağlantı sağlandığında otomatik gönderilecek."
+          "İnternet bağlantısı yok. Veriler cihaza kaydedildi: Senkronizasyon Bekliyor (Taslak)"
         );
         setTimeout(() => setOfflineNotice(null), 6000);
 
         Alert.alert(
           "🌐 Çevrimdışı Kayıt",
-          "İnternet bağlantısı yok. Jurnal cihaz hafızasına kaydedildi, bağlantı sağlandığında merkeze iletilecektir."
+          "İnternet bağlantısı yok. Jurnal yerel hafızaya 'Senkronizasyon Bekliyor (Taslak)' olarak kaydedildi. Bağlantı geldiğinde sunucuya iletilecektir."
         );
       } else {
         try {
@@ -170,7 +169,7 @@ export default function JournalScreen() {
             "Günlük şantiye jurnali başarıyla sisteme kaydedildi ve şirket merkezine iletildi."
           );
         } catch (apiErr: any) {
-          console.warn("[Journal] API hatası, offline kuyruğa alınıyor:", apiErr?.message);
+          console.warn("[Journal] API hatası, offline taslak kuyruğuna aktarılıyor:", apiErr?.message);
           await OfflineQueue.addToQueue(
             "/site-diary/logs",
             journalPayload,
@@ -181,7 +180,7 @@ export default function JournalScreen() {
             }
           );
           setOfflineNotice(
-            "Sunucuya erişilemedi. Veriler cihaza kaydedildi, arka planda senkronize edilecek."
+            "Sunucuya erişilemedi. Veriler cihaza kaydedildi: Senkronizasyon Bekliyor (Taslak)"
           );
           setTimeout(() => setOfflineNotice(null), 6000);
         }
@@ -198,7 +197,7 @@ export default function JournalScreen() {
         worksDone,
         equipment: equipment || "1 Kule Vinç",
         isgNotes: isgNotes || "Uygunsuzluk tespit edilmedi.",
-        status: hasInternet ? "TASLAK" : "İNCELENİYOR",
+        status: hasInternet ? "ONAYLANDI" : "Senkronizasyon Bekliyor (Taslak)",
       };
 
       setJournals((prev) => [newRecord, ...(prev || [])]);
@@ -227,7 +226,7 @@ export default function JournalScreen() {
           {queueCount > 0 && (
             <View style={styles.queueBadge}>
               <Feather name="refresh-cw" size={10} color={iosColors.systemOrange} />
-              <Text style={styles.queueBadgeText}>{queueCount} Kuyrukta</Text>
+              <Text style={styles.queueBadgeText}>{queueCount} Taslak</Text>
             </View>
           )}
 
@@ -245,7 +244,7 @@ export default function JournalScreen() {
       {/* Çevrimdışı Bildirim Toast'ı */}
       {offlineNotice && (
         <View style={styles.offlineToast}>
-          <Feather name="check-circle" size={16} color={iosColors.systemGreen} />
+          <Feather name="cloud-off" size={16} color={iosColors.systemOrange} />
           <Text style={styles.offlineToastText}>{offlineNotice}</Text>
           <TouchableOpacity onPress={() => setOfflineNotice(null)}>
             <Feather name="x" size={16} color={iosColors.labelSecondary} />
@@ -259,7 +258,7 @@ export default function JournalScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* ============================================================ */}
-        {/* EN ÜST: ŞANTİYE HAVA DURUMU & GPS KARTI + ANTİ-SPOOF ROZETİ  */}
+        {/* ADIM 3: GPS ANTİ-SPOOFİNG & HAVA DURUMU KARTI                */}
         {/* ============================================================ */}
         <View style={styles.weatherCard}>
           {Platform.OS === "ios" && (
@@ -276,10 +275,29 @@ export default function JournalScreen() {
               </View>
             </View>
 
-            {/* Yeşil Anti-Spoof Rozeti */}
-            <View style={styles.antiSpoofBadge}>
-              <Feather name="shield" size={11} color={iosColors.systemGreen} />
-              <Text style={styles.antiSpoofText}>Anti-Spoof Doğrulandı</Text>
+            {/* ADIM 3: GPS Anti-Spoofing Rozeti (Kırmızı / Yeşil) */}
+            <View
+              style={
+                isMocked
+                  ? styles.antiSpoofBadgeDanger
+                  : styles.antiSpoofBadgeSuccess
+              }
+            >
+              <Feather
+                name={isMocked ? "alert-circle" : "shield"}
+                size={11}
+                color={isMocked ? iosColors.systemRed : iosColors.systemGreen}
+              />
+              <Text
+                style={[
+                  styles.antiSpoofText,
+                  { color: isMocked ? iosColors.systemRed : iosColors.systemGreen },
+                ]}
+              >
+                {isMocked
+                  ? "GPS Doğrulaması Başarısız"
+                  : "Anti-Spoof Doğrulandı"}
+              </Text>
             </View>
           </View>
 
@@ -326,49 +344,57 @@ export default function JournalScreen() {
         <Text style={styles.sectionTitle}>GEÇMİŞ ŞANTİYE JURNALLERİ</Text>
 
         {/* Jurnal Listesi */}
-        {(journals || []).map((item) => (
-          <View key={item.id} style={styles.journalItemCard}>
-            <View style={styles.journalItemHeader}>
-              <Text style={styles.journalItemDate}>{item.date}</Text>
-              <View
-                style={[
-                  styles.journalItemBadge,
-                  item.status === "ONAYLANDI"
-                    ? styles.journalItemBadgeSuccess
-                    : styles.journalItemBadgeWarning,
-                ]}
-              >
-                <Text
+        {(journals || []).map((item) => {
+          const isPendingDraft = item.status === "Senkronizasyon Bekliyor (Taslak)";
+
+          return (
+            <View key={item.id} style={styles.journalItemCard}>
+              <View style={styles.journalItemHeader}>
+                <Text style={styles.journalItemDate}>{item.date}</Text>
+                <View
                   style={[
-                    styles.journalItemBadgeText,
+                    styles.journalItemBadge,
                     item.status === "ONAYLANDI"
-                      ? { color: iosColors.systemGreen }
-                      : { color: iosColors.systemOrange },
+                      ? styles.journalItemBadgeSuccess
+                      : isPendingDraft
+                      ? styles.journalItemBadgeDraft
+                      : styles.journalItemBadgeWarning,
                   ]}
                 >
-                  {item.status}
-                </Text>
+                  <Text
+                    style={[
+                      styles.journalItemBadgeText,
+                      item.status === "ONAYLANDI"
+                        ? { color: iosColors.systemGreen }
+                        : isPendingDraft
+                        ? { color: iosColors.systemOrange }
+                        : { color: iosColors.systemBlue },
+                    ]}
+                  >
+                    {item.status}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.journalItemBlock}>{item.block}</Text>
+              <Text style={styles.journalItemWorks}>{item.worksDone}</Text>
+
+              <View style={styles.journalItemFooter}>
+                <View style={styles.footerItem}>
+                  <Feather name="users" size={12} color={iosColors.labelSecondary} />
+                  <Text style={styles.footerText}>{item.personnelCount} Personel</Text>
+                </View>
+
+                <View style={styles.footerItem}>
+                  <Feather name="sun" size={12} color={iosColors.systemGreen} />
+                  <Text style={styles.footerText}>
+                    {item.weatherSummary} ({item.temperature}°C)
+                  </Text>
+                </View>
               </View>
             </View>
-
-            <Text style={styles.journalItemBlock}>{item.block}</Text>
-            <Text style={styles.journalItemWorks}>{item.worksDone}</Text>
-
-            <View style={styles.journalItemFooter}>
-              <View style={styles.footerItem}>
-                <Feather name="users" size={12} color={iosColors.labelSecondary} />
-                <Text style={styles.footerText}>{item.personnelCount} Personel</Text>
-              </View>
-
-              <View style={styles.footerItem}>
-                <Feather name="sun" size={12} color={iosColors.systemGreen} />
-                <Text style={styles.footerText}>
-                  {item.weatherSummary} ({item.temperature}°C)
-                </Text>
-              </View>
-            </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* ============================================================ */}
@@ -412,7 +438,6 @@ export default function JournalScreen() {
             >
               {/* Form Alanları */}
               <View style={{ gap: 14 }}>
-                {/* Proje Adı */}
                 <View>
                   <Text style={styles.fieldLabel}>PROJE & ŞANTİYE</Text>
                   <TextInput
@@ -491,9 +516,7 @@ export default function JournalScreen() {
               </View>
             </ScrollView>
 
-            {/* ============================================================ */}
-            {/* SAYFANIN EN ALTINA SABİT (STICKY) DEVASA YEŞİL KAYDET BUTONU */}
-            {/* ============================================================ */}
+            {/* SABİT (STICKY) DEVASA YEŞİL KAYDET BUTONU */}
             <View style={styles.stickyBottomBar}>
               <TouchableOpacity
                 onPress={handleSaveJournal}
@@ -588,16 +611,16 @@ const styles = StyleSheet.create({
     marginTop: 10,
     padding: 12,
     borderRadius: 14,
-    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    backgroundColor: "rgba(255, 149, 0, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(52, 199, 89, 0.35)",
+    borderColor: "rgba(255, 149, 0, 0.35)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   offlineToastText: {
     fontSize: 12,
-    color: iosColors.systemGreen,
+    color: iosColors.systemOrange,
     fontWeight: "600",
     flex: 1,
     marginHorizontal: 8,
@@ -609,7 +632,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
   weatherCard: {
     backgroundColor: iosColors.glassCard,
@@ -655,7 +678,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: iosColors.labelSecondary,
   },
-  antiSpoofBadge: {
+  antiSpoofBadgeSuccess: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -666,10 +689,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(52, 199, 89, 0.35)",
   },
+  antiSpoofBadgeDanger: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255, 59, 48, 0.15)",
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: iosRadius.badge,
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.35)",
+  },
   antiSpoofText: {
     fontSize: 10,
     fontWeight: "800",
-    color: iosColors.systemGreen,
   },
   weatherDetails: {
     borderTopWidth: 1,
@@ -772,6 +805,10 @@ const styles = StyleSheet.create({
     borderColor: "rgba(52, 199, 89, 0.35)",
   },
   journalItemBadgeWarning: {
+    backgroundColor: "rgba(10, 122, 255, 0.15)",
+    borderColor: "rgba(10, 122, 255, 0.35)",
+  },
+  journalItemBadgeDraft: {
     backgroundColor: "rgba(255, 149, 0, 0.15)",
     borderColor: "rgba(255, 149, 0, 0.35)",
   },

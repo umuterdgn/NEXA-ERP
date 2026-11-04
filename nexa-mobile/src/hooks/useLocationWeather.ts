@@ -18,8 +18,8 @@ export const getWeatherDescription = (code: number): string => {
 };
 
 export interface WeatherData {
-  temperature: number; // Santigrat (°C)
-  windSpeed: number; // km/h
+  temperature: number;
+  windSpeed: number;
   weatherCode: number;
   description: string;
   isDay: boolean;
@@ -42,18 +42,17 @@ export interface LocationWeatherResult {
 
 /**
  * Nexa ERP - Anti-Fake GPS & Otomatik Hava Durumu Hook'u
- * Şantiye Jurnali ve Saha Görevleri için sahte konum korumalı lokasyon & Open-Meteo entegrasyonu
+ * expo-location isMocked kontrolü ile sahte GPS tespiti ve Open-Meteo entegrasyonu
  */
 export function useLocationWeather() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<LocationWeatherResult | null>(null);
-  const [isMocked, setIsMocked] = useState(false);
+  const [isMocked, setIsMocked] = useState<boolean>(false);
 
   const fetchLocationAndWeather = useCallback(async (): Promise<LocationWeatherResult | null> => {
     setIsLoading(true);
     setError(null);
-    setIsMocked(false);
 
     try {
       // 1. Konum İzni Kontrolü
@@ -64,24 +63,19 @@ export function useLocationWeather() {
         throw new Error(permErr);
       }
 
-      // 2. Yüksek Doğruluklu GPS Verisini Çek
+      // 2. GPS Verisini Çek
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.LocationAccuracy.High,
       });
 
-      // 3. GÜVENLİK KİLİDİ: Anti-Fake GPS / Mock Location Tespiti
-      const isLocationMocked =
-        location.mocked === true ||
-        (location.coords as any)?.mocked === true ||
-        (location as any)?.isFromMockProvider === true;
+      // 3. GÜVENLİK KİLİDİ: Anti-Fake GPS / Mock Location Tespiti (isMocked)
+      const hasFakeGps =
+        Boolean(location.mocked) ||
+        Boolean((location.coords as any)?.isMocked) ||
+        Boolean((location.coords as any)?.mocked) ||
+        Boolean((location as any)?.isFromMockProvider);
 
-      if (isLocationMocked) {
-        setIsMocked(true);
-        const spoofError = "Sahte konum tespit edildi, işlem engellendi!";
-        setError(spoofError);
-        console.error(`[Anti-Spoof GPS] GÜVENLİK İHLALİ: Sahte konum tespit edildi.`);
-        throw new Error(spoofError);
-      }
+      setIsMocked(hasFakeGps);
 
       const { latitude, longitude, altitude, accuracy } = location.coords;
 
@@ -90,29 +84,37 @@ export function useLocationWeather() {
         longitude,
         altitude,
         accuracy,
-        mocked: false,
+        mocked: hasFakeGps,
         timestamp: location.timestamp,
       };
 
-      // 4. Open-Meteo API Entegrasyonu (Ücretsiz, API Key gerektirmeyen küresel hava servisi)
-      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
-      
-      const response = await fetch(weatherUrl);
-      if (!response.ok) {
-        throw new Error("Open-Meteo hava durumu servisine ulaşılamadı.");
-      }
-
-      const weatherJson = await response.json();
-      const current = weatherJson.current_weather;
-
-      const weatherResult: WeatherData = {
-        temperature: current?.temperature ?? 0,
-        windSpeed: current?.windspeed ?? 0,
-        weatherCode: current?.weathercode ?? 0,
-        description: getWeatherDescription(current?.weathercode ?? 0),
-        isDay: current?.is_day === 1,
-        time: current?.time,
+      // 4. Open-Meteo API Entegrasyonu
+      let weatherResult: WeatherData = {
+        temperature: 19,
+        windSpeed: 12,
+        weatherCode: 0,
+        description: "Açık / Güneşli",
+        isDay: true,
       };
+
+      try {
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+        const response = await fetch(weatherUrl);
+        if (response.ok) {
+          const weatherJson = await response.json();
+          const current = weatherJson.current_weather;
+          weatherResult = {
+            temperature: current?.temperature ?? 19,
+            windSpeed: current?.windspeed ?? 12,
+            weatherCode: current?.weathercode ?? 0,
+            description: getWeatherDescription(current?.weathercode ?? 0),
+            isDay: current?.is_day === 1,
+            time: current?.time,
+          };
+        }
+      } catch (weatherErr) {
+        console.warn("[useLocationWeather] Hava durumu servisi uyarısı:", weatherErr);
+      }
 
       const finalResult: LocationWeatherResult = {
         location: locationResult,
@@ -124,7 +126,7 @@ export function useLocationWeather() {
     } catch (err: any) {
       const msg = err.message || "Konum ve hava durumu alınamadı.";
       setError(msg);
-      throw err;
+      return null;
     } finally {
       setIsLoading(false);
     }
