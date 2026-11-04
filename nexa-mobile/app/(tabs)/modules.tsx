@@ -10,3 +10,4 @@ import ModulesScreen from "../../src/screens/ModulesScreen";
 export default function ModulesTabScreen() {
   return <ModulesScreen />;
 }
+
