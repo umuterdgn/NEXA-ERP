@@ -260,7 +260,7 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
                   activeOpacity={0.7}
                   onPress={() => {
                     closeDrawer();
-                    router.push("/modules" as any);
+                    router.push("/(tabs)/modules" as any);
                   }}
                 >
                   <View style={[styles.menuIconCircle, { backgroundColor: "rgba(0, 199, 190, 0.15)" }]}>

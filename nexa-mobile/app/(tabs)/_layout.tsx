@@ -165,11 +165,11 @@ export default function TabLayout() {
           }}
         />
 
-        {/* 5. Portallar */}
+        {/* 5. Modüller (Tüm İşlemler) */}
         <Tabs.Screen
-          name="portals"
+          name="modules"
           options={{
-            title: "Portallar",
+            title: "Modüller",
             tabBarIcon: ({ focused }) => (
               <Ionicons
                 name={focused ? "grid" : "grid-outline"}
@@ -181,6 +181,7 @@ export default function TabLayout() {
         />
 
         {/* DİĞER İÇ ROTALAR (Tab barda buton göstermeden yönlendirilebilir) */}
+        <Tabs.Screen name="portals" options={{ href: null }} />
         <Tabs.Screen name="attendance" options={{ href: null }} />
         <Tabs.Screen name="safety" options={{ href: null }} />
         <Tabs.Screen name="bim" options={{ href: null }} />
