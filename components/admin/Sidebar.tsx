@@ -84,7 +84,9 @@ import {
   Gavel,
   Navigation,
   QrCode,
-  Receipt
+  Receipt,
+  PackageCheck,
+  TestTube2
 } from "lucide-react"
 
 interface MenuItem {
@@ -166,6 +168,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/progress-payments", label: "Hakediş ve Metraj", icon: Calculator, category: "FİNANS & TEDARİK" },
   { href: "/admin/procurement", label: "Satınalma & Talepler", icon: ShoppingCart, category: "FİNANS & TEDARİK" },
   { href: "/admin/procurement/logistics", label: "Kapı Güvenlik & Lojistik", icon: Truck, category: "FİNANS & TEDARİK" },
+  { href: "/admin/procurement/receiving", label: "Malzeme Kabul & Tesellüm", icon: PackageCheck, category: "FİNANS & TEDARİK" },
   { href: "/admin/logistics/map", label: "Lojistik Canlı Harita", icon: Navigation, category: "FİNANS & TEDARİK" },
   { href: "/admin/inventory/qr-scanner", label: "QR Mikro Tüketim", icon: QrCode, category: "FİNANS & TEDARİK" },
   { href: "/admin/ai-assistant", label: "AI Tahsilat & Risk Asistanı", icon: Bot, category: "FİNANS & TEDARİK" },
@@ -200,6 +203,7 @@ const menuItems: MenuItem[] = [
   // YAPI DENETİM & KALİTE
   { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", icon: CheckSquare, category: "YAPI DENETİM & KALİTE" },
   { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", icon: XCircle, category: "YAPI DENETİM & KALİTE" },
+  { href: "/admin/qa-qc/concrete-casting", label: "Beton Döküm Tutanağı (QA)", icon: TestTube2, category: "YAPI DENETİM & KALİTE" },
   
   // İSG & RİSK YÖNETİMİ
   { href: "/admin/isg", label: "İSG Dashboard & Analiz", icon: Activity, category: "İSG & RİSK YÖNETİMİ" },
@@ -447,7 +451,7 @@ export default function AdminSidebar({
   return (
     <>
       {/* Mobile Header */}
-      <div className="fixed left-0 right-0 top-0 z-40 border-b border-slate-800 bg-slate-900 px-4 pb-safe pt-safe lg:hidden">
+      <div className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-800 bg-slate-900 px-4 pb-safe pt-safe lg:hidden">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -491,7 +495,7 @@ export default function AdminSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-[9999] lg:z-40 h-full transition-all duration-300 ${
+        className={`fixed left-0 top-0 z-[100] lg:z-[100] h-full transition-all duration-300 ${
           isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
         } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-[85vw] max-w-[320px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900`}
       >

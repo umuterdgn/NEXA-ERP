@@ -491,7 +491,7 @@ export default function BleEquipmentMap({
   }, [highlightedId, equipments, isSearchActive, visibleEquipments])
 
   return (
-    <div className="relative w-full h-full bg-slate-950 overflow-hidden rounded-xl border border-slate-800">
+    <div className="relative w-full h-full bg-slate-950 overflow-hidden rounded-xl border border-slate-800 z-0">
       {/* Global CSS for Leaflet Popups in Dark Mode */}
       <style jsx global>{`
         .leaflet-popup-content-wrapper {

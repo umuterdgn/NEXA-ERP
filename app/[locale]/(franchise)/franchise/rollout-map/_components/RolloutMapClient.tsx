@@ -30,6 +30,7 @@ import {
 
 import RolloutMapWrapper from "./RolloutMapWrapper"
 import type { StoreProject, PinCategory } from "./RolloutLeafletMap"
+import NewDiscoveryModal from "@/components/discovery/NewDiscoveryModal"
 
 export default function RolloutMapClient({ initialProjects }: { initialProjects: StoreProject[] }) {
   const [projects, setProjects] = useState<StoreProject[]>(initialProjects)
@@ -137,6 +138,7 @@ export default function RolloutMapClient({ initialProjects }: { initialProjects:
           >
             Rollout Kanban
           </Link>
+          <NewDiscoveryModal buttonText="+ Yeni Keşif Ekle" />
           <Link
             href="/franchise/rollout"
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md shadow-amber-600/20"
