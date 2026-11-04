@@ -29,10 +29,12 @@ import { useRouter } from "expo-router";
 import { useAuth, UserRole } from "../../src/hooks/useAuth";
 import { QRScanner } from "../../src/components/scanner";
 import { iosColors, iosRadius, iosStyles } from "../../src/theme/iosTheme";
+import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
 
 export default function DynamicDashboardScreen() {
   const router = useRouter();
   const { user, role, setRole } = useAuth();
+  const { openDrawer } = useDrawer();
 
   // QR Tarayıcı Modal State'i
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -147,6 +149,14 @@ export default function DynamicDashboardScreen() {
           <Text style={styles.dateText}>{todayFormatted}</Text>
 
           <View style={styles.titleRow}>
+            <TouchableOpacity
+              style={styles.hamburgerButton}
+              onPress={openDrawer}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="menu" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={styles.welcomeTitle}>Merhaba, {firstName}</Text>
             </View>
@@ -670,6 +680,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  hamburgerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
   welcomeTitle: {
     fontSize: 30,

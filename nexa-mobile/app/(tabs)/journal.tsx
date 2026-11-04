@@ -28,6 +28,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import NetInfo from "@react-native-community/netinfo";
+import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
 import { useLocationWeather, useNetworkSync } from "../../src/hooks";
 import { OfflineQueue } from "../../src/services/OfflineQueue";
 import { api } from "../../src/lib/api";
@@ -77,6 +78,7 @@ const INITIAL_JOURNALS: JournalRecord[] = [
 ];
 
 export default function JournalScreen() {
+  const { openDrawer } = useDrawer();
   const [journals, setJournals] = useState<JournalRecord[]>(INITIAL_JOURNALS);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -217,7 +219,15 @@ export default function JournalScreen() {
     <SafeAreaView style={styles.safeContainer} edges={["top", "left", "right"]}>
       {/* 1. ÜST HEADER */}
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity
+          style={styles.hamburgerButton}
+          onPress={openDrawer}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="menu" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <View style={{ flex: 1 }}>
           <Text style={styles.headerSubtitle}>Saha Raporları</Text>
           <Text style={styles.headerTitle}>Şantiye Jurnali</Text>
         </View>
@@ -557,6 +567,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  hamburgerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
   headerSubtitle: {
     fontSize: 11,

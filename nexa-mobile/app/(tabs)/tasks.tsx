@@ -29,6 +29,7 @@ import Animated, {
   SharedValue,
 } from "react-native-reanimated";
 import { iosColors, iosRadius } from "../../src/theme/iosTheme";
+import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
 
 export interface TaskItem {
   id: string;
@@ -137,6 +138,7 @@ function SwipeRightAction({ progress, drag, onComplete }: RightActionProps) {
 }
 
 export default function TasksScreen() {
+  const { openDrawer } = useDrawer();
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
 
@@ -225,7 +227,15 @@ export default function TasksScreen() {
       {/* 1. ÜST HEADER */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
-          <View>
+          <TouchableOpacity
+            style={styles.hamburgerButton}
+            onPress={openDrawer}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="menu" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerSubtitle}>Saha İş Akışı</Text>
             <Text style={styles.headerTitle}>İş Emirleri</Text>
           </View>
@@ -410,6 +420,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  hamburgerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
   headerSubtitle: {
     fontSize: 11,
