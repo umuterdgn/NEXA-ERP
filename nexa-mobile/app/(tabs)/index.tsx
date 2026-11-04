@@ -30,6 +30,7 @@ import { useAuth, UserRole } from "../../src/hooks/useAuth";
 import { QRScanner } from "../../src/components/scanner";
 import { iosColors, iosRadius, iosStyles } from "../../src/theme/iosTheme";
 import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
+import { startDriverLocationTracking, stopDriverLocationTracking, isDriverTrackingActive } from "../../src/tasks/backgroundLocationTask";
 
 export default function DynamicDashboardScreen() {
   const router = useRouter();
@@ -42,6 +43,35 @@ export default function DynamicDashboardScreen() {
   // e-İmza / YİBF Vize Modal State'i (Yapı Denetim)
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+  const [isDriverDriving, setIsDriverDriving] = useState(false);
+  const [isDriverTrackingLoading, setIsDriverTrackingLoading] = useState(false);
+
+  React.useEffect(() => {
+    isDriverTrackingActive().then(setIsDriverDriving);
+  }, []);
+
+  const handleToggleDriverGps = async () => {
+    try {
+      setIsDriverTrackingLoading(true);
+      if (!isDriverDriving) {
+        const success = await startDriverLocationTracking({ plate: "34 VR 8901", driverName: user?.name || "Şoför" });
+        if (success) {
+          setIsDriverDriving(true);
+          Alert.alert("Sürüş Başladı", "Arka plan GPS takibi aktif (10s / 50m). Konumunuz merkeze aktarılıyor.");
+        } else {
+          Alert.alert("İzin Gerekli", "Arka plan GPS izni verilmedi.");
+        }
+      } else {
+        await stopDriverLocationTracking();
+        setIsDriverDriving(false);
+        Alert.alert("Sürüş Tamamlandı", "Arka plan GPS takibi durduruldu.");
+      }
+    } catch (err: any) {
+      Alert.alert("Hata", err?.message || "İşlem hatası");
+    } finally {
+      setIsDriverTrackingLoading(false);
+    }
+  };
 
   // Günün iOS Tarihi
   const todayFormatted = new Date()

@@ -13,6 +13,7 @@ import toast from "react-hot-toast"
 import { HardHat, Key, Lock, Mail, User, ShieldCheck, X } from "lucide-react"
 import ConfirmModal from "@/components/ConfirmModal"
 import BleDeviceAssignModal from "@/components/admin/BleDeviceAssignModal"
+import { DEPARTMENT_CASCADING_CONFIGS, ROLE_DEFINITIONS, DETAILED_TRADES, UserRole } from "@/lib/constants/Roles"
 
 type PersonnelRecord = {
   id: string
@@ -334,7 +335,8 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     healthStatus: "",
     bonuses: "",
     gunlukYevmiye: "",
-    professionId: ""
+    professionId: "",
+    tenantId: "nexa-franchise"
   })
   const [projects, setProjects] = useState<ProjectItem[]>([])
   const [professions, setProfessions] = useState<Profession[]>([
@@ -513,6 +515,10 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
       <h2 className="text-xl font-semibold text-white mb-6">Yeni Personel Ekle</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* ADIM 5: Bağlı Olduğu Şantiye/Tenant Değeri Gizli (Hidden) Alanları */}
+        <input type="hidden" name="tenantId" value={formData.tenantId || "nexa-franchise"} />
+        <input type="hidden" name="assignedSite" value={formData.projectId || "site_kadikoy_rezidans"} />
+        <input type="hidden" name="currentSite" value={formData.currentSite} />
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Personel No</label>

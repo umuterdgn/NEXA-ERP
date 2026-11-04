@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
+import { startDriverLocationTracking, stopDriverLocationTracking, isDriverTrackingActive } from "../../src/tasks/backgroundLocationTask";
 import {
   getAuthSession,
   damageApi,
@@ -107,7 +108,11 @@ export default function PortalsScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsScrollContent}
         >
-          {PORTALS_LIST.map((p) => {
+          {PORTALS_LIST.filter((p) => {
+            const role = currentUser?.role;
+            if (role === "DRIVER" || role === "SOFOR") return p.key === "driver";
+            return true;
+          }).map((p) => {
             const isActive = activePortal === p.key;
             return (
               <TouchableOpacity
@@ -677,6 +682,8 @@ function SubcontractorPortal() {
 /* ========================================================================== */
 function DriverRoutePortal() {
   const [gatePass, setGatePass] = useState<any>(null);
+  const [isDriving, setIsDriving] = useState(false);
+  const [isTrackingLoading, setIsTrackingLoading] = useState(false);
 
   const driverCoord = { latitude: 36.584, longitude: 36.1685 };
   const gateCoord = { latitude: 36.5878, longitude: 36.1735 };
@@ -686,8 +693,39 @@ function DriverRoutePortal() {
     (async () => {
       const data = await driverApi.getGatePass();
       setGatePass(data);
+      const active = await isDriverTrackingActive();
+      setIsDriving(active);
     })();
   }, []);
+
+  const handleToggleDriving = async () => {
+    try {
+      setIsTrackingLoading(true);
+      if (!isDriving) {
+        const success = await startDriverLocationTracking({
+          plate: gatePass?.plate || "34 NXA 789",
+          driverName: "Lojistik Şoförü",
+        });
+        if (success) {
+          setIsDriving(true);
+          Alert.alert(
+            "Sürüş Başlatıldı (Arka Plan GPS Aktif)",
+            "Cihaz kilitliyken bile her 10 saniyede bir veya 50 metre yer değiştirmede /api/location/update üzerinden merkeze telemetri aktarılacaktır."
+          );
+        } else {
+          Alert.alert("İzin Gerekli", "Arka plan konum izni verilmediğinden takip başlatılamadı.");
+        }
+      } else {
+        await stopDriverLocationTracking();
+        setIsDriving(false);
+        Alert.alert("Sürüş Tamamlandı", "Arka plan GPS takibi durduruldu.");
+      }
+    } catch (err: any) {
+      Alert.alert("Hata", err?.message || "İşlem gerçekleştirilemedi.");
+    } finally {
+      setIsTrackingLoading(false);
+    }
+  };
 
   const handleOpenNavigation = () => {
     const url = Platform.select({
@@ -708,6 +746,58 @@ function DriverRoutePortal() {
           <Text style={styles.portalCardDesc}>Kapı geçişi için QR kod ve döküm rotası</Text>
         </View>
       </View>
+
+      {/* Şoför Canlı Arka Plan GPS Takip Kontrolü (10s veya 50m) */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: isDriving ? "rgba(52, 199, 89, 0.12)" : "rgba(255, 255, 255, 0.04)",
+          borderWidth: 1,
+          borderColor: isDriving ? "rgba(52, 199, 89, 0.35)" : "rgba(255, 255, 255, 0.08)",
+          borderRadius: 16,
+          padding: 14,
+          gap: 12,
+        }}
+      >
+        <Ionicons name={isDriving ? "radio" : "pause-circle"} size={24} color={isDriving ? "#34C759" : "#8E8E93"} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 13, fontWeight: "800", color: isDriving ? "#34C759" : "#FFFFFF" }}>
+            {isDriving ? "CANLI ARKA PLAN GPS TAKİBİ AKTİF" : "SÜRÜŞ TAKİBİ BEKLEMEDE"}
+          </Text>
+          <Text style={{ fontSize: 11, color: "#8E8E93", marginTop: 2 }}>
+            {isDriving
+              ? "Her 10s veya 50m telemetri verisi şantiye merkezine aktarılıyor"
+              : "Döküm rotasına çıkarken sürüş takibini başlatın"}
+          </Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: isDriving ? "#FF3B30" : "#34C759",
+          paddingVertical: 14,
+          borderRadius: 14,
+          gap: 8,
+        }}
+        onPress={handleToggleDriving}
+        disabled={isTrackingLoading}
+        activeOpacity={0.85}
+      >
+        {isTrackingLoading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <>
+            <Ionicons name={isDriving ? "stop-circle" : "play-circle"} size={22} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+              {isDriving ? "Sürüşü Tamamla (GPS Durdur)" : "Sürüşe Başla (Arka Plan GPS Aktif Et)"}
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
 
       {/* Kapı Geçiş QR Kodu */}
       <View style={styles.qrPassBox}>

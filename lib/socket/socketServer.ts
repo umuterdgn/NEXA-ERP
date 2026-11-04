@@ -32,7 +32,7 @@ let locationBuffer: Array<{
   timestamp: Date;
 }> = [];
 
-let flushIntervalTimer: NodeJS.Timeout | null = null;
+let flushIntervalTimer: any = null;
 let ioInstance: SocketIOServer | null = null;
 
 /**

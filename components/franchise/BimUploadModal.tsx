@@ -22,7 +22,7 @@ import { toast } from "react-hot-toast"
 interface BimUploadModalProps {
   isOpen: boolean
   onClose: () => void
-  projects?: Array<{ id: string; name: string }>
+  projects?: Array<{ id: string; name?: string | null }>
   onSuccess?: () => void
 }
 

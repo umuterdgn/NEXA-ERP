@@ -30,7 +30,7 @@ import BimUploadModal from "@/components/franchise/BimUploadModal"
 interface BimPageClientProps {
   projects: Array<{
     id: string
-    name: string
+    name?: string | null
     city?: string | null
     district?: string | null
     status?: string | null
@@ -252,7 +252,7 @@ export default function BimPageClient({ projects, templates }: BimPageClientProp
       <BimUploadModal
         isOpen={isBimModalOpen}
         onClose={() => setIsBimModalOpen(false)}
-        projects={projects}
+        projects={projects.map((p) => ({ id: p.id, name: p.name || "Şube / Proje" }))}
       />
     </div>
   )

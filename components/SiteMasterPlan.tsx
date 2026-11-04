@@ -382,7 +382,7 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
 
   // Canlı BLE Personel Üretimi & Turf.js Uzaysal İhlal Takip Motoru
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
 
     if (isLiveTracking && projectLat && projectLng) {
       // 1. İşçileri Gerçek Personel Verisi ile Başlat (100% Prisma DB)

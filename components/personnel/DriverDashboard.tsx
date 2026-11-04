@@ -78,7 +78,7 @@ export default function DriverDashboard({ initialAppointments, user }: DriverDas
   const [lastCoords, setLastCoords] = useState<{ lat: number; lng: number; speed: number | null } | null>(null)
   const [pingsSent, setPingsSent] = useState(0)
   const [gpsError, setGpsError] = useState<string | null>(null)
-  const telemetryIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const telemetryIntervalRef = useRef<any>(null)
 
   // QR Modal State (ADIM 5)
   const [selectedQrTrip, setSelectedQrTrip] = useState<Appointment | null>(null)

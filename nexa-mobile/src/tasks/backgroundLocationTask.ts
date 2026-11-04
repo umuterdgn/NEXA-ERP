@@ -1,11 +1,11 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Nexa ERP - Şantiye Personeli Arka Plan GPS Canlı Takip Görevi
+ * Nexa ERP - Şantiye Personeli & Şoför Arka Plan GPS Canlı Takip Görevi
  *
- * Personel şantiyeye giriş (Check-in) yaptığı anda başlar ve çıkış (Check-out)
- * yapana kadar uygulama arka planda veya telefon kilitliyken bile
- * merkeze (OHS / İSG izleme) düzenli koordinat aktarır.
+ * Şoför "Sürüşe Başla" dediğinde veya personel şantiyeye check-in yaptığında başlar.
+ * Uygulama arka plandayken veya telefon kilitliyken bile her 10 saniyede bir
+ * veya 50 metre yer değiştirmede merkeze (/api/location/update) kesintisiz koordinat aktarır.
  */
 
 import * as TaskManager from "expo-task-manager";
@@ -17,6 +17,7 @@ import { locationSocket } from "../services/LocationSocket";
 export const BACKGROUND_LOCATION_TASK = "BACKGROUND_LOCATION_TASK";
 export const ATTENDANCE_TRACKING_KEY = "@nexa_attendance_tracking_active";
 export const LAST_ATTENDANCE_LOCATION_KEY = "@nexa_last_attendance_location";
+export const DRIVER_TRACKING_KEY = "@nexa_driver_tracking_active";
 
 export interface AttendanceTrackingSession {
   isActive: boolean;
@@ -31,15 +32,24 @@ export interface AttendanceTrackingSession {
   lastUpdated?: string;
 }
 
-let isAttendanceTaskRegistered = false;
+export interface DriverTrackingSession {
+  isDriving: boolean;
+  driverId?: string;
+  driverName?: string;
+  plate?: string;
+  destinationSite?: string;
+  startedAt?: string;
+  stoppedAt?: string;
+}
+
+let isTaskRegistered = false;
 
 /**
- * ADIM 1: Arka Plan Görev (Task) Tanımlaması (Güvenli Başlatma)
- * Android WorkDatabase ve InitializationProvider çökmesini önlemek için doğrudan global scope yerine,
- * React Native hazır olduğunda useEffect veya ilk check-in eylemiyle çağrılır.
+ * Arka Plan Görev (Task) Tanımlaması
+ * TaskManager.defineTask('BACKGROUND_LOCATION_TASK', ...)
  */
 export function registerBackgroundLocationTask() {
-  if (isAttendanceTaskRegistered) return;
+  if (isTaskRegistered) return;
   try {
     if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK)) {
       TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
@@ -60,18 +70,23 @@ export function registerBackgroundLocationTask() {
           const timestamp = latest.timestamp;
 
           try {
-            // AsyncStorage'dan aktif puantaj oturumunu oku
-            let userId = "usr_personel_01";
-            let personelId = "PRS-2026-001";
-            let projectId = "PRJ-2026-A";
+            // Aktif şoför veya personel oturumunu kontrol et
+            let driverSession: DriverTrackingSession | null = null;
+            try {
+              const drvStr = await AsyncStorage.getItem(DRIVER_TRACKING_KEY);
+              if (drvStr) driverSession = JSON.parse(drvStr);
+            } catch {}
 
-            const sessionStr = await AsyncStorage.getItem(ATTENDANCE_TRACKING_KEY);
-            if (sessionStr) {
-              const session: AttendanceTrackingSession = JSON.parse(sessionStr);
-              if (session.userId) userId = session.userId;
-              if (session.personelId) personelId = session.personelId;
-              if (session.projectId) projectId = session.projectId;
-            }
+            let attendanceSession: AttendanceTrackingSession | null = null;
+            try {
+              const attStr = await AsyncStorage.getItem(ATTENDANCE_TRACKING_KEY);
+              if (attStr) attendanceSession = JSON.parse(attStr);
+            } catch {}
+
+            const isDriving = !!driverSession?.isDriving;
+            const userId = driverSession?.driverId || attendanceSession?.userId || "drv_01";
+            const userName = driverSession?.driverName || attendanceSession?.userName || "Şoför";
+            const plate = driverSession?.plate || "34 NXA 789";
 
             // Son konumu yerel depoya kaydet
             await AsyncStorage.setItem(
@@ -84,58 +99,53 @@ export function registerBackgroundLocationTask() {
                 altitude: altitude ? Math.round(altitude) : null,
                 heading: heading || null,
                 timestamp,
+                isDriving,
               })
             );
 
-            // ADIM 2: Mobilden gelen arka plan konum verileri socket.emit('updateLocation', { lat, lng, userId }) üzerinden akar
-            const socketSuccess = locationSocket.emitLocation({
+            // 1. Backend /api/location/update çağrısı (Her 10s veya 50m)
+            await api
+              .post("/location/update", {
+                driverId: userId,
+                driverName: userName,
+                plate,
+                latitude,
+                longitude,
+                speed: speed ? Math.round(speed * 3.6) : 0,
+                heading: heading || 0,
+                accuracy: accuracy ? Math.round(accuracy) : 5,
+                timestamp,
+                isDriving,
+              })
+              .catch((httpErr) => {
+                console.warn("[BackgroundLocationTask] /api/location/update fallback:", httpErr?.message);
+              });
+
+            // 2. Real-time Socket.io yayını
+            locationSocket.emitLocation({
               userId,
               lat: latitude,
               lng: longitude,
-              projectId,
               accuracy: accuracy ? Math.round(accuracy) : null,
               speed: speed ? Math.round(speed * 3.6) : null,
               altitude: altitude ? Math.round(altitude) : null,
               timestamp,
             });
 
-            // Socket bağlantısı olmaması durumunda HTTP fallback
-            if (!socketSuccess) {
-              await api.post("/location/live-update", {
-                userId,
-                personelId,
-                projectId,
-                lat: latitude,
-                lng: longitude,
-                latitude,
-                longitude,
-                accuracy: accuracy ? Math.round(accuracy) : null,
-                speed: speed ? Math.round(speed * 3.6) : null,
-                altitude: altitude ? Math.round(altitude) : null,
-                timestamp,
-                source: "ATTENDANCE_BACKGROUND_GEOFENCE",
-              }).catch((err) => {
-                console.warn("[BackgroundLocationTask] HTTP fallback uyarısı:", err?.message);
-              });
-            }
-
             console.log(
-              `[BackgroundLocationTask] 🛰️ Canlı İSG konumu Socket.io ile iletildi: ${latitude.toFixed(
+              `[BackgroundLocationTask] 🛰️ Konum iletildi: [${latitude.toFixed(5)}, ${longitude.toFixed(
                 5
-              )}, ${longitude.toFixed(5)} (Hassasiyet: ±${accuracy ? Math.round(accuracy) : 5}m)`
+              )}] | Hız: ${speed ? Math.round(speed * 3.6) : 0} km/h | Sürüş: ${isDriving ? "EVET" : "HAYIR"}`
             );
           } catch (reqErr: any) {
-            console.warn(
-              "[BackgroundLocationTask] Konum merkeze iletilemedi (Ağ veya sunucu):",
-              reqErr?.message || reqErr
-            );
+            console.warn("[BackgroundLocationTask] Hata:", reqErr?.message || reqErr);
           }
         }
       });
-      isAttendanceTaskRegistered = true;
-      console.log("[BackgroundLocationTask] Arka plan İSG görevi güvenle kaydedildi.");
+      isTaskRegistered = true;
+      console.log("[BackgroundLocationTask] Arka plan GPS görevi başarıyla tanımlandı.");
     } else {
-      isAttendanceTaskRegistered = true;
+      isTaskRegistered = true;
     }
   } catch (err: any) {
     console.warn("[BackgroundLocationTask] TaskManager tanımlama hatası:", err?.message || err);
@@ -143,8 +153,109 @@ export function registerBackgroundLocationTask() {
 }
 
 /**
- * ADIM 2: Puantaj Giriş (Check-in) yapıldığında arka plan konum takibini başlatır.
- * Pili korumak için 10 metrede bir veya 15 saniyede bir günceller.
+ * Şoförler İçin Sürüş Takibini Başlatma (10s veya 50m yer değiştirme)
+ */
+export async function startDriverLocationTracking(params?: {
+  driverId?: string;
+  driverName?: string;
+  plate?: string;
+  destinationSite?: string;
+}): Promise<boolean> {
+  try {
+    registerBackgroundLocationTask();
+
+    // 1. Ön Plan İzni
+    const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
+    if (fgStatus !== "granted") {
+      console.warn("[DriverLocation] Ön plan konum izni verilmedi");
+      return false;
+    }
+
+    // 2. Arka Plan İzni (Cihaz kilitliyken dinlemek için)
+    try {
+      const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+      if (bgStatus !== "granted") {
+        console.warn("[DriverLocation] Arka plan izni kısıtlı, ön plan devrede.");
+      }
+    } catch (bgErr) {
+      console.warn("[DriverLocation] Arka plan izin isteği:", bgErr);
+    }
+
+    // 3. Location.startLocationUpdatesAsync ile arka plan dinleme
+    const isStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+    if (!isStarted) {
+      await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
+        accuracy: Location.Accuracy.High,
+        timeInterval: 10000, // 10 saniyede bir
+        distanceInterval: 50, // 50 metre yer değiştirmede
+        deferredUpdatesInterval: 10000,
+        deferredUpdatesDistance: 50,
+        showsBackgroundLocationIndicator: true,
+        pausesUpdatesAutomatically: false,
+        foregroundService: {
+          notificationTitle: "Nexa Lojistik - Sürüş Takibi Aktif",
+          notificationBody: `${params?.plate || "34 NXA 789"} ile şantiyeye teslimat rotası izleniyor.`,
+          notificationColor: "#34C759",
+        },
+      });
+    }
+
+    // Oturumu kaydet
+    const session: DriverTrackingSession = {
+      isDriving: true,
+      driverId: params?.driverId || "drv_01",
+      driverName: params?.driverName || "Ahmet Şoför",
+      plate: params?.plate || "34 NXA 789",
+      destinationSite: params?.destinationSite || "Kadıköy Merkez Rezidans",
+      startedAt: new Date().toISOString(),
+    };
+    await AsyncStorage.setItem(DRIVER_TRACKING_KEY, JSON.stringify(session));
+
+    return true;
+  } catch (error) {
+    console.error("[DriverLocation] Sürüş takibi başlatma hatası:", error);
+    return false;
+  }
+}
+
+/**
+ * Şoför Sürüş Takibini Bitirme
+ */
+export async function stopDriverLocationTracking(): Promise<boolean> {
+  try {
+    const isStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+    if (isStarted) {
+      await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+    }
+
+    const session: DriverTrackingSession = {
+      isDriving: false,
+      stoppedAt: new Date().toISOString(),
+    };
+    await AsyncStorage.setItem(DRIVER_TRACKING_KEY, JSON.stringify(session));
+    return true;
+  } catch (error) {
+    console.error("[DriverLocation] Sürüş takibi durdurma hatası:", error);
+    return false;
+  }
+}
+
+/**
+ * Şoför Sürüş Takibi Aktif mi?
+ */
+export async function isDriverTrackingActive(): Promise<boolean> {
+  try {
+    const str = await AsyncStorage.getItem(DRIVER_TRACKING_KEY);
+    if (!str) return false;
+    const session: DriverTrackingSession = JSON.parse(str);
+    return !!session.isDriving;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Personel Puantaj Arka Plan Takibi Başlatma
  */
 export async function startAttendanceLocationTracking(params?: {
   userId?: string;
@@ -154,38 +265,18 @@ export async function startAttendanceLocationTracking(params?: {
   projectName?: string;
 }): Promise<boolean> {
   try {
-    // Görevin tanımlı olduğundan kesin emin ol
     registerBackgroundLocationTask();
 
-    // 1. Ön Plan Konum İzni Kontrolü
     const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
-    if (fgStatus !== "granted") {
-      console.warn("[BackgroundLocationTask] Ön plan konum izni verilmedi.");
-      return false;
-    }
+    if (fgStatus !== "granted") return false;
 
-    // 2. Arka Plan Konum İzni Kontrolü
-    const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
-    if (bgStatus !== "granted") {
-      console.warn(
-        "[BackgroundLocationTask] Arka plan konum izni verilmedi, ancak ön plan izinli."
-      );
-    }
-
-    // 3. Görev zaten çalışıyor mu?
-    const isStarted = await Location.hasStartedLocationUpdatesAsync(
-      BACKGROUND_LOCATION_TASK
-    );
-
-    if (isStarted) {
-      console.log("[BackgroundLocationTask] Görev zaten aktif.");
-    } else {
-      // ADIM 2 Parametreleri: accuracy: Balanced, distanceInterval: 10, deferredUpdatesInterval: 15000
+    const isStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+    if (!isStarted) {
       await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
         accuracy: Location.Accuracy.Balanced,
-        distanceInterval: 10, // 10 metrede bir
-        deferredUpdatesInterval: 15000, // 15 saniyede bir
-        showsBackgroundLocationIndicator: true, // iOS mavi durum çubuğu
+        distanceInterval: 10,
+        deferredUpdatesInterval: 15000,
+        showsBackgroundLocationIndicator: true,
         pausesUpdatesAutomatically: false,
         foregroundService: {
           notificationTitle: "Nexa ERP - Şantiye Güvenlik Takibi",
@@ -193,10 +284,8 @@ export async function startAttendanceLocationTracking(params?: {
           notificationColor: "#2563EB",
         },
       });
-      console.log("[BackgroundLocationTask] Arka plan İSG konum takibi başlatıldı.");
     }
 
-    // Aktif oturum bilgisini AsyncStorage'a kaydet
     const session: AttendanceTrackingSession = {
       isActive: true,
       userId: params?.userId || "usr_personel_01",
@@ -211,43 +300,30 @@ export async function startAttendanceLocationTracking(params?: {
 
     return true;
   } catch (error) {
-    console.error("[BackgroundLocationTask] Takip başlatma hatası:", error);
+    console.error("[AttendanceLocation] Takip başlatma hatası:", error);
     return false;
   }
 }
 
-/**
- * ADIM 2: Puantaj Çıkış (Check-out) yapıldığında arka plan konum takibini tamamen durdurur.
- */
 export async function stopAttendanceLocationTracking(): Promise<boolean> {
   try {
-    const isStarted = await Location.hasStartedLocationUpdatesAsync(
-      BACKGROUND_LOCATION_TASK
-    );
-
+    const isStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
     if (isStarted) {
       await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
-      console.log("[BackgroundLocationTask] Arka plan İSG konum takibi durduruldu.");
     }
-
-    // Depodan aktif oturumu güncelle / kaldır
     const existing = await AsyncStorage.getItem(ATTENDANCE_TRACKING_KEY);
     if (existing) {
       const session: AttendanceTrackingSession = JSON.parse(existing);
       session.isActive = false;
       await AsyncStorage.setItem(ATTENDANCE_TRACKING_KEY, JSON.stringify(session));
     }
-
     return true;
   } catch (error) {
-    console.error("[BackgroundLocationTask] Takip durdurma hatası:", error);
+    console.error("[AttendanceLocation] Takip durdurma hatası:", error);
     return false;
   }
 }
 
-/**
- * Mevcut takip durumunu sorgular
- */
 export async function isAttendanceLocationTrackingActive(): Promise<boolean> {
   try {
     return await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);

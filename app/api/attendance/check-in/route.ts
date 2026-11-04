@@ -62,7 +62,7 @@ export async function POST(req: Request) {
           select: {
             id: true,
             name: true,
-            code: true,
+            title: true,
           },
         },
       },

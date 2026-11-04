@@ -154,7 +154,7 @@ export default function LiveSituationRiskMap({
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1); // 1x, 2x, 5x
-  const playbackTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const playbackTimerRef = useRef<any>(null);
 
   // 1. Playback için Personel Listesini Yükle
   useEffect(() => {

@@ -77,7 +77,7 @@ export default function TrackDriverClient({ trackingCode }: TrackDriverClientPro
   const [copied, setCopied] = useState(false);
 
   // Interval & Watcher Referansları
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<any>(null);
   const watchIdRef = useRef<number | null>(null);
   const wakeLockRef = useRef<any>(null);
 

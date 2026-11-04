@@ -50,5 +50,10 @@ export default async function FranchiseBimPage() {
     }),
   ])
 
-  return <BimPageClient projects={projects} templates={templates} />
+  const formattedProjects = projects.map((p) => ({
+    ...p,
+    name: p.name || "İsimsiz Şube / Mağaza",
+  }))
+
+  return <BimPageClient projects={formattedProjects} templates={templates} />
 }

@@ -254,7 +254,23 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
                   <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
                 </TouchableOpacity>
 
-                {/* 2. Ayarlar */}
+                {/* 2. Tüm Şantiye Modülleri (20 Mega Modül) */}
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    closeDrawer();
+                    router.push("/modules" as any);
+                  }}
+                >
+                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(0, 199, 190, 0.15)" }]}>
+                    <Ionicons name="grid" size={18} color="#00C7BE" />
+                  </View>
+                  <Text style={styles.menuItemText}>Tüm Şantiye Modülleri (20)</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                </TouchableOpacity>
+
+                {/* 3. Ayarlar */}
                 <TouchableOpacity
                   style={styles.menuItem}
                   activeOpacity={0.7}
