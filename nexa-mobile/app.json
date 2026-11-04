@@ -30,6 +30,9 @@
     },
     "android": {
       "package": "com.nexa.erp",
+      "build": {
+        "extraProguardRules": "./proguard-rules.pro"
+      },
       "adaptiveIcon": {
         "backgroundColor": "#090d16",
         "foregroundImage": "./assets/android-icon-foreground.png",
