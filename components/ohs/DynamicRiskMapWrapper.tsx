@@ -33,3 +33,4 @@ const LiveSituationRiskMap = dynamic(
 export default function DynamicRiskMapWrapper(props: DynamicRiskMapWrapperProps) {
   return <LiveSituationRiskMap {...props} />;
 }
+
