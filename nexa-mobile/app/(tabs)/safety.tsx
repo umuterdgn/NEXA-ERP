@@ -1,11 +1,11 @@
 /**
  * © 2026 NXA Software. All rights reserved.
- * Developer: Umut Erdoğan
- * Nexa ERP - Mobil İSG İhlal & Ramak Kala Raporlama Modülü
+ * Nexa ERP Mobil - Apple iOS Standartlarında İSG & Güvenlik Raporlama
  *
- * Sahada görülen güvenlik ihlallerini anında fotoğraflayıp, GPS konumu ve
- * sorumlu taşeron bilgisiyle merkeze raporlayan native İSG bileşeni.
- * Çevrimdışı (offline) ortamlarda OfflineQueue üzerinden otomatik kuyruklar.
+ * - Koyu iOS Zemin (#0A0F1C)
+ * - En üstte devasa kırmızı (#FF3B30) "İhlal / Ceza Bildir" ve devasa turuncu (#FF9500) "Ramak Kala Olayı Bildir" butonları
+ * - Alt kısımda iOS liste standartlarına uygun (divider çizgili, sade) ceza ve tutanak listesi
+ * - Çökme koruması: data?.map, try-catch kamera, GPS ve senkronizasyon
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -33,8 +33,8 @@ import { useNetworkSync } from "../../src/hooks/useNetworkSync";
 import { OfflineCamera, QueuedMediaItem } from "../../src/components/media/OfflineCamera";
 import { OfflineQueue } from "../../src/services/OfflineQueue";
 import { api } from "../../src/lib/api";
+import { iosColors, iosRadius } from "../../src/theme/iosTheme";
 
-// İSG İhlal Kategorileri & Türleri
 export const INCIDENT_TYPES = [
   { id: "KKD", label: "KKD Eksikliği (Baret / Yelek / Emniyet Kemeri)", icon: "hard-hat", severity: "HIGH" },
   { id: "HEIGHT", label: "Yüksekte Çalışma & Düşme Riski", icon: "arrow-up-circle", severity: "CRITICAL" },
@@ -47,7 +47,6 @@ export const INCIDENT_TYPES = [
   { id: "OTHER", label: "Diğer İSG & Çevre Uygunsuzluğu", icon: "info", severity: "MEDIUM" },
 ];
 
-// Sistem Taşeronları
 export const SYSTEM_SUBCONTRACTORS = [
   { id: "SUB-1", name: "Zirve Yapı Endüstri Ltd.", trade: "Kaba Yapı & Kalıp", riskScore: 82 },
   { id: "SUB-2", name: "Ege İnşaat Taahhüt A.Ş.", trade: "Betonarme & Demir", riskScore: 90 },
@@ -76,7 +75,7 @@ export interface SafetyIncidentItem {
 }
 
 export default function SafetyScreen() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { isConnected } = useNetworkSync();
 
   // Kamera & Modal State'leri
@@ -95,12 +94,11 @@ export default function SafetyScreen() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
-  const [isLocating, setIsLocating] = useState<boolean>(false);
   const [penaltyAmount, setPenaltyAmount] = useState<string>("5000");
   const [description, setDescription] = useState<string>("");
   const [severity, setSeverity] = useState<"LOW" | "MEDIUM" | "HIGH" | "CRITICAL">("HIGH");
 
-  // Liste & Yükleme
+  // Liste
   const [incidents, setIncidents] = useState<SafetyIncidentItem[]>([
     {
       id: "INC-2026-081",
@@ -125,7 +123,7 @@ export default function SafetyScreen() {
       locationText: "B Blok Şaft Boşluğu Yanı",
       latitude: 40.9918,
       longitude: 29.0292,
-      description: "Üst kattan gevşek bırakılan profil demiri 1 metre yakınına düştü. Yaralanma yok, alan güvenlik şeridine alındı.",
+      description: "Üst kattan profil demiri çalışma sahasına düştü. Yaralanma yok, alan derhal güvenlik şeridine alındı.",
       severity: "CRITICAL",
       status: "SUBMITTED",
       createdAt: "Dün, 16:20",
@@ -140,7 +138,7 @@ export default function SafetyScreen() {
       latitude: 40.9905,
       longitude: 29.0275,
       penaltyAmount: 10000,
-      description: "Dış cephe iskelesinde güvenlik filesi ve yaşam hattı bağlanmadan montaj yapıldığı saptandı.",
+      description: "Dış cephe iskelesinde güvenlik filesi ve yaşam hattı bağlanmadan montaj yapıldığı tespit edildi.",
       severity: "CRITICAL",
       status: "SUBMITTED",
       createdAt: "01 Kas 2026, 14:10",
@@ -156,33 +154,27 @@ export default function SafetyScreen() {
     message: string;
   } | null>(null);
 
-  // Sayfa açıldığında GPS konumunu al
+  // Konum Sorgusu
   const requestCurrentLocation = useCallback(async () => {
     try {
-      setIsLocating(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setIsLocating(false);
-        return;
-      }
+      if (status !== "granted") return;
       const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
+        accuracy: Location.Accuracy.Balanced,
       });
       setLatitude(loc.coords.latitude);
       setLongitude(loc.coords.longitude);
       setLocationAccuracy(Math.round(loc.coords.accuracy || 5));
     } catch (err) {
-      console.warn("[Safety GPS] Konum alınamadı:", err);
-    } finally {
-      setIsLocating(false);
+      console.warn("[Safety GPS Error]:", err);
     }
   }, []);
 
   useEffect(() => {
-    requestCurrentLocation();
+    requestCurrentLocation().catch(() => {});
   }, [requestCurrentLocation]);
 
-  // ADIM 2: "İhlal Bildir" butonuna basıldığında
+  // "İhlal Bildir" Butonu
   const handleOpenViolationReporting = () => {
     setCameraMode("VIOLATION");
     setSelectedCategory("VIOLATION");
@@ -192,7 +184,7 @@ export default function SafetyScreen() {
     setIsCameraVisible(true);
   };
 
-  // "Ramak Kala Olayı Bildir" butonuna basıldığında
+  // "Ramak Kala Olayı Bildir" Butonu
   const handleOpenNearMissReporting = () => {
     setCameraMode("NEAR_MISS");
     setSelectedCategory("NEAR_MISS");
@@ -203,90 +195,18 @@ export default function SafetyScreen() {
     setIsCameraVisible(true);
   };
 
-  // AI Vision Analiz State'leri
-  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
-  const [aiViolationResult, setAiViolationResult] = useState<{
-    violationFound: boolean;
-    details: string;
-    severity: "HIGH" | "MEDIUM" | "LOW";
-  } | null>(null);
-
-  // ADIM 1 & 2: Fotoğrafta baret, yelek, kemer eksikliğini analiz eden AI Motorunu tetikle
-  const runAiVisionAnalysis = async (photoUri: string) => {
-    setIsAiAnalyzing(true);
-    setAiViolationResult(null);
-
-    try {
-      console.log("[Safety AI] Fotoğraf analiz ediliyor:", photoUri);
-
-      let resData;
-      try {
-        const res = await api.post("/safety/analyze-vision", {
-          imageUrl: photoUri,
-        });
-        resData = res.data;
-      } catch (networkError) {
-        console.warn("[Safety AI] API hatası, offline İSG tespit motoru devrede:", networkError);
-        resData = {
-          violationFound: true,
-          details: "Sağdaki personelde baret eksik! Bu kayıt Yüksek Riskli ihlal olarak dosyalandı.",
-          severity: "HIGH" as const,
-        };
-      }
-
-      setAiViolationResult(resData);
-
-      if (resData.violationFound) {
-        // Yapay zeka "violationFound: true" dönerse, ekranda kırmızı bir uyarı patlat
-        Vibration.vibrate([100, 250, 100, 250]);
-        setSeverity("HIGH");
-        setSelectedType(INCIDENT_TYPES[0].label); // KKD Eksikliği (Baret / Yelek / Emniyet Kemeri)
-        setDescription(
-          `🤖 [AI OTO-DENETİM TESPİTİ]: ${resData.details}\nPersonel derhal uyarılmış olup, baret ve gerekli KKD donanımı temin edilene kadar çalışma geçici olarak durdurulmuştur.`
-        );
-
-        Alert.alert(
-          "🚨 AI İSG İHLALİ TESPİT ETTİ!",
-          "🤖 AI Tespit Etti: Sağdaki personelde baret eksik! Bu kayıt Yüksek Riskli ihlal olarak dosyalandı.\n\nTespit Detayı: " +
-            resData.details,
-          [{ text: "Tutanağa Uygula & Devam Et", style: "destructive" }]
-        );
-      }
-    } catch (err: any) {
-      console.error("[Safety AI Vision Error]:", err);
-    } finally {
-      setIsAiAnalyzing(false);
-    }
-  };
-
-  // Kameradan fotoğraf çekildiğinde çalışan callback
+  // Fotoğraf Çekildiğinde
   const handlePhotoCaptured = (item: QueuedMediaItem) => {
     setIsCameraVisible(false);
     setCapturedPhotoUri(item.localUri);
-    // Fotoğraf çekildikten hemen sonra Bottom Sheet kayıt formunu aç
     setIsFormModalVisible(true);
     requestCurrentLocation();
-    Vibration.vibrate(50);
-
-    // ADIM 2: Fotoğraf çekilip backend'e yüklendiği an analyzeSafetyViolation action'ını tetikle
-    runAiVisionAnalysis(item.localUri);
-  };
-
-  // Formu direkt açmak (fotoğrafsız veya sonradan eklemeli)
-  const handleOpenFormDirectly = (cat: "VIOLATION" | "NEAR_MISS") => {
-    setSelectedCategory(cat);
-    if (cat === "NEAR_MISS") {
-      setSelectedType("Ramak Kala (Near-Miss) Olayı");
-      setPenaltyAmount("");
-    } else {
-      setSelectedType(INCIDENT_TYPES[0].label);
-      setPenaltyAmount("5000");
+    if (Platform.OS !== "web") {
+      Vibration.vibrate(50);
     }
-    requestCurrentLocation();
-    setIsFormModalVisible(true);
   };
 
-  // ADIM 3: Çevrimdışı (Offline) Destek ve Gönderim
+  // Rapor Gönder
   const handleSubmitReport = async () => {
     if (!description.trim() && !locationText.trim()) {
       Alert.alert("Eksik Bilgi", "Lütfen konum açıklaması veya ihlal detayını belirtiniz.");
@@ -295,8 +215,13 @@ export default function SafetyScreen() {
 
     setIsSubmitting(true);
     try {
-      const netState = await Network.getNetworkStateAsync();
-      const online = netState.isConnected && netState.isInternetReachable !== false;
+      let online = isConnected;
+      try {
+        const netState = await Network.getNetworkStateAsync();
+        online = Boolean(netState.isConnected);
+      } catch (e) {
+        online = false;
+      }
 
       const newIncidentId = `INC-${Date.now().toString().slice(-6)}`;
       const payload = {
@@ -317,7 +242,6 @@ export default function SafetyScreen() {
       };
 
       if (!online) {
-        // Çevrimdışı: OfflineQueue servisine gönder
         await OfflineQueue.addToQueue(
           "/safety/incidents",
           payload,
@@ -328,7 +252,6 @@ export default function SafetyScreen() {
           }
         );
 
-        // UI'ya hemen çevrimdışı bekleyen durum olarak ekle
         const localItem: SafetyIncidentItem = {
           id: newIncidentId,
           category: selectedCategory,
@@ -342,23 +265,19 @@ export default function SafetyScreen() {
           imageUrl: capturedPhotoUri || undefined,
           severity: severity,
           status: "PENDING_SYNC",
-          createdAt: "Şimdi (Kuyrukta)",
+          createdAt: "Şimdi (Cihazda)",
           reporterName: user?.name || "İSG Uzmanı",
         };
 
-        setIncidents([localItem, ...incidents]);
+        setIncidents((prev) => [localItem, ...(prev || [])]);
         setFeedbackBanner({
           type: "OFFLINE",
-          message:
-            "İnternet bağlantısı yok. Güvenlik kaydı cihaz hafızasına kaydedildi, bağlantı sağlandığında otomatik merkeze iletilecektir.",
+          message: "İnternet bağlantısı yok. Güvenlik kaydı cihaza kaydedildi, bağlantı sağlandığında gönderilecek.",
         });
       } else {
-        // Çevrimiçi: Backend API'ye gönder
         try {
           await api.post("/safety/incidents", payload);
         } catch (apiErr) {
-          // Sunucu hatasında da güvenle OfflineQueue'ya aktar
-          console.warn("[Safety] Sunucuya ulaşılamadı, kuyruğa alınıyor:", apiErr);
           await OfflineQueue.addToQueue(
             "/safety/incidents",
             payload,
@@ -387,24 +306,22 @@ export default function SafetyScreen() {
           reporterName: user?.name || "İSG Uzmanı",
         };
 
-        setIncidents([localItem, ...incidents]);
+        setIncidents((prev) => [localItem, ...(prev || [])]);
         setFeedbackBanner({
           type: "SUCCESS",
-          message: "İSG Güvenlik Bildirimi başarıyla merkeze iletildi ve şantiye tutanağına işlendi.",
+          message: "İSG Güvenlik Bildirimi başarıyla kaydedildi ve tutanağa işlendi.",
         });
       }
 
-      // Formu sıfırla ve kapat
       setIsFormModalVisible(false);
       setCapturedPhotoUri(null);
       setDescription("");
       setLocationText("");
-      Vibration.vibrate(100);
+      if (Platform.OS !== "web") {
+        Vibration.vibrate(100);
+      }
 
-      // Banner'ı 6 saniye sonra kapat
-      setTimeout(() => {
-        setFeedbackBanner(null);
-      }, 6000);
+      setTimeout(() => setFeedbackBanner(null), 5000);
     } catch (err: any) {
       console.error("[Safety Submit Error]:", err);
       Alert.alert("Hata", "Rapor kaydedilemedi: " + (err.message || "Bilinmeyen hata"));
@@ -413,112 +330,74 @@ export default function SafetyScreen() {
     }
   };
 
-  const filteredIncidents = incidents.filter((item) => {
+  const filteredIncidents = (incidents || []).filter((item) => {
     if (activeFilter === "ALL") return true;
     return item.category === activeFilter;
   });
 
-  const violationCount = incidents.filter((i) => i.category === "VIOLATION").length;
-  const nearMissCount = incidents.filter((i) => i.category === "NEAR_MISS").length;
-  const pendingSyncCount = incidents.filter((i) => i.status === "PENDING_SYNC").length;
+  const violationCount = (incidents || []).filter((i) => i.category === "VIOLATION").length;
+  const nearMissCount = (incidents || []).filter((i) => i.category === "NEAR_MISS").length;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-950">
+    <SafeAreaView style={styles.safeContainer} edges={["top", "left", "right"]}>
       {/* 1. ÜST HEADER */}
-      <View className="px-5 pt-3 pb-4 border-b border-gray-900 bg-gray-900/40">
-        <View className="flex-row items-center justify-between">
-          <View>
-            <View className="flex-row items-center space-x-2">
-              <View className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-              <Text className="text-xs uppercase tracking-wider font-bold text-red-400">
-                İSG Denetim & Saha Güvenliği
-              </Text>
-            </View>
-            <Text className="text-2xl font-black text-white mt-0.5 tracking-tight">
-              Güvenlik Raporlama
-            </Text>
+      <View style={styles.header}>
+        <View>
+          <View style={styles.headerIndicator}>
+            <View style={styles.indicatorDot} />
+            <Text style={styles.indicatorText}>İSG DENETİM & SAHA GÜVENLİĞİ</Text>
           </View>
-
-          {/* Ağ & Kuyruk Durumu Rozeti */}
-          <View className="items-end">
-            <View
-              className={`flex-row items-center px-2.5 py-1 rounded-full ${
-                isConnected ? "bg-emerald-500/20 border border-emerald-500/40" : "bg-amber-500/20 border border-amber-500/40"
-              }`}
-            >
-              <Feather
-                name={isConnected ? "wifi" : "wifi-off"}
-                size={12}
-                color={isConnected ? "#10B981" : "#F59E0B"}
-              />
-              <Text
-                className={`text-[11px] font-bold ml-1.5 ${
-                  isConnected ? "text-emerald-400" : "text-amber-400"
-                }`}
-              >
-                {isConnected ? "Çevrimiçi" : "Çevrimdışı"}
-              </Text>
-            </View>
-            {pendingSyncCount > 0 && (
-              <Text className="text-[10px] text-amber-400 font-semibold mt-1">
-                ⏳ {pendingSyncCount} kayıt kuyrukta
-              </Text>
-            )}
-          </View>
+          <Text style={styles.headerTitle}>Güvenlik Raporlama</Text>
         </View>
 
-        {/* Bilgilendirme Banner'ı */}
-        {feedbackBanner && (
-          <View
-            className={`mt-3 p-3 rounded-xl border flex-row items-start ${
-              feedbackBanner.type === "OFFLINE"
-                ? "bg-amber-950/70 border-amber-500/50"
-                : feedbackBanner.type === "SUCCESS"
-                ? "bg-emerald-950/70 border-emerald-500/50"
-                : "bg-red-950/70 border-red-500/50"
-            }`}
+        <View
+          style={[
+            styles.networkBadge,
+            isConnected ? styles.networkBadgeOnline : styles.networkBadgeOffline,
+          ]}
+        >
+          <Feather
+            name={isConnected ? "wifi" : "wifi-off"}
+            size={12}
+            color={isConnected ? iosColors.systemGreen : iosColors.systemOrange}
+          />
+          <Text
+            style={[
+              styles.networkBadgeText,
+              isConnected ? { color: iosColors.systemGreen } : { color: iosColors.systemOrange },
+            ]}
           >
-            <Feather
-              name={
-                feedbackBanner.type === "OFFLINE"
-                  ? "cloud-off"
-                  : feedbackBanner.type === "SUCCESS"
-                  ? "check-circle"
-                  : "alert-circle"
-              }
-              size={18}
-              color={
-                feedbackBanner.type === "OFFLINE"
-                  ? "#F59E0B"
-                  : feedbackBanner.type === "SUCCESS"
-                  ? "#10B981"
-                  : "#EF4444"
-              }
-              style={{ marginTop: 2, marginRight: 8 }}
-            />
-            <View className="flex-1">
-              <Text
-                className={`text-xs font-semibold ${
-                  feedbackBanner.type === "OFFLINE"
-                    ? "text-amber-200"
-                    : feedbackBanner.type === "SUCCESS"
-                    ? "text-emerald-200"
-                    : "text-red-200"
-                }`}
-              >
-                {feedbackBanner.message}
-              </Text>
-            </View>
-            <TouchableOpacity onPress={() => setFeedbackBanner(null)}>
-              <Feather name="x" size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          </View>
-        )}
+            {isConnected ? "Çevrimiçi" : "Çevrimdışı"}
+          </Text>
+        </View>
       </View>
 
+      {/* Banner */}
+      {feedbackBanner && (
+        <View
+          style={[
+            styles.banner,
+            feedbackBanner.type === "SUCCESS"
+              ? styles.bannerSuccess
+              : styles.bannerWarning,
+          ]}
+        >
+          <Feather
+            name={feedbackBanner.type === "SUCCESS" ? "check-circle" : "cloud-off"}
+            size={16}
+            color={feedbackBanner.type === "SUCCESS" ? iosColors.systemGreen : iosColors.systemOrange}
+          />
+          <Text style={styles.bannerText}>{feedbackBanner.message}</Text>
+          <TouchableOpacity onPress={() => setFeedbackBanner(null)}>
+            <Feather name="x" size={16} color={iosColors.labelSecondary} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView
-        className="flex-1 px-5"
-        contentContainerStyle={{ paddingBottom: 40, paddingTop: 16 }}
+        style={styles.scrollArea}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -527,90 +406,76 @@ export default function SafetyScreen() {
               requestCurrentLocation();
               setTimeout(() => setIsRefreshing(false), 800);
             }}
-            tintColor="#EF4444"
+            tintColor={iosColors.systemRed}
           />
         }
       >
-        {/* ADIM 1: DİKKAT ÇEKİCİ İKİ ANA BUTON */}
-        <View className="space-y-3 mb-6">
-          {/* BUTON 1: ⚠️ İHLAL / CEZA BİLDİR */}
+        {/* ============================================================ */}
+        {/* ADIM 4: DEVASA KIRMIZI (#FF3B30) VE TURUNCU (#FF9500) BUTONLAR*/}
+        {/* ============================================================ */}
+        <View style={styles.actionButtonsContainer}>
+          {/* BUTON 1: DEVASA KIRMIZI "İHLAL / CEZA BİLDİR" */}
           <TouchableOpacity
             activeOpacity={0.88}
             onPress={handleOpenViolationReporting}
-            className="bg-gradient-to-r from-red-600 to-rose-700 p-4 rounded-2xl shadow-lg border border-red-500/60 overflow-hidden relative"
-            style={{ backgroundColor: "#DC2626" }}
+            style={styles.giantViolationButton}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1 pr-3">
-                <View className="flex-row items-center space-x-2 mb-1">
-                  <View className="bg-black/30 px-2 py-0.5 rounded-full">
-                    <Text className="text-[10px] font-black text-white tracking-widest uppercase">
-                      ACİL SAHA YAPTIRIMI
-                    </Text>
-                  </View>
+            <View style={styles.buttonTopRow}>
+              <View style={styles.buttonTextWrapper}>
+                <View style={styles.badgeLabelWrapper}>
+                  <Text style={styles.badgeLabelRed}>ACİL SAHA YAPTIRIMI</Text>
                 </View>
-                <Text className="text-xl font-extrabold text-white tracking-tight">
-                  ⚠️ İhlal / Ceza Bildir
-                </Text>
-                <Text className="text-xs text-red-100 font-medium mt-1 leading-4">
-                  Baretsiz işçi, emniyetsiz iskele veya KKD ihlalini anında fotoğrafla, GPS ile tutanağa bağla.
+                <Text style={styles.giantButtonTitle}>⚠️ İhlal / Ceza Bildir</Text>
+                <Text style={styles.giantButtonSubtitle}>
+                  Baretsiz personel, emniyetsiz iskele veya KKD ihlalini anında fotoğrafla, GPS ile tutanağa bağla.
                 </Text>
               </View>
 
-              <View className="w-14 h-14 rounded-2xl bg-black/25 items-center justify-center border border-white/20">
-                <Feather name="camera" size={26} color="#FFFFFF" />
+              <View style={styles.iconCircleRed}>
+                <Feather name="camera" size={28} color="#FFFFFF" />
               </View>
             </View>
 
-            <View className="flex-row items-center justify-between mt-3 pt-2.5 border-t border-white/15">
-              <View className="flex-row items-center">
-                <Feather name="map-pin" size={12} color="#FEE2E2" />
-                <Text className="text-[11px] text-red-100 font-semibold ml-1">
+            <View style={styles.buttonBottomRow}>
+              <View style={styles.gpsRow}>
+                <Feather name="map-pin" size={12} color="rgba(255, 255, 255, 0.8)" />
+                <Text style={styles.gpsText}>
                   {latitude ? `GPS Aktif (±${locationAccuracy || 5}m)` : "GPS Alınıyor..."}
                 </Text>
               </View>
-              <View className="flex-row items-center">
-                <Text className="text-xs font-bold text-white mr-1">Fotoğraf Çek</Text>
+              <View style={styles.arrowRow}>
+                <Text style={styles.arrowText}>Fotoğraf Çek</Text>
                 <Feather name="chevron-right" size={14} color="#FFFFFF" />
               </View>
             </View>
           </TouchableOpacity>
 
-          {/* BUTON 2: 🛑 RAMAK KALA OLAYI BİLDİR */}
+          {/* BUTON 2: DEVASA TURUNCU "RAMAK KALA OLAYI BİLDİR" */}
           <TouchableOpacity
             activeOpacity={0.88}
             onPress={handleOpenNearMissReporting}
-            className="p-4 rounded-2xl shadow-lg border border-amber-500/50 overflow-hidden relative mt-3"
-            style={{ backgroundColor: "#D97706" }}
+            style={styles.giantNearMissButton}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1 pr-3">
-                <View className="flex-row items-center space-x-2 mb-1">
-                  <View className="bg-black/30 px-2 py-0.5 rounded-full">
-                    <Text className="text-[10px] font-black text-amber-100 tracking-widest uppercase">
-                      KAZAYI ÖNCEDEN ENGELLE
-                    </Text>
-                  </View>
+            <View style={styles.buttonTopRow}>
+              <View style={styles.buttonTextWrapper}>
+                <View style={styles.badgeLabelWrapper}>
+                  <Text style={styles.badgeLabelOrange}>KAZAYI ÖNCEDEN ENGELLE</Text>
                 </View>
-                <Text className="text-xl font-extrabold text-white tracking-tight">
-                  🛑 Ramak Kala Olayı Bildir
-                </Text>
-                <Text className="text-xs text-amber-100 font-medium mt-1 leading-4">
-                  Yaralanma olmadan atlatılan düşen malzeme veya açık şaft tehlikelerini sisteme işle.
+                <Text style={styles.giantButtonTitle}>🛑 Ramak Kala Olayı Bildir</Text>
+                <Text style={styles.giantButtonSubtitle}>
+                  Yaralanma olmadan atlatılan malzeme düşmesi veya açık şaft risklerini sisteme işle.
                 </Text>
               </View>
 
-              <View className="w-14 h-14 rounded-2xl bg-black/25 items-center justify-center border border-white/20">
-                <MaterialCommunityIcons name="shield-alert" size={30} color="#FFFFFF" />
+              <View style={styles.iconCircleOrange}>
+                <MaterialCommunityIcons name="shield-alert" size={32} color="#FFFFFF" />
               </View>
             </View>
 
-            <View className="flex-row items-center justify-between mt-3 pt-2.5 border-t border-white/15">
-              <Text className="text-[11px] text-amber-100 font-semibold">
-                Kaza Olmadan Önce Güvenliği Sağla
-              </Text>
-              <View className="flex-row items-center">
-                <Text className="text-xs font-bold text-white mr-1">Raporla</Text>
+            <View style={styles.buttonBottomRow}>
+              <Text style={styles.gpsText}>Kaza Olmadan Önce Güvenliği Sağla</Text>
+              <View style={styles.arrowRow}>
+                <Text style={styles.arrowText}>Raporla</Text>
                 <Feather name="chevron-right" size={14} color="#FFFFFF" />
               </View>
             </View>
@@ -618,64 +483,79 @@ export default function SafetyScreen() {
         </View>
 
         {/* HIZLI METRİK KARTLARI */}
-        <View className="flex-row space-x-2 mb-6">
-          <View className="flex-1 bg-gray-900 border border-gray-800 p-3 rounded-xl">
-            <Text className="text-[11px] text-gray-400 font-semibold">Toplam İhlal</Text>
-            <View className="flex-row items-baseline mt-1">
-              <Text className="text-2xl font-black text-red-400">{violationCount}</Text>
-              <Text className="text-[10px] text-gray-500 ml-1">Kayıt</Text>
-            </View>
+        <View style={styles.metricsRow}>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricCardLabel}>Toplam İhlal</Text>
+            <Text style={[styles.metricCardValue, { color: iosColors.systemRed }]}>
+              {violationCount}
+            </Text>
           </View>
 
-          <View className="flex-1 bg-gray-900 border border-gray-800 p-3 rounded-xl">
-            <Text className="text-[11px] text-gray-400 font-semibold">Ramak Kala</Text>
-            <View className="flex-row items-baseline mt-1">
-              <Text className="text-2xl font-black text-amber-400">{nearMissCount}</Text>
-              <Text className="text-[10px] text-gray-500 ml-1">Kayıt</Text>
-            </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricCardLabel}>Ramak Kala</Text>
+            <Text style={[styles.metricCardValue, { color: iosColors.systemOrange }]}>
+              {nearMissCount}
+            </Text>
           </View>
 
-          <View className="flex-1 bg-gray-900 border border-gray-800 p-3 rounded-xl">
-            <Text className="text-[11px] text-gray-400 font-semibold">Kayıp Günlü Kaza</Text>
-            <View className="flex-row items-baseline mt-1">
-              <Text className="text-2xl font-black text-emerald-400">0</Text>
-              <Text className="text-[10px] text-emerald-500/80 ml-1">Kazasız</Text>
-            </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricCardLabel}>Kayıp Günlü Kaza</Text>
+            <Text style={[styles.metricCardValue, { color: iosColors.systemGreen }]}>
+              0
+            </Text>
           </View>
         </View>
 
         {/* FİLTRE VE BAŞLIK */}
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-base font-bold text-white">Saha Güvenlik Kayıtları</Text>
-          <View className="flex-row bg-gray-900 p-0.5 rounded-lg border border-gray-800">
+        <View style={styles.filterSection}>
+          <Text style={styles.filterSectionTitle}>Saha Güvenlik Kayıtları</Text>
+          <View style={styles.filterPills}>
             <TouchableOpacity
               onPress={() => setActiveFilter("ALL")}
-              className={`px-2.5 py-1 rounded-md ${activeFilter === "ALL" ? "bg-gray-800" : ""}`}
+              style={[
+                styles.filterPill,
+                activeFilter === "ALL" && styles.filterPillActive,
+              ]}
             >
-              <Text className={`text-xs font-semibold ${activeFilter === "ALL" ? "text-white" : "text-gray-400"}`}>
+              <Text
+                style={[
+                  styles.filterPillText,
+                  activeFilter === "ALL" && styles.filterPillTextActive,
+                ]}
+              >
                 Tümü
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => setActiveFilter("VIOLATION")}
-              className={`px-2.5 py-1 rounded-md ${activeFilter === "VIOLATION" ? "bg-red-950/80" : ""}`}
+              style={[
+                styles.filterPill,
+                activeFilter === "VIOLATION" && styles.filterPillActiveRed,
+              ]}
             >
               <Text
-                className={`text-xs font-semibold ${
-                  activeFilter === "VIOLATION" ? "text-red-400" : "text-gray-400"
-                }`}
+                style={[
+                  styles.filterPillText,
+                  activeFilter === "VIOLATION" && { color: iosColors.systemRed },
+                ]}
               >
                 İhlaller
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => setActiveFilter("NEAR_MISS")}
-              className={`px-2.5 py-1 rounded-md ${activeFilter === "NEAR_MISS" ? "bg-amber-950/80" : ""}`}
+              style={[
+                styles.filterPill,
+                activeFilter === "NEAR_MISS" && styles.filterPillActiveOrange,
+              ]}
             >
               <Text
-                className={`text-xs font-semibold ${
-                  activeFilter === "NEAR_MISS" ? "text-amber-400" : "text-gray-400"
-                }`}
+                style={[
+                  styles.filterPillText,
+                  activeFilter === "NEAR_MISS" && { color: iosColors.systemOrange },
+                ]}
               >
                 Ramak Kala
               </Text>
@@ -683,130 +563,121 @@ export default function SafetyScreen() {
           </View>
         </View>
 
-        {/* LİSTE */}
-        <View className="space-y-3">
+        {/* ============================================================ */}
+        {/* iOS LİSTE STANDARTLARINDA ÇİZGİLİ / AYRAÇLI LİSTE           */}
+        {/* ============================================================ */}
+        <View style={styles.listContainer}>
           {filteredIncidents.length === 0 ? (
-            <View className="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 items-center justify-center">
-              <Feather name="shield" size={36} color="#4B5563" />
-              <Text className="text-sm font-semibold text-gray-400 mt-2">
+            <View style={styles.emptyCard}>
+              <Feather name="shield" size={36} color={iosColors.labelMuted} />
+              <Text style={styles.emptyCardText}>
                 Bu kategoride kayıtlı olay bulunamadı.
               </Text>
             </View>
           ) : (
-            filteredIncidents.map((incident) => (
-              <View
-                key={incident.id}
-                className="bg-gray-900 border border-gray-800 rounded-2xl p-4 shadow-sm mb-3"
-              >
-                {/* Üst Bilgi Rozeti */}
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-row items-center space-x-1.5">
-                    <View
-                      className={`px-2 py-0.5 rounded-full ${
-                        incident.category === "VIOLATION"
-                          ? "bg-red-500/20 border border-red-500/30"
-                          : "bg-amber-500/20 border border-amber-500/30"
-                      }`}
-                    >
-                      <Text
-                        className={`text-[10px] font-black uppercase ${
-                          incident.category === "VIOLATION" ? "text-red-400" : "text-amber-400"
-                        }`}
-                      >
-                        {incident.category === "VIOLATION" ? "⚠️ İSG İhlali" : "🛑 Ramak Kala"}
-                      </Text>
-                    </View>
+            filteredIncidents.map((incident, index) => {
+              const isViolation = incident.category === "VIOLATION";
+              const isLast = index === filteredIncidents.length - 1;
 
-                    {incident.status === "PENDING_SYNC" ? (
-                      <View className="bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
-                        <Text className="text-[10px] text-amber-300 font-bold">
-                          ⏳ Cihazda Bekliyor
+              return (
+                <View
+                  key={incident.id}
+                  style={[
+                    styles.incidentItemCard,
+                    !isLast && styles.incidentItemBorder,
+                  ]}
+                >
+                  {/* Başlık Satırı & Rozetler */}
+                  <View style={styles.incidentItemHeader}>
+                    <View style={styles.badgeRow}>
+                      <View
+                        style={[
+                          styles.categoryBadge,
+                          isViolation ? styles.categoryBadgeRed : styles.categoryBadgeOrange,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryBadgeText,
+                            isViolation ? { color: iosColors.systemRed } : { color: iosColors.systemOrange },
+                          ]}
+                        >
+                          {isViolation ? "⚠️ İSG İhlali" : "🛑 Ramak Kala"}
                         </Text>
                       </View>
-                    ) : (
-                      <View className="bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                        <Text className="text-[10px] text-emerald-400 font-bold">
-                          ✓ Merkeze İletildi
+
+                      {incident.status === "PENDING_SYNC" ? (
+                        <View style={styles.syncBadgePending}>
+                          <Text style={styles.syncBadgePendingText}>⏳ Cihazda</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.syncBadgeDone}>
+                          <Text style={styles.syncBadgeDoneText}>✓ İletildi</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <Text style={styles.incidentDateText}>{incident.createdAt}</Text>
+                  </View>
+
+                  {/* Olay Türü */}
+                  <Text style={styles.incidentTypeTitle}>{incident.incidentType}</Text>
+
+                  {/* Taşeron ve Ceza Bilgisi */}
+                  <View style={styles.subcontractorRow}>
+                    <View style={styles.subBadge}>
+                      <Feather name="briefcase" size={11} color={iosColors.labelSecondary} />
+                      <Text style={styles.subBadgeText}>{incident.subcontractorName}</Text>
+                    </View>
+
+                    {incident.penaltyAmount && (
+                      <View style={styles.penaltyBadge}>
+                        <Feather name="dollar-sign" size={11} color={iosColors.systemRed} />
+                        <Text style={styles.penaltyBadgeText}>
+                          ₺{incident.penaltyAmount.toLocaleString("tr-TR")} Ceza
                         </Text>
                       </View>
                     )}
                   </View>
 
-                  <Text className="text-[11px] text-gray-500 font-medium">
-                    {incident.createdAt}
-                  </Text>
-                </View>
-
-                {/* Başlık & İhlal Türü */}
-                <Text className="text-base font-bold text-white mb-1">
-                  {incident.incidentType}
-                </Text>
-
-                {/* Sorumlu Taşeron & Ceza */}
-                <View className="flex-row items-center flex-wrap gap-2 mb-2">
-                  <View className="flex-row items-center bg-gray-800/80 px-2.5 py-1 rounded-lg">
-                    <Feather name="briefcase" size={12} color="#9CA3AF" />
-                    <Text className="text-xs text-gray-300 font-semibold ml-1.5">
-                      {incident.subcontractorName}
-                    </Text>
+                  {/* Konum */}
+                  <View style={styles.locationRow}>
+                    <Feather name="map-pin" size={12} color={iosColors.systemBlue} />
+                    <Text style={styles.locationText}>{incident.locationText}</Text>
                   </View>
 
-                  {incident.penaltyAmount && (
-                    <View className="flex-row items-center bg-red-950/60 border border-red-800/60 px-2.5 py-1 rounded-lg">
-                      <Feather name="dollar-sign" size={12} color="#F87171" />
-                      <Text className="text-xs text-red-300 font-bold ml-1">
-                        ₺{incident.penaltyAmount.toLocaleString("tr-TR")} Ceza
-                      </Text>
+                  {/* Açıklama */}
+                  <Text style={styles.descriptionText}>{incident.description}</Text>
+
+                  {/* Varsa Fotoğraf */}
+                  {incident.imageUrl ? (
+                    <View style={styles.photoContainer}>
+                      <Image
+                        source={{ uri: incident.imageUrl }}
+                        style={styles.photoImage}
+                        resizeMode="cover"
+                      />
                     </View>
-                  )}
-                </View>
+                  ) : null}
 
-                {/* Konum */}
-                <View className="flex-row items-center mb-2">
-                  <Feather name="map-pin" size={12} color="#60A5FA" />
-                  <Text className="text-xs text-blue-400 font-medium ml-1.5">
-                    {incident.locationText}
-                    {incident.latitude && incident.longitude
-                      ? ` (${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)})`
-                      : ""}
-                  </Text>
-                </View>
-
-                {/* Detay Metni */}
-                <Text className="text-xs text-gray-400 leading-4 mb-3">
-                  {incident.description}
-                </Text>
-
-                {/* Varsa Çekilen Fotoğraf Önizlemesi */}
-                {incident.imageUrl ? (
-                  <View className="mb-2 rounded-xl overflow-hidden border border-gray-800 h-28 w-full bg-gray-950">
-                    <Image
-                      source={{ uri: incident.imageUrl }}
-                      style={{ width: "100%", height: "100%" }}
-                      resizeMode="cover"
-                    />
-                  </View>
-                ) : null}
-
-                {/* Alt Bilgi: Raporlayan */}
-                <View className="pt-2 border-t border-gray-800/80 flex-row items-center justify-between">
-                  <Text className="text-[11px] text-gray-500">
-                    Raporlayan: <Text className="text-gray-400 font-semibold">{incident.reporterName}</Text>
-                  </Text>
-                  <View className="flex-row items-center">
-                    <Feather name="check" size={12} color="#10B981" />
-                    <Text className="text-[11px] text-gray-400 font-semibold ml-1">
-                      Tutanağa İşlendi
+                  {/* Alt Bilgi: Raporlayan */}
+                  <View style={styles.reporterRow}>
+                    <Text style={styles.reporterText}>
+                      Raporlayan: <Text style={{ color: iosColors.labelPrimary, fontWeight: "600" }}>{incident.reporterName}</Text>
                     </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Feather name="check" size={12} color={iosColors.systemGreen} />
+                      <Text style={styles.registeredText}>Tutanağa İşlendi</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       </ScrollView>
 
-      {/* ADIM 2: OFFLINE KAMERA MODAL'I */}
+      {/* KAMERA MODALI */}
       <Modal
         visible={isCameraVisible}
         animationType="slide"
@@ -823,395 +694,145 @@ export default function SafetyScreen() {
         />
       </Modal>
 
-      {/* ADIM 2: BOTTOM SHEET / KAYIT FORMU MODAL'I */}
+      {/* FORM MODALI */}
       <Modal
         visible={isFormModalVisible}
         animationType="slide"
-        transparent={true}
+        presentationStyle="pageSheet"
         onRequestClose={() => setIsFormModalVisible(false)}
       >
-        <View className="flex-1 bg-black/75 justify-end">
-          <View
-            className="bg-gray-900 rounded-t-3xl border-t border-gray-800 max-h-[92%] flex-col"
-            style={{ maxHeight: "92%" }}
+        <SafeAreaView style={styles.safeContainer} edges={["top", "bottom"]}>
+          <View style={styles.sheetHandle} />
+
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>
+                {selectedCategory === "NEAR_MISS"
+                  ? "🛑 Ramak Kala Tutanağı"
+                  : "⚠️ İSG İhlal & Ceza Tutanağı"}
+              </Text>
+              <Text style={styles.modalSubtitle}>Saha güvenlik raporunu tamamlayın</Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setIsFormModalVisible(false)}
+              style={styles.modalCloseBtn}
+            >
+              <Feather name="x" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            style={{ flex: 1, paddingHorizontal: 20, paddingTop: 14 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 40 }}
           >
-            {/* Tutma Çubuğu (Bottom Sheet Grabber) */}
-            <View className="items-center pt-3 pb-1">
-              <View className="w-12 h-1.5 rounded-full bg-gray-700" />
-            </View>
+            {/* Fotoğraf Önizleme */}
+            {capturedPhotoUri && (
+              <View style={styles.formPhotoWrapper}>
+                <Image
+                  source={{ uri: capturedPhotoUri }}
+                  style={styles.formPhoto}
+                  resizeMode="cover"
+                />
+              </View>
+            )}
 
-            {/* Modal Header */}
-            <View className="px-5 py-3 border-b border-gray-800 flex-row items-center justify-between">
+            {/* Form Alanları */}
+            <View style={{ gap: 14 }}>
               <View>
-                <Text className="text-lg font-black text-white">
-                  {selectedCategory === "NEAR_MISS"
-                    ? "🛑 Ramak Kala Tutanağı"
-                    : "⚠️ İSG İhlal & Ceza Tutanağı"}
-                </Text>
-                <Text className="text-xs text-gray-400">
-                  Fotoğraflı ve GPS doğrulamalı resmi saha kaydı
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={() => setIsFormModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-gray-800 items-center justify-center"
-              >
-                <Feather name="x" size={18} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView className="px-5 pt-3" contentContainerStyle={{ paddingBottom: 30 }}>
-              {/* Çekilen Fotoğraf Önizlemesi & AI Vision Analiz Kartı */}
-              {capturedPhotoUri && (
-                <View className="mb-4">
-                  <View className="flex-row items-center justify-between mb-1.5">
-                    <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                      Çekilen İSG Fotoğraf Kanıtı
-                    </Text>
-                    {isAiAnalyzing && (
-                      <View className="flex-row items-center bg-blue-500/20 px-2 py-0.5 rounded-full border border-blue-500/30">
-                        <ActivityIndicator size="small" color="#60A5FA" style={{ transform: [{ scale: 0.7 }] }} />
-                        <Text className="text-[10px] text-blue-300 font-bold ml-1">AI Taranıyor...</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <View className="relative rounded-2xl overflow-hidden border border-gray-700 h-44 bg-gray-950">
-                    <Image
-                      source={{ uri: capturedPhotoUri }}
-                      style={{ width: "100%", height: "100%" }}
-                      resizeMode="cover"
-                    />
-
-                    {/* Yeniden Çek ve AI ile Tara Butonları */}
-                    <View className="absolute bottom-3 right-3 flex-row space-x-2 gap-2">
-                      <TouchableOpacity
-                        onPress={() => runAiVisionAnalysis(capturedPhotoUri)}
-                        disabled={isAiAnalyzing}
-                        className="bg-blue-600/90 active:bg-blue-700 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 shadow-md"
-                      >
-                        <MaterialCommunityIcons name="robot" size={14} color="#FFFFFF" />
-                        <Text className="text-xs text-white font-semibold ml-1">AI ile Tara</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => {
-                          setIsCameraVisible(true);
-                          setIsFormModalVisible(false);
-                        }}
-                        className="bg-black/70 px-3 py-1.5 rounded-full flex-row items-center border border-white/20"
-                      >
-                        <Feather name="refresh-cw" size={13} color="#FFFFFF" />
-                        <Text className="text-xs text-white font-semibold ml-1.5">Yeniden Çek</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  {/* AI Vision Analiz Durumu (Loading) */}
-                  {isAiAnalyzing && (
-                    <View className="mt-2.5 p-3 rounded-xl bg-blue-950/70 border border-blue-500/40 flex-row items-center">
-                      <ActivityIndicator size="small" color="#60A5FA" style={{ marginRight: 10 }} />
-                      <View className="flex-1">
-                        <Text className="text-xs font-bold text-blue-200">
-                          🤖 OpenAI Vision İSG Denetimi Yapılıyor...
-                        </Text>
-                        <Text className="text-[10px] text-blue-300/80 mt-0.5">
-                          Fotoğrafta baret, fosforlu yelek ve emniyet kemeri eksikliği taranıyor.
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-
-                  {/* ADIM 2: Yapay zeka "violationFound: true" dönerse kırmızı uyarı patlat */}
-                  {aiViolationResult && aiViolationResult.violationFound && (
-                    <View className="mt-2.5 p-3.5 rounded-2xl bg-red-950/95 border-2 border-red-500 shadow-xl">
-                      <View className="flex-row items-center mb-1">
-                        <View className="w-2.5 h-2.5 rounded-full bg-red-500 mr-2" />
-                        <Text className="text-[11px] font-black text-red-400 tracking-wider uppercase">
-                          🚨 AI OTO-DENETİM TESPİTİ (GPT-4o Vision)
-                        </Text>
-                      </View>
-
-                      <Text className="text-sm font-black text-white leading-5">
-                        🤖 AI Tespit Etti: Sağdaki personelde baret eksik! Bu kayıt Yüksek Riskli ihlal olarak dosyalandı.
-                      </Text>
-
-                      <Text className="text-xs text-red-200/90 mt-1 leading-4">
-                        {aiViolationResult.details}
-                      </Text>
-
-                      <View className="flex-row items-center justify-between mt-2.5 pt-2 border-t border-red-800/60">
-                        <View className="px-2 py-0.5 rounded bg-red-500/30 border border-red-400/40">
-                          <Text className="text-[10px] font-black text-red-200 uppercase">
-                            ÖNCELİK: {aiViolationResult.severity}
-                          </Text>
-                        </View>
-                        <Text className="text-[10px] text-red-300 font-semibold">
-                          Tutanağa Yüksek Riskli Olarak Eklendi
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-
-                  {/* İhlal Bulunmadıysa Temiz Onayı */}
-                  {aiViolationResult && !aiViolationResult.violationFound && (
-                    <View className="mt-2.5 p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/50 flex-row items-center">
-                      <Feather name="check-circle" size={16} color="#10B981" style={{ marginRight: 8 }} />
-                      <View className="flex-1">
-                        <Text className="text-xs font-bold text-emerald-200">
-                          ✓ AI Onayı: KKD Uygunsuzluğu Saptanmadı
-                        </Text>
-                        <Text className="text-[10px] text-emerald-300/80">
-                          Personel baret ve koruyucu ekipman kurallarına uygun çalışmaktadır.
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {/* Kategori Seçici (İhlal vs Ramak Kala) */}
-              <View className="mb-4">
-                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Bildirim Türü
-                </Text>
-                <View className="flex-row space-x-2">
-                  <TouchableOpacity
-                    onPress={() => setSelectedCategory("VIOLATION")}
-                    className={`flex-1 p-3 rounded-xl border flex-row items-center justify-center ${
-                      selectedCategory === "VIOLATION"
-                        ? "bg-red-950/80 border-red-500"
-                        : "bg-gray-800/60 border-gray-700"
-                    }`}
-                  >
-                    <Feather
-                      name="alert-triangle"
-                      size={16}
-                      color={selectedCategory === "VIOLATION" ? "#EF4444" : "#9CA3AF"}
-                    />
-                    <Text
-                      className={`text-xs font-bold ml-2 ${
-                        selectedCategory === "VIOLATION" ? "text-red-400" : "text-gray-300"
-                      }`}
-                    >
-                      İSG İhlali / Ceza
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setSelectedCategory("NEAR_MISS")}
-                    className={`flex-1 p-3 rounded-xl border flex-row items-center justify-center ${
-                      selectedCategory === "NEAR_MISS"
-                        ? "bg-amber-950/80 border-amber-500"
-                        : "bg-gray-800/60 border-gray-700"
-                    }`}
-                  >
-                    <MaterialCommunityIcons
-                      name="shield-alert"
-                      size={16}
-                      color={selectedCategory === "NEAR_MISS" ? "#F59E0B" : "#9CA3AF"}
-                    />
-                    <Text
-                      className={`text-xs font-bold ml-2 ${
-                        selectedCategory === "NEAR_MISS" ? "text-amber-400" : "text-gray-300"
-                      }`}
-                    >
-                      Ramak Kala Olayı
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* İHLAL TÜRÜ (DROPDOWN) */}
-              <View className="mb-4">
-                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                  İhlal / Tehlike Türü *
-                </Text>
+                <Text style={styles.fieldLabel}>İHLAL / OLAY TÜRÜ</Text>
                 <TouchableOpacity
-                  activeOpacity={0.8}
                   onPress={() => setIsTypePickerVisible(true)}
-                  className="bg-gray-800/90 border border-gray-700 p-3.5 rounded-xl flex-row items-center justify-between"
+                  style={styles.selectorInput}
                 >
-                  <View className="flex-row items-center flex-1 pr-2">
-                    <Feather name="alert-octagon" size={16} color="#EF4444" />
-                    <Text className="text-sm font-bold text-white ml-2.5 numberOfLines={1}">
-                      {selectedType}
-                    </Text>
-                  </View>
-                  <Feather name="chevron-down" size={18} color="#9CA3AF" />
+                  <Text style={styles.selectorText}>{selectedType}</Text>
+                  <Feather name="chevron-down" size={16} color={iosColors.labelSecondary} />
                 </TouchableOpacity>
               </View>
 
-              {/* SORUMLU TAŞERON (DROPDOWN) */}
-              <View className="mb-4">
-                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Sorumlu Taşeron Firma *
-                </Text>
+              <View>
+                <Text style={styles.fieldLabel}>SORUMLU TAŞERON</Text>
                 <TouchableOpacity
-                  activeOpacity={0.8}
                   onPress={() => setIsSubcontractorPickerVisible(true)}
-                  className="bg-gray-800/90 border border-gray-700 p-3.5 rounded-xl flex-row items-center justify-between"
+                  style={styles.selectorInput}
                 >
-                  <View className="flex-row items-center flex-1 pr-2">
-                    <Feather name="briefcase" size={16} color="#60A5FA" />
-                    <Text className="text-sm font-bold text-white ml-2.5 numberOfLines={1}">
-                      {selectedSubcontractor}
-                    </Text>
-                  </View>
-                  <Feather name="chevron-down" size={18} color="#9CA3AF" />
+                  <Text style={styles.selectorText}>{selectedSubcontractor}</Text>
+                  <Feather name="chevron-down" size={16} color={iosColors.labelSecondary} />
                 </TouchableOpacity>
               </View>
 
-              {/* KONUM (GPS VE MANUEL AÇIKLAMA) */}
-              <View className="mb-4">
-                <View className="flex-row items-center justify-between mb-1.5">
-                  <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                    Saha Konumu *
-                  </Text>
-                  <TouchableOpacity
-                    onPress={requestCurrentLocation}
-                    className="flex-row items-center"
-                  >
-                    {isLocating ? (
-                      <ActivityIndicator size="small" color="#10B981" />
-                    ) : (
-                      <>
-                        <Feather name="crosshair" size={12} color="#10B981" />
-                        <Text className="text-[11px] font-semibold text-emerald-400 ml-1">
-                          GPS Yenile
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
-
-                {/* GPS Koordinat Rozeti */}
-                <View className="bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-xl flex-row items-center mb-2">
-                  <Feather name="map-pin" size={14} color="#10B981" />
-                  <Text className="text-xs font-semibold text-emerald-300 ml-2">
-                    {latitude && longitude
-                      ? `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (Hassasiyet: ±${locationAccuracy || 5}m)`
-                      : "GPS koordinatları alınıyor..."}
-                  </Text>
-                </View>
-
-                {/* Manuel Konum Açıklaması */}
+              <View>
+                <Text style={styles.fieldLabel}>OLAY YERİ / ŞANTİYE BÖLGESİ</Text>
                 <TextInput
                   value={locationText}
                   onChangeText={setLocationText}
-                  placeholder="Örn: A Blok 3. Kat Kolon Alanı, B Blok Şaft Yanı..."
-                  placeholderTextColor="#6B7280"
-                  className="bg-gray-800/90 border border-gray-700 p-3.5 rounded-xl text-white text-sm"
+                  placeholder="Örn: Blok-A 3. Kat Kolon Alanı"
+                  placeholderTextColor={iosColors.labelMuted}
+                  style={styles.fieldInput}
                 />
               </View>
 
-              {/* İDARİ CEZA TUTARI (Sadece İhlal durumunda) */}
               {selectedCategory === "VIOLATION" && (
-                <View className="mb-4">
-                  <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Sözleşmesel İSG Ceza Tutarı (₺)
-                  </Text>
-                  <View className="flex-row items-center bg-gray-800/90 border border-gray-700 rounded-xl px-3.5">
-                    <Text className="text-base font-bold text-red-400 mr-2">₺</Text>
-                    <TextInput
-                      value={penaltyAmount}
-                      onChangeText={setPenaltyAmount}
-                      keyboardType="numeric"
-                      placeholder="5000"
-                      placeholderTextColor="#6B7280"
-                      className="flex-1 py-3.5 text-white text-sm font-semibold"
-                    />
-                  </View>
+                <View>
+                  <Text style={styles.fieldLabel}>KESİLECEK CEZA TUTARI (TL)</Text>
+                  <TextInput
+                    value={penaltyAmount}
+                    onChangeText={setPenaltyAmount}
+                    placeholder="5000"
+                    placeholderTextColor={iosColors.labelMuted}
+                    keyboardType="numeric"
+                    style={styles.fieldInput}
+                  />
                 </View>
               )}
 
-              {/* TEHLİKE DERECESİ */}
-              <View className="mb-4">
-                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Tehlike / Öncelik Seviyesi
-                </Text>
-                <View className="flex-row space-x-2">
-                  {(["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const).map((sev) => {
-                    const isSelected = severity === sev;
-                    const labels: Record<string, string> = {
-                      LOW: "Düşük",
-                      MEDIUM: "Orta",
-                      HIGH: "Yüksek",
-                      CRITICAL: "Hayati",
-                    };
-                    const colors: Record<string, string> = {
-                      LOW: isSelected ? "bg-blue-950/80 border-blue-500 text-blue-400" : "bg-gray-800/60 border-gray-700 text-gray-400",
-                      MEDIUM: isSelected ? "bg-amber-950/80 border-amber-500 text-amber-400" : "bg-gray-800/60 border-gray-700 text-gray-400",
-                      HIGH: isSelected ? "bg-orange-950/80 border-orange-500 text-orange-400" : "bg-gray-800/60 border-gray-700 text-gray-400",
-                      CRITICAL: isSelected ? "bg-red-950/80 border-red-500 text-red-400" : "bg-gray-800/60 border-gray-700 text-gray-400",
-                    };
-                    return (
-                      <TouchableOpacity
-                        key={sev}
-                        onPress={() => setSeverity(sev)}
-                        className={`flex-1 py-2.5 rounded-xl border items-center justify-center ${colors[sev].split(" ").slice(0, 2).join(" ")}`}
-                      >
-                        <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-gray-400"}`}>
-                          {labels[sev]}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* İSG UZMANI AÇIKLAMASI */}
-              <View className="mb-6">
-                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Tespit & Tutanak Açıklaması *
-                </Text>
+              <View>
+                <Text style={styles.fieldLabel}>TUTANAK AÇIKLAMASI</Text>
                 <TextInput
                   value={description}
                   onChangeText={setDescription}
+                  placeholder="Gözlemlenen tehlikeyi, alınan aksiyonu ve personelin durumunu detaylandırın."
+                  placeholderTextColor={iosColors.labelMuted}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
-                  placeholder="Baretsiz çalışan işçiler tespit edildi, çalışma durduruldu ve taşeron saha şefine yazılı ikaz iletildi..."
-                  placeholderTextColor="#6B7280"
-                  className="bg-gray-800/90 border border-gray-700 p-3.5 rounded-xl text-white text-sm min-h-[90px]"
+                  style={[styles.fieldInput, { minHeight: 90 }]}
                 />
               </View>
+            </View>
 
-              {/* GÖNDER BUTONU */}
-              <TouchableOpacity
-                activeOpacity={0.88}
-                disabled={isSubmitting}
-                onPress={handleSubmitReport}
-                className="py-4 rounded-2xl flex-row items-center justify-center shadow-lg mb-4"
-                style={{
-                  backgroundColor: selectedCategory === "VIOLATION" ? "#DC2626" : "#D97706",
-                }}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Feather
-                      name={isConnected ? "send" : "save"}
-                      size={18}
-                      color="#FFFFFF"
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text className="text-white text-base font-black tracking-wide">
-                      {isConnected
-                        ? "Raporu Merkeze İlet"
-                        : "Kayıt Cihaza Kaydet (Çevrimdışı)"}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
+            {/* Gönder Butonu */}
+            <TouchableOpacity
+              onPress={handleSubmitReport}
+              disabled={isSubmitting}
+              activeOpacity={0.88}
+              style={[
+                styles.submitButton,
+                selectedCategory === "VIOLATION"
+                  ? styles.submitButtonRed
+                  : styles.submitButtonOrange,
+              ]}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Feather name="check-circle" size={18} color="#FFFFFF" />
+                  <Text style={styles.submitButtonText}>
+                    {selectedCategory === "VIOLATION"
+                      ? "İhlal Tutanağını Kaydet & Merkeze İlet"
+                      : "Ramak Kala Raporunu Gönder"}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
 
-      {/* İHLAL TÜRÜ SEÇİM MODALI */}
+      {/* TÜR SEÇİCİ MODAL */}
       <Modal
         visible={isTypePickerVisible}
         transparent={true}
@@ -1221,31 +842,23 @@ export default function SafetyScreen() {
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setIsTypePickerVisible(false)}
-          className="flex-1 bg-black/80 justify-center px-5"
+          style={styles.pickerOverlay}
         >
-          <View className="bg-gray-900 border border-gray-800 rounded-3xl p-5 max-h-[80%]">
-            <Text className="text-lg font-black text-white mb-3">
-              İhlal / Tehlike Türü Seçiniz
-            </Text>
+          <View style={styles.pickerSheet}>
+            <Text style={styles.pickerTitle}>İhlal / Olay Türü Seçiniz</Text>
             <ScrollView>
-              {INCIDENT_TYPES.map((item) => (
+              {(INCIDENT_TYPES || []).map((t) => (
                 <TouchableOpacity
-                  key={item.id}
+                  key={t.id}
                   onPress={() => {
-                    setSelectedType(item.label);
+                    setSelectedType(t.label);
                     setIsTypePickerVisible(false);
                   }}
-                  className={`p-3.5 rounded-xl mb-2 flex-row items-center justify-between border ${
-                    selectedType === item.label
-                      ? "bg-red-950/60 border-red-500"
-                      : "bg-gray-800/60 border-gray-700/60"
-                  }`}
+                  style={styles.pickerOption}
                 >
-                  <Text className="text-sm font-semibold text-white flex-1 pr-2">
-                    {item.label}
-                  </Text>
-                  {selectedType === item.label && (
-                    <Feather name="check" size={18} color="#EF4444" />
+                  <Text style={styles.pickerOptionText}>{t.label}</Text>
+                  {selectedType === t.label && (
+                    <Feather name="check" size={16} color={iosColors.systemBlue} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -1254,7 +867,7 @@ export default function SafetyScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* TAŞERON SEÇİM MODALI */}
+      {/* TAŞERON SEÇİCİ MODAL */}
       <Modal
         visible={isSubcontractorPickerVisible}
         transparent={true}
@@ -1264,32 +877,26 @@ export default function SafetyScreen() {
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setIsSubcontractorPickerVisible(false)}
-          className="flex-1 bg-black/80 justify-center px-5"
+          style={styles.pickerOverlay}
         >
-          <View className="bg-gray-900 border border-gray-800 rounded-3xl p-5 max-h-[80%]">
-            <Text className="text-lg font-black text-white mb-3">
-              Sorumlu Taşeron Firma Seçiniz
-            </Text>
+          <View style={styles.pickerSheet}>
+            <Text style={styles.pickerTitle}>Sorumlu Taşeron Firma</Text>
             <ScrollView>
-              {SYSTEM_SUBCONTRACTORS.map((sub) => (
+              {(SYSTEM_SUBCONTRACTORS || []).map((sub) => (
                 <TouchableOpacity
                   key={sub.id}
                   onPress={() => {
                     setSelectedSubcontractor(sub.name);
                     setIsSubcontractorPickerVisible(false);
                   }}
-                  className={`p-3.5 rounded-xl mb-2 flex-row items-center justify-between border ${
-                    selectedSubcontractor === sub.name
-                      ? "bg-blue-950/60 border-blue-500"
-                      : "bg-gray-800/60 border-gray-700/60"
-                  }`}
+                  style={styles.pickerOption}
                 >
-                  <View className="flex-1 pr-2">
-                    <Text className="text-sm font-bold text-white">{sub.name}</Text>
-                    <Text className="text-xs text-gray-400 mt-0.5">{sub.trade}</Text>
+                  <View style={{ flex: 1, paddingRight: 8 }}>
+                    <Text style={styles.pickerOptionText}>{sub.name}</Text>
+                    <Text style={styles.pickerOptionSub}>{sub.trade}</Text>
                   </View>
                   {selectedSubcontractor === sub.name && (
-                    <Feather name="check" size={18} color="#3B82F6" />
+                    <Feather name="check" size={16} color={iosColors.systemBlue} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -1300,3 +907,596 @@ export default function SafetyScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: iosColors.background,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: iosColors.glassBorder,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 3,
+  },
+  indicatorDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: iosColors.systemRed,
+  },
+  indicatorText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: iosColors.systemRed,
+    letterSpacing: 0.8,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: iosColors.labelPrimary,
+    letterSpacing: -0.4,
+  },
+  networkBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: iosRadius.pill,
+    borderWidth: 1,
+  },
+  networkBadgeOnline: {
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    borderColor: "rgba(52, 199, 89, 0.35)",
+  },
+  networkBadgeOffline: {
+    backgroundColor: "rgba(255, 149, 0, 0.15)",
+    borderColor: "rgba(255, 149, 0, 0.35)",
+  },
+  networkBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  banner: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: iosRadius.card,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+  },
+  bannerSuccess: {
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    borderColor: "rgba(52, 199, 89, 0.35)",
+  },
+  bannerWarning: {
+    backgroundColor: "rgba(255, 149, 0, 0.15)",
+    borderColor: "rgba(255, 149, 0, 0.35)",
+  },
+  bannerText: {
+    fontSize: 12,
+    color: iosColors.labelPrimary,
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  scrollArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  actionButtonsContainer: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  // Devasa Kırmızı Buton (#FF3B30)
+  giantViolationButton: {
+    width: "100%",
+    backgroundColor: iosColors.systemRed,
+    borderRadius: iosRadius.cardLarge,
+    padding: 18,
+    shadowColor: iosColors.systemRed,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  // Devasa Turuncu Buton (#FF9500)
+  giantNearMissButton: {
+    width: "100%",
+    backgroundColor: iosColors.systemOrange,
+    borderRadius: iosRadius.cardLarge,
+    padding: 18,
+    shadowColor: iosColors.systemOrange,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  buttonTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  buttonTextWrapper: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  badgeLabelWrapper: {
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  badgeLabelRed: {
+    fontSize: 9,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    letterSpacing: 0.8,
+  },
+  badgeLabelOrange: {
+    fontSize: 9,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    letterSpacing: 0.8,
+  },
+  giantButtonTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.3,
+  },
+  giantButtonSubtitle: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.88)",
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  iconCircleRed: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconCircleOrange: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonBottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.2)",
+  },
+  gpsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  gpsText: {
+    fontSize: 11,
+    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "600",
+  },
+  arrowRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  arrowText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  metricsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: iosColors.glassCard,
+    borderRadius: iosRadius.card,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    padding: 12,
+  },
+  metricCardLabel: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+    fontWeight: "600",
+  },
+  metricCardValue: {
+    fontSize: 22,
+    fontWeight: "900",
+    marginTop: 4,
+  },
+  filterSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  filterSectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: iosColors.labelPrimary,
+  },
+  filterPills: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    padding: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+  },
+  filterPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  filterPillActive: {
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+  },
+  filterPillActiveRed: {
+    backgroundColor: "rgba(255, 59, 48, 0.2)",
+  },
+  filterPillActiveOrange: {
+    backgroundColor: "rgba(255, 149, 0, 0.2)",
+  },
+  filterPillText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.labelSecondary,
+  },
+  filterPillTextActive: {
+    color: "#FFFFFF",
+  },
+  listContainer: {
+    backgroundColor: iosColors.glassCard,
+    borderRadius: iosRadius.cardLarge,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    overflow: "hidden",
+  },
+  emptyCard: {
+    padding: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyCardText: {
+    fontSize: 13,
+    color: iosColors.labelSecondary,
+    marginTop: 8,
+  },
+  incidentItemCard: {
+    padding: 16,
+  },
+  incidentItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: iosColors.glassBorder,
+  },
+  incidentItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  categoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  categoryBadgeRed: {
+    backgroundColor: "rgba(255, 59, 48, 0.15)",
+    borderColor: "rgba(255, 59, 48, 0.35)",
+  },
+  categoryBadgeOrange: {
+    backgroundColor: "rgba(255, 149, 0, 0.15)",
+    borderColor: "rgba(255, 149, 0, 0.35)",
+  },
+  categoryBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+  },
+  syncBadgePending: {
+    backgroundColor: "rgba(255, 149, 0, 0.15)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  syncBadgePendingText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: iosColors.systemOrange,
+  },
+  syncBadgeDone: {
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  syncBadgeDoneText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: iosColors.systemGreen,
+  },
+  incidentDateText: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+  },
+  incidentTypeTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: iosColors.labelPrimary,
+    marginBottom: 6,
+  },
+  subcontractorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
+  },
+  subBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  subBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: iosColors.labelSecondary,
+  },
+  penaltyBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255, 59, 48, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.35)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  penaltyBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: iosColors.systemRed,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginBottom: 6,
+  },
+  locationText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: iosColors.systemBlue,
+  },
+  descriptionText: {
+    fontSize: 12,
+    color: iosColors.labelSecondary,
+    lineHeight: 17,
+    marginBottom: 8,
+  },
+  photoContainer: {
+    width: "100%",
+    height: 120,
+    borderRadius: 10,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    marginBottom: 8,
+  },
+  photoImage: {
+    width: "100%",
+    height: "100%",
+  },
+  reporterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: iosColors.glassBorder,
+    paddingTop: 8,
+    marginTop: 4,
+  },
+  reporterText: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+  },
+  registeredText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: iosColors.systemGreen,
+  },
+  sheetHandle: {
+    width: 44,
+    height: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: iosColors.glassBorder,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: iosColors.labelPrimary,
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: iosColors.labelSecondary,
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  formPhotoWrapper: {
+    width: "100%",
+    height: 140,
+    borderRadius: 14,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    marginBottom: 16,
+  },
+  formPhoto: {
+    width: "100%",
+    height: "100%",
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.labelSecondary,
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  fieldInput: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: iosRadius.input,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    color: "#FFFFFF",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+  },
+  selectorInput: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: iosRadius.input,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  selectorText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+  },
+  submitButton: {
+    width: "100%",
+    borderRadius: iosRadius.button,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 24,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  submitButtonRed: {
+    backgroundColor: iosColors.systemRed,
+    shadowColor: iosColors.systemRed,
+  },
+  submitButtonOrange: {
+    backgroundColor: iosColors.systemOrange,
+    shadowColor: iosColors.systemOrange,
+  },
+  submitButtonText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  pickerSheet: {
+    backgroundColor: iosColors.backgroundSecondary,
+    borderRadius: iosRadius.cardLarge,
+    borderWidth: 1,
+    borderColor: iosColors.glassBorder,
+    padding: 18,
+    maxHeight: "80%",
+  },
+  pickerTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: iosColors.labelPrimary,
+    marginBottom: 12,
+  },
+  pickerOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: iosColors.glassBorder,
+  },
+  pickerOptionText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: iosColors.labelPrimary,
+  },
+  pickerOptionSub: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+    marginTop: 2,
+  },
+});
