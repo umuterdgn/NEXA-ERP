@@ -72,9 +72,8 @@ export async function POST(req: NextRequest) {
           tseCertificate: true,
           status: rejectedQuantity > 0 ? "Şartlı Kabul" : "Onaylandı",
           inspectorName: receiverName || session.user.name || "Saha Şefi",
-          notes: `Gelen: ${receivedQuantity} ${unit} | Red/Hasar: ${rejectedQuantity || 0} ${unit} ${
-            damageReason ? `(${damageReason})` : ""
-          } ${notes ? `| Not: ${notes}` : ""}`,
+          notes: `Gelen: ${receivedQuantity} ${unit} | Red/Hasar: ${rejectedQuantity || 0} ${unit} ${damageReason ? `(${damageReason})` : ""
+            } ${notes ? `| Not: ${notes}` : ""}`,
         },
       });
     } catch (dbErr) {

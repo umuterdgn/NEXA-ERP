@@ -26,9 +26,15 @@ import toast from "react-hot-toast";
 
 interface ProjectOption {
   id: string;
+<<<<<<< HEAD
   title?: string | null;
   name?: string | null;
   city?: string | null;
+=======
+  title?: string | null;
+  name?: string | null;
+  city?: string | null;
+>>>>>>> 0bc202996566110dca4d9702def0abbe9d37379f
 }
 
 interface NewDiscoveryModalProps {
@@ -460,4 +466,7 @@ export default function NewDiscoveryModal({
     </>
   );
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0bc202996566110dca4d9702def0abbe9d37379f

@@ -430,11 +430,10 @@ export default function ConcreteCastingPage() {
                   <td className="py-4 px-4 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`text-base font-bold font-mono ${
-                          log.slumpCm >= 12 && log.slumpCm <= 21
+                        className={`text-base font-bold font-mono ${log.slumpCm >= 12 && log.slumpCm <= 21
                             ? "text-emerald-400"
                             : "text-amber-400"
-                        }`}
+                          }`}
                       >
                         {log.slumpCm} cm
                       </span>
@@ -802,4 +801,3 @@ export default function ConcreteCastingPage() {
     </div>
   );
 }
-
