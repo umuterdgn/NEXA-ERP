@@ -41,3 +41,4 @@ yarn-error.*
 /android
 !/android/gradle.properties
 !/android/app/proguard-rules.pro
+!/android/build.gradle

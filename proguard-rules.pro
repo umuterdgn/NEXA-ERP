@@ -3,3 +3,4 @@
 -keep class androidx.room.** { *; }
 -dontwarn androidx.work.**
 -dontwarn androidx.room.**
+
