@@ -11,6 +11,7 @@ import Image from "next/image"
 import { signOut, useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import NotificationBell from "@/components/NotificationBell"
+import ThemeToggle from "@/components/ThemeToggle"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { isMenuItemAllowed } from "@/lib/utils/module-permissions"
 import { 
@@ -280,13 +281,73 @@ export default function AdminSidebar({
   isCollapsed,
   setIsCollapsed,
   companyType: propCompanyType,
+  sidebarWidth: propSidebarWidth,
+  setSidebarWidth: propSetSidebarWidth,
 }: {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
   companyType?: string
+  sidebarWidth?: number
+  setSidebarWidth?: React.Dispatch<React.SetStateAction<number>>
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [internalWidth, setInternalWidth] = useState<number>(260)
+  const [isResizing, setIsResizing] = useState(false)
+
+  const currentWidth = propSidebarWidth ?? internalWidth
+  const setWidth = propSetSidebarWidth ?? setInternalWidth
+
+  // Sayfa açıldığında localStorage'dan genişliği yükle
+  useEffect(() => {
+    try {
+      const savedWidth = localStorage.getItem("nexa_sidebar_width")
+      if (savedWidth) {
+        const parsed = parseInt(savedWidth, 10)
+        if (!isNaN(parsed) && parsed >= 240 && parsed <= 480) {
+          setWidth(parsed)
+        }
+      }
+    } catch {}
+  }, [setWidth])
+
+  // Fare sürükleme olayları (Resizer / Drag Handle - 240px min, 480px max)
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(240, Math.min(480, e.clientX))
+      setWidth(newWidth)
+      try {
+        localStorage.setItem("nexa_sidebar_width", String(newWidth))
+      } catch {}
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+    }
+
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
+
+    window.addEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mouseup", handleMouseUp)
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("mouseup", handleMouseUp)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+    }
+  }, [isResizing, setWidth])
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }
+
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const pathname = usePathname()
   const { isInstallable, promptInstall } = usePwaInstall()
@@ -510,12 +571,12 @@ export default function AdminSidebar({
   return (
     <>
       {/* Mobile Header */}
-      <div className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-800 bg-slate-900 px-4 pb-safe pt-safe lg:hidden">
+      <div className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pb-safe pt-safe lg:hidden">
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-slate-800"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-slate-900 dark:text-white transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
             aria-label="Menüyü aç"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -534,13 +595,16 @@ export default function AdminSidebar({
                 }}
               />
             ) : (
-              <h1 className="font-semibold text-white">
+              <h1 className="font-semibold text-slate-900 dark:text-white">
                 {isSubcontractor ? "Taşeron Portalı" : "Nexa ERP"}
               </h1>
             )}
           </div>
 
-          <div className="w-11" aria-hidden="true" />
+          <div className="flex items-center gap-2">
+            <ThemeToggle variant="icon" />
+            <NotificationBell />
+          </div>
         </div>
       </div>
 
@@ -554,10 +618,34 @@ export default function AdminSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-[100] lg:z-[100] h-full transition-all duration-300 ${
+        style={{
+          width: isCollapsed ? undefined : `${currentWidth}px`,
+        }}
+        className={`fixed left-0 top-0 z-[100] lg:z-[100] h-full ${
+          isResizing ? "" : "transition-all duration-200"
+        } ${
           isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
-        } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-[85vw] max-w-[320px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900`}
+        } ${isCollapsed ? "lg:w-20" : ""} w-[85vw] max-w-[480px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 relative group/sidebar`}
       >
+        {/* Drag Handle / Resizer */}
+        {!isCollapsed && (
+          <div
+            onMouseDown={handleMouseDown}
+            className={`hidden lg:flex absolute -right-1.5 top-0 w-3 h-full cursor-col-resize items-center justify-center z-50 select-none group/resizer hover:bg-blue-500/10 transition-colors ${
+              isResizing ? "bg-blue-500/20" : ""
+            }`}
+            title="Sidebar Genişliğini Ayarla (240px - 480px)"
+          >
+            <div
+              className={`w-1 rounded-full transition-all ${
+                isResizing
+                  ? "bg-blue-500 h-24"
+                  : "bg-slate-300 dark:bg-slate-700 h-8 group-hover/resizer:bg-blue-500 group-hover/resizer:h-14"
+              }`}
+            />
+          </div>
+        )}
+
         <div className={`flex h-full flex-col ${isCollapsed ? "p-3" : "p-4 sm:p-5"}`}>
           {/* Header */}
           <div className="mb-4">
@@ -607,6 +695,7 @@ export default function AdminSidebar({
                 )
               )}
               <div className="flex items-center gap-2">
+                {!isCollapsed && <ThemeToggle variant="icon" />}
                 {!isCollapsed && <NotificationBell />}
                 <button
                   type="button"

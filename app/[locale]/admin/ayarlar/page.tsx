@@ -247,26 +247,26 @@ export default function AdminSettingsPage() {
     <div className="lg:mt-0 mt-16 max-w-5xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             Sistem Ayarları
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Görünüm, dil, arşivleme ve profil yapılandırmasını yönetin.
           </p>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-800 pb-4">
+      <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
         <button
           onClick={() => setActiveTab("appearance")}
           className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
             activeTab === "appearance"
               ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-1 ring-blue-500"
-              : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800"
+              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800"
           }`}
         >
-          <Palette className="w-4 h-4 text-cyan-400" />
+          <Palette className="w-4 h-4 text-cyan-500" />
           <span>Görünüm & Dil</span>
         </button>
 
@@ -275,7 +275,7 @@ export default function AdminSettingsPage() {
           className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             activeTab === "profile"
               ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-1 ring-blue-500"
-              : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800"
+              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800"
           }`}
         >
           Profil Düzenleme
@@ -286,7 +286,7 @@ export default function AdminSettingsPage() {
           className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             activeTab === "drive"
               ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-1 ring-blue-500"
-              : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800"
+              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800"
           }`}
         >
           Google Drive
@@ -297,7 +297,7 @@ export default function AdminSettingsPage() {
           className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             activeTab === "professions"
               ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-1 ring-blue-500"
-              : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800"
+              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800"
           }`}
         >
           Meslek Yönetimi
@@ -305,9 +305,9 @@ export default function AdminSettingsPage() {
 
         <Link
           href="/admin/settings/integrations"
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors bg-cyan-950/40 text-cyan-300 border border-cyan-800/60 hover:bg-cyan-900/40 flex items-center gap-1.5 ml-auto"
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 flex items-center gap-1.5 ml-auto"
         >
-          <Bot className="w-4 h-4 text-cyan-400" />
+          <Bot className="w-4 h-4 text-cyan-500" />
           <span>Bakanlık (YİBF) Entegrasyonu</span>
         </Link>
       </div>
@@ -317,14 +317,14 @@ export default function AdminSettingsPage() {
         {activeTab === "appearance" && (
           <div className="space-y-6">
             {/* Görünüm / Tema Seçimi */}
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500">
                   <Palette className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">Görünüm Modu (Tema)</h2>
-                  <p className="text-xs text-slate-400">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Görünüm Modu (Tema)</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Kullanım ortamınıza ve ortam ışığına göre optimum kontrast seviyesini seçin.
                   </p>
                 </div>
@@ -336,8 +336,8 @@ export default function AdminSettingsPage() {
                   onClick={() => handleThemeChange("dark")}
                   className={`cursor-pointer rounded-2xl p-5 border-2 transition-all relative flex flex-col justify-between ${
                     (mounted ? theme : "dark") === "dark"
-                      ? "border-blue-500 bg-slate-950/80 shadow-lg shadow-blue-500/10 ring-2 ring-blue-500/30"
-                      : "border-slate-800 bg-slate-950/40 hover:border-slate-700"
+                      ? "border-blue-500 bg-slate-950/80 text-white shadow-lg shadow-blue-500/10 ring-2 ring-blue-500/30"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 hover:border-slate-400 dark:hover:border-slate-700 text-slate-900 dark:text-white"
                   }`}
                 >
                   <div>
@@ -351,16 +351,16 @@ export default function AdminSettingsPage() {
                         </div>
                       )}
                     </div>
-                    <h3 className="text-base font-bold text-white mb-1">Koyu (Dark)</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <h3 className="text-base font-bold mb-1">Koyu (Dark)</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                       Mevcut lacivert ve siyah zemin tasarımı. Şantiye ofisi ve gece kullanımı için göz yormaz.
                     </p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2">
+                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-blue-500" />
                     <span className="w-3 h-3 rounded-full bg-slate-800" />
                     <span className="w-3 h-3 rounded-full bg-slate-950" />
-                    <span className="text-[11px] text-slate-500 ml-auto font-mono">Standart</span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 ml-auto font-mono">Standart</span>
                   </div>
                 </div>
 
@@ -369,13 +369,13 @@ export default function AdminSettingsPage() {
                   onClick={() => handleThemeChange("light")}
                   className={`cursor-pointer rounded-2xl p-5 border-2 transition-all relative flex flex-col justify-between ${
                     (mounted ? theme : "dark") === "light"
-                      ? "border-blue-500 bg-slate-100/10 shadow-lg shadow-blue-500/10 ring-2 ring-blue-500/30"
-                      : "border-slate-800 bg-slate-950/40 hover:border-slate-700"
+                      ? "border-blue-500 bg-blue-50/40 dark:bg-slate-100/10 shadow-lg shadow-blue-500/10 ring-2 ring-blue-500/30 text-slate-900 dark:text-white"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 hover:border-slate-400 dark:hover:border-slate-700 text-slate-900 dark:text-white"
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
                         <Sun className="w-5 h-5" />
                       </div>
                       {(mounted ? theme : "dark") === "light" && (
@@ -384,16 +384,16 @@ export default function AdminSettingsPage() {
                         </div>
                       )}
                     </div>
-                    <h3 className="text-base font-bold text-white mb-1">Açık (Light)</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <h3 className="text-base font-bold mb-1">Açık (Light)</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                       Beyaz ağırlıklı, net ve ferah tasarım. Standart ofis aydınlatmasında yüksek okunabilirlik sağlar.
                     </p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2">
+                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-blue-600" />
                     <span className="w-3 h-3 rounded-full bg-white" />
                     <span className="w-3 h-3 rounded-full bg-slate-200" />
-                    <span className="text-[11px] text-slate-500 ml-auto font-mono">Ferah Ofis</span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 ml-auto font-mono">Ferah Ofis</span>
                   </div>
                 </div>
 
@@ -402,13 +402,13 @@ export default function AdminSettingsPage() {
                   onClick={() => handleThemeChange("monochrome")}
                   className={`cursor-pointer rounded-2xl p-5 border-2 transition-all relative flex flex-col justify-between ${
                     (mounted ? theme : "dark") === "monochrome"
-                      ? "border-white bg-black shadow-lg shadow-white/10 ring-2 ring-white/50"
-                      : "border-slate-800 bg-slate-950/40 hover:border-slate-700"
+                      ? "border-black dark:border-white bg-black text-white shadow-lg shadow-white/10 ring-2 ring-white/50"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 hover:border-slate-400 dark:hover:border-slate-700 text-slate-900 dark:text-white"
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center font-black border border-white">
+                      <div className="w-10 h-10 rounded-xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black border border-white">
                         <Contrast className="w-5 h-5" />
                       </div>
                       {(mounted ? theme : "dark") === "monochrome" && (
@@ -418,31 +418,31 @@ export default function AdminSettingsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-white mb-1">Siyah-Beyaz (Monochrome)</h3>
+                      <h3 className="text-base font-bold mb-1">Siyah-Beyaz (Monochrome)</h3>
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                       Güneş altında çalışan saha personeli için renk körlüğü ve WCAG AAA yüksek kontrast standartlarında saf siyah-beyaz mod.
                     </p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2">
+                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-white" />
                     <span className="w-3 h-3 rounded-full bg-neutral-600" />
                     <span className="w-3 h-3 rounded-full bg-black border border-white/50" />
-                    <span className="text-[11px] text-amber-400 ml-auto font-mono font-semibold">Güneş Altı & WCAG</span>
+                    <span className="text-[11px] text-amber-500 ml-auto font-mono font-semibold">Güneş Altı & WCAG</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Dil Seçimi */}
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
                   <Globe className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">Dil Seçimi (Language & Locale)</h2>
-                  <p className="text-xs text-slate-400">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Dil Seçimi (Language & Locale)</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Sistem arayüzünü ve raporları tercih ettiğiniz dilde görüntüleyin.
                   </p>
                 </div>
@@ -463,8 +463,8 @@ export default function AdminSettingsPage() {
                       onClick={() => handleLanguageChange(item.code)}
                       className={`p-4 rounded-xl border text-left transition-all relative ${
                         isSelected
-                          ? "border-emerald-500 bg-emerald-500/10 text-white ring-1 ring-emerald-500/50"
-                          : "border-slate-800 bg-slate-950/40 text-slate-300 hover:border-slate-700"
+                          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-900 dark:text-white ring-1 ring-emerald-500/50 shadow-sm"
+                          : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-700"
                       }`}
                     >
                       {isSelected && (
@@ -473,8 +473,8 @@ export default function AdminSettingsPage() {
                         </div>
                       )}
                       <div className="text-2xl mb-2">{item.flag}</div>
-                      <div className="font-bold text-sm text-white">{item.native}</div>
-                      <div className="text-[11px] text-slate-400 uppercase font-mono">{item.code} • {item.dir}</div>
+                      <div className="font-bold text-sm text-slate-900 dark:text-white">{item.native}</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-mono">{item.code} • {item.dir}</div>
                     </button>
                   )
                 })}
@@ -485,20 +485,20 @@ export default function AdminSettingsPage() {
 
         {/* Profile Tab */}
         {activeTab === "profile" && (
-          <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 max-w-2xl">
-            <h2 className="text-xl font-semibold text-white mb-6">Profil Düzenleme</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm max-w-2xl">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Profil Düzenleme</h2>
             
             <form onSubmit={handleProfileSave} className="space-y-6">
               <div className="flex items-center gap-6">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden border-2 border-slate-700">
+                  <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border-2 border-slate-300 dark:border-slate-700">
                     {profileData.profileImage ? (
                       <img src={profileData.profileImage} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-3xl text-slate-500">{profileData.name.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-500 transition-colors">
+                  <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-500 transition-colors shadow-sm">
                     <input
                       type="file"
                       accept="image/*"
@@ -511,28 +511,28 @@ export default function AdminSettingsPage() {
                   </label>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-400">Profil fotoğrafını değiştirmek için ikona tıklayın</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Profil fotoğrafını değiştirmek için ikona tıklayın</p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Ad Soyad</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Ad Soyad</label>
                 <input
                   type="text"
                   value={profileData.name}
                   onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">E-posta</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">E-posta</label>
                 <input
                   type="email"
                   value={profileData.email}
                   onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                   required
                 />
               </div>
@@ -541,7 +541,7 @@ export default function AdminSettingsPage() {
                 <button
                   type="submit"
                   disabled={isProfileSaving}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 shadow-sm"
                 >
                   {isProfileSaving ? "Kaydediliyor..." : "Kaydet"}
                 </button>
@@ -552,23 +552,23 @@ export default function AdminSettingsPage() {
 
         {/* Google Drive Settings */}
         {activeTab === "drive" && (
-          <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 max-w-2xl">
-            <h2 className="text-xl font-semibold text-white mb-6">Google Drive Arşiv Ayarları</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm max-w-2xl">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Google Drive Arşiv Ayarları</h2>
             
             <form onSubmit={handleSave} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Google Drive Klasör ID / Linki
                 </label>
                 <input
                   type="text"
                   value={driveFolderId}
                   onChange={(e) => setDriveFolderId(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                   placeholder="https://drive.google.com/drive/folders/..."
                   disabled={isLoading}
                 />
-                <p className="text-sm text-slate-400 mt-2">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
                   PDF dosyalarının yükleneceği Google Drive klasörünün ID'si veya tam linki.
                 </p>
               </div>
@@ -577,7 +577,7 @@ export default function AdminSettingsPage() {
                 <button
                   type="submit"
                   disabled={isSaving || isLoading}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 shadow-sm"
                 >
                   {isSaving ? "Kaydediliyor..." : "Kaydet"}
                 </button>
@@ -588,8 +588,8 @@ export default function AdminSettingsPage() {
 
         {/* Profession Management */}
         {activeTab === "professions" && (
-          <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 max-w-2xl">
-            <h2 className="text-xl font-semibold text-white mb-6">Birim / Meslek Yönetimi</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm max-w-2xl">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Birim / Meslek Yönetimi</h2>
             
             {/* Add New Profession Form */}
             <form onSubmit={handleAddProfession} className="mb-6">
@@ -598,14 +598,14 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={newProfession}
                   onChange={(e) => setNewProfession(e.target.value)}
-                  className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                   placeholder="Yeni meslek adı (Örn: Kalıpçı, Elektrikçi)"
                   disabled={isAddingProfession}
                 />
                 <button
                   type="submit"
                   disabled={isAddingProfession || !newProfession.trim()}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50 shadow-sm"
                 >
                   {isAddingProfession ? "Ekleniyor..." : "Ekle"}
                 </button>
@@ -615,17 +615,17 @@ export default function AdminSettingsPage() {
             {/* Professions List */}
             <div className="space-y-2">
               {professions.length === 0 ? (
-                <p className="text-slate-400 text-center py-4">Henüz meslek eklenmedi</p>
+                <p className="text-slate-500 dark:text-slate-400 text-center py-4">Henüz meslek eklenmedi</p>
               ) : (
                 professions.map((prof) => (
                   <div
                     key={prof.id}
-                    className="flex items-center justify-between p-3 bg-slate-800 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-transparent"
                   >
-                    <span className="text-white">{prof.name}</span>
+                    <span className="text-slate-900 dark:text-white font-medium">{prof.name}</span>
                     <button
                       onClick={() => handleDeleteProfession(prof.id)}
-                      className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-500 transition-colors"
+                      className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-500 transition-colors shadow-sm"
                     >
                       Sil
                     </button>

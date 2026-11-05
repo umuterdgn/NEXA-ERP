@@ -3,6 +3,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Nexa ERP - Görsel Proje Kontrol Merkezi (2.5D Isometric & Heatmap Master Dashboard)
+ * Açık / Koyu Tema (Light & Dark) Destekli, Veritabanı (Prisma) Entegreli
  */
 
 import React, { useState, useEffect } from "react"
@@ -27,8 +28,10 @@ import {
   Flame,
   Radio,
   SlidersHorizontal,
+  FileWarning,
 } from "lucide-react"
 import toast from "react-hot-toast"
+import ThemeToggle from "@/components/ThemeToggle"
 
 interface ZoneItem {
   id: string
@@ -38,6 +41,16 @@ interface ZoneItem {
   areaType?: string | null
   status: string
   progressRate: number
+}
+
+interface DeficiencyItem {
+  id: string
+  floor: string
+  element?: string | null
+  category: string
+  priority: string
+  description: string
+  status: string
 }
 
 interface BlockItem {
@@ -69,189 +82,69 @@ interface BlockItem {
     status: string
     batteryOrTelemetry: string
   }[]
+  deficienciesList?: DeficiencyItem[]
   zones: ZoneItem[]
 }
 
-// Varsayılan zengin şantiye simülasyon blokları (DB'de henüz veri yoksa fallback)
-const DEFAULT_BLOCKS: BlockItem[] = [
-  {
-    id: "blk-1",
-    projectId: "prj-vadi",
-    projectName: "Vadi Kuleleri & Yaşam Merkezi",
-    name: "A Blok - Rezidans Kulesi",
-    code: "BLK-A",
-    totalFloors: 14,
-    basementFloors: 2,
-    status: "ACTIVE",
-    healthStatus: "GREEN",
-    completionRate: 84.5,
-    activeWorkers: 46,
-    activeMachinery: 4,
-    lastMilestone: "Dün 12. Kat tabliyesi döküldü (C35/45 Beton, 320 m³)",
-    openDefects: 0,
-    isgRiskScore: 8,
-    workerBreakdown: {
-      kalipci: 14,
-      demirci: 16,
-      betoncu: 8,
-      elektrik: 5,
-      isg: 3,
-    },
-    machineryList: [
-      { name: "Potain MDT 219 Kule Vinç #1", type: "Kule Vinç", status: "Yük Kaldırıyor (2.1t)", batteryOrTelemetry: "IoT Online" },
-      { name: "Putzmeister 36m Pompa", type: "Beton Pompası", status: "Hazır Beklemede", batteryOrTelemetry: "CAN-Bus 98%" },
-      { name: "Komatsu PC200 Ekskavatör", type: "Hafriyat", status: "Saha İçi Sevkiyat", batteryOrTelemetry: "GPS Aktif" },
-    ],
-    zones: [
-      { id: "z-14", name: "14. Kat - Çatı Terası", floorNumber: 14, areaType: "SLAB", status: "NOT_STARTED", progressRate: 10 },
-      { id: "z-13", name: "13. Kat - Daireler", floorNumber: 13, areaType: "FLOOR", status: "IN_PROGRESS", progressRate: 45 },
-      { id: "z-12", name: "12. Kat - Daireler (Dün Tabliye Döküldü)", floorNumber: 12, areaType: "FLOOR", status: "COMPLETED", progressRate: 100 },
-      { id: "z-11", name: "11. Kat - Daireler", floorNumber: 11, areaType: "FLOOR", status: "COMPLETED", progressRate: 100 },
-      { id: "z-10", name: "10. Kat - Daireler", floorNumber: 10, areaType: "FLOOR", status: "COMPLETED", progressRate: 100 },
-      { id: "z-5", name: "5. Kat - Daireler", floorNumber: 5, areaType: "FLOOR", status: "COMPLETED", progressRate: 100 },
-      { id: "z-1", name: "Zemin Kat - Giriş Lobby", floorNumber: 0, areaType: "COMMON_AREA", status: "COMPLETED", progressRate: 100 },
-      { id: "z-b1", name: "Bodrum -1 - Kapalı Otopark", floorNumber: -1, areaType: "COMMON_AREA", status: "COMPLETED", progressRate: 100 },
-    ],
-  },
-  {
-    id: "blk-2",
-    projectId: "prj-vadi",
-    projectName: "Vadi Kuleleri & Yaşam Merkezi",
-    name: "B Blok - Ticari Ofis Kulesi",
-    code: "BLK-B",
-    totalFloors: 10,
-    basementFloors: 2,
-    status: "ACTIVE",
-    healthStatus: "YELLOW",
-    completionRate: 61.0,
-    activeWorkers: 38,
-    activeMachinery: 3,
-    lastMilestone: "6. Kat kolon filizleri bağlandı, kalıp onayı bekleniyor",
-    openDefects: 3,
-    isgRiskScore: 35,
-    workerBreakdown: {
-      kalipci: 12,
-      demirci: 12,
-      betoncu: 6,
-      elektrik: 6,
-      isg: 2,
-    },
-    machineryList: [
-      { name: "Liebherr 280 EC-H Vinç", type: "Kule Vinç", status: "Rüzgar Alarmı Beklemede", batteryOrTelemetry: "IoT Online" },
-      { name: "Caterpillar Forklift", type: "Lojistik", status: "Palet İndiriyor", batteryOrTelemetry: "BLE Tag OK" },
-    ],
-    zones: [
-      { id: "zb-10", name: "10. Kat - Ofis Katı", floorNumber: 10, areaType: "FLOOR", status: "NOT_STARTED", progressRate: 0 },
-      { id: "zb-7", name: "7. Kat - Ofis Katı", floorNumber: 7, areaType: "FLOOR", status: "NOT_STARTED", progressRate: 15 },
-      { id: "zb-6", name: "6. Kat - Ofis Katı (DÖF: Kalıp Eğikliği)", floorNumber: 6, areaType: "FLOOR", status: "IN_PROGRESS", progressRate: 65 },
-      { id: "zb-5", name: "5. Kat - Ofis Katı", floorNumber: 5, areaType: "FLOOR", status: "COMPLETED", progressRate: 100 },
-      { id: "zb-1", name: "Zemin Kat - Ticari Mağazalar", floorNumber: 0, areaType: "COMMON_AREA", status: "COMPLETED", progressRate: 100 },
-      { id: "zb-b1", name: "Bodrum -1 - Mekanik Oda", floorNumber: -1, areaType: "SHAFT", status: "COMPLETED", progressRate: 100 },
-    ],
-  },
-  {
-    id: "blk-3",
-    projectId: "prj-vadi",
-    projectName: "Vadi Kuleleri & Yaşam Merkezi",
-    name: "C Blok - Sosyal Tesis & Spa",
-    code: "BLK-C",
-    totalFloors: 4,
-    basementFloors: 1,
-    status: "ACTIVE",
-    healthStatus: "RED",
-    completionRate: 34.2,
-    activeWorkers: 18,
-    activeMachinery: 1,
-    lastMilestone: "Zemin kat tavan kalıbında çökme riski tespit edildi - İSG Durdurdu",
-    openDefects: 5,
-    isgRiskScore: 82,
-    workerBreakdown: {
-      kalipci: 6,
-      demirci: 4,
-      betoncu: 0,
-      elektrik: 4,
-      isg: 4,
-    },
-    machineryList: [
-      { name: "JCB 3CX Kazıcı Yükleyici", type: "Hafriyat", status: "Motor Stop (Güvenlik Kilit)", batteryOrTelemetry: "Kırmızı Uyarı" },
-    ],
-    zones: [
-      { id: "zc-4", name: "4. Kat - Açık Teras & Restoran", floorNumber: 4, areaType: "COMMON_AREA", status: "NOT_STARTED", progressRate: 0 },
-      { id: "zc-2", name: "2. Kat - Fitness & Dinlenme", floorNumber: 2, areaType: "COMMON_AREA", status: "NOT_STARTED", progressRate: 20 },
-      { id: "zc-1", name: "1. Kat - Yüzme Havuzu (İSG Mühürlü)", floorNumber: 1, areaType: "COMMON_AREA", status: "IN_PROGRESS", progressRate: 40 },
-      { id: "zc-0", name: "Zemin - Resepsiyon & Soyunma Odaları", floorNumber: 0, areaType: "COMMON_AREA", status: "IN_PROGRESS", progressRate: 55 },
-      { id: "zc-b1", name: "Bodrum - Su Deposu & Pompa Dairesi", floorNumber: -1, areaType: "COMMON_AREA", status: "COMPLETED", progressRate: 100 },
-    ],
-  },
-  {
-    id: "blk-4",
-    projectId: "prj-vadi",
-    projectName: "Vadi Kuleleri & Yaşam Merkezi",
-    name: "D Blok - Villalar & İdari Bina",
-    code: "BLK-D",
-    totalFloors: 3,
-    basementFloors: 1,
-    status: "ACTIVE",
-    healthStatus: "GREEN",
-    completionRate: 92.0,
-    activeWorkers: 24,
-    activeMachinery: 2,
-    lastMilestone: "Çatı çelik konstrüksiyon montajı başarıyla tamamlandı",
-    openDefects: 0,
-    isgRiskScore: 5,
-    workerBreakdown: {
-      kalipci: 4,
-      demirci: 4,
-      betoncu: 2,
-      elektrik: 10,
-      isg: 4,
-    },
-    machineryList: [
-      { name: "Hiab 166 Kamyon Üstü Vinç", type: "Mobil Vinç", status: "Malzeme Boşaltıyor", batteryOrTelemetry: "Online" },
-    ],
-    zones: [
-      { id: "zd-3", name: "3. Kat - Çatı Katı & İdari Ofisler", floorNumber: 3, areaType: "FLOOR", status: "IN_PROGRESS", progressRate: 85 },
-      { id: "zd-2", name: "2. Kat - Yönetim Katı", floorNumber: 2, areaType: "FLOOR", status: "COMPLETED", progressRate: 100 },
-      { id: "zd-1", name: "1. Kat - Toplantı Odaları", floorNumber: 1, areaType: "FLOOR", status: "COMPLETED", progressRate: 100 },
-      { id: "zd-0", name: "Zemin Kat - Giriş & Karşılama", floorNumber: 0, areaType: "COMMON_AREA", status: "COMPLETED", progressRate: 100 },
-    ],
-  },
-]
+interface ProjectOption {
+  id: string
+  name: string
+  status: string
+  progress?: number | null
+  city?: string | null
+}
 
 export default function ProjectMasterDashboardPage() {
-  const [blocks, setBlocks] = useState<BlockItem[]>(DEFAULT_BLOCKS)
+  const [projects, setProjects] = useState<ProjectOption[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("")
+  const [blocks, setBlocks] = useState<BlockItem[]>([])
   const [selectedBlock, setSelectedBlock] = useState<BlockItem | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState<"ALL" | "GREEN" | "YELLOW" | "RED">("ALL")
   const [viewMode, setViewMode] = useState<"ISOMETRIC" | "HEATMAP">("ISOMETRIC")
-  const [selectedProject, setSelectedProject] = useState("prj-vadi")
   const [isLoading, setIsLoading] = useState(false)
 
+  // Sayfa açıldığında projeleri ve blokları DB'den çek
   useEffect(() => {
-    fetchBlocksData()
+    fetchInitialData()
   }, [])
 
-  const fetchBlocksData = async () => {
+  const fetchInitialData = async () => {
     setIsLoading(true)
     try {
       const res = await fetch("/api/admin/blocks")
       if (res.ok) {
         const data = await res.json()
-        if (data.blocks && data.blocks.length > 0) {
-          // Merge API data with simulation defaults
-          const merged = data.blocks.map((b: any, idx: number) => {
-            const fallback = DEFAULT_BLOCKS[idx % DEFAULT_BLOCKS.length]
-            return {
-              ...fallback,
-              ...b,
-              zones: b.zones && b.zones.length > 0 ? b.zones : fallback.zones,
-            }
-          })
-          setBlocks(merged)
+        if (data.projects && data.projects.length > 0) {
+          setProjects(data.projects)
+          const targetId = data.selectedProjectId || data.projects[0].id
+          setSelectedProjectId(targetId)
+          if (data.blocks) {
+            setBlocks(data.blocks)
+          }
         }
       }
     } catch (e) {
-      // Use rich default simulation
+      toast.error("Proje verileri yüklenirken hata oluştu.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleProjectChange = async (projectId: string) => {
+    setSelectedProjectId(projectId)
+    setIsLoading(true)
+    try {
+      const res = await fetch(`/api/admin/blocks?projectId=${projectId}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.blocks) {
+          setBlocks(data.blocks)
+          toast.success(`${projects.find((p) => p.id === projectId)?.name || "Proje"} blokları yüklendi.`)
+        }
+      }
+    } catch (e) {
+      toast.error("Bloklar yüklenemedi.")
     } finally {
       setIsLoading(false)
     }
@@ -262,7 +155,8 @@ export default function ProjectMasterDashboardPage() {
     setIsDrawerOpen(true)
   }
 
-  const handleStatusChangeSimulation = (blockId: string, newHealth: "GREEN" | "YELLOW" | "RED") => {
+  const handleStatusChangeSimulation = async (blockId: string, newHealth: "GREEN" | "YELLOW" | "RED") => {
+    // 1. Optimistic UI update
     setBlocks((prev) =>
       prev.map((b) => {
         if (b.id === blockId) {
@@ -278,7 +172,20 @@ export default function ProjectMasterDashboardPage() {
     if (selectedBlock && selectedBlock.id === blockId) {
       setSelectedBlock((prev) => (prev ? { ...prev, healthStatus: newHealth } : null))
     }
-    toast.success(`Blok durumu ${newHealth} olarak güncellendi.`)
+
+    // 2. DB Update (PATCH)
+    try {
+      const res = await fetch("/api/admin/blocks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blockId, healthStatus: newHealth }),
+      })
+      if (res.ok) {
+        toast.success(`Blok durumu veritabanında ${newHealth} olarak güncellendi.`)
+      }
+    } catch (err) {
+      // rollback or ignore
+    }
   }
 
   const filteredBlocks = blocks.filter((b) => {
@@ -286,58 +193,63 @@ export default function ProjectMasterDashboardPage() {
     return b.healthStatus === activeFilter
   })
 
-  // Quick stats calculation
+  // Canlı KPI hesaplamaları
   const totalBlocks = blocks.length
-  const avgProgress = Math.round(
-    blocks.reduce((acc, curr) => acc + (curr.completionRate || 0), 0) / (totalBlocks || 1)
-  )
+  const avgProgress = totalBlocks > 0
+    ? Math.round(blocks.reduce((acc, curr) => acc + (curr.completionRate || 0), 0) / totalBlocks)
+    : 0
   const totalWorkers = blocks.reduce((acc, curr) => acc + (curr.activeWorkers || 0), 0)
   const totalMachinery = blocks.reduce((acc, curr) => acc + (curr.activeMachinery || 0), 0)
   const redAlertCount = blocks.filter((b) => b.healthStatus === "RED").length
   const yellowAlertCount = blocks.filter((b) => b.healthStatus === "YELLOW").length
 
   return (
-    <div className="min-h-screen text-slate-100 pb-20 relative">
+    <div className="min-h-screen text-slate-900 dark:text-slate-100 pb-20 relative">
       {/* Top Banner & Control Center Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Canlı Telemetri & IoT
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Canlı DB & IoT Telemetrisi
             </span>
-            <span className="text-xs text-slate-400 font-mono">
-              NEXA MASTER DISPATCHER v4.2
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+              NEXA MASTER DISPATCHER v4.5
             </span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight mt-1">
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1">
             Proje Kontrol Merkezi (Master Dashboard)
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            WebGL motoru yüklemeden 2.5D izometrik derinlik ve renk kodlu Isı Haritası (Heatmap) ile tüm blokları yönetin.
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            Prisma veritabanı destekli 2.5D izometrik kule görünümü ve çoklu blok ısı haritası (Heatmap).
           </p>
         </div>
 
-        {/* Action Buttons & Project Switcher */}
+        {/* Action Buttons & Dynamic Project Switcher */}
         <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
-            className="px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="prj-vadi">Vadi Kuleleri & Yaşam Projesi</option>
-            <option value="prj-plaza">Nexa Finans Plaza</option>
-            <option value="prj-metro">Metro Şantiyesi Hat 4</option>
-          </select>
+          {/* Dynamic DB Project Selector */}
+          <div className="relative">
+            <select
+              value={selectedProjectId}
+              onChange={(e) => handleProjectChange(e.target.value)}
+              className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[240px]"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} {p.city ? `(${p.city})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* View Mode Toggle */}
-          <div className="bg-slate-900 p-1 rounded-xl border border-slate-800 flex items-center">
+          <div className="bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-300 dark:border-slate-800 flex items-center shadow-sm">
             <button
               onClick={() => setViewMode("ISOMETRIC")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 viewMode === "ISOMETRIC"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                  : "text-slate-400 hover:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -348,7 +260,7 @@ export default function ProjectMasterDashboardPage() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 viewMode === "HEATMAP"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                  : "text-slate-400 hover:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
@@ -356,88 +268,98 @@ export default function ProjectMasterDashboardPage() {
             </button>
           </div>
 
+          {/* Quick Theme Toggle in Dashboard Toolbar */}
+          <ThemeToggle variant="icon" />
+
+          {/* Refresh Button */}
           <button
-            onClick={fetchBlocksData}
+            onClick={() => handleProjectChange(selectedProjectId)}
             disabled={isLoading}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
             title="Yenile"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-blue-400" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-blue-500" : ""}`} />
           </button>
         </div>
       </div>
 
       {/* KPI METRIC BAR */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-        <div className="bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+        <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>Toplam Blok</span>
-            <Building2 className="w-4 h-4 text-blue-400" />
+            <Building2 className="w-4 h-4 text-blue-500" />
           </div>
-          <div className="text-2xl font-black text-white">{totalBlocks} <span className="text-xs font-normal text-slate-500">Kule/Yapı</span></div>
-          <div className="text-[11px] text-blue-400 font-medium mt-1">Multi-Block Hiyerarşi</div>
+          <div className="text-2xl font-black text-slate-900 dark:text-white">
+            {totalBlocks} <span className="text-xs font-normal text-slate-500">Kule/Yapı</span>
+          </div>
+          <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1">Multi-Block Hiyerarşi</div>
         </div>
 
-        <div className="bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+        <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>Genel İlerleme</span>
-            <Compass className="w-4 h-4 text-cyan-400" />
+            <Compass className="w-4 h-4 text-cyan-500" />
           </div>
-          <div className="text-2xl font-black text-white">%{avgProgress}</div>
-          <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-500 to-emerald-400 h-full rounded-full" style={{ width: `${avgProgress}%` }} />
+          <div className="text-2xl font-black text-slate-900 dark:text-white">%{avgProgress}</div>
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-500 to-emerald-500 h-full rounded-full" style={{ width: `${avgProgress}%` }} />
           </div>
         </div>
 
-        <div className="bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+        <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>Aktif İşçi (Turnike/GPS)</span>
-            <HardHat className="w-4 h-4 text-amber-400" />
+            <HardHat className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-black text-white">{totalWorkers} <span className="text-xs font-normal text-slate-500">Personel</span></div>
-          <div className="text-[11px] text-emerald-400 font-medium mt-1 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          <div className="text-2xl font-black text-slate-900 dark:text-white">
+            {totalWorkers} <span className="text-xs font-normal text-slate-500">Personel</span>
+          </div>
+          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
             Canlı Biyometrik Onaylı
           </div>
         </div>
 
-        <div className="bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+        <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>İş Makineleri (BLE)</span>
-            <Truck className="w-4 h-4 text-purple-400" />
+            <Truck className="w-4 h-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-black text-white">{totalMachinery} <span className="text-xs font-normal text-slate-500">Araç</span></div>
-          <div className="text-[11px] text-purple-400 font-medium mt-1">Vinç, Pompa & Kepçe</div>
+          <div className="text-2xl font-black text-slate-900 dark:text-white">
+            {totalMachinery} <span className="text-xs font-normal text-slate-500">Araç</span>
+          </div>
+          <div className="text-[11px] text-purple-600 dark:text-purple-400 font-medium mt-1">Vinç, Pompa & Kepçe</div>
         </div>
 
-        <div className="col-span-2 md:col-span-1 bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+        <div className="col-span-2 md:col-span-1 bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>Riskli Bloklar</span>
-            <ShieldAlert className="w-4 h-4 text-rose-400" />
+            <ShieldAlert className="w-4 h-4 text-rose-500" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-rose-400">{redAlertCount}</span>
-            <span className="text-xs text-rose-400/80 font-bold">Kritik</span>
-            <span className="text-slate-600">/</span>
-            <span className="text-lg font-bold text-amber-400">{yellowAlertCount}</span>
-            <span className="text-xs text-amber-400/80 font-bold">Risk</span>
+            <span className="text-2xl font-black text-rose-600 dark:text-rose-400">{redAlertCount}</span>
+            <span className="text-xs text-rose-600 dark:text-rose-400 font-bold">Kritik</span>
+            <span className="text-slate-400 dark:text-slate-600">/</span>
+            <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{yellowAlertCount}</span>
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-bold">Risk</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">İSG & İmalat Durumu</div>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">İSG & İmalat Durumu</div>
         </div>
       </div>
 
       {/* FILTER BUTTONS & HEATMAP LEGEND */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Durum Filtresi:</span>
+          <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Durum Filtresi:</span>
           
           <button
             onClick={() => setActiveFilter("ALL")}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
               activeFilter === "ALL"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-800 text-slate-400 hover:text-white"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             Tümü ({blocks.length})
@@ -448,10 +370,10 @@ export default function ProjectMasterDashboardPage() {
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeFilter === "GREEN"
                 ? "bg-emerald-600 text-white"
-                : "bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 hover:bg-emerald-900/50"
+                : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40"
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             Planında ({blocks.filter((b) => b.healthStatus === "GREEN").length})
           </button>
 
@@ -460,10 +382,10 @@ export default function ProjectMasterDashboardPage() {
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeFilter === "YELLOW"
                 ? "bg-amber-600 text-white"
-                : "bg-amber-950/40 text-amber-400 border border-amber-800/40 hover:bg-amber-900/50"
+                : "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40"
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
             Gecikme / Risk ({blocks.filter((b) => b.healthStatus === "YELLOW").length})
           </button>
 
@@ -472,26 +394,26 @@ export default function ProjectMasterDashboardPage() {
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeFilter === "RED"
                 ? "bg-rose-600 text-white"
-                : "bg-rose-950/40 text-rose-400 border border-rose-800/40 hover:bg-rose-900/50"
+                : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/40"
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-rose-400" />
+            <span className="w-2 h-2 rounded-full bg-rose-500" />
             Kritik / Durdu ({blocks.filter((b) => b.healthStatus === "RED").length})
           </button>
         </div>
 
         {/* Heatmap Legend */}
-        <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
+        <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+            <span className="w-3 h-3 rounded bg-emerald-500 shadow-sm" />
             <span>%80+ / Takvimde</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-amber-500 shadow-sm shadow-amber-500/50" />
+            <span className="w-3 h-3 rounded bg-amber-500 shadow-sm" />
             <span>Risk / DÖF</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-rose-600 shadow-sm shadow-rose-600/50" />
+            <span className="w-3 h-3 rounded bg-rose-600 shadow-sm" />
             <span>Kritik / İSG Kaza</span>
           </div>
         </div>
@@ -506,22 +428,22 @@ export default function ProjectMasterDashboardPage() {
             const isRed = block.healthStatus === "RED"
 
             const statusBorder = isRed
-              ? "border-rose-500/60 shadow-xl shadow-rose-900/20 ring-1 ring-rose-500/40"
+              ? "border-rose-400 dark:border-rose-500/60 shadow-xl shadow-rose-900/10 ring-1 ring-rose-500/30"
               : isYellow
-              ? "border-amber-500/60 shadow-xl shadow-amber-900/20 ring-1 ring-amber-500/40"
-              : "border-emerald-500/40 shadow-xl shadow-emerald-900/10 hover:border-emerald-500/70"
+              ? "border-amber-400 dark:border-amber-500/60 shadow-xl shadow-amber-900/10 ring-1 ring-amber-500/30"
+              : "border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500"
 
             const badgeBg = isRed
-              ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+              ? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40"
               : isYellow
-              ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-              : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+              ? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
+              : "bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40"
 
             return (
               <div
                 key={block.id}
                 onClick={() => handleOpenXRay(block)}
-                className={`bg-slate-900 rounded-3xl p-5 border-2 transition-all cursor-pointer hover:-translate-y-1 relative group flex flex-col justify-between overflow-hidden ${statusBorder}`}
+                className={`bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 transition-all cursor-pointer hover:-translate-y-1 relative group flex flex-col justify-between overflow-hidden shadow-sm ${statusBorder}`}
               >
                 {/* 2.5D Isometric Top Accent Glow */}
                 <div
@@ -535,14 +457,14 @@ export default function ProjectMasterDashboardPage() {
                   <div className="flex items-start justify-between gap-2 mb-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider uppercase bg-slate-800 text-slate-300 border border-slate-700">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                           {block.code}
                         </span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
                           {block.totalFloors} Kat ({block.basementFloors} Bodrum)
                         </span>
                       </div>
-                      <h3 className="text-lg font-bold text-white mt-1 group-hover:text-blue-400 transition-colors">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {block.name}
                       </h3>
                     </div>
@@ -553,10 +475,10 @@ export default function ProjectMasterDashboardPage() {
                       <span
                         className={`w-2 h-2 rounded-full ${
                           isRed
-                            ? "bg-rose-400 animate-ping"
+                            ? "bg-rose-500 animate-ping"
                             : isYellow
-                            ? "bg-amber-400"
-                            : "bg-emerald-400"
+                            ? "bg-amber-500"
+                            : "bg-emerald-500"
                         }`}
                       />
                       {isRed ? "Kritik" : isYellow ? "Risk" : "Planında"}
@@ -564,9 +486,8 @@ export default function ProjectMasterDashboardPage() {
                   </div>
 
                   {/* 2.5D ISOMETRIC VISUAL TOWER (CSS Slices) */}
-                  <div className="my-4 py-4 px-3 bg-slate-950/60 rounded-2xl border border-slate-800/80 flex items-center justify-center relative overflow-hidden">
+                  <div className="my-4 py-4 px-3 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800/80 flex items-center justify-center relative overflow-hidden">
                     <div className="w-full flex flex-col items-center">
-                      {/* Isometric Floor Slices Stack */}
                       <div className="w-36 flex flex-col gap-1 py-1">
                         {[...Array(6)].map((_, i) => {
                           const floorIndex = 5 - i
@@ -577,21 +498,21 @@ export default function ProjectMasterDashboardPage() {
 
                           const sliceColor = isRed
                             ? isFloorCompleted
-                              ? "bg-rose-900/60 border-rose-500/50"
+                              ? "bg-rose-200 text-rose-900 border-rose-300 dark:bg-rose-900/60 dark:text-slate-300 dark:border-rose-500/50"
                               : isFloorActive
-                              ? "bg-rose-500/40 border-rose-400 animate-pulse"
-                              : "bg-slate-800/40 border-slate-700/50"
+                              ? "bg-rose-500 text-white border-rose-600 animate-pulse dark:bg-rose-500/40 dark:border-rose-400"
+                              : "bg-slate-200 text-slate-600 border-slate-300 dark:bg-slate-800/40 dark:text-slate-500 dark:border-slate-700/50"
                             : isYellow
                             ? isFloorCompleted
-                              ? "bg-amber-900/60 border-amber-500/50"
+                              ? "bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-900/60 dark:text-slate-300 dark:border-amber-500/50"
                               : isFloorActive
-                              ? "bg-amber-500/40 border-amber-400 animate-pulse"
-                              : "bg-slate-800/40 border-slate-700/50"
+                              ? "bg-amber-500 text-white border-amber-600 animate-pulse dark:bg-amber-500/40 dark:border-amber-400"
+                              : "bg-slate-200 text-slate-600 border-slate-300 dark:bg-slate-800/40 dark:text-slate-500 dark:border-slate-700/50"
                             : isFloorCompleted
-                            ? "bg-emerald-900/60 border-emerald-500/50"
+                            ? "bg-emerald-200 text-emerald-900 border-emerald-300 dark:bg-emerald-900/60 dark:text-slate-300 dark:border-emerald-500/50"
                             : isFloorActive
-                            ? "bg-emerald-500/40 border-emerald-400 animate-pulse"
-                            : "bg-slate-800/40 border-slate-700/50"
+                            ? "bg-emerald-500 text-white border-emerald-600 animate-pulse dark:bg-emerald-500/40 dark:border-emerald-400"
+                            : "bg-slate-200 text-slate-600 border-slate-300 dark:bg-slate-800/40 dark:text-slate-500 dark:border-slate-700/50"
 
                           return (
                             <div
@@ -602,7 +523,7 @@ export default function ProjectMasterDashboardPage() {
                               }}
                               className={`rounded-md border shadow-sm transition-all flex items-center justify-between px-2 ${sliceColor}`}
                             >
-                              <span className="text-[8px] font-mono font-bold text-slate-300">
+                              <span className="text-[8px] font-mono font-bold">
                                 {floorIndex === 5 ? "Çatı" : floorIndex === 0 ? "Zemin" : `K-${floorIndex}`}
                               </span>
                               {isFloorActive && (
@@ -613,7 +534,7 @@ export default function ProjectMasterDashboardPage() {
                         })}
                       </div>
 
-                      <div className="text-[10px] text-slate-400 font-mono mt-1">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-1">
                         2.5D İzometrik Katman Dilimleri
                       </div>
                     </div>
@@ -622,10 +543,10 @@ export default function ProjectMasterDashboardPage() {
                   {/* Progress Bar & Percentage */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs mb-1.5 font-bold">
-                      <span className="text-slate-400">İlerleme Oranı</span>
-                      <span className="text-white">%{block.completionRate}</span>
+                      <span className="text-slate-500 dark:text-slate-400">İlerleme Oranı</span>
+                      <span className="text-slate-900 dark:text-white">%{block.completionRate}</span>
                     </div>
-                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           isRed
@@ -640,41 +561,41 @@ export default function ProjectMasterDashboardPage() {
                   </div>
 
                   {/* Last Milestone Info */}
-                  <div className="p-3 rounded-xl bg-slate-950/40 border border-slate-800 mb-4 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 mb-4 text-xs">
                     <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-cyan-400" />
+                      <CheckCircle2 className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
                       Son Kritik İmalat
                     </div>
-                    <p className="text-slate-300 font-medium line-clamp-2 leading-relaxed">
+                    <p className="text-slate-700 dark:text-slate-300 font-medium line-clamp-2 leading-relaxed">
                       {block.lastMilestone}
                     </p>
                   </div>
 
                   {/* Field Telemetry Quick Chips */}
                   <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                    <div className="p-2 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center gap-2">
-                      <HardHat className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center gap-2">
+                      <HardHat className="w-4 h-4 text-amber-500 flex-shrink-0" />
                       <div>
-                        <div className="font-bold text-white">{block.activeWorkers} İşçi</div>
-                        <div className="text-[10px] text-slate-400">Turnike/GPS</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{block.activeWorkers} İşçi</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">Turnike/GPS</div>
                       </div>
                     </div>
 
-                    <div className="p-2 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                    <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center gap-2">
+                      <Truck className="w-4 h-4 text-purple-500 flex-shrink-0" />
                       <div>
-                        <div className="font-bold text-white">{block.activeMachinery} Araç</div>
-                        <div className="text-[10px] text-slate-400">BLE IoT Tag</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{block.activeMachinery} Araç</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">BLE IoT Tag</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Open Defects / OHS Risk */}
-                  <div className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-slate-950/30 border border-slate-800/80">
-                    <span className="text-slate-400">Açık DÖF:</span>
+                  <div className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80">
+                    <span className="text-slate-500 dark:text-slate-400">Açık DÖF:</span>
                     <span
                       className={`font-bold ${
-                        block.openDefects > 0 ? "text-amber-400" : "text-emerald-400"
+                        block.openDefects > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
                       }`}
                     >
                       {block.openDefects > 0 ? `${block.openDefects} Uygunsuzluk` : "Sıfır DÖF"}
@@ -683,8 +604,8 @@ export default function ProjectMasterDashboardPage() {
                 </div>
 
                 {/* Card Footer: X-Ray Drawer Trigger */}
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                  <span className="text-xs font-bold text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                     <span>X-Ray İncele</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </span>
@@ -698,16 +619,16 @@ export default function ProjectMasterDashboardPage() {
         </div>
       ) : (
         /* HEATMAP MATRIX VIEW */
-        <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 space-y-6">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-white">Kat & Blok Isı Haritası Matrisi</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kat & Blok Isı Haritası Matrisi</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Tüm blokların kat bazında imalat yoğunluğunu ve engellerini tek bakışta analiz edin.
               </p>
             </div>
-            <div className="text-xs font-mono text-slate-400">
-              Gerçek Zamanlı Saha Girdisi
+            <div className="text-xs font-mono text-slate-500 dark:text-slate-400">
+              Prisma Canlı Telemetri
             </div>
           </div>
 
@@ -716,21 +637,21 @@ export default function ProjectMasterDashboardPage() {
               <div
                 key={block.id}
                 onClick={() => handleOpenXRay(block)}
-                className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-blue-500/50 transition-colors cursor-pointer"
+                className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 transition-colors cursor-pointer"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded font-black text-xs bg-slate-800 text-white">
+                    <span className="px-2 py-0.5 rounded font-black text-xs bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white">
                       {block.code}
                     </span>
-                    <h3 className="font-bold text-white text-base">{block.name}</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">{block.name}</h3>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                         block.healthStatus === "RED"
-                          ? "bg-rose-500/20 text-rose-300"
+                          ? "bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300"
                           : block.healthStatus === "YELLOW"
-                          ? "bg-amber-500/20 text-amber-300"
-                          : "bg-emerald-500/20 text-emerald-300"
+                          ? "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300"
+                          : "bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-300"
                       }`}
                     >
                       {block.healthStatus}
@@ -738,13 +659,13 @@ export default function ProjectMasterDashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-4 text-xs">
-                    <span className="text-slate-400">
-                      Aktif: <strong className="text-white">{block.activeWorkers} İşçi</strong>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Aktif: <strong className="text-slate-900 dark:text-white">{block.activeWorkers} İşçi</strong>
                     </span>
-                    <span className="text-slate-400">
-                      Makine: <strong className="text-white">{block.activeMachinery} Adet</strong>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Makine: <strong className="text-slate-900 dark:text-white">{block.activeMachinery} Adet</strong>
                     </span>
-                    <span className="text-blue-400 font-bold">%{block.completionRate}</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-bold">%{block.completionRate}</span>
                   </div>
                 </div>
 
@@ -759,13 +680,13 @@ export default function ProjectMasterDashboardPage() {
                       : isZoneDone
                       ? "bg-emerald-600 text-white border-emerald-400"
                       : zone.progressRate > 0
-                      ? "bg-amber-500 text-black border-amber-300"
-                      : "bg-slate-800 text-slate-400 border-slate-700"
+                      ? "bg-amber-500 text-white border-amber-300"
+                      : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700"
 
                     return (
                       <div
                         key={zone.id}
-                        className={`p-2 rounded-lg border text-center transition-transform hover:scale-105 ${zoneBg}`}
+                        className={`p-2 rounded-lg border text-center transition-transform hover:scale-105 shadow-xs ${zoneBg}`}
                         title={`${zone.name} - %${zone.progressRate}`}
                       >
                         <div className="text-[10px] font-mono font-bold">
@@ -789,32 +710,32 @@ export default function ProjectMasterDashboardPage() {
         <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-xs transition-opacity"
             onClick={() => setIsDrawerOpen(false)}
           />
 
           {/* Drawer Body */}
-          <div className="relative w-full max-w-xl bg-slate-900 border-l border-slate-800 text-slate-100 h-full shadow-2xl flex flex-col z-10 overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 h-full shadow-2xl flex flex-col z-10 overflow-y-auto">
             {/* Drawer Header */}
-            <div className="p-6 border-b border-slate-800 bg-slate-950/80 sticky top-0 z-20 flex items-start justify-between">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 sticky top-0 z-20 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-blue-600 text-white">
                     {selectedBlock.code}
                   </span>
-                  <span className="text-xs text-slate-400">
-                    {selectedBlock.projectName}
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {selectedBlock.projectName || "Aktif Şantiye"}
                   </span>
                 </div>
-                <h2 className="text-xl font-black text-white">{selectedBlock.name}</h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  X-Ray Dijital Şantiye İnceleme ve Telemetri Raporu
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">{selectedBlock.name}</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  X-Ray Dijital Şantiye İnceleme ve Canlı Telemetri Raporu
                 </p>
               </div>
 
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                className="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -823,38 +744,38 @@ export default function ProjectMasterDashboardPage() {
             {/* Drawer Content */}
             <div className="p-6 space-y-6 flex-1">
               {/* Quick Health Status Changer for simulation */}
-              <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-bold text-slate-300">Blok Sağlık Durumu (Heatmap)</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">Risk seviyesini manuel simüle et</div>
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-300">Blok Durumu (DB Kaydı)</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Durumu anında güncelle</div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handleStatusChangeSimulation(selectedBlock.id, "GREEN")}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
                       selectedBlock.healthStatus === "GREEN"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-800 text-slate-400"
+                        ? "bg-emerald-600 text-white shadow-sm"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                     }`}
                   >
                     🟢 Planında
                   </button>
                   <button
                     onClick={() => handleStatusChangeSimulation(selectedBlock.id, "YELLOW")}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
                       selectedBlock.healthStatus === "YELLOW"
-                        ? "bg-amber-600 text-white"
-                        : "bg-slate-800 text-slate-400"
+                        ? "bg-amber-600 text-white shadow-sm"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                     }`}
                   >
                     🟡 Risk
                   </button>
                   <button
                     onClick={() => handleStatusChangeSimulation(selectedBlock.id, "RED")}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
                       selectedBlock.healthStatus === "RED"
-                        ? "bg-rose-600 text-white"
-                        : "bg-slate-800 text-slate-400"
+                        ? "bg-rose-600 text-white shadow-sm"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                     }`}
                   >
                     🔴 Kritik
@@ -863,19 +784,19 @@ export default function ProjectMasterDashboardPage() {
               </div>
 
               {/* 1. CANLI TURNİKE & GPS İŞÇİ TELEMETRİSİ */}
-              <div className="bg-slate-950/60 rounded-2xl p-5 border border-slate-800">
+              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
                       <HardHat className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-white text-sm">Canlı İşçi Sayısı (Turnike & GPS)</h4>
-                      <p className="text-[11px] text-slate-400">Sahada kayıtlı anlık personel</p>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">Canlı İşçi Sayısı (Turnike & GPS)</h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">DB Attendance loglarından anlık çekildi</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-xl font-black text-amber-400">
+                    <span className="text-xl font-black text-amber-600 dark:text-amber-400">
                       {selectedBlock.activeWorkers}
                     </span>
                     <span className="text-xs text-slate-500 ml-1">Kişi</span>
@@ -883,69 +804,115 @@ export default function ProjectMasterDashboardPage() {
                 </div>
 
                 {selectedBlock.workerBreakdown && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-800/80">
-                    <div className="p-2 bg-slate-900 rounded-xl text-xs">
-                      <span className="text-slate-400">Kalıpçı Ekibi:</span>
-                      <div className="font-bold text-white">{selectedBlock.workerBreakdown.kalipci} Personel</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-800/80">
+                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                      <span className="text-slate-500 dark:text-slate-400">Kalıpçı Ekibi:</span>
+                      <div className="font-bold text-slate-900 dark:text-white">{selectedBlock.workerBreakdown.kalipci} Personel</div>
                     </div>
-                    <div className="p-2 bg-slate-900 rounded-xl text-xs">
-                      <span className="text-slate-400">Demirci Ekibi:</span>
-                      <div className="font-bold text-white">{selectedBlock.workerBreakdown.demirci} Personel</div>
+                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                      <span className="text-slate-500 dark:text-slate-400">Demirci Ekibi:</span>
+                      <div className="font-bold text-slate-900 dark:text-white">{selectedBlock.workerBreakdown.demirci} Personel</div>
                     </div>
-                    <div className="p-2 bg-slate-900 rounded-xl text-xs">
-                      <span className="text-slate-400">Beton Ekibi:</span>
-                      <div className="font-bold text-white">{selectedBlock.workerBreakdown.betoncu} Personel</div>
+                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                      <span className="text-slate-500 dark:text-slate-400">Beton Ekibi:</span>
+                      <div className="font-bold text-slate-900 dark:text-white">{selectedBlock.workerBreakdown.betoncu} Personel</div>
                     </div>
-                    <div className="p-2 bg-slate-900 rounded-xl text-xs">
-                      <span className="text-slate-400">Mekanik/Elektrik:</span>
-                      <div className="font-bold text-white">{selectedBlock.workerBreakdown.elektrik} Personel</div>
+                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                      <span className="text-slate-500 dark:text-slate-400">Mekanik/Elektrik:</span>
+                      <div className="font-bold text-slate-900 dark:text-white">{selectedBlock.workerBreakdown.elektrik} Personel</div>
                     </div>
-                    <div className="p-2 bg-slate-900 rounded-xl text-xs">
-                      <span className="text-slate-400">İSG & Saha Şefi:</span>
-                      <div className="font-bold text-emerald-400">{selectedBlock.workerBreakdown.isg} Personel</div>
+                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                      <span className="text-slate-500 dark:text-slate-400">İSG & Saha Şefi:</span>
+                      <div className="font-bold text-emerald-600 dark:text-emerald-400">{selectedBlock.workerBreakdown.isg} Personel</div>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* 2. SON TAMAMLANAN KRİTİK İMALAT */}
-              <div className="bg-slate-950/60 rounded-2xl p-5 border border-slate-800">
+              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm">Son Tamamlanan Kritik İmalat (Milestone)</h4>
-                    <p className="text-[11px] text-slate-400">Yapı denetim ve şantiye şefi onaylı</p>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Son Tamamlanan Kritik İmalat (Milestone)</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">Yapı denetim onaylı şantiye imalatı</p>
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 mt-2">
-                  <p className="text-sm font-semibold text-slate-200">
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 mt-2">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                     {selectedBlock.lastMilestone}
                   </p>
-                  <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-2">
-                    <span>Onaylayan: <strong>Murat Karaca (Yapı Denetim)</strong></span>
+                  <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+                    <span>Durum: <strong className="text-emerald-600 dark:text-emerald-400">Onaylandı</strong></span>
                     <span>•</span>
-                    <span>Durum: <strong>Kürleme ve Mukavemet Takibinde</strong></span>
+                    <span>Kalite & Kürleme Takibinde</span>
                   </div>
                 </div>
               </div>
 
-              {/* 3. SAHADAKİ AKTİF İŞ MAKİNELERİ (BLE IoT) */}
-              <div className="bg-slate-950/60 rounded-2xl p-5 border border-slate-800">
+              {/* 3. ANLIK UYUMSUZLUK (DÖF) RAPORLARI */}
+              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+                    <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+                      <FileWarning className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">Açık DÖF / Saha Uygunsuzlukları</h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Veritabanındaki aktif uygunsuzluklar</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">
+                    {selectedBlock.deficienciesList?.length || selectedBlock.openDefects} Kayıt
+                  </span>
+                </div>
+
+                {selectedBlock.deficienciesList && selectedBlock.deficienciesList.length > 0 ? (
+                  <div className="space-y-2 mt-2">
+                    {selectedBlock.deficienciesList.map((def, idx) => (
+                      <div
+                        key={def.id || idx}
+                        className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between text-xs"
+                      >
+                        <div>
+                          <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <span className="text-rose-600 dark:text-rose-400">[{def.floor}]</span>
+                            <span>{def.description}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            Kategori: {def.category} • Öncelik: {def.priority}
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                          {def.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl text-center text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                    Bu blokta açık bir DÖF veya uygunsuzluk kaydı bulunmuyor.
+                  </div>
+                )}
+              </div>
+
+              {/* 4. SAHADAKİ AKTİF İŞ MAKİNELERİ (BLE IoT) */}
+              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
                       <Truck className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-white text-sm">Aktif İş Makineleri (BLE & IoT)</h4>
-                      <p className="text-[11px] text-slate-400">Otomatik telemetri ve yük sensörü</p>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">Aktif İş Makineleri (BLE & IoT)</h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Otomatik telemetri ve yük sensörü</p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-purple-400">
-                    {selectedBlock.machineryList?.length || 0} Makine
+                  <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
+                    {selectedBlock.machineryList?.length || selectedBlock.activeMachinery} Makine
                   </span>
                 </div>
 
@@ -953,13 +920,13 @@ export default function ProjectMasterDashboardPage() {
                   {selectedBlock.machineryList?.map((m, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs"
+                      className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
                     >
                       <div>
-                        <div className="font-bold text-white">{m.name}</div>
-                        <div className="text-[11px] text-slate-400">{m.type} • {m.status}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{m.name}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">{m.type} • {m.status}</div>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-950/60 text-purple-300 border border-purple-800/40">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40">
                         {m.batteryOrTelemetry}
                       </span>
                     </div>
@@ -967,16 +934,16 @@ export default function ProjectMasterDashboardPage() {
                 </div>
               </div>
 
-              {/* 4. KAT VE MAHAL BAZINDA DETAYLI İLERLEME */}
-              <div className="bg-slate-950/60 rounded-2xl p-5 border border-slate-800">
+              {/* 5. KAT VE MAHAL BAZINDA DETAYLI İLERLEME */}
+              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
                       <Layers className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-white text-sm">Kat & Mahal İlerleme Çubukları</h4>
-                      <p className="text-[11px] text-slate-400">Her katın imalat durumu ve DÖF oranı</p>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">Kat & Mahal İlerleme Çubukları</h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Her katın DB'deki ilerleme yüzdesi</p>
                     </div>
                   </div>
                 </div>
@@ -985,30 +952,30 @@ export default function ProjectMasterDashboardPage() {
                   {selectedBlock.zones.map((zone) => (
                     <div
                       key={zone.id}
-                      className="p-3 bg-slate-900 rounded-xl border border-slate-800/80"
+                      className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800/80"
                     >
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-bold text-white">{zone.name}</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{zone.name}</span>
                         <span
                           className={`font-black ${
                             zone.progressRate === 100
-                              ? "text-emerald-400"
+                              ? "text-emerald-600 dark:text-emerald-400"
                               : zone.progressRate > 0
-                              ? "text-amber-400"
-                              : "text-slate-500"
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-slate-400 dark:text-slate-500"
                           }`}
                         >
                           %{zone.progressRate}
                         </span>
                       </div>
-                      <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${
                             zone.progressRate === 100
                               ? "bg-emerald-500"
                               : zone.progressRate > 0
                               ? "bg-amber-500"
-                              : "bg-slate-700"
+                              : "bg-slate-300 dark:bg-slate-700"
                           }`}
                           style={{ width: `${zone.progressRate}%` }}
                         />
@@ -1020,19 +987,19 @@ export default function ProjectMasterDashboardPage() {
 
               {/* Quick Actions */}
               <div className="pt-2">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                   Hızlı Saha Aksiyonları
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => toast.success("İş emri oluşturma modülü açıldı")}
-                    className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors text-center"
+                    className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors text-center shadow-sm"
                   >
                     + İş Emri Ata
                   </button>
                   <button
                     onClick={() => toast.success("DÖF / Uygunsuzluk bildirim formu açıldı")}
-                    className="p-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-colors text-center"
+                    className="p-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-colors text-center shadow-sm"
                   >
                     ⚠️ DÖF Kaydı Aç
                   </button>
@@ -1045,4 +1012,3 @@ export default function ProjectMasterDashboardPage() {
     </div>
   )
 }
-
