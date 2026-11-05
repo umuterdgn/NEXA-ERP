@@ -2,10 +2,10 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * This code is the property of NXA Software.
+ * Nexa ERP - Gelişmiş Akordiyon (Collapsible) & Hızlı Aramalı Sidebar (Yan Menü)
  */
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Link, usePathname } from "@/i18n/routing"
 import Image from "next/image"
 import { signOut, useSession } from "next-auth/react"
@@ -65,6 +65,7 @@ import {
   PieChart,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Download,
   LogOut,
   Briefcase,
@@ -86,7 +87,12 @@ import {
   QrCode,
   Receipt,
   PackageCheck,
-  TestTube2
+  TestTube2,
+  Radio,
+  Camera,
+  RefreshCw,
+  Hammer,
+  X,
 } from "lucide-react"
 
 interface MenuItem {
@@ -94,6 +100,41 @@ interface MenuItem {
   label: string
   icon: any
   category: string
+}
+
+// Kategori İkon Haritası
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case "ANA MENÜ":
+      return LayoutDashboard
+    case "İNSAN KAYNAKLARI":
+      return Users
+    case "TAŞERON YÖNETİMİ":
+      return HardHat
+    case "FİNANS & TEDARİK":
+      return DollarSign
+    case "PROJE YÖNETİMİ":
+      return FolderKanban
+    case "YAPI DENETİM & KONTROL":
+      return ShieldCheck
+    case "YAPI DENETİM & KALİTE":
+    case "KALİTE GÜVENCE (QA/QC)":
+      return Award
+    case "İSG & RİSK YÖNETİMİ":
+      return ShieldAlert
+    case "İLETİŞİM & OPERASYON":
+      return Radio
+    case "SİSTEM & AYARLAR":
+      return Settings
+    case "TAŞERON PORTALI":
+      return HardHat
+    case "FRANCHISE & ROLLOUT":
+      return Building2
+    case "SAHA & RAPORLAMA":
+      return ClipboardList
+    default:
+      return FolderKanban
+  }
 }
 
 // Taşeron Kısıtlı Menü Listesi (Finans, Kasa, Sözleşmeler, Satınalma tamamen gizlenir)
@@ -111,7 +152,8 @@ const inspectorMenuItems: MenuItem[] = [
   { href: "/admin/samples", label: "Karot / Numune Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
   { href: "/yibf", label: "Bakanlık e-YİBF Sistemi", icon: Building2, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Hammer, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/inspection/timelapse", label: "Saha Kamerası (Timelapse)", icon: Camera, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: FileCheck, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/qa-qc/materials", label: "Malzeme Onayları (QA)", icon: CheckSquare, category: "KALİTE GÜVENCE (QA/QC)" },
   { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: XCircle, category: "KALİTE GÜVENCE (QA/QC)" },
@@ -185,7 +227,8 @@ const menuItems: MenuItem[] = [
   { href: "/admin/forms/builder", label: "Dinamik Form Oluşturucu", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", icon: FileWarning, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/samples", label: "Numune & Karot Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Hammer, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/inspection/timelapse", label: "Saha Kamerası (Timelapse)", icon: Camera, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/attachment", label: "Ataşman & Delil", icon: Paperclip, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", icon: Archive, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/documents", label: "Dijital Evrak Arşivi", icon: Files, category: "YAPI DENETİM & KONTROL" },
@@ -193,7 +236,7 @@ const menuItems: MenuItem[] = [
   { href: "/admin/reports", label: "Saha Raporları", icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/ai-vision", label: "AI Görsel Analiz", icon: ImagePlus, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/revisions", label: "Proje Revizyonları", icon: History, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/routes", label: "Rota Optimizasyonu", icon: Map, category: "YAPI DENETİM & KONTROL" },
+  { href: "/admin/routes", label: "Rota Optimizasyonu", icon: Navigation, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/drone-maps", label: "Hava & Drone Gözlem", icon: Plane, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", icon: PenTool, category: "YAPI DENETİM & KONTROL" },
   { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
@@ -216,13 +259,13 @@ const menuItems: MenuItem[] = [
   { href: "/admin/tasks", label: "Görevler & Takvim", icon: Calendar, category: "İLETİŞİM & OPERASYON" },
   { href: "/admin/work-orders", label: "İş Emirleri (Kanban)", icon: ClipboardList, category: "İLETİŞİM & OPERASYON" },
   { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "İLETİŞİM & OPERASYON" },
+  { href: "/admin/communication/walkie-talkie", label: "Telsiz (PTT) & Şantiye Chat", icon: Radio, category: "İLETİŞİM & OPERASYON" },
   { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "İLETİŞİM & OPERASYON" },
-  
-
 
   // SİSTEM & AYARLAR
   { href: "/admin/system-health", label: "Sistem Sağlığı & Check-up", icon: Activity, category: "SİSTEM & AYARLAR" },
   { href: "/admin/users", label: "Kullanıcılar", icon: Users, category: "SİSTEM & AYARLAR" },
+  { href: "/admin/settings/offline-sync", label: "Cihaz ve Çevrimdışı Senkronizasyon (Offline Sync)", icon: RefreshCw, category: "SİSTEM & AYARLAR" },
   { href: "/admin/logs", label: "Sistem Logları", icon: FileLogIcon, category: "SİSTEM & AYARLAR" },
   { href: "/admin/audit-logs", label: "İşlem Geçmişi", icon: History, category: "SİSTEM & AYARLAR" },
   { href: "/admin/notifications", label: "Bildirimler", icon: Bell, category: "SİSTEM & AYARLAR" },
@@ -262,7 +305,6 @@ export default function AdminSidebar({
   }
 
   useEffect(() => {
-    // 1. URL'den aktif proje ID'sini al
     const match = pathname?.match(/\/admin\/projects\/([^\/]+)/)
     if (match && match[1] && match[1] !== "new") {
       setActiveProjectId(match[1])
@@ -270,7 +312,6 @@ export default function AdminSidebar({
         localStorage.setItem("nexa_active_project_id", match[1])
       } catch {}
     } else {
-      // 2. LocalStorage'dan al
       try {
         const saved = localStorage.getItem("nexa_active_project_id")
         if (saved) {
@@ -278,7 +319,6 @@ export default function AdminSidebar({
           return
         }
       } catch {}
-      // 3. API'den ilk projeyi çek
       fetch("/api/admin/projects?limit=1")
         .then((res) => res.json())
         .then((data) => {
@@ -299,12 +339,10 @@ export default function AdminSidebar({
   const isSubcontractor = userRole === "SUBCONTRACTOR"
   const isInspector = userRole === "INSPECTOR" || userRole === "AUDITOR"
 
-  // White-Label Kurumsal Marka Bilgisi
   const isWhiteLabelActive = Boolean((session?.user as any)?.isWhiteLabelActive)
   const tenantLogoUrl = (session?.user as any)?.logoUrl as string | undefined
   const tenantCompanyName = (session?.user as any)?.companyName || (session?.user as any)?.name
 
-  // Role & CompanyType based menu isolation
   let rawMenuItems = menuItems
   if (isFranchise) {
     rawMenuItems = franchiseMenuItems
@@ -313,7 +351,6 @@ export default function AdminSidebar({
   } else if (isInspector) {
     rawMenuItems = inspectorMenuItems
   } else if (userRole === "ACCOUNTANT") {
-    // Sadece Finans, Fatura, Çek/Senet, Hakediş menüleri
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin" ||
       item.href === "/admin/finance" ||
@@ -323,7 +360,6 @@ export default function AdminSidebar({
       item.href === "/admin/progress-payments"
     )
   } else if (userRole === "HR_STAFF") {
-    // Sadece Personel, Puantaj, İzinler menüleri
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin" ||
       item.href === "/admin/personel" ||
@@ -333,7 +369,6 @@ export default function AdminSidebar({
       item.href === "/admin/shifts"
     )
   } else if (userRole === "PURCHASING_STAFF") {
-    // Sadece Tedarik, İhaleler, Envanter menüleri
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin" ||
       item.href === "/admin/procurement" ||
@@ -344,13 +379,11 @@ export default function AdminSidebar({
       item.href === "/admin/procurement/logistics"
     )
   } else if (userRole === "HR_MANAGER") {
-    // Sadece İK, Personel ve Bordro linkleri (Kasa, Finans, Metraj tamamen gizlenir)
     rawMenuItems = menuItems.filter(item => 
       item.category === "İNSAN KAYNAKLARI" || 
       (item.category === "ANA MENÜ" && item.href === "/admin")
     )
   } else if (userRole === "FINANCE_MANAGER") {
-    // Sadece Kasa, Finans, Hakediş, Çek/Senet (İK, Personel tamamen gizlenir)
     rawMenuItems = menuItems.filter(item =>
       item.category === "FİNANS & TEDARİK" ||
       item.href === "/admin/billing" ||
@@ -358,19 +391,18 @@ export default function AdminSidebar({
       (item.category === "ANA MENÜ" && item.href === "/admin")
     )
   } else if (userRole === "PROCUREMENT_MANAGER") {
-    // Sadece Satınalma, Talepler, Lojistik, Ambar, Demirbaş
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin/procurement" ||
       item.href === "/admin/procurement/logistics" ||
       item.href === "/admin/logistics/map" ||
       item.href === "/admin/inventory/qr-scanner" ||
       item.href === "/admin/inventory" ||
+      item.href === "/admin/inventory/qr-scanner" ||
       item.href === "/admin/equipments" ||
       item.href === "/admin/contracts" ||
       (item.category === "ANA MENÜ" && item.href === "/admin")
     )
   } else if (userRole === "EQUIPMENT_MANAGER") {
-    // Sadece Demirbaş, Ambar, Lojistik, Harita
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin/equipments" ||
       item.href === "/admin/procurement/logistics" ||
@@ -381,7 +413,6 @@ export default function AdminSidebar({
       (item.category === "ANA MENÜ" && item.href === "/admin")
     )
   } else if (userRole === "ISG_EXPERT") {
-    // Sadece İSG Alarmı, İSG Evrak Takibi, Taşeron Denetimi, Eksiklikler, Harita
     rawMenuItems = menuItems.filter(item =>
       item.href === "/admin/personel/alerts" ||
       item.href === "/admin/subcontractors/documents" ||
@@ -392,7 +423,6 @@ export default function AdminSidebar({
       (item.category === "ANA MENÜ" && item.href === "/admin")
     )
   } else if (userRole === "SECURITY") {
-    // Sadece Kapı Güvenlik & Lojistik Takvimi
     rawMenuItems = [
       {
         href: "/admin/procurement/logistics",
@@ -405,7 +435,6 @@ export default function AdminSidebar({
 
   const sessionEnabledModules = (session?.user as any)?.enabledModules as string[] | undefined
 
-  // Multi-Tenant SaaS Modül İzinleri Filtresi (Kapalı menüler Sidebar'da tamamen gizlenir)
   const moduleFilteredItems = rawMenuItems.filter((item) =>
     isMenuItemAllowed(item, sessionEnabledModules, userRole)
   )
@@ -417,36 +446,64 @@ export default function AdminSidebar({
     return item
   })
 
-  // Group items by category
-  const groupedMenuItems = effectiveMenuItems.reduce((acc, item) => {
-    const category = item.category
-    if (!acc[category]) {
-      acc[category] = []
-    }
-    acc[category].push(item)
-    return acc
-  }, {} as Record<string, MenuItem[]>)
+  // Aktif sayfanın bulunduğu kategoriyi tespit et
+  const activeCategory = useMemo(() => {
+    const activeItem = effectiveMenuItems.find((item) => {
+      if (item.href === "/admin") return pathname === "/admin"
+      return pathname === item.href || (pathname && pathname.startsWith(item.href) && item.href !== "/admin")
+    })
+    return activeItem?.category || "ANA MENÜ"
+  }, [pathname, effectiveMenuItems])
 
-  // Filter items based on search
-  const filteredMenuItems = effectiveMenuItems.filter(item => {
-    if (!searchQuery.trim()) return true
-    const query = searchQuery.toLowerCase()
-    return item.label.toLowerCase().includes(query) || 
-           getLocalizedLabel(item).toLowerCase().includes(query) ||
-           item.category.toLowerCase().includes(query)
+  // Akordiyon (Collapsible) state'i: Varsayılan olarak aktif sayfanın kategorisi açık
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
+    [activeCategory]: true,
+    "ANA MENÜ": true,
   })
 
-  // Group filtered items
-  const groupedFilteredItems = filteredMenuItems.reduce((acc, item) => {
-    const category = item.category
-    if (!acc[category]) {
-      acc[category] = []
+  // Sayfa değiştikçe aktif kategoriyi otomatik genişlet
+  useEffect(() => {
+    if (activeCategory) {
+      setOpenCategories((prev) => ({
+        ...prev,
+        [activeCategory]: true,
+      }))
     }
-    acc[category].push(item)
-    return acc
-  }, {} as Record<string, MenuItem[]>)
+  }, [activeCategory])
 
-  const categories = Object.keys(searchQuery.trim() ? groupedFilteredItems : groupedMenuItems)
+  const toggleCategory = (category: string) => {
+    setOpenCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }))
+  }
+
+  // Arama filtresi (Search Bar)
+  const filteredMenuItems = useMemo(() => {
+    if (!searchQuery.trim()) return effectiveMenuItems
+    const query = searchQuery.toLowerCase().trim()
+    return effectiveMenuItems.filter((item) => {
+      const labelMatch = item.label.toLowerCase().includes(query)
+      const localizedMatch = getLocalizedLabel(item).toLowerCase().includes(query)
+      const categoryMatch = item.category.toLowerCase().includes(query)
+      const hrefMatch = item.href.toLowerCase().includes(query)
+      return labelMatch || localizedMatch || categoryMatch || hrefMatch
+    })
+  }, [effectiveMenuItems, searchQuery])
+
+  // Gruplanmış menü öğeleri
+  const groupedItems = useMemo(() => {
+    return filteredMenuItems.reduce((acc, item) => {
+      const category = item.category
+      if (!acc[category]) {
+        acc[category] = []
+      }
+      acc[category].push(item)
+      return acc
+    }, {} as Record<string, MenuItem[]>)
+  }, [filteredMenuItems])
+
+  const categories = Object.keys(groupedItems)
 
   return (
     <>
@@ -499,10 +556,10 @@ export default function AdminSidebar({
           isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
         } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-[85vw] max-w-[320px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900`}
       >
-        <div className={`flex h-full flex-col ${isCollapsed ? "p-3" : "p-4 sm:p-6"}`}>
+        <div className={`flex h-full flex-col ${isCollapsed ? "p-3" : "p-4 sm:p-5"}`}>
           {/* Header */}
-          <div className="mb-6">
-            <div className={`mb-4 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
+          <div className="mb-4">
+            <div className={`mb-3 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
               {!isCollapsed ? (
                 <div>
                   {isWhiteLabelActive && tenantLogoUrl ? (
@@ -521,12 +578,12 @@ export default function AdminSidebar({
                     </div>
                   ) : (
                     <div>
-                      <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <h1 className="mb-0.5 text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-tenant" />
                         <span>{isSubcontractor ? "Taşeron Portalı" : "Nexa ERP"}</span>
                       </h1>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {isSubcontractor ? "Korumalı Saha Paneli" : "Şantiye & Denetim Asistanı"}
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {isSubcontractor ? "Korumalı Saha Paneli" : "Şantiye & Saha Yönetimi"}
                       </p>
                     </div>
                   )}
@@ -560,88 +617,146 @@ export default function AdminSidebar({
               </div>
             </div>
 
+            {/* ADIM 1: Hızlı Menü Arama (Search Bar) */}
             {!isCollapsed && (
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
+              <div className="relative mt-2">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
-                  placeholder="Menü ara..."
+                  placeholder="Hızlı Menü Arama (Örn: Beton...)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-slate-100 pl-10 pr-4 text-slate-900 transition-all placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-slate-400"
+                  className="min-h-[40px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-8 text-xs text-slate-900 transition-all placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-950/70 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-950"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                    title="Aramayı Temizle"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             )}
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden pr-2">
+          {/* ADIM 1: Akordiyon (Collapsible) Navigation Listesi */}
+          <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-1.5 scrollbar-thin scrollbar-thumb-slate-700/40">
+            {categories.length === 0 && searchQuery.trim() && (
+              <div className="p-4 text-center text-xs text-slate-400 space-y-2 mt-4">
+                <p>"{searchQuery}" ile eşleşen modül bulunamadı.</p>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="px-3 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-[11px] font-semibold transition-all"
+                >
+                  Aramayı Temizle
+                </button>
+              </div>
+            )}
+
             {categories.map((category) => {
-              const items = searchQuery.trim() ? groupedFilteredItems[category] : groupedMenuItems[category]
+              const items = groupedItems[category]
               if (!items || items.length === 0) return null
 
+              const isOpenCategory = searchQuery.trim() ? true : Boolean(openCategories[category])
+              const CategoryIcon = getCategoryIcon(category)
+              const hasActiveChild = items.some(
+                (item) => pathname === item.href || (pathname && pathname.startsWith(item.href) && item.href !== "/admin")
+              )
+
               return (
-                <div key={category}>
-                  {/* Category Header */}
-                  {!isCollapsed && (
-                    <div className="mt-6 mb-2 px-4 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">
-                      {category}
-                    </div>
+                <div key={category} className="rounded-xl overflow-hidden transition-all">
+                  {/* Category Header (Akordiyon Açma/Kapama Butonu) */}
+                  {!isCollapsed ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(category)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all text-left select-none ${
+                        hasActiveChild
+                          ? "text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/15"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 truncate">
+                        <CategoryIcon className={`h-4 w-4 shrink-0 ${hasActiveChild ? "text-blue-500" : "text-slate-400"}`} />
+                        <span className="tracking-wider uppercase text-[11px] font-bold truncate">
+                          {category}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
+                          {items.length}
+                        </span>
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                            isOpenCategory ? "rotate-0" : "-rotate-90"
+                          }`}
+                        />
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="my-2 border-t border-slate-200 dark:border-slate-800" />
                   )}
 
-                  {/* Menu Items */}
-                  <div className="space-y-1">
-                    {items.map((item) => {
-                      const isActive = pathname === item.href || (item.label === "Keşif & Metraj (BoQ)" && pathname?.includes("/boq"))
-                      const Icon = item.icon
-                      const displayLabel = getLocalizedLabel(item)
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setIsOpen(false)}
-                          className={`flex min-h-[40px] items-center rounded-lg transition-colors ${
-                            isActive
-                              ? "bg-tenant/15 font-semibold text-tenant border-l-2 border-tenant dark:bg-slate-800 dark:text-tenant"
-                              : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                          } gap-3 px-3 py-2`}
-                          title={isCollapsed ? displayLabel : undefined}
-                        >
-                          <Icon className="h-4 w-4 shrink-0" />
-                          {!isCollapsed && <span className="text-sm">{displayLabel}</span>}
-                        </Link>
-                      )
-                    })}
-                  </div>
+                  {/* Menu Items (Akordiyon İçeriği) */}
+                  {(isOpenCategory || isCollapsed) && (
+                    <div className={`space-y-0.5 mt-1 ${!isCollapsed ? "pl-2 border-l border-slate-200 dark:border-slate-800/80 ml-2.5 mb-2" : ""}`}>
+                      {items.map((item) => {
+                        const isActive = pathname === item.href || (item.label === "Keşif & Metraj (BoQ)" && pathname?.includes("/boq"))
+                        const Icon = item.icon
+                        const displayLabel = getLocalizedLabel(item)
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setIsOpen(false)}
+                            className={`flex min-h-[36px] items-center rounded-lg transition-all ${
+                              isActive
+                                ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20 dark:bg-blue-600 dark:text-white"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white"
+                            } gap-2.5 px-2.5 py-1.5 text-xs`}
+                            title={isCollapsed ? displayLabel : undefined}
+                          >
+                            <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
+                            {!isCollapsed && <span className="truncate">{displayLabel}</span>}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )
             })}
           </nav>
 
           {/* Footer */}
-          <div className="mt-4 border-t border-slate-200 pt-6 pb-safe dark:border-slate-800">
+          <div className="mt-3 border-t border-slate-200 pt-4 pb-safe dark:border-slate-800">
             {isInstallable && (
               <button
                 type="button"
                 onClick={() => void promptInstall()}
-                className={`mb-3 flex min-h-[44px] w-full items-center justify-center gap-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white shadow-lg shadow-blue-600/20 transition-colors hover:from-blue-500 hover:to-indigo-500 ${
+                className={`mb-2.5 flex min-h-[40px] w-full items-center justify-center gap-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-2 text-white shadow-lg shadow-blue-600/20 transition-colors hover:from-blue-500 hover:to-indigo-500 text-xs font-bold ${
                   isCollapsed ? "px-2" : "text-left"
                 }`}
                 title={isCollapsed ? "Uygulamayı Yükle" : undefined}
               >
-                <Download className="h-5 w-5 shrink-0" />
+                <Download className="h-4 w-4 shrink-0" />
                 {!isCollapsed && <span>Uygulamayı Yükle</span>}
               </button>
             )}
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className={`flex min-h-[44px] w-full items-center gap-3 rounded-lg bg-red-600 px-4 py-3 text-white transition-colors hover:bg-red-500 ${
+              className={`flex min-h-[40px] w-full items-center gap-2.5 rounded-lg bg-red-600 px-3 py-2 text-white transition-colors hover:bg-red-500 text-xs font-bold ${
                 isCollapsed ? "justify-center" : "text-left"
               }`}
               title={isCollapsed ? "Çıkış Yap" : undefined}
             >
-              <LogOut className="h-5 w-5 shrink-0" />
+              <LogOut className="h-4 w-4 shrink-0" />
               {!isCollapsed && <span>Çıkış Yap</span>}
             </button>
           </div>
