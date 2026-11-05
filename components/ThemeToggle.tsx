@@ -207,3 +207,4 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
     </div>
   )
 }
+
