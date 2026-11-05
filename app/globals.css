@@ -8,13 +8,13 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --tenant-primary: #3B82F6;
 }
 
 .dark {
-  --background: #0a0a0a;
+  --background: #0A0F1C;
   --foreground: #ededed;
   --tenant-primary: #3B82F6;
 }
@@ -24,16 +24,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-dark-background: #0f172a;
+  --color-dark-background: #0A0F1C;
   --color-dark-foreground: #f8fafc;
   --color-tenant: var(--tenant-primary);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 html,
@@ -132,12 +125,12 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155; /* slate-700 rengi */
+  background: #334155;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569; /* slate-600 rengi */
+  background: #475569;
 }
 
 /* Firefox için */
@@ -150,8 +143,6 @@ textarea {
 .dark-map-tiles {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
-
-
 
 /* Siyah-Beyaz (Monochrome / High Contrast - Güneş Altı & WCAG Uygun) */
 .monochrome {

@@ -20,21 +20,20 @@ export default function AdminLayoutShell({ children }: { children: React.ReactNo
   }, [])
 
   return (
-    <>
-      <AdminSidebar
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        sidebarWidth={sidebarWidth}
-        setSidebarWidth={setSidebarWidth}
-      />
-      <main
-        style={{
-          ["--admin-sidebar-margin" as any]: `${isCollapsed ? 80 : sidebarWidth}px`,
-        }}
-        className="transition-all duration-150 pt-20 p-6 lg:pt-6 lg:p-8 lg:ml-[var(--admin-sidebar-margin)]"
-      >
-        {children}
+    <div className="flex h-screen w-full overflow-hidden">
+      <div className="flex-shrink-0 h-full">
+        <AdminSidebar
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          sidebarWidth={sidebarWidth}
+          setSidebarWidth={setSidebarWidth}
+        />
+      </div>
+      <main className="flex-1 h-full overflow-y-auto bg-slate-50 dark:bg-[#0A0F1C]">
+        <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 min-h-full">
+          {children}
+        </div>
       </main>
-    </>
+    </div>
   )
 }

@@ -10,6 +10,7 @@ import Link from "next/link"
 import { Bot, Palette, Sun, Moon, Contrast, Globe, Check, Eye, SunMedium } from "lucide-react"
 import toast from "react-hot-toast"
 import ConfirmModal from "@/components/ConfirmModal"
+import ThemeToggle from "@/components/ThemeToggle"
 import { useTheme } from "next-themes"
 import { useLocale } from "next-intl"
 import { usePathname, useRouter } from "@/i18n/routing"
@@ -245,7 +246,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="lg:mt-0 mt-16 max-w-5xl">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             Sistem Ayarları
@@ -254,6 +255,7 @@ export default function AdminSettingsPage() {
             Görünüm, dil, arşivleme ve profil yapılandırmasını yönetin.
           </p>
         </div>
+        <ThemeToggle variant="pills" />
       </div>
 
       {/* Tab Navigation */}

@@ -621,11 +621,11 @@ export default function AdminSidebar({
         style={{
           width: isCollapsed ? undefined : `${currentWidth}px`,
         }}
-        className={`fixed left-0 top-0 z-[100] lg:z-[100] h-full ${
+        className={`fixed lg:relative left-0 top-0 z-[100] lg:z-auto h-full flex-shrink-0 ${
           isResizing ? "" : "transition-all duration-200"
         } ${
           isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
-        } ${isCollapsed ? "lg:w-20" : ""} w-[85vw] max-w-[480px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 relative group/sidebar`}
+        } ${isCollapsed ? "lg:w-20" : ""} w-[85vw] max-w-[480px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-[#111827] relative group/sidebar flex flex-col`}
       >
         {/* Drag Handle / Resizer */}
         {!isCollapsed && (

@@ -77,7 +77,7 @@ export default async function AdminLayout({
   return (
     <NextAuthSessionProvider>
       <div 
-        className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col"
+        className="h-screen w-full overflow-hidden bg-slate-50 dark:bg-[#0A0F1C] text-slate-900 dark:text-white flex flex-col"
         style={{
           '--tenant-primary': primaryColor,
         } as React.CSSProperties}

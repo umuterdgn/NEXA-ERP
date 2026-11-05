@@ -37,7 +37,7 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
 
   if (!mounted) {
     return (
-      <div className={`w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse ${className}`} />
+      <div className={`w-9 h-9 rounded-lg bg-slate-100 dark:bg-[#111827] animate-pulse ${className}`} />
     )
   }
 
@@ -56,14 +56,16 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
   }
 
   const cycleTheme = () => {
-    if (currentTheme === "dark") handleSelectTheme("light")
-    else if (currentTheme === "light") handleSelectTheme("monochrome")
-    else handleSelectTheme("dark")
+    if (currentTheme === "dark") {
+      handleSelectTheme("light")
+    } else {
+      handleSelectTheme("dark")
+    }
   }
 
   if (variant === "pills") {
     return (
-      <div className={`flex items-center p-1 rounded-xl bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700/60 ${className}`}>
+      <div className={`flex items-center p-1 rounded-xl bg-slate-200/80 dark:bg-[#111827] border border-slate-300 dark:border-slate-800 shadow-sm ${className}`}>
         <button
           type="button"
           onClick={() => handleSelectTheme("dark")}
@@ -72,9 +74,9 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
               ? "bg-slate-900 text-white shadow-sm"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
-          title="Koyu Tema"
+          title="Koyu Tema (Dark)"
         >
-          <Moon className="w-3.5 h-3.5" />
+          <Moon className="w-3.5 h-3.5 text-blue-400" />
           <span>Koyu</span>
         </button>
 
@@ -86,7 +88,7 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
-          title="Açık Tema"
+          title="Açık Tema (Light)"
         >
           <Sun className="w-3.5 h-3.5 text-amber-500" />
           <span>Açık</span>
@@ -100,7 +102,7 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
               ? "bg-black text-white ring-1 ring-white/50"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
-          title="Siyah-Beyaz (Güneş Altı)"
+          title="Siyah-Beyaz (Güneş Altı & WCAG)"
         >
           <Contrast className="w-3.5 h-3.5" />
           <span>Mono</span>
@@ -114,8 +116,8 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
       <button
         type="button"
         onClick={cycleTheme}
-        className={`w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors shadow-sm ${className}`}
-        title={`Tema Değiştir (Şu anki: ${currentTheme})`}
+        className={`w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors shadow-sm ${className}`}
+        title={`Tema Değiştir (Şu anki: ${currentTheme === "dark" ? "Koyu" : "Açık"})`}
       >
         {currentTheme === "light" ? (
           <Sun className="w-4 h-4 text-amber-500" />
@@ -134,7 +136,7 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition-colors shadow-sm text-xs font-medium"
+        className="h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition-colors shadow-sm text-xs font-medium"
         title="Görünüm Teması"
       >
         {currentTheme === "light" ? (
@@ -150,7 +152,7 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1.5 shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
+        <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] p-1.5 shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
           <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             Görünüm Teması
           </div>
@@ -207,4 +209,3 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
     </div>
   )
 }
-
