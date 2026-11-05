@@ -2,7 +2,7 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Nexa ERP - Çoklu Tema Geçiş Bileşeni (Koyu / Açık / Siyah-Beyaz)
+ * Nexa ERP - Çoklu Tema Geçiş Bileşeni (Koyu / Açık / Siyah-Beyaz / iOS Style Switch)
  */
 
 import React, { useState, useEffect, useRef } from "react"
@@ -11,12 +11,12 @@ import { Sun, Moon, Contrast, Check } from "lucide-react"
 import toast from "react-hot-toast"
 
 interface ThemeToggleProps {
-  variant?: "dropdown" | "pills" | "icon"
+  variant?: "dropdown" | "pills" | "icon" | "ios"
   className?: string
 }
 
 export default function ThemeToggle({ variant = "dropdown", className = "" }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -36,12 +36,17 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
   }, [])
 
   if (!mounted) {
+    if (variant === "ios") {
+      return (
+        <div className={`w-13 h-7 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse ${className}`} />
+      )
+    }
     return (
       <div className={`w-9 h-9 rounded-lg bg-slate-100 dark:bg-[#111827] animate-pulse ${className}`} />
     )
   }
 
-  const currentTheme = theme || "dark"
+  const currentTheme = theme || resolvedTheme || "dark"
 
   const handleSelectTheme = (newTheme: "dark" | "light" | "monochrome") => {
     setTheme(newTheme)
@@ -61,6 +66,55 @@ export default function ThemeToggle({ variant = "dropdown", className = "" }: Th
     } else {
       handleSelectTheme("dark")
     }
+  }
+
+  // --- iOS Style Elegant Switch ---
+  if (variant === "ios") {
+    const isDark = currentTheme === "dark"
+
+    return (
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isDark}
+        onClick={cycleTheme}
+        className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-300 ease-in-out focus:outline-none ${
+          isDark
+            ? "bg-slate-800 border border-slate-700/80 shadow-inner"
+            : "bg-slate-200 border border-slate-300 shadow-inner"
+        } ${className}`}
+        title={`Temayı Değiştir (${isDark ? "Açık Moda Geç" : "Koyu Moda Geç"})`}
+      >
+        <span className="sr-only">Tema Değiştir</span>
+
+        {/* Ambient Track Icons */}
+        <span className="absolute inset-0 flex items-center justify-between px-1.5 pointer-events-none select-none">
+          <Sun
+            className={`w-3.5 h-3.5 transition-all duration-200 ${
+              isDark ? "text-slate-500 opacity-40 scale-75" : "text-amber-500 opacity-100 scale-100"
+            }`}
+          />
+          <Moon
+            className={`w-3.5 h-3.5 transition-all duration-200 ${
+              isDark ? "text-blue-400 opacity-100 scale-100" : "text-slate-400 opacity-40 scale-75"
+            }`}
+          />
+        </span>
+
+        {/* iOS Slider Knob */}
+        <span
+          className={`pointer-events-none inline-flex h-6 w-6 transform items-center justify-center rounded-full bg-white shadow-md ring-0 transition-transform duration-300 ease-in-out dark:bg-slate-900 ${
+            isDark ? "translate-x-6" : "translate-x-0"
+          }`}
+        >
+          {isDark ? (
+            <Moon className="w-3.5 h-3.5 text-blue-400 transition-transform duration-200" />
+          ) : (
+            <Sun className="w-3.5 h-3.5 text-amber-500 transition-transform duration-200" />
+          )}
+        </span>
+      </button>
+    )
   }
 
   if (variant === "pills") {

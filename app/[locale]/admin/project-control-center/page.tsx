@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import toast from "react-hot-toast"
 import ThemeToggle from "@/components/ThemeToggle"
+import CreateTaskModal from "@/components/admin/CreateTaskModal"
 
 interface ZoneItem {
   id: string
@@ -100,6 +101,7 @@ export default function ProjectMasterDashboardPage() {
   const [blocks, setBlocks] = useState<BlockItem[]>([])
   const [selectedBlock, setSelectedBlock] = useState<BlockItem | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState<"ALL" | "GREEN" | "YELLOW" | "RED">("ALL")
   const [viewMode, setViewMode] = useState<"ISOMETRIC" | "HEATMAP">("ISOMETRIC")
   const [isLoading, setIsLoading] = useState(false)
@@ -268,8 +270,8 @@ export default function ProjectMasterDashboardPage() {
             </button>
           </div>
 
-          {/* Quick Theme Toggle in Dashboard Toolbar */}
-          <ThemeToggle variant="icon" />
+          {/* Quick iOS Theme Switch in Dashboard Toolbar */}
+          <ThemeToggle variant="ios" />
 
           {/* Refresh Button */}
           <button
@@ -285,7 +287,7 @@ export default function ProjectMasterDashboardPage() {
 
       {/* KPI METRIC BAR */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-        <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>Toplam Blok</span>
             <Building2 className="w-4 h-4 text-blue-500" />
@@ -296,7 +298,7 @@ export default function ProjectMasterDashboardPage() {
           <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1">Multi-Block Hiyerarşi</div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>Genel İlerleme</span>
             <Compass className="w-4 h-4 text-cyan-500" />
@@ -307,7 +309,7 @@ export default function ProjectMasterDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>Aktif İşçi (Turnike/GPS)</span>
             <HardHat className="w-4 h-4 text-amber-500" />
@@ -321,7 +323,7 @@ export default function ProjectMasterDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>İş Makineleri (BLE)</span>
             <Truck className="w-4 h-4 text-purple-500" />
@@ -332,7 +334,7 @@ export default function ProjectMasterDashboardPage() {
           <div className="text-[11px] text-purple-600 dark:text-purple-400 font-medium mt-1">Vinç, Pompa & Kepçe</div>
         </div>
 
-        <div className="col-span-2 md:col-span-1 bg-white dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="col-span-2 md:col-span-1 bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
             <span>Riskli Bloklar</span>
             <ShieldAlert className="w-4 h-4 text-rose-500" />
@@ -349,7 +351,7 @@ export default function ProjectMasterDashboardPage() {
       </div>
 
       {/* FILTER BUTTONS & HEATMAP LEGEND */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white dark:bg-[#111827] p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
           <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Durum Filtresi:</span>
@@ -443,7 +445,7 @@ export default function ProjectMasterDashboardPage() {
               <div
                 key={block.id}
                 onClick={() => handleOpenXRay(block)}
-                className={`bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 transition-all cursor-pointer hover:-translate-y-1 relative group flex flex-col justify-between overflow-hidden shadow-sm ${statusBorder}`}
+                className={`bg-white dark:bg-[#111827] rounded-3xl p-5 border-2 transition-all cursor-pointer hover:-translate-y-1 relative group flex flex-col justify-between overflow-hidden shadow-sm ${statusBorder}`}
               >
                 {/* 2.5D Isometric Top Accent Glow */}
                 <div
@@ -619,7 +621,7 @@ export default function ProjectMasterDashboardPage() {
         </div>
       ) : (
         /* HEATMAP MATRIX VIEW */
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
+        <div className="bg-white dark:bg-[#111827] rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kat & Blok Isı Haritası Matrisi</h2>
@@ -637,7 +639,7 @@ export default function ProjectMasterDashboardPage() {
               <div
                 key={block.id}
                 onClick={() => handleOpenXRay(block)}
-                className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 transition-colors cursor-pointer"
+                className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0E1526] border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 transition-colors cursor-pointer"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2">
@@ -715,9 +717,9 @@ export default function ProjectMasterDashboardPage() {
           />
 
           {/* Drawer Body */}
-          <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 h-full shadow-2xl flex flex-col z-10 overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-white dark:bg-[#111827] border-l border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white h-full shadow-2xl flex flex-col z-10 overflow-y-auto">
             {/* Drawer Header */}
-            <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 sticky top-0 z-20 flex items-start justify-between">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0E1526] sticky top-0 z-20 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-blue-600 text-white">
@@ -744,7 +746,7 @@ export default function ProjectMasterDashboardPage() {
             {/* Drawer Content */}
             <div className="p-6 space-y-6 flex-1">
               {/* Quick Health Status Changer for simulation */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0E1526] border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-bold text-slate-800 dark:text-slate-300">Blok Durumu (DB Kaydı)</div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Durumu anında güncelle</div>
@@ -784,7 +786,7 @@ export default function ProjectMasterDashboardPage() {
               </div>
 
               {/* 1. CANLI TURNİKE & GPS İŞÇİ TELEMETRİSİ */}
-              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <div className="bg-slate-50 dark:bg-[#0E1526] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
@@ -805,23 +807,23 @@ export default function ProjectMasterDashboardPage() {
 
                 {selectedBlock.workerBreakdown && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-800/80">
-                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                    <div className="p-2 bg-white dark:bg-[#111827] rounded-xl text-xs border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 dark:text-slate-400">Kalıpçı Ekibi:</span>
                       <div className="font-bold text-slate-900 dark:text-white">{selectedBlock.workerBreakdown.kalipci} Personel</div>
                     </div>
-                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                    <div className="p-2 bg-white dark:bg-[#111827] rounded-xl text-xs border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 dark:text-slate-400">Demirci Ekibi:</span>
                       <div className="font-bold text-slate-900 dark:text-white">{selectedBlock.workerBreakdown.demirci} Personel</div>
                     </div>
-                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                    <div className="p-2 bg-white dark:bg-[#111827] rounded-xl text-xs border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 dark:text-slate-400">Beton Ekibi:</span>
                       <div className="font-bold text-slate-900 dark:text-white">{selectedBlock.workerBreakdown.betoncu} Personel</div>
                     </div>
-                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                    <div className="p-2 bg-white dark:bg-[#111827] rounded-xl text-xs border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 dark:text-slate-400">Mekanik/Elektrik:</span>
                       <div className="font-bold text-slate-900 dark:text-white">{selectedBlock.workerBreakdown.elektrik} Personel</div>
                     </div>
-                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl text-xs border border-slate-100 dark:border-transparent">
+                    <div className="p-2 bg-white dark:bg-[#111827] rounded-xl text-xs border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 dark:text-slate-400">İSG & Saha Şefi:</span>
                       <div className="font-bold text-emerald-600 dark:text-emerald-400">{selectedBlock.workerBreakdown.isg} Personel</div>
                     </div>
@@ -830,7 +832,7 @@ export default function ProjectMasterDashboardPage() {
               </div>
 
               {/* 2. SON TAMAMLANAN KRİTİK İMALAT */}
-              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <div className="bg-slate-50 dark:bg-[#0E1526] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="w-4 h-4" />
@@ -841,7 +843,7 @@ export default function ProjectMasterDashboardPage() {
                   </div>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 mt-2">
+                <div className="p-3 bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 mt-2">
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                     {selectedBlock.lastMilestone}
                   </p>
@@ -854,7 +856,7 @@ export default function ProjectMasterDashboardPage() {
               </div>
 
               {/* 3. ANLIK UYUMSUZLUK (DÖF) RAPORLARI */}
-              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <div className="bg-slate-50 dark:bg-[#0E1526] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
@@ -875,7 +877,7 @@ export default function ProjectMasterDashboardPage() {
                     {selectedBlock.deficienciesList.map((def, idx) => (
                       <div
                         key={def.id || idx}
-                        className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between text-xs"
+                        className="p-3 bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between text-xs"
                       >
                         <div>
                           <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -900,7 +902,7 @@ export default function ProjectMasterDashboardPage() {
               </div>
 
               {/* 4. SAHADAKİ AKTİF İŞ MAKİNELERİ (BLE IoT) */}
-              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <div className="bg-slate-50 dark:bg-[#0E1526] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
@@ -920,7 +922,7 @@ export default function ProjectMasterDashboardPage() {
                   {selectedBlock.machineryList?.map((m, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
+                      className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
                     >
                       <div>
                         <div className="font-bold text-slate-900 dark:text-white">{m.name}</div>
@@ -935,7 +937,7 @@ export default function ProjectMasterDashboardPage() {
               </div>
 
               {/* 5. KAT VE MAHAL BAZINDA DETAYLI İLERLEME */}
-              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <div className="bg-slate-50 dark:bg-[#0E1526] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
@@ -952,7 +954,7 @@ export default function ProjectMasterDashboardPage() {
                   {selectedBlock.zones.map((zone) => (
                     <div
                       key={zone.id}
-                      className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800/80"
+                      className="p-3 bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800/80"
                     >
                       <div className="flex items-center justify-between text-xs mb-1">
                         <span className="font-bold text-slate-900 dark:text-white">{zone.name}</span>
@@ -992,14 +994,16 @@ export default function ProjectMasterDashboardPage() {
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => toast.success("İş emri oluşturma modülü açıldı")}
-                    className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors text-center shadow-sm"
+                    type="button"
+                    onClick={() => setIsTaskModalOpen(true)}
+                    className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all text-center shadow-md shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-1.5"
                   >
-                    + İş Emri Ata
+                    <span>+ İş Emri Ata</span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => toast.success("DÖF / Uygunsuzluk bildirim formu açıldı")}
-                    className="p-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-colors text-center shadow-sm"
+                    className="p-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-all text-center shadow-md shadow-amber-600/20 active:scale-95"
                   >
                     ⚠️ DÖF Kaydı Aç
                   </button>
@@ -1009,6 +1013,13 @@ export default function ProjectMasterDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Real Task Assignment Modal */}
+      <CreateTaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        block={selectedBlock}
+      />
     </div>
   )
 }

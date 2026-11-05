@@ -602,7 +602,7 @@ export default function AdminSidebar({
           </div>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle variant="icon" />
+            <ThemeToggle variant="ios" />
             <NotificationBell />
           </div>
         </div>
@@ -695,7 +695,6 @@ export default function AdminSidebar({
                 )
               )}
               <div className="flex items-center gap-2">
-                {!isCollapsed && <ThemeToggle variant="icon" />}
                 {!isCollapsed && <NotificationBell />}
                 <button
                   type="button"
@@ -825,7 +824,17 @@ export default function AdminSidebar({
           </nav>
 
           {/* Footer */}
-          <div className="mt-3 border-t border-slate-200 pt-4 pb-safe dark:border-slate-800">
+          <div className="mt-3 border-t border-slate-200 pt-3 pb-safe dark:border-slate-800">
+            {/* iOS Tarzı Zarif Tema Switch (Güneş / Ay) */}
+            <div className={`mb-3 flex items-center ${isCollapsed ? "justify-center" : "justify-between px-1"} py-1`}>
+              {!isCollapsed && (
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                  Görünüm
+                </span>
+              )}
+              <ThemeToggle variant="ios" />
+            </div>
+
             {isInstallable && (
               <button
                 type="button"
