@@ -435,6 +435,7 @@ model Project {
   inspectionForms          InspectionForm[]
   boqProgressItems         BoqItem[]
   geofenceZones            GeofenceZone[]
+  blocks                   Block[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -495,6 +496,68 @@ model GeofenceZone {
   @@index([tenantId])
   @@index([type])
   @@index([isActive])
+}
+
+// ============================================================================
+// MULTI-BLOCK & ZONE (Çoklu Blok ve Kat/Mahal Hiyerarşisi)
+// Project -> Block -> Zone
+// ============================================================================
+
+model Block {
+  id              String    @id @default(cuid())
+  tenantId        String?   // SaaS: Kiracı ID
+  projectId       String
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name            String    // Örn: "A Blok", "B Blok", "C Blok - Sosyal Tesis"
+  code            String?   // Örn: "BLK-A", "BLK-B"
+  totalFloors     Int?      @default(10) // Kat sayısı
+  basementFloors  Int?      @default(2)  // Bodrum kat sayısı
+  status          String?   @default("ACTIVE") // ACTIVE, COMPLETED, ON_HOLD
+  healthStatus    String?   @default("GREEN")  // GREEN (Planında), YELLOW (Risk/DÖF), RED (Kritik/Durdu)
+  completionRate  Float?    @default(0) // % ilerleme (0 - 100)
+  activeWorkers   Int?      @default(0) // Anlık çalışan sayısı (Turnike/GPS)
+  activeMachinery Int?      @default(0) // Anlık iş makinesi sayısı (BLE)
+  lastMilestone   String?   // Son tamamlanan kritik imalat (Örn: "Dün 2. Kat tabliyesi döküldü")
+  openDefects     Int?      @default(0) // Açık DÖF/uygunsuzluk sayısı
+  isgRiskScore    Int?      @default(15) // İSG Risk Puanı (0-100)
+  
+  zones           Zone[]
+  workOrders      WorkOrder[]
+  attendances     AttendanceRecord[]
+  dailyLogs       DailyLog[]
+  inspections     Inspection[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([healthStatus])
+  @@index([tenantId])
+}
+
+model Zone {
+  id           String    @id @default(cuid())
+  tenantId     String?   // SaaS: Kiracı ID
+  blockId      String
+  block        Block     @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  name         String    // Örn: "Zemin Kat", "3. Kat", "Çatı Katı", "Otopark -2"
+  code         String?   // Örn: "KAT-03"
+  floorNumber  Int?      // -2, -1, 0, 1, 2, ...
+  areaType     String?   @default("FLOOR") // FLOOR, APARTMENT, COMMON_AREA, SHAFT, SLAB
+  status       String?   @default("IN_PROGRESS") // NOT_STARTED, IN_PROGRESS, COMPLETED, INSPECTION_READY
+  progressRate Float?    @default(0) // % kat ilerleme
+
+  workOrders   WorkOrder[]
+  dailyLogs    DailyLog[]
+  inspections  Inspection[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([blockId])
+  @@index([status])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -2223,10 +2286,13 @@ model AttendanceRecord {
   workerName    String? // GPS bazlı check-in için isim
   latitude      Float? // GPS check-in koordinatı
   longitude     Float? // GPS check-in koordinatı
+  blockId       String?
+  block         Block?    @relation(fields: [blockId], references: [id], onDelete: SetNull)
   createdAt     DateTime  @default(now())
 
   @@index([personelId])
   @@index([projectId])
+  @@index([blockId])
   @@index([date])
   @@index([status])
   @@index([tenantId])
@@ -2257,12 +2323,18 @@ model DailyLog {
   inspectorId        String?  // İmzayı atan denetçi ID'si
   projectId      String
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  blockId        String?
+  block          Block?   @relation(fields: [blockId], references: [id], onDelete: SetNull)
+  zoneId         String?
+  zone           Zone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
   createdById    String?
   createdBy      User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([projectId])
+  @@index([blockId])
+  @@index([zoneId])
   @@index([date])
   @@index([tenantId])
   @@index([createdById])
@@ -3144,6 +3216,10 @@ model WorkOrder {
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id])
+  blockId   String?
+  block     Block?   @relation(fields: [blockId], references: [id], onDelete: SetNull)
+  zoneId    String?
+  zone      Zone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
 
   assignedToId String?
   assignedTo   Personel? @relation("PersonelTasks", fields: [assignedToId], references: [id])
@@ -3156,6 +3232,8 @@ model WorkOrder {
   @@index([priority])
   @@index([department])
   @@index([projectId])
+  @@index([blockId])
+  @@index([zoneId])
   @@index([assignedToId])
   @@index([tenantId])
 }
@@ -3169,6 +3247,10 @@ model Inspection {
   tenantId       String? // SaaS: Kiracı ID
   projectId      String
   project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  blockId        String?
+  block          Block?       @relation(fields: [blockId], references: [id], onDelete: SetNull)
+  zoneId         String?
+  zone           Zone?        @relation(fields: [zoneId], references: [id], onDelete: SetNull)
   inspectorId    String
   inspector      Personel     @relation(fields: [inspectorId], references: [id])
   type           String // DONATI, BETON, KALIP, DUVAR, DOSEME, KOLON, KIRIS
@@ -3182,6 +3264,8 @@ model Inspection {
   updatedAt      DateTime     @updatedAt
 
   @@index([projectId])
+  @@index([blockId])
+  @@index([zoneId])
   @@index([inspectorId])
   @@index([type])
   @@index([status])

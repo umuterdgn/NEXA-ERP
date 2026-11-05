@@ -6,6 +6,13 @@ export default {
     extend: {
       colors: {
         tenant: 'var(--tenant-primary, #3B82F6)',
+        mono: {
+          bg: '#000000',
+          card: '#121212',
+          border: '#ffffff',
+          text: '#ffffff',
+          muted: '#a3a3a3',
+        },
       },
     },
   },

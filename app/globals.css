@@ -151,3 +151,40 @@ textarea {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 
+
+
+/* Siyah-Beyaz (Monochrome / High Contrast - Güneş Altı & WCAG Uygun) */
+.monochrome {
+  --background: #000000;
+  --foreground: #ffffff;
+  --tenant-primary: #ffffff;
+  color-scheme: dark;
+}
+
+html.monochrome {
+  filter: grayscale(100%) contrast(125%);
+}
+
+html.monochrome body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+html.monochrome .bg-slate-900,
+html.monochrome .bg-slate-950,
+html.monochrome .bg-slate-800,
+html.monochrome .bg-slate-900\/50,
+html.monochrome .bg-slate-800\/50,
+html.monochrome .bg-slate-50,
+html.monochrome .bg-white {
+  background-color: #0d0d0d !important;
+  border-color: #737373 !important;
+  color: #ffffff !important;
+}
+
+.theme-mono {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  filter: grayscale(100%) contrast(130%);
+}

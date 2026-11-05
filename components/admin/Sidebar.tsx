@@ -78,6 +78,7 @@ import {
   PencilRuler,
   Award,
   Activity,
+  Layers,
   FileBadge,
   Construction,
   XCircle,
@@ -218,6 +219,7 @@ const menuItems: MenuItem[] = [
   
   // PROJE YÖNETİMİ
   { href: "/admin/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
+  { href: "/admin/project-control-center", label: "Proje Kontrol Merkezi (Master)", icon: Layers, category: "PROJE YÖNETİMİ" },
   { href: "/admin/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ" },
   { href: "/admin/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ" },
   { href: "/admin/boq", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ" },

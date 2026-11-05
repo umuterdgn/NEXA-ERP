@@ -22,6 +22,7 @@ Notifications.setNotificationHandler({
 });
 
 import { useNetworkSync } from "../src/hooks/useNetworkSync";
+import { MobileThemeProvider } from "../src/context/ThemeContext";
 
 /**
  * Nexa ERP Mobil - Kök Düzen (Root Layout)
@@ -84,30 +85,32 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: "#090d16",
-            },
-            animation: "fade_from_bottom",
-          }}
-        >
-          <Stack.Screen
-            name="index"
-            options={{
+        <MobileThemeProvider>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
               headerShown: false,
-              title: "Nexa ERP Giriş",
+              contentStyle: {
+                backgroundColor: "#090d16",
+              },
+              animation: "fade_from_bottom",
             }}
-          />
-          <Stack.Screen
-            name="(tabs)"
-            options={{
-              headerShown: false,
-            }}
-          />
-        </Stack>
+          >
+            <Stack.Screen
+              name="index"
+              options={{
+                headerShown: false,
+                title: "Nexa ERP Giriş",
+              }}
+            />
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false,
+              }}
+            />
+          </Stack>
+        </MobileThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

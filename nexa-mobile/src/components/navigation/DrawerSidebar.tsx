@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { getAuthSession, clearAuthSession } from "../../../apiClient";
 import { OfflineQueue } from "../../services/OfflineQueue";
+import { useMobileTheme } from "../../context/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 340);
@@ -40,6 +41,7 @@ export const useDrawer = () => useContext(DrawerContext);
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const { theme, setTheme, language, setLanguage } = useMobileTheme();
 
   const [slideAnim] = useState(new Animated.Value(-DRAWER_WIDTH));
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -379,9 +381,87 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Koyu Tema (Dark Mode)</Text>
-              <Text style={styles.settingValue}>Aktif (Zorunlu)</Text>
+            {/* Görünüm / Tema Seçimi */}
+            <View style={{ marginBottom: 18 }}>
+              <Text style={styles.settingSectionTitle}>Görünüm Modu (Tema)</Text>
+              <View style={styles.themeSelectorRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeOptionPill,
+                    theme === "dark" && styles.themeOptionActive,
+                  ]}
+                  onPress={() => setTheme("dark")}
+                >
+                  <Ionicons name="moon" size={14} color={theme === "dark" ? "#FFF" : "#8E8E93"} />
+                  <Text style={[styles.themeOptionText, theme === "dark" && styles.themeOptionTextActive]}>
+                    Koyu
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.themeOptionPill,
+                    theme === "light" && styles.themeOptionActiveLight,
+                  ]}
+                  onPress={() => setTheme("light")}
+                >
+                  <Ionicons name="sunny" size={14} color={theme === "light" ? "#0F172A" : "#8E8E93"} />
+                  <Text style={[styles.themeOptionText, theme === "light" && styles.themeOptionTextActiveLight]}>
+                    Açık
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.themeOptionPill,
+                    theme === "monochrome" && styles.themeOptionActiveMono,
+                  ]}
+                  onPress={() => setTheme("monochrome")}
+                >
+                  <Ionicons name="contrast" size={14} color={theme === "monochrome" ? "#000" : "#8E8E93"} />
+                  <Text style={[styles.themeOptionText, theme === "monochrome" && styles.themeOptionTextActiveMono]}>
+                    Siyah-Beyaz
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.settingHelpText}>
+                {theme === "monochrome"
+                  ? "☀️ Güneş altı yüksek kontrast & WCAG uyumlu mod"
+                  : theme === "light"
+                  ? "🏢 Ferah ve net ofis görünümü"
+                  : "🌙 Standart lacivert/siyah karanlık arayüz"}
+              </Text>
+            </View>
+
+            {/* Dil Seçimi */}
+            <View style={{ marginBottom: 18 }}>
+              <Text style={styles.settingSectionTitle}>Dil / Language</Text>
+              <View style={styles.themeSelectorRow}>
+                <TouchableOpacity
+                  style={[styles.langOptionPill, language === "tr" && styles.langOptionActive]}
+                  onPress={() => setLanguage("tr")}
+                >
+                  <Text style={[styles.langOptionText, language === "tr" && styles.langOptionTextActive]}>
+                    🇹🇷 TR
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.langOptionPill, language === "en" && styles.langOptionActive]}
+                  onPress={() => setLanguage("en")}
+                >
+                  <Text style={[styles.langOptionText, language === "en" && styles.langOptionTextActive]}>
+                    🇬🇧 EN
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.langOptionPill, language === "de" && styles.langOptionActive]}
+                  onPress={() => setLanguage("de")}
+                >
+                  <Text style={[styles.langOptionText, language === "de" && styles.langOptionTextActive]}>
+                    🇩🇪 DE
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.settingRow}>
@@ -396,11 +476,6 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
               >
                 <Text style={{ color: "#0A7AFF", fontWeight: "600" }}>Temizle</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Dil / Language</Text>
-              <Text style={styles.settingValue}>Türkçe (TR)</Text>
             </View>
 
             <TouchableOpacity
@@ -755,6 +830,87 @@ const styles = StyleSheet.create({
   modalDoneText: {
     color: "#FFFFFF",
     fontSize: 14,
+    fontWeight: "700",
+  },
+  settingSectionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#E2E8F0",
+    marginBottom: 8,
+  },
+  themeSelectorRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  themeOptionPill: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 4,
+  },
+  themeOptionActive: {
+    backgroundColor: "#0A7AFF",
+    borderColor: "#0A7AFF",
+  },
+  themeOptionActiveLight: {
+    backgroundColor: "#F8FAFC",
+    borderColor: "#CBD5E1",
+  },
+  themeOptionActiveMono: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FFFFFF",
+  },
+  themeOptionText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#8E8E93",
+  },
+  themeOptionTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  themeOptionTextActiveLight: {
+    color: "#0F172A",
+    fontWeight: "700",
+  },
+  themeOptionTextActiveMono: {
+    color: "#000000",
+    fontWeight: "800",
+  },
+  settingHelpText: {
+    fontSize: 11,
+    color: "#8E8E93",
+    marginTop: 6,
+    fontStyle: "italic",
+  },
+  langOptionPill: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 10,
+    paddingVertical: 8,
+  },
+  langOptionActive: {
+    backgroundColor: "rgba(10, 122, 255, 0.25)",
+    borderColor: "#0A7AFF",
+  },
+  langOptionText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#8E8E93",
+  },
+  langOptionTextActive: {
+    color: "#FFFFFF",
     fontWeight: "700",
   },
 });
