@@ -671,19 +671,17 @@ export default function ProjectMasterDashboardPage() {
                   </div>
                 </div>
 
-                {/* Floor Matrix Grid */}
+                {/* Floor Matrix Grid (Heatmap: Kırmızı / Sarı / Yeşil) */}
                 <div className="grid grid-cols-4 sm:grid-cols-8 md:grid-cols-14 gap-1.5">
                   {block.zones.map((zone) => {
-                    const isZoneDone = zone.progressRate === 100
-                    const isZoneRisk = zone.name.includes("DÖF") || zone.name.includes("Mühür")
+                    const isZoneDone = zone.progressRate >= 100
+                    const isZoneInProgress = zone.progressRate > 0 && zone.progressRate < 100
 
-                    const zoneBg = isZoneRisk
-                      ? "bg-rose-600 text-white border-rose-400"
-                      : isZoneDone
-                      ? "bg-emerald-600 text-white border-emerald-400"
-                      : zone.progressRate > 0
-                      ? "bg-amber-500 text-white border-amber-300"
-                      : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700"
+                    const zoneBg = isZoneDone
+                      ? "bg-emerald-600 text-white border-emerald-400 shadow-emerald-900/20"
+                      : isZoneInProgress
+                      ? "bg-amber-500 text-white border-amber-300 shadow-amber-900/20"
+                      : "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-400 dark:border-rose-500/40 hover:bg-rose-500/30"
 
                     return (
                       <div
@@ -950,40 +948,59 @@ export default function ProjectMasterDashboardPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3 mt-2 max-h-64 overflow-y-auto pr-1">
-                  {selectedBlock.zones.map((zone) => (
-                    <div
-                      key={zone.id}
-                      className="p-3 bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800/80"
-                    >
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-bold text-slate-900 dark:text-white">{zone.name}</span>
-                        <span
-                          className={`font-black ${
-                            zone.progressRate === 100
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : zone.progressRate > 0
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-slate-400 dark:text-slate-500"
-                          }`}
-                        >
-                          %{zone.progressRate}
-                        </span>
+                <div className="space-y-3 mt-2 max-h-72 overflow-y-auto pr-1">
+                  {selectedBlock.zones.map((zone) => {
+                    const isDone = zone.progressRate >= 100
+                    const isInProgress = zone.progressRate > 0 && zone.progressRate < 100
+                    const isNotStarted = zone.progressRate === 0
+
+                    return (
+                      <div
+                        key={zone.id}
+                        className="p-3 bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800/80 shadow-xs"
+                      >
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isDone
+                                  ? "bg-emerald-500"
+                                  : isInProgress
+                                  ? "bg-amber-500"
+                                  : "bg-rose-500"
+                              }`}
+                            />
+                            <span className="font-bold text-slate-900 dark:text-white">
+                              {zone.name}: %{zone.progressRate}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                              isDone
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30"
+                                : isInProgress
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30"
+                                : "bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30"
+                            }`}
+                          >
+                            {isDone ? "Tamamlandı" : isInProgress ? "İmalat Devam Ediyor" : "Başlanmadı"}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isDone
+                                ? "bg-emerald-500"
+                                : isInProgress
+                                ? "bg-amber-500"
+                                : "bg-rose-500/40"
+                            }`}
+                            style={{ width: `${Math.max(zone.progressRate, 2)}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${
-                            zone.progressRate === 100
-                              ? "bg-emerald-500"
-                              : zone.progressRate > 0
-                              ? "bg-amber-500"
-                              : "bg-slate-300 dark:bg-slate-700"
-                          }`}
-                          style={{ width: `${zone.progressRate}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 

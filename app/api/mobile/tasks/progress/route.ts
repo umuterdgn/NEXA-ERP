@@ -26,6 +26,9 @@ export async function POST(request: Request) {
       latitude,
       longitude,
       capturedAt,
+      zoneId,
+      zoneName,
+      subcontractorId,
       projectId: incomingProjectId,
     } = body
 
@@ -41,6 +44,14 @@ export async function POST(request: Request) {
     if (!photoUrl) {
       return NextResponse.json(
         { error: "Saha ilerleme girişi için fotoğraf / görsel kanıt yüklenmesi zorunludur!" },
+        { status: 400 }
+      )
+    }
+
+    // ADIM 1: Kat / Mahal Zorunluluğu
+    if (!zoneName && !zoneId) {
+      return NextResponse.json(
+        { error: "İlgili Kat / Mahal seçimi zorunludur! Lütfen imalatın yapıldığı katı seçin." },
         { status: 400 }
       )
     }
@@ -90,7 +101,7 @@ export async function POST(request: Request) {
       },
     })
 
-    // 3. BoqProgressLog tablosuna sahadan giriş kanıtını kaydet (GPS & Zaman Damgalı)
+    // 3. BoqProgressLog tablosuna sahadan giriş kanıtını kaydet (GPS, Kat/Mahal ve Taşeron Bağlantılı)
     const progressLog = await prisma.boqProgressLog.create({
       data: {
         boqItemId: targetBoqItem.id,
@@ -101,8 +112,104 @@ export async function POST(request: Request) {
         latitude: latitude != null ? Number(latitude) : null,
         longitude: longitude != null ? Number(longitude) : null,
         capturedAt: capturedAt ? new Date(capturedAt) : new Date(),
+        zoneId: zoneId || null,
+        zoneName: zoneName || null,
+        subcontractorId: subcontractorId || targetBoqItem.subcontractorId || null,
       },
     })
+
+    // ADIM 1 & 3: İlgili Kat/Mahal (Zone) İlerlemesini Güncelle
+    if (zoneId || zoneName) {
+      try {
+        const targetZone = zoneId
+          ? await prisma.zone.findUnique({ where: { id: zoneId } })
+          : await prisma.zone.findFirst({
+              where: {
+                name: { contains: zoneName || "" },
+                block: { projectId: targetBoqItem.projectId },
+              },
+            })
+
+        if (targetZone) {
+          const addedRate =
+            targetBoqItem.plannedQuantity > 0
+              ? (qty / targetBoqItem.plannedQuantity) * 100
+              : 15
+          const newRate = Math.min(
+            100,
+            Math.round(((targetZone.progressRate || 0) + addedRate) * 10) / 10
+          )
+          await prisma.zone.update({
+            where: { id: targetZone.id },
+            data: {
+              progressRate: newRate,
+              status: newRate >= 100 ? "COMPLETED" : "IN_PROGRESS",
+            },
+          })
+        }
+      } catch (zoneErr) {
+        console.warn("Mobile zone update warning:", zoneErr)
+      }
+    }
+
+    // ADIM 2: Otomatik Taşeron Hakedişi (Progress Payment) Hesabı
+    const effectiveSubId = subcontractorId || targetBoqItem.subcontractorId
+    const isSubcontractorTask = Boolean(
+      effectiveSubId ||
+      userRole === "SUBCONTRACTOR" ||
+      userName?.toLowerCase().includes("taşeron") ||
+      userName?.toLowerCase().includes("usta")
+    )
+
+    if (isSubcontractorTask) {
+      try {
+        const unitPrice = targetBoqItem.unitPrice || 0
+        const earnedAmount = qty * unitPrice
+        const currentPeriod = new Date().toISOString().slice(0, 7) // "2026-11"
+
+        const existingPayment = await prisma.progressPayment.findFirst({
+          where: {
+            projectId: targetBoqItem.projectId,
+            period: currentPeriod,
+            ...(effectiveSubId ? { subcontractorCompanyId: effectiveSubId } : {}),
+          },
+        })
+
+        if (existingPayment) {
+          await prisma.progressPayment.update({
+            where: { id: existingPayment.id },
+            data: {
+              quantity: { increment: qty },
+              totalAmount: { increment: earnedAmount },
+              totalPrice: { increment: earnedAmount },
+              amount: { increment: earnedAmount },
+              netAmount: { increment: earnedAmount * 0.95 },
+              netPayableAmount: { increment: earnedAmount * 0.95 },
+            },
+          })
+        } else {
+          await prisma.progressPayment.create({
+            data: {
+              projectId: targetBoqItem.projectId,
+              subcontractorCompanyId: effectiveSubId || null,
+              title: `${currentPeriod} Dönemi Taşeron Hakedişi (${targetBoqItem.pozNo} - ${zoneName || "Mobil İlerleme"})`,
+              period: currentPeriod,
+              quantity: qty,
+              unit: targetBoqItem.unit,
+              unitPrice,
+              totalAmount: earnedAmount,
+              totalPrice: earnedAmount,
+              amount: earnedAmount,
+              netAmount: earnedAmount * 0.95,
+              netPayableAmount: earnedAmount * 0.95,
+              status: "DRAFT",
+            },
+          })
+        }
+      } catch (payErr) {
+        console.warn("Mobile progress payment calculation error:", payErr)
+      }
+    }
 
     // 4. İlerleme yüzdesi hesapla
     const completionRate =

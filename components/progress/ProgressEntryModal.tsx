@@ -3,7 +3,7 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Nexa ERP - Sahadan İlerleme Girişi Modalı (ProgressEntryModal)
- * Saha Personeli / Ekip Seçimi, Gerçekleşen Miktar & Fotoğraflı İmalat Girişi
+ * Kat/Mahal (Zone) Zorunlu Seçimi & Otomatik Taşeron Hakedişi (Progress Payment)
  * Anti-Fraud Zorunlu Canlı Fotoğraf & GPS/Zaman Damgası (Watermark)
  * Açık / Koyu Tema (Light & Dark Mode) Destekli
  */
@@ -22,6 +22,8 @@ import {
   Clock,
   ShieldCheck,
   ShieldAlert,
+  Layers,
+  Building2,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { BoqItemWithLogs } from "@/app/[locale]/admin/projects/[id]/progress/actions"
@@ -30,6 +32,8 @@ export interface FieldPersonnelOption {
   id: string
   name: string
   roleTitle: string
+  isSubcontractor?: boolean
+  companyName?: string
 }
 
 export interface GpsCoordinates {
@@ -38,15 +42,35 @@ export interface GpsCoordinates {
   accuracy?: number
 }
 
+export interface ZoneOption {
+  id: string
+  name: string
+  floorNumber?: number
+  blockName?: string
+  progressRate?: number
+}
+
 const DEFAULT_FIELD_STAFF: FieldPersonnelOption[] = [
-  { id: "usr-1", name: "Ahmet Yılmaz", roleTitle: "Saha Şantiye Şefi (İnşaat Müh.)" },
-  { id: "usr-2", name: "Mehmet Kaya", roleTitle: "Kalıpçı Ekip Başı (Taşeron Usta)" },
-  { id: "usr-3", name: "Ali Demir", roleTitle: "Beton ve Döküm Şefi" },
-  { id: "usr-4", name: "Hasan Çelik", roleTitle: "Demirci Taşeron Ustası" },
-  { id: "usr-5", name: "Murat Ak", roleTitle: "İSG & Saha Denetmeni" },
-  { id: "usr-6", name: "Emre Yıldız", roleTitle: "Elektrik ve Otomasyon Ekip Başı" },
-  { id: "usr-7", name: "Hüseyin Tekin", roleTitle: "Mekanik & Sıhhi Tesisat Şefi" },
-  { id: "usr-8", name: "Burak Öztürk", roleTitle: "Harita & Aplikasyon Teknikeri" },
+  { id: "usr-1", name: "Ahmet Yılmaz", roleTitle: "Saha Şantiye Şefi (İnşaat Müh.)", isSubcontractor: false },
+  { id: "usr-2", name: "Mehmet Kaya", roleTitle: "Kalıpçı Ekip Başı (Taşeron Usta)", isSubcontractor: true, companyName: "Kaya Kalıp & İskele Ltd." },
+  { id: "usr-3", name: "Ali Demir", roleTitle: "Beton ve Döküm Şefi", isSubcontractor: false },
+  { id: "usr-4", name: "Hasan Çelik", roleTitle: "Demirci Taşeron Ustası", isSubcontractor: true, companyName: "Çelik Donatı & Demir A.Ş." },
+  { id: "usr-5", name: "Murat Ak", roleTitle: "İSG & Saha Denetmeni", isSubcontractor: false },
+  { id: "usr-6", name: "Emre Yıldız", roleTitle: "Elektrik Ekip Başı (Taşeron)", isSubcontractor: true, companyName: "Yıldız Elektrik & Otomasyon" },
+  { id: "usr-7", name: "Hüseyin Tekin", roleTitle: "Mekanik Tesisat Ustası (Taşeron)", isSubcontractor: true, companyName: "Tekin Mekanik Sıhhi Tesisat" },
+  { id: "usr-8", name: "Burak Öztürk", roleTitle: "Harita & Aplikasyon Teknikeri", isSubcontractor: false },
+]
+
+const DEFAULT_ZONES: ZoneOption[] = [
+  { id: "zn-14", name: "14. Kat - Çatı Terası & Mekanik", floorNumber: 14, blockName: "A Blok", progressRate: 10 },
+  { id: "zn-13", name: "13. Kat - Rezidans Daireleri", floorNumber: 13, blockName: "A Blok", progressRate: 45 },
+  { id: "zn-12", name: "12. Kat - Rezidans Daireleri", floorNumber: 12, blockName: "A Blok", progressRate: 100 },
+  { id: "zn-10", name: "10. Kat - Rezidans Daireleri", floorNumber: 10, blockName: "A Blok", progressRate: 100 },
+  { id: "zn-6", name: "6. Kat - Tip Kat Daireler", floorNumber: 6, blockName: "A Blok", progressRate: 85 },
+  { id: "zn-3", name: "3. Kat - Kolon ve Kiriş Betonu", floorNumber: 3, blockName: "A Blok", progressRate: 70 },
+  { id: "zn-0", name: "Zemin Kat - Giriş Lobby & Ticari", floorNumber: 0, blockName: "A Blok", progressRate: 100 },
+  { id: "zn-b1", name: "Bodrum -1 - Kapalı Otopark", floorNumber: -1, blockName: "A Blok", progressRate: 100 },
+  { id: "zn-b2", name: "Bodrum -2 - Perde & Temel Radye", floorNumber: -2, blockName: "A Blok", progressRate: 100 },
 ]
 
 interface ProgressEntryModalProps {
@@ -62,6 +86,9 @@ interface ProgressEntryModalProps {
     latitude?: number | null
     longitude?: number | null
     capturedAt?: string | null
+    zoneId?: string | null
+    zoneName?: string | null
+    subcontractorId?: string | null
   }) => Promise<void>
 }
 
@@ -83,7 +110,6 @@ async function getBrowserLocation(): Promise<GpsCoordinates | null> {
         })
       },
       () => {
-        // GPS izni verilmezse veya masaüstü ise varsayılan şantiye koordinatı
         resolve({
           latitude: 41.0082,
           longitude: 28.9784,
@@ -101,7 +127,8 @@ async function getBrowserLocation(): Promise<GpsCoordinates | null> {
 async function applyWatermarkToImage(
   file: File,
   coords: GpsCoordinates | null,
-  personnel: string
+  personnel: string,
+  zoneName?: string
 ): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader()
@@ -122,8 +149,8 @@ async function applyWatermarkToImage(
         ctx.drawImage(img, 0, 0)
 
         // 2. Alt kısma anti-fraud watermark şeridi çiz
-        const barHeight = Math.max(80, Math.round(canvas.height * 0.14))
-        ctx.fillStyle = "rgba(15, 23, 42, 0.88)" // Slate-900 yarı saydam
+        const barHeight = Math.max(90, Math.round(canvas.height * 0.15))
+        ctx.fillStyle = "rgba(15, 23, 42, 0.88)"
         ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight)
 
         // Üst border çizgisi (zümrüt yeşili)
@@ -151,7 +178,7 @@ async function applyWatermarkToImage(
         const accStr = coords?.accuracy ? `(Hassasiyet: ±${Math.round(coords.accuracy)}m)` : "(GPS Doğrulandı)"
 
         // Satır 1: Başlık & Doğrulama Rozeti
-        ctx.fillStyle = "#34d399" // emerald-400
+        ctx.fillStyle = "#34d399"
         ctx.font = `bold ${fontSize}px sans-serif`
         ctx.fillText(
           `🛡️ NEXA ERP SAHA İMALAT DOĞRULAMASI • ANTI-FRAUD WATERMARK`,
@@ -168,11 +195,11 @@ async function applyWatermarkToImage(
           canvas.height - barHeight + fontSize * 2 + 16
         )
 
-        // Satır 3: Personel
+        // Satır 3: Personel & Mahal
         ctx.fillStyle = "#cbd5e1"
         ctx.font = `${Math.round(fontSize * 0.85)}px sans-serif`
         ctx.fillText(
-          `👷 Sorumlu Personel: ${personnel || "Saha Şefi"}`,
+          `👷 Sorumlu: ${personnel || "Saha Şefi"}  |  🏢 Kat/Mahal: ${zoneName || "Genel Saha"}`,
           24,
           canvas.height - barHeight + fontSize * 3 + 22
         )
@@ -194,6 +221,11 @@ export default function ProgressEntryModal({
   const [additionalQty, setAdditionalQty] = useState("")
   const [selectedPersonnel, setSelectedPersonnel] = useState(DEFAULT_FIELD_STAFF[0].name)
   const [personnelList, setPersonnelList] = useState<FieldPersonnelOption[]>(DEFAULT_FIELD_STAFF)
+  const [zonesList, setZonesList] = useState<ZoneOption[]>(DEFAULT_ZONES)
+  const [selectedZoneId, setSelectedZoneId] = useState<string>(DEFAULT_ZONES[2].id)
+  const [selectedZoneName, setSelectedZoneName] = useState<string>(DEFAULT_ZONES[2].name)
+  const [isSubcontractor, setIsSubcontractor] = useState(false)
+  const [subcontractorCompany, setSubcontractorCompany] = useState("")
   const [notes, setNotes] = useState("")
   const [attachmentUrl, setAttachmentUrl] = useState("")
   const [gpsCoords, setGpsCoords] = useState<GpsCoordinates | null>(null)
@@ -201,36 +233,70 @@ export default function ProgressEntryModal({
   const [isUploading, setIsUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Sistem kullanıcılarını (ENGINEER / WORKER) çekmeyi dene
+  // Kat / Mahal (Zones) ve Personel Listesini Çek
   useEffect(() => {
-    async function fetchUsers() {
+    async function loadData() {
+      // 1. Personel Listesi
       try {
         const res = await fetch("/api/admin/users?role=ENGINEER")
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data.users) && data.users.length > 0) {
-            const mapped = data.users.map((u: any) => ({
+            const mapped: FieldPersonnelOption[] = data.users.map((u: any) => ({
               id: u.id,
               name: u.name || u.email,
               roleTitle: u.role === "ENGINEER" ? "Saha Mühendisi" : "Saha Ekibi",
+              isSubcontractor: u.companyType === "SUBCONTRACTOR" || u.role === "SUBCONTRACTOR",
+              companyName: u.company?.name || "Taşeron Ekibi",
             }))
-            setPersonnelList(mapped)
-            if (mapped[0]) setSelectedPersonnel(mapped[0].name)
+            // Default taşeronları da listeye ekle
+            setPersonnelList([...mapped, ...DEFAULT_FIELD_STAFF.filter(d => !mapped.some(m => m.name === d.name))])
           }
         }
       } catch (err) {
         // Fallback to DEFAULT_FIELD_STAFF
       }
+
+      // 2. Kat ve Mahal (Zones) Listesi
+      try {
+        const pId = boqItem?.projectId
+        const zRes = await fetch(`/api/admin/zones${pId ? `?projectId=${pId}` : ""}`)
+        if (zRes.ok) {
+          const zData = await zRes.json()
+          if (Array.isArray(zData.zones) && zData.zones.length > 0) {
+            setZonesList(zData.zones)
+            if (zData.zones[0]) {
+              setSelectedZoneId(zData.zones[0].id)
+              setSelectedZoneName(zData.zones[0].name)
+            }
+          }
+        }
+      } catch {
+        // Fallback to DEFAULT_ZONES
+      }
     }
+
     if (isOpen) {
-      fetchUsers()
+      loadData()
       setAdditionalQty("")
       setNotes("")
       setAttachmentUrl("")
       setGpsCoords(null)
       setCapturedTime("")
     }
-  }, [isOpen])
+  }, [isOpen, boqItem?.projectId])
+
+  // Personel değiştiğinde taşeron tespiti yap
+  useEffect(() => {
+    const found = personnelList.find(p => `${p.name} (${p.roleTitle})` === selectedPersonnel || p.name === selectedPersonnel)
+    if (found?.isSubcontractor || selectedPersonnel.toLowerCase().includes("taşeron") || selectedPersonnel.toLowerCase().includes("usta")) {
+      setIsSubcontractor(true)
+      setSubcontractorCompany(found?.companyName || "Kaya Kalıp & Demir İnşaat Ltd.")
+    } else {
+      setIsSubcontractor(false)
+      setSubcontractorCompany("")
+    }
+  }, [selectedPersonnel, personnelList])
 
   if (!isOpen || !boqItem) return null
 
@@ -243,7 +309,6 @@ export default function ProgressEntryModal({
 
     setIsUploading(true)
     try {
-      // 1. Cihaz GPS koordinatlarını al
       const coords = await getBrowserLocation()
       const now = new Date()
       setGpsCoords(coords)
@@ -258,10 +323,10 @@ export default function ProgressEntryModal({
         })
       )
 
-      // 2. Anti-fraud Canvas Filigranı (Watermark) bas
-      const watermarkedBase64 = await applyWatermarkToImage(file, coords, selectedPersonnel)
+      // Anti-fraud Canvas Filigranı (Kat bilgisi dahil)
+      const watermarkedBase64 = await applyWatermarkToImage(file, coords, selectedPersonnel, selectedZoneName)
       setAttachmentUrl(watermarkedBase64)
-      toast.success("Fotoğrafa GPS ve Zaman damgası filigranı başarıyla basıldı!")
+      toast.success("Fotoğrafa GPS, Zaman ve Kat damgası basıldı!")
     } catch (err) {
       console.error("Watermark error:", err)
       setAttachmentUrl("https://res.cloudinary.com/nexa/image/upload/v1/site/field-proof.jpg")
@@ -280,12 +345,18 @@ export default function ProgressEntryModal({
       return
     }
 
+    // ADIM 1: Kat / Mahal Zorunluluğu Kontrolü
+    if (!selectedZoneId && !selectedZoneName) {
+      toast.error("Lütfen imalatın yapıldığı Kat / Mahali seçin!")
+      return
+    }
+
     if (!selectedPersonnel) {
       toast.error("Lütfen bu imalatı gerçekleştiren personeli/ekibi seçin")
       return
     }
 
-    // ADIM 1: Fotoğraf Zorunluluğu Kontrolü (Anti-Fraud)
+    // Fotoğraf Zorunluluğu Kontrolü (Anti-Fraud)
     if (!attachmentUrl) {
       toast.error("Fotoğraf yüklenmesi zorunludur! Lütfen sahadan güncel imalat kanıtını ekleyin.")
       return
@@ -296,12 +367,15 @@ export default function ProgressEntryModal({
       await onSubmit({
         boqItemId: boqItem.id,
         additionalQuantity: qty,
-        notes: notes || `${qty} ${boqItem.unit} saha imalatı gerçekleştirildi.`,
+        notes: notes || `${qty} ${boqItem.unit} imalat ${selectedZoneName} mahaline işlendi.`,
         attachmentUrl,
         createdByName: selectedPersonnel,
         latitude: gpsCoords?.latitude ?? 41.0082,
         longitude: gpsCoords?.longitude ?? 28.9784,
         capturedAt: new Date().toISOString(),
+        zoneId: selectedZoneId || undefined,
+        zoneName: selectedZoneName || undefined,
+        subcontractorId: isSubcontractor ? "sub-kaya-kalip" : undefined,
       })
       onClose()
     } catch (err: any) {
@@ -316,6 +390,7 @@ export default function ProgressEntryModal({
   const inputQtyNumber = parseFloat(additionalQty) || 0
   const newTotalQty = actualQty + inputQtyNumber
   const newPercent = plannedQty > 0 ? Math.min(100, Math.round((newTotalQty / plannedQty) * 100)) : 0
+  const estimatedEarned = inputQtyNumber * boqItem.unitPrice
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
@@ -329,7 +404,7 @@ export default function ProgressEntryModal({
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Sahadan İlerleme Girişi</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Gerçekleşen imalat miktarını, personeli ve GPS/Zaman damgalı görseli sisteme işleyin
+                Kat/Mahal detaylı imalat, taşeron hakedişi ve GPS onaylı görsel kanıt
               </p>
             </div>
           </div>
@@ -366,6 +441,41 @@ export default function ProgressEntryModal({
             </div>
           </div>
 
+          {/* ADIM 1: İlgili Kat / Mahal Seçimi (ZORUNLU) */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-blue-500" />
+                <span>İlgili Kat / Mahal (Zone)</span>
+              </span>
+              <span className="text-rose-500 text-xs font-bold">* Zorunlu</span>
+            </label>
+            <div className="relative">
+              <select
+                required
+                value={selectedZoneId}
+                onChange={(e) => {
+                  const zId = e.target.value
+                  setSelectedZoneId(zId)
+                  const match = zonesList.find((z) => z.id === zId)
+                  if (match) setSelectedZoneName(match.name)
+                }}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none pr-10"
+              >
+                <option value="">-- Kat / Mahal Seçiniz --</option>
+                {zonesList.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    🏢 {z.blockName ? `${z.blockName} • ` : ""}{z.name} (Mevcut İlerleme: %{z.progressRate ?? 0})
+                  </option>
+                ))}
+              </select>
+              <Layers className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Bu seçim, Master Dashboard Isı Haritası'ndaki kat ilerleme oranını doğrudan güncelleyecektir.
+            </p>
+          </div>
+
           {/* Sorumlu Saha Personeli / Ekip Seçimi (ZORUNLU) */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
@@ -391,6 +501,25 @@ export default function ProgressEntryModal({
               <Users className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
+
+          {/* ADIM 1 & 2: Taşeron Hakediş Otomasyon Bilgisi */}
+          {isSubcontractor && (
+            <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/40 text-xs text-purple-900 dark:text-purple-300 flex items-start gap-2.5">
+              <Building2 className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="font-bold flex items-center gap-1.5">
+                  <span>Taşeron Hakedişi Otomatik Hesaplanacak</span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-600 dark:text-purple-400 font-mono">
+                    {subcontractorCompany || "Bağlı Taşeron"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-purple-700 dark:text-purple-400 mt-0.5">
+                  Birim Fiyat: {formatTRY(boqItem.unitPrice)} | Hak Edilen Tutar:{" "}
+                  <strong>{formatTRY(estimatedEarned)}</strong> (Aktif dönem hakedişine geçici tutar olarak otomatik eklenecektir).
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Bugün Yapılan Miktar Girişi */}
           <div>
@@ -435,14 +564,14 @@ export default function ProgressEntryModal({
             </label>
             <input
               type="text"
-              placeholder="Örn: Blok B 3. Kat Kolonları döşeme betonu döküldü, vibratör uygulandı."
+              placeholder={`Örn: ${selectedZoneName} döşeme betonu döküldü, vibratör uygulandı.`}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 leading-relaxed transition-all"
             />
           </div>
 
-          {/* ADIM 1 & ADIM 3: Saha Ataşmanı & Fotoğraf (ZORUNLU & FİLİGRANLI) */}
+          {/* Saha Ataşmanı & Fotoğraf (ZORUNLU & FİLİGRANLI) */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
@@ -458,7 +587,7 @@ export default function ProgressEntryModal({
             <div className="space-y-2">
               <label className="w-full cursor-pointer flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition-all">
                 <Camera className="w-4 h-4 text-emerald-500" />
-                <span>Kamera ile Çek veya Fotoğraf Yükle (GPS Damgası Basılır)</span>
+                <span>Kamera ile Çek veya Fotoğraf Yükle (GPS & Kat Damgalı)</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -528,7 +657,7 @@ export default function ProgressEntryModal({
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5" />
               )}
-              <span>İlerlemeyi Onayla & Gantt'a Yaz</span>
+              <span>İlerlemeyi Onayla & Hakedişe Yaz</span>
             </button>
           </div>
         </form>

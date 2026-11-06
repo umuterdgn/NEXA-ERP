@@ -32,6 +32,9 @@ export interface BoqItemWithLogs {
     latitude?: number | null
     longitude?: number | null
     capturedAt?: string | null
+    zoneId?: string | null
+    zoneName?: string | null
+    subcontractorId?: string | null
     createdAt: string
   }[]
 }
@@ -132,6 +135,9 @@ export async function getProjectProgressData(projectId: string) {
         latitude: log.latitude ?? null,
         longitude: log.longitude ?? null,
         capturedAt: log.capturedAt ? log.capturedAt.toISOString() : null,
+        zoneId: log.zoneId ?? null,
+        zoneName: log.zoneName ?? null,
+        subcontractorId: log.subcontractorId ?? null,
         createdAt: log.createdAt.toISOString(),
       })),
     }))
@@ -188,6 +194,9 @@ export async function updateBoqProgress(payload: {
   latitude?: number | null
   longitude?: number | null
   capturedAt?: Date | string | null
+  zoneId?: string | null
+  zoneName?: string | null
+  subcontractorId?: string | null
 }) {
   try {
     const {
@@ -199,6 +208,9 @@ export async function updateBoqProgress(payload: {
       latitude,
       longitude,
       capturedAt,
+      zoneId,
+      zoneName,
+      subcontractorId,
     } = payload
 
     if (!boqItemId) {
@@ -215,6 +227,14 @@ export async function updateBoqProgress(payload: {
       return {
         success: false,
         error: "Saha ilerleme girişi için kanıt fotoğrafı yüklenmesi zorunludur!",
+      }
+    }
+
+    // ADIM 1: Kat / Mahal Zorunluluğu
+    if (!zoneName && !zoneId) {
+      return {
+        success: false,
+        error: "İlgili Kat / Mahal seçimi zorunludur! Lütfen imalatın yapıldığı katı seçin.",
       }
     }
 
@@ -235,7 +255,7 @@ export async function updateBoqProgress(payload: {
       },
     })
 
-    // 2. Günlük İlerleme Logu (BoqProgressLog) oluştur - GPS ve Zaman Damgalı
+    // 2. Günlük İlerleme Logu (BoqProgressLog) oluştur - GPS, Zaman, Kat/Mahal ve Taşeron Bağlantılı
     await prisma.boqProgressLog.create({
       data: {
         boqItemId,
@@ -246,8 +266,97 @@ export async function updateBoqProgress(payload: {
         latitude: latitude != null ? Number(latitude) : null,
         longitude: longitude != null ? Number(longitude) : null,
         capturedAt: capturedAt ? new Date(capturedAt) : new Date(),
+        zoneId: zoneId || null,
+        zoneName: zoneName || null,
+        subcontractorId: subcontractorId || currentItem.subcontractorId || null,
       },
     })
+
+    // ADIM 1 & 3: İlgili Kat/Mahal (Zone) İlerlemesini Güncelle
+    if (zoneId || zoneName) {
+      try {
+        const targetZone = zoneId
+          ? await prisma.zone.findUnique({ where: { id: zoneId } })
+          : await prisma.zone.findFirst({
+              where: {
+                name: { contains: zoneName || "" },
+                block: { projectId: currentItem.projectId },
+              },
+            })
+
+        if (targetZone) {
+          const addedRate = currentItem.plannedQuantity > 0 ? (qty / currentItem.plannedQuantity) * 100 : 15
+          const newRate = Math.min(100, Math.round(((targetZone.progressRate || 0) + addedRate) * 10) / 10)
+          await prisma.zone.update({
+            where: { id: targetZone.id },
+            data: {
+              progressRate: newRate,
+              status: newRate >= 100 ? "COMPLETED" : "IN_PROGRESS",
+            },
+          })
+        }
+      } catch (zoneErr) {
+        console.warn("Zone progress update warning:", zoneErr)
+      }
+    }
+
+    // ADIM 2: Otomatik Taşeron Hakedişi (Progress Payment) Hesabı
+    const effectiveSubId = subcontractorId || currentItem.subcontractorId
+    const isSubcontractorEntry = Boolean(
+      effectiveSubId ||
+      createdByName?.toLowerCase().includes("taşeron") ||
+      createdByName?.toLowerCase().includes("usta")
+    )
+
+    if (isSubcontractorEntry) {
+      try {
+        const unitPrice = currentItem.unitPrice || 0
+        const earnedAmount = qty * unitPrice
+        const currentPeriod = new Date().toISOString().slice(0, 7) // "2026-11"
+
+        const existingPayment = await prisma.progressPayment.findFirst({
+          where: {
+            projectId: currentItem.projectId,
+            period: currentPeriod,
+            ...(effectiveSubId ? { subcontractorCompanyId: effectiveSubId } : {}),
+          },
+        })
+
+        if (existingPayment) {
+          await prisma.progressPayment.update({
+            where: { id: existingPayment.id },
+            data: {
+              quantity: { increment: qty },
+              totalAmount: { increment: earnedAmount },
+              totalPrice: { increment: earnedAmount },
+              amount: { increment: earnedAmount },
+              netAmount: { increment: earnedAmount * 0.95 },
+              netPayableAmount: { increment: earnedAmount * 0.95 },
+            },
+          })
+        } else {
+          await prisma.progressPayment.create({
+            data: {
+              projectId: currentItem.projectId,
+              subcontractorCompanyId: effectiveSubId || null,
+              title: `${currentPeriod} Dönemi Taşeron Hakedişi (${currentItem.pozNo} - ${zoneName || "Kat İmalatı"})`,
+              period: currentPeriod,
+              quantity: qty,
+              unit: currentItem.unit,
+              unitPrice,
+              totalAmount: earnedAmount,
+              totalPrice: earnedAmount,
+              amount: earnedAmount,
+              netAmount: earnedAmount * 0.95,
+              netPayableAmount: earnedAmount * 0.95,
+              status: "DRAFT",
+            },
+          })
+        }
+      } catch (payErr) {
+        console.warn("Otomatik hakediş hesaplama uyarısı:", payErr)
+      }
+    }
 
     // ADIM 4: Personel performans günlüğüne / AuditLog'a bu başarıyı işle
     try {

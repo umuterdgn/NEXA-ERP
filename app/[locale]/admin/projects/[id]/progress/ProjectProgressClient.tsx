@@ -1024,8 +1024,11 @@ export default function ProjectProgressClient({
                           {log.notes}
                         </p>
                       )}
-                      <div className="text-[10px] text-slate-500 mt-1">
-                        Kayıt: {log.createdByName || "Saha Personeli"}
+                      <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-1">
+                        <span>Kayıt: {log.createdByName || "Saha Personeli"}</span>
+                        {log.zoneName && (
+                          <span className="text-blue-400 font-semibold">• 🏢 {log.zoneName}</span>
+                        )}
                       </div>
                     </div>
 

@@ -169,11 +169,24 @@ export default function TasksScreen() {
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
 
-  // Sahadan İlerleme Girişi Modal State'leri (Anti-Fraud GPS & Kamera Destekli)
+  const AVAILABLE_ZONES = [
+    "14. Kat - Çatı Terası & Mekanik",
+    "13. Kat - Daireler (Rezidans)",
+    "12. Kat - Daireler (Rezidans)",
+    "6. Kat - Tip Kat Daireler",
+    "3. Kat - Kolon & Kiriş Tabliyesi",
+    "Zemin Kat - Giriş / Lobi",
+    "Bodrum -1 - Kapalı Otopark",
+    "Bodrum -2 - Radye Temel & Perde",
+  ];
+
+  // Sahadan İlerleme Girişi Modal State'leri (Anti-Fraud GPS, Kat/Mahal & Hakediş Destekli)
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
   const [dailyProgressQty, setDailyProgressQty] = useState("");
   const [dailyProgressNotes, setDailyProgressNotes] = useState("");
+  const [selectedZone, setSelectedZone] = useState<string>(AVAILABLE_ZONES[4]);
+  const [isSubcontractorMode, setIsSubcontractorMode] = useState<boolean>(true);
   const [isPhotoAttached, setIsPhotoAttached] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoGps, setPhotoGps] = useState<{ latitude: number; longitude: number; isMocked?: boolean } | null>(null);
@@ -185,6 +198,8 @@ export default function TasksScreen() {
     setSelectedTask(task);
     setDailyProgressQty("");
     setDailyProgressNotes("");
+    setSelectedZone(AVAILABLE_ZONES[4]);
+    setIsSubcontractorMode(true);
     setIsPhotoAttached(false);
     setPhotoUri(null);
     setPhotoGps(null);
@@ -263,6 +278,12 @@ export default function TasksScreen() {
       return;
     }
 
+    // ADIM 1: Kat / Mahal Zorunluluğu Kontrolü
+    if (!selectedZone) {
+      Alert.alert("Kat/Mahal Zorunludur", "Lütfen imalatın yapıldığı Kat / Mahali seçin.");
+      return;
+    }
+
     // ADIM 1: Fotoğraf Zorunluluğu Kontrolü
     if (!isPhotoAttached && !photoUri) {
       Alert.alert(
@@ -278,7 +299,7 @@ export default function TasksScreen() {
     }
 
     try {
-      // Backend /api/mobile/tasks/progress çağrısı
+      // Backend /api/mobile/tasks/progress çağrısı (Kat ve Taşeron Hakediş Entegreli)
       await fetch("/api/mobile/tasks/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -286,13 +307,15 @@ export default function TasksScreen() {
           taskId: selectedTask.id,
           boqItemId: selectedTask.boqItemId,
           quantityAdded: qty,
-          notes: dailyProgressNotes || `${qty} ${selectedTask.unit || "m3"} imalat tamamlandı.`,
+          notes: dailyProgressNotes || `${qty} ${selectedTask.unit || "m3"} imalat ${selectedZone} mahaline işlendi.`,
           photoUrl: photoUri || "https://res.cloudinary.com/nexa/image/upload/v1/site/field-proof.jpg",
-          userName: "Ahmet Yılmaz (Saha Şefi)",
-          userRole: "ENGINEER",
+          userName: isSubcontractorMode ? "Mehmet Kaya (Taşeron Usta Başı)" : "Ahmet Yılmaz (Saha Şefi)",
+          userRole: isSubcontractorMode ? "SUBCONTRACTOR" : "ENGINEER",
           latitude: photoGps?.latitude ?? 41.0082,
           longitude: photoGps?.longitude ?? 28.9784,
           capturedAt: new Date().toISOString(),
+          zoneName: selectedZone,
+          subcontractorId: isSubcontractorMode ? "sub-kaya-kalip" : undefined,
         }),
       }).catch(() => {
         // Fallback for offline/standalone execution
@@ -316,8 +339,8 @@ export default function TasksScreen() {
 
       setIsProgressModalOpen(false);
       Alert.alert(
-        "🚀 Gantt Şemasına İletildi",
-        `"${selectedTask.title}" görevine ${qty} ${selectedTask.unit || "m3"} imalat işlendi. Web panelindeki Gantt şeması ve metraj tablosu anlık olarak güncellendi.`
+        "🚀 Gantt & Hakedişe İletildi",
+        `"${selectedTask.title}" imalatı ${selectedZone} mahaline işlendi. Taşeron hakedişi otomatik hesaplandı ve Master Dashboard Isı Haritası kat bazında güncellendi.`
       );
     } finally {
       setIsSubmitting(false);
@@ -670,6 +693,86 @@ export default function TasksScreen() {
                   {selectedTask?.currentQuantity || 0} {selectedTask?.unit || "m3"} (%{Math.round(((selectedTask?.currentQuantity || 0) / (selectedTask?.targetQuantity || 100)) * 100)})
                 </Text>
               </View>
+            </View>
+
+            {/* ADIM 1: İlgili Kat / Mahal Seçimi (ZORUNLU) */}
+            <View style={{ marginBottom: 14 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <Text style={styles.inputLabel}>İlgili Kat / Mahal (Zone) *</Text>
+                <Text style={{ fontSize: 10, fontWeight: "800", color: iosColors.systemBlue }}>
+                  * Zorunlu
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                {AVAILABLE_ZONES.slice(0, 4).map((zone) => {
+                  const isSelected = selectedZone === zone;
+                  return (
+                    <TouchableOpacity
+                      key={zone}
+                      onPress={() => setSelectedZone(zone)}
+                      style={[
+                        styles.zoneChip,
+                        isSelected && styles.zoneChipActive,
+                      ]}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.zoneChipText,
+                          isSelected && styles.zoneChipTextActive,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {zone.split(" - ")[0]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                {AVAILABLE_ZONES.slice(4).map((zone) => {
+                  const isSelected = selectedZone === zone;
+                  return (
+                    <TouchableOpacity
+                      key={zone}
+                      onPress={() => setSelectedZone(zone)}
+                      style={[
+                        styles.zoneChip,
+                        isSelected && styles.zoneChipActive,
+                      ]}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.zoneChipText,
+                          isSelected && styles.zoneChipTextActive,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {zone.split(" - ")[0]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={styles.selectedZoneSubtitle}>
+                📍 Seçili Mahal: <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>{selectedZone}</Text>
+              </Text>
+            </View>
+
+            {/* ADIM 1 & 2: Taşeron Hakediş Otomasyonu */}
+            <View style={styles.subcontractorBadge}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Ionicons name="briefcase" size={14} color={iosColors.systemOrange} />
+                <Text style={styles.subcontractorTitle}>Taşeron Hakedişi:</Text>
+                <Text style={styles.subcontractorName}>Kaya Kalıp & Demir Ltd.</Text>
+              </View>
+              <Text style={styles.subcontractorDesc}>
+                İlerleme girildiğinde Kasım 2026 hakediş tutarına otomatik eklenecektir.
+              </Text>
             </View>
 
             {/* Input: Bugün Yapılan Miktar */}
@@ -1216,5 +1319,55 @@ const styles = StyleSheet.create({
     color: iosColors.labelSecondary,
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     marginTop: 2,
+  },
+  zoneChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+  },
+  zoneChipActive: {
+    backgroundColor: "rgba(10, 122, 255, 0.2)",
+    borderColor: iosColors.systemBlue,
+  },
+  zoneChipText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.labelSecondary,
+  },
+  zoneChipTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+  },
+  selectedZoneSubtitle: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+    marginTop: 6,
+  },
+  subcontractorBadge: {
+    backgroundColor: "rgba(255, 149, 0, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 149, 0, 0.3)",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 14,
+  },
+  subcontractorTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.systemOrange,
+  },
+  subcontractorName: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  subcontractorDesc: {
+    fontSize: 10,
+    color: "rgba(255, 255, 255, 0.7)",
+    marginTop: 2,
+    lineHeight: 14,
   },
 });

@@ -551,6 +551,7 @@ model Zone {
   workOrders   WorkOrder[]
   dailyLogs    DailyLog[]
   inspections  Inspection[]
+  progressLogs BoqProgressLog[]
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -4974,21 +4975,27 @@ model BoqItem {
 }
 
 model BoqProgressLog {
-  id            String   @id @default(cuid())
-  tenantId     String?   // SaaS: Kiracı ID
-  boqItemId     String
-  boqItem       BoqItem  @relation(fields: [boqItemId], references: [id], onDelete: Cascade)
-  quantityAdded Float // Eklenen miktar (Örn: 50)
-  notes         String?  @db.Text
-  attachmentUrl String? // Fotoğraf / Ataşman
-  createdByName String? // Kaydeden personel
-  latitude      Float?  // GPS Enlem (Anti-fraud)
-  longitude     Float?  // GPS Boylam (Anti-fraud)
-  capturedAt    DateTime? // Gerçek çekim / damga zamanı
-  createdAt     DateTime @default(now())
+  id              String    @id @default(cuid())
+  tenantId        String?   // SaaS: Kiracı ID
+  boqItemId       String
+  boqItem         BoqItem   @relation(fields: [boqItemId], references: [id], onDelete: Cascade)
+  quantityAdded   Float     // Eklenen miktar (Örn: 50)
+  notes           String?   @db.Text
+  attachmentUrl   String?   // Fotoğraf / Ataşman
+  createdByName   String?   // Kaydeden personel
+  latitude        Float?    // GPS Enlem (Anti-fraud)
+  longitude       Float?    // GPS Boylam (Anti-fraud)
+  capturedAt      DateTime? // Gerçek çekim / damga zamanı
+  zoneId          String?   // İlgili Kat/Mahal ID
+  zoneName        String?   // İlgili Kat/Mahal Adı (Örn: "12. Kat - Daireler")
+  zone            Zone?     @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  subcontractorId String?   // Taşeron ID (otomatik hakediş bağlantısı)
+  createdAt       DateTime  @default(now())
 
   @@index([boqItemId])
   @@index([createdAt])
+  @@index([zoneId])
+  @@index([subcontractorId])
   @@index([tenantId])
 }
 
