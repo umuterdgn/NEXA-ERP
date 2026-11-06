@@ -38,7 +38,9 @@ import {
   SlidersHorizontal,
   ChevronDown,
   Info,
-  Calculator
+  Calculator,
+  MapPin,
+  ShieldCheck
 } from "lucide-react"
 import {
   BoqItemWithLogs,
@@ -1028,15 +1030,29 @@ export default function ProjectProgressClient({
                     </div>
 
                     {log.attachmentUrl && (
-                      <a
-                        href={log.attachmentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-400 text-[10px] flex items-center gap-1 flex-shrink-0"
-                      >
-                        <Camera className="w-3 h-3" />
-                        <span>Ataşman</span>
-                      </a>
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <a
+                          href={log.attachmentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center gap-1.5 transition-colors"
+                        >
+                          <Camera className="w-3 h-3 text-emerald-400" />
+                          <span>Kanıt Görseli</span>
+                        </a>
+                        {log.latitude != null && log.longitude != null && (
+                          <a
+                            href={`https://www.google.com/maps?q=${log.latitude},${log.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[9px] text-blue-400 hover:underline flex items-center gap-1 font-mono"
+                            title="Haritada Gör (GPS Doğrulaması)"
+                          >
+                            <MapPin className="w-2.5 h-2.5 text-blue-400" />
+                            <span>{log.latitude.toFixed(4)}°, {log.longitude.toFixed(4)}°</span>
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))

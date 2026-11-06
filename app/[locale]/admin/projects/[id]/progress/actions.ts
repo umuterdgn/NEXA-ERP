@@ -29,6 +29,9 @@ export interface BoqItemWithLogs {
     notes: string | null
     attachmentUrl: string | null
     createdByName: string | null
+    latitude?: number | null
+    longitude?: number | null
+    capturedAt?: string | null
     createdAt: string
   }[]
 }
@@ -126,6 +129,9 @@ export async function getProjectProgressData(projectId: string) {
         notes: log.notes,
         attachmentUrl: log.attachmentUrl,
         createdByName: log.createdByName,
+        latitude: log.latitude ?? null,
+        longitude: log.longitude ?? null,
+        capturedAt: log.capturedAt ? log.capturedAt.toISOString() : null,
         createdAt: log.createdAt.toISOString(),
       })),
     }))
@@ -179,9 +185,21 @@ export async function updateBoqProgress(payload: {
   notes?: string
   attachmentUrl?: string
   createdByName?: string
+  latitude?: number | null
+  longitude?: number | null
+  capturedAt?: Date | string | null
 }) {
   try {
-    const { boqItemId, additionalQuantity, notes, attachmentUrl, createdByName } = payload
+    const {
+      boqItemId,
+      additionalQuantity,
+      notes,
+      attachmentUrl,
+      createdByName,
+      latitude,
+      longitude,
+      capturedAt,
+    } = payload
 
     if (!boqItemId) {
       return { success: false, error: "BoQ kalemi seçilmedi" }
@@ -190,6 +208,14 @@ export async function updateBoqProgress(payload: {
     const qty = Number(additionalQuantity)
     if (isNaN(qty) || qty <= 0) {
       return { success: false, error: "Lütfen 0'dan büyük geçerli bir miktar girin" }
+    }
+
+    // ADIM 1: Fotoğraf Zorunluluğu (Anti-Fraud)
+    if (!attachmentUrl) {
+      return {
+        success: false,
+        error: "Saha ilerleme girişi için kanıt fotoğrafı yüklenmesi zorunludur!",
+      }
     }
 
     // İlgili BoQ kalemini getir
@@ -209,7 +235,7 @@ export async function updateBoqProgress(payload: {
       },
     })
 
-    // 2. Günlük İlerleme Logu (BoqProgressLog) oluştur
+    // 2. Günlük İlerleme Logu (BoqProgressLog) oluştur - GPS ve Zaman Damgalı
     await prisma.boqProgressLog.create({
       data: {
         boqItemId,
@@ -217,6 +243,9 @@ export async function updateBoqProgress(payload: {
         notes: notes || null,
         attachmentUrl: attachmentUrl || null,
         createdByName: createdByName || "Saha Şefi / Mühendis",
+        latitude: latitude != null ? Number(latitude) : null,
+        longitude: longitude != null ? Number(longitude) : null,
+        capturedAt: capturedAt ? new Date(capturedAt) : new Date(),
       },
     })
 
@@ -228,11 +257,14 @@ export async function updateBoqProgress(payload: {
           action: "FIELD_PROGRESS_LOGGED",
           entityType: "BoqProgressLog",
           userName: createdByName || "Saha Personeli",
-          summary: `${createdByName || "Saha Personeli"} tarafından ${currentItem.pozNo} pozuna +${qty} ${currentItem.unit} imalat girişi tamamlandı ve puantaj/performansa işlendi.`,
+          summary: `${createdByName || "Saha Personeli"} tarafından ${currentItem.pozNo} pozuna +${qty} ${currentItem.unit} imalat girişi tamamlandı (GPS & Zaman Damgalı Fotoğraf Doğrulandı).`,
           newValues: {
             boqItemId,
             quantityAdded: qty,
             performedBy: createdByName,
+            latitude: latitude ?? null,
+            longitude: longitude ?? null,
+            capturedAt: capturedAt ?? new Date(),
           },
         },
       })

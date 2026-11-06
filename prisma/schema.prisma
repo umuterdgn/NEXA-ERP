@@ -4982,6 +4982,9 @@ model BoqProgressLog {
   notes         String?  @db.Text
   attachmentUrl String? // Fotoğraf / Ataşman
   createdByName String? // Kaydeden personel
+  latitude      Float?  // GPS Enlem (Anti-fraud)
+  longitude     Float?  // GPS Boylam (Anti-fraud)
+  capturedAt    DateTime? // Gerçek çekim / damga zamanı
   createdAt     DateTime @default(now())
 
   @@index([boqItemId])

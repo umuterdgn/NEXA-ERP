@@ -23,6 +23,9 @@ export async function POST(request: Request) {
       photoUrl,
       userName,
       userRole,
+      latitude,
+      longitude,
+      capturedAt,
       projectId: incomingProjectId,
     } = body
 
@@ -30,6 +33,14 @@ export async function POST(request: Request) {
     if (isNaN(qty) || qty <= 0) {
       return NextResponse.json(
         { error: "Lütfen 0'dan büyük geçerli bir ilerleme miktarı girin" },
+        { status: 400 }
+      )
+    }
+
+    // ADIM 1: Fotoğraf Zorunluluğu (Anti-Fraud)
+    if (!photoUrl) {
+      return NextResponse.json(
+        { error: "Saha ilerleme girişi için fotoğraf / görsel kanıt yüklenmesi zorunludur!" },
         { status: 400 }
       )
     }
@@ -79,7 +90,7 @@ export async function POST(request: Request) {
       },
     })
 
-    // 3. BoqProgressLog tablosuna sahadan giriş kanıtını kaydet
+    // 3. BoqProgressLog tablosuna sahadan giriş kanıtını kaydet (GPS & Zaman Damgalı)
     const progressLog = await prisma.boqProgressLog.create({
       data: {
         boqItemId: targetBoqItem.id,
@@ -87,6 +98,9 @@ export async function POST(request: Request) {
         notes: notes || "Mobil uygulamadan sahadan ilerleme girişi yapıldı.",
         attachmentUrl: photoUrl || null,
         createdByName: userName || "Saha Şefi / Mühendis (Mobil)",
+        latitude: latitude != null ? Number(latitude) : null,
+        longitude: longitude != null ? Number(longitude) : null,
+        capturedAt: capturedAt ? new Date(capturedAt) : new Date(),
       },
     })
 
