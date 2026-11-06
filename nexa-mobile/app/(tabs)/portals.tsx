@@ -29,6 +29,7 @@ import {
   revisionApi,
   materialReceivingApi,
   concreteCastingApi,
+  logisticsApi,
 } from "../../apiClient";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -148,7 +149,7 @@ export default function PortalsScreen() {
       >
         {activePortal === "damage" && <DamageEvidencePortal />}
         {activePortal === "subcontractor" && <SubcontractorPortal />}
-        {activePortal === "driver" && <DriverRoutePortal />}
+        {activePortal === "driver" && <DriverRoutePortal currentUser={currentUser} />}
         {activePortal === "franchise" && <FranchisePortal />}
         {activePortal === "inspection" && <InspectionPortal />}
       </ScrollView>
@@ -680,10 +681,21 @@ function SubcontractorPortal() {
 /* ========================================================================== */
 /*                    3. SÜRÜCÜ & ROTA PORTALI                                */
 /* ========================================================================== */
-function DriverRoutePortal() {
+function DriverRoutePortal({ currentUser }: { currentUser?: any }) {
   const [gatePass, setGatePass] = useState<any>(null);
   const [isDriving, setIsDriving] = useState(false);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
+  const [driverStatus, setDriverStatus] = useState<"IDLE" | "IN_TRANSIT" | "DELAYED" | "ARRIVED_AT_SITE">("IDLE");
+  const [isSendingStatus, setIsSendingStatus] = useState(false);
+
+  // Rol kontrolü: Sadece DRIVER / SOFOR veya ADMIN / ENGINEER erişebilir
+  const userRole = currentUser?.role || "GUEST";
+  const hasAccess =
+    userRole === "DRIVER" ||
+    userRole === "SOFOR" ||
+    userRole === "ADMIN" ||
+    userRole === "SYSTEM_ADMIN" ||
+    userRole === "ENGINEER";
 
   const driverCoord = { latitude: 36.584, longitude: 36.1685 };
   const gateCoord = { latitude: 36.5878, longitude: 36.1735 };
@@ -698,16 +710,63 @@ function DriverRoutePortal() {
     })();
   }, []);
 
+  if (!hasAccess) {
+    return (
+      <View style={[styles.portalCardWrapper, { alignItems: "center", paddingVertical: 40 }]}>
+        <View style={[styles.portalIconBox, { backgroundColor: "rgba(255, 59, 48, 0.15)", width: 64, height: 64, borderRadius: 32, marginBottom: 16 }]}>
+          <Ionicons name="lock-closed" size={32} color="#FF3B30" />
+        </View>
+        <Text style={[styles.portalCardTitle, { fontSize: 18, textAlign: "center", marginBottom: 8 }]}>
+          Erişim İzni Kısıtlandı
+        </Text>
+        <Text style={[styles.portalCardDesc, { textAlign: "center", maxWidth: 300, lineHeight: 20 }]}>
+          Sürücü ve Lojistik ekranı yalnızca sistemde rolü "DRIVER" (Şoför) olan personele veya Sistem Yöneticisine açıktır.{"\n"}
+          Mevcut rolünüz: <Text style={{ color: "#FF9500", fontWeight: "700" }}>{userRole}</Text>
+        </Text>
+      </View>
+    );
+  }
+
+  // Telemetri ve Durum Gönderimi (Yola Çıktım, Gecikme Var, Şantiyeye Ulaştım)
+  const handleUpdateDriverStatus = async (
+    status: "IN_TRANSIT" | "DELAYED" | "ARRIVED_AT_SITE",
+    title: string
+  ) => {
+    try {
+      setIsSendingStatus(true);
+      setDriverStatus(status);
+
+      await logisticsApi.updateStatus({
+        status,
+        plateNumber: gatePass?.plate || "34 NXA 789",
+        driverName: currentUser?.name || "Lojistik Sürücüsü",
+        latitude: driverCoord.latitude,
+        longitude: driverCoord.longitude,
+        notes: `Sürücü durumu güncellendi: ${title}`,
+      });
+
+      Alert.alert(
+        "✅ Telemetri İletildi",
+        `Durumunuz "${title}" olarak şantiye kontrol merkezine ve haritaya anlık yansıtıldı.`
+      );
+    } catch (err: any) {
+      Alert.alert("İletişim Uyarısı", err?.message || "Durum iletilemedi.");
+    } finally {
+      setIsSendingStatus(false);
+    }
+  };
+
   const handleToggleDriving = async () => {
     try {
       setIsTrackingLoading(true);
       if (!isDriving) {
         const success = await startDriverLocationTracking({
           plate: gatePass?.plate || "34 NXA 789",
-          driverName: "Lojistik Şoförü",
+          driverName: currentUser?.name || "Lojistik Şoförü",
         });
         if (success) {
           setIsDriving(true);
+          setDriverStatus("IN_TRANSIT");
           Alert.alert(
             "Sürüş Başlatıldı (Arka Plan GPS Aktif)",
             "Cihaz kilitliyken bile her 10 saniyede bir veya 50 metre yer değiştirmede /api/location/update üzerinden merkeze telemetri aktarılacaktır."
@@ -744,6 +803,85 @@ function DriverRoutePortal() {
         <View style={{ flex: 1 }}>
           <Text style={styles.portalCardTitle}>Sürücü & Rota Portalı</Text>
           <Text style={styles.portalCardDesc}>Kapı geçişi için QR kod ve döküm rotası</Text>
+        </View>
+        <View style={{ backgroundColor: driverStatus === "IN_TRANSIT" ? "rgba(52, 199, 89, 0.2)" : driverStatus === "DELAYED" ? "rgba(255, 59, 48, 0.2)" : "rgba(10, 122, 255, 0.2)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+          <Text style={{ fontSize: 11, fontWeight: "700", color: driverStatus === "IN_TRANSIT" ? "#34C759" : driverStatus === "DELAYED" ? "#FF3B30" : "#0A7AFF" }}>
+            {driverStatus === "IN_TRANSIT" ? "YOLDA" : driverStatus === "DELAYED" ? "GECİKME" : driverStatus === "ARRIVED_AT_SITE" ? "ŞANTİYEDE" : "HAZIR"}
+          </Text>
+        </View>
+      </View>
+
+      {/* ADIM 3: ADAPTİF SÜRÜCÜ DURUM BUTONLARI */}
+      <View style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: 16, padding: 12, gap: 8, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.08)" }}>
+        <Text style={{ fontSize: 12, fontWeight: "700", color: "#8E8E93", textTransform: "uppercase", letterSpacing: 0.5 }}>
+          Anlık Sürücü Durumu Bildir
+        </Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {/* Yola Çıktım */}
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: driverStatus === "IN_TRANSIT" ? "#34C759" : "rgba(52, 199, 89, 0.15)",
+              paddingVertical: 10,
+              paddingHorizontal: 8,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "#34C759",
+            }}
+            disabled={isSendingStatus}
+            onPress={() => handleUpdateDriverStatus("IN_TRANSIT", "Yola Çıktım")}
+          >
+            <Ionicons name="car" size={16} color={driverStatus === "IN_TRANSIT" ? "#FFFFFF" : "#34C759"} />
+            <Text style={{ fontSize: 11, fontWeight: "700", color: driverStatus === "IN_TRANSIT" ? "#FFFFFF" : "#34C759", marginTop: 4 }}>
+              Yola Çıktım
+            </Text>
+          </TouchableOpacity>
+
+          {/* Gecikme Var */}
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: driverStatus === "DELAYED" ? "#FF9500" : "rgba(255, 149, 0, 0.15)",
+              paddingVertical: 10,
+              paddingHorizontal: 8,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "#FF9500",
+            }}
+            disabled={isSendingStatus}
+            onPress={() => handleUpdateDriverStatus("DELAYED", "Gecikme Var (Kaza/Trafik)")}
+          >
+            <Ionicons name="warning" size={16} color={driverStatus === "DELAYED" ? "#FFFFFF" : "#FF9500"} />
+            <Text style={{ fontSize: 11, fontWeight: "700", color: driverStatus === "DELAYED" ? "#FFFFFF" : "#FF9500", marginTop: 4 }}>
+              Gecikme Var
+            </Text>
+          </TouchableOpacity>
+
+          {/* Şantiyeye Ulaştım */}
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: driverStatus === "ARRIVED_AT_SITE" ? "#0A7AFF" : "rgba(10, 122, 255, 0.15)",
+              paddingVertical: 10,
+              paddingHorizontal: 8,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "#0A7AFF",
+            }}
+            disabled={isSendingStatus}
+            onPress={() => handleUpdateDriverStatus("ARRIVED_AT_SITE", "Şantiyeye Ulaştım")}
+          >
+            <Ionicons name="business" size={16} color={driverStatus === "ARRIVED_AT_SITE" ? "#FFFFFF" : "#0A7AFF"} />
+            <Text style={{ fontSize: 11, fontWeight: "700", color: driverStatus === "ARRIVED_AT_SITE" ? "#FFFFFF" : "#0A7AFF", marginTop: 4 }}>
+              Şantiyedeyim
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 

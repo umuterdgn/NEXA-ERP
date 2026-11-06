@@ -22,6 +22,7 @@ import {
   DollarSign, 
   Building2, 
   FolderKanban, 
+  TrendingUp, 
   Users, 
   ClipboardList, 
   Settings,
@@ -220,6 +221,7 @@ const menuItems: MenuItem[] = [
   
   // PROJE YÖNETİMİ
   { href: "/admin/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
+  { href: "/admin/progress", label: "İlerleyiş", icon: TrendingUp, category: "PROJE YÖNETİMİ" },
   { href: "/admin/project-control-center", label: "Proje Kontrol Merkezi (Master)", icon: Layers, category: "PROJE YÖNETİMİ" },
   { href: "/admin/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ" },
   { href: "/admin/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ" },

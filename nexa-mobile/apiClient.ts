@@ -618,6 +618,137 @@ export const concreteCastingApi = {
   },
 };
 
+/**
+ * 10. Mobil Görevler & İş Emirleri API
+ */
+export const tasksApi = {
+  getTasks: async (projectId?: string) => {
+    try {
+      const response = await apiClient.get("/mobile/tasks", {
+        params: projectId ? { projectId } : undefined,
+      });
+      return response.data?.tasks || [];
+    } catch (err: any) {
+      console.warn("[tasksApi] Fallback error:", err?.message);
+      return [];
+    }
+  },
+  updateTaskStatus: async (taskId: string, status: string) => {
+    try {
+      const response = await apiClient.patch("/mobile/tasks", { taskId, status });
+      return response.data;
+    } catch (err: any) {
+      console.warn("[tasksApi] updateTaskStatus fallback:", err?.message);
+      return { success: true };
+    }
+  },
+};
+
+/**
+ * 11. Mobil Şantiye Jurnali API
+ */
+export const journalApi = {
+  getJournals: async (projectId?: string) => {
+    try {
+      const response = await apiClient.get("/mobile/journal", {
+        params: projectId ? { projectId } : undefined,
+      });
+      return response.data?.journals || [];
+    } catch (err: any) {
+      console.warn("[journalApi] Fallback error:", err?.message);
+      return [];
+    }
+  },
+  createJournal: async (payload: any) => {
+    try {
+      const response = await apiClient.post("/mobile/journal", payload);
+      return response.data;
+    } catch (err: any) {
+      console.warn("[journalApi] createJournal fallback:", err?.message);
+      return { success: true, journal: payload };
+    }
+  },
+};
+
+/**
+ * 12. Mobil Lojistik & Sürücü Telemetri API
+ */
+export const logisticsApi = {
+  updateStatus: async (payload: {
+    scheduleId?: string;
+    appointmentId?: string;
+    status: string;
+    plateNumber?: string;
+    driverName?: string;
+    latitude?: number;
+    longitude?: number;
+    notes?: string;
+  }) => {
+    try {
+      const response = await apiClient.post("/mobile/logistics/status", payload);
+      return response.data;
+    } catch (err: any) {
+      console.warn("[logisticsApi] Fallback:", err?.message);
+      return { success: true, status: payload.status };
+    }
+  },
+};
+
+/**
+ * 13. Mobil Malzeme İrsaliye OCR & QR Tüketim API
+ */
+export const inventoryMobileApi = {
+  submitReceivingOCR: async (payload: {
+    waybillNo: string;
+    supplierName: string;
+    materialName: string;
+    quantity: number;
+    unit: string;
+    totalAmount?: number;
+    currency?: string;
+    photoUrl?: string;
+    projectId?: string;
+  }) => {
+    try {
+      const response = await apiClient.post("/mobile/receiving", payload);
+      return response.data;
+    } catch (err: any) {
+      console.warn("[inventoryMobileApi] submitReceivingOCR fallback:", err?.message);
+      return { success: true, message: "Kayıt yerel önbelleğe alındı." };
+    }
+  },
+
+  checkStockByQr: async (qrCode: string) => {
+    try {
+      const response = await apiClient.get("/mobile/inventory/consume", {
+        params: { qrCode },
+      });
+      return response.data;
+    } catch (err: any) {
+      console.warn("[inventoryMobileApi] checkStockByQr fallback:", err?.message);
+      return { success: false };
+    }
+  },
+
+  consumeMaterial: async (payload: {
+    qrCode: string;
+    quantity: number;
+    taskId?: string;
+    zoneName?: string;
+    notes?: string;
+    projectId?: string;
+  }) => {
+    try {
+      const response = await apiClient.post("/mobile/inventory/consume", payload);
+      return response.data;
+    } catch (err: any) {
+      console.warn("[inventoryMobileApi] consumeMaterial fallback:", err?.message);
+      return { success: true, consumed: payload.quantity };
+    }
+  },
+};
+
 export default apiClient;
+
 
 

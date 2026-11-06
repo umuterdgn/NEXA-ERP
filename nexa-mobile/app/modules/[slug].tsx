@@ -8,10 +8,22 @@ import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import PlaceholderScreen from "../../src/components/common/PlaceholderScreen";
 import { ALL_MODULES } from "../../src/screens/ModulesScreen";
+import WaybillOCRScreen from "../../src/screens/WaybillOCRScreen";
+import MaterialConsumptionScreen from "../../src/screens/MaterialConsumptionScreen";
 
 export default function GenericModuleScreen() {
   const router = useRouter();
   const { slug } = useLocalSearchParams<{ slug: string }>();
+
+  // 1. Malzeme Kabul & İrsaliye OCR Modülü
+  if (slug === "material-receiving") {
+    return <WaybillOCRScreen onBack={() => router.back()} />;
+  }
+
+  // 2. Malzeme Tüketimi (QR Sarfiyat) Modülü
+  if (slug === "material-consumption") {
+    return <MaterialConsumptionScreen onBack={() => router.back()} />;
+  }
 
   // Eşleşen modülü bul
   const matched = ALL_MODULES.find((m) => m.slug === slug);

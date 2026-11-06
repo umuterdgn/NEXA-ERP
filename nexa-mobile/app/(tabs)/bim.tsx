@@ -8,7 +8,7 @@
  * - Çevrimdışı Model İndirme (expo-file-system)
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -45,6 +45,8 @@ export default function BimArScreen() {
 
   const [activeModel, setActiveModel] = useState("Merkez Rezidans - Blok A & B");
   const [isArActive, setIsArActive] = useState(false);
+  const [hasRenderError, setHasRenderError] = useState(false);
+  const [lowMemoryMode, setLowMemoryMode] = useState(false); // Draco / Düşük RAM Modu
 
   // Kamera İzinleri
   const [permission, requestPermission] = useCameraPermissions();
@@ -57,31 +59,65 @@ export default function BimArScreen() {
   const [scale, setScale] = useState(1.0);
   const [modelOverlay, setModelOverlay] = useState<any>(null);
 
-  // Web API'den güncel BIM katman planını çek
+  // Bellek yönetimi: Unmount veya AR kapandığında bellek temizliği
   useEffect(() => {
+    return () => {
+      // Arka plan bellek ve render kaynaklarını boşalt
+      setModelOverlay(null);
+    };
+  }, []);
+
+  // Web API'den güncel BIM katman planını çek (Try-catch korumalı)
+  useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const data = await bimApi.getCurrentModelOverlay();
-        setModelOverlay(data);
+        if (isMounted) {
+          setModelOverlay(data);
+          setHasRenderError(false);
+        }
       } catch (err) {
         console.warn("[BimArScreen] Model overlay çekme uyarısı:", err);
+        if (isMounted) {
+          setHasRenderError(false); // Fallback ile devam et
+        }
       }
     })();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const handleStartAr = async () => {
-    if (!permission?.granted) {
-      const { granted } = await requestPermission();
-      if (!granted) {
-        Alert.alert(
-          "Kamera İzni Gerekli",
-          "Şantiyede AR (Artırılmış Gerçeklik) katmanını görebilmek için kamera izni vermeniz gerekir."
-        );
-        return;
+  // RAM Şişmesini önleyen memoized katman hesaplamaları
+  const memoizedTransform = useMemo(() => {
+    return {
+      opacity: overlayOpacity,
+      transform: [{ scale: lowMemoryMode ? 1.0 : scale }],
+    };
+  }, [overlayOpacity, scale, lowMemoryMode]);
+
+  const handleStartAr = useCallback(async () => {
+    try {
+      if (!permission?.granted) {
+        const { granted } = await requestPermission();
+        if (!granted) {
+          Alert.alert(
+            "Kamera İzni Gerekli",
+            "Şantiyede AR (Artırılmış Gerçeklik) katmanını görebilmek için kamera izni vermeniz gerekir."
+          );
+          return;
+        }
       }
+      setIsArActive(true);
+      setHasRenderError(false);
+    } catch (err: any) {
+      console.error("[BimArScreen] AR Başlatma Hatası:", err);
+      Alert.alert("AR Hatası", "Kamera veya 3D katman başlatılamadı. Cihaz belleği yetersiz olabilir.");
+      setHasRenderError(true);
     }
-    setIsArActive(true);
-  };
+  }, [permission, requestPermission]);
 
   const handleDownload = async () => {
     try {
@@ -193,14 +229,29 @@ export default function BimArScreen() {
                     Lazer Hizalama
                   </Text>
                 </TouchableOpacity>
+
+                {/* RAM / Draco Düşük Bellek Modu */}
+                <TouchableOpacity
+                  style={[styles.arLayerChip, lowMemoryMode && { backgroundColor: "rgba(175, 82, 222, 0.4)" }]}
+                  onPress={() => setLowMemoryMode(!lowMemoryMode)}
+                >
+                  <Ionicons
+                    name="hardware-chip"
+                    size={13}
+                    color={lowMemoryMode ? "#AF52DE" : "#8E8E93"}
+                  />
+                  <Text style={[styles.arLayerText, lowMemoryMode && { color: "#FFFFFF" }]}>
+                    {lowMemoryMode ? "Düşük RAM (Aktif)" : "Draco Optimize"}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </SafeAreaView>
 
-            {/* ORTA: AR ÇİZGİLERİ VE STATİK / MEKANİK OVERLAY BİNDİRMESİ */}
+            {/* ORTA: AR ÇİZGİLERİ VE STATİK / MEKANİK OVERLAY BİNDİRMESİ (MEMOIZED & CRASH-SAFE) */}
             <View
               style={[
                 styles.arOverlayCanvas,
-                { opacity: overlayOpacity, transform: [{ scale }] },
+                memoizedTransform,
               ]}
               pointerEvents="none"
             >

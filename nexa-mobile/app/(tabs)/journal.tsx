@@ -33,6 +33,7 @@ import { useLocationWeather, useNetworkSync } from "../../src/hooks";
 import { OfflineQueue } from "../../src/services/OfflineQueue";
 import { api } from "../../src/lib/api";
 import { iosColors, iosRadius } from "../../src/theme/iosTheme";
+import { journalApi } from "../../apiClient";
 
 export interface JournalRecord {
   id: string;
@@ -105,6 +106,20 @@ export default function JournalScreen() {
   const { isConnected, queueCount } = useNetworkSync();
   const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
 
+  // Veritabanından jurnalleri yükle
+  useEffect(() => {
+    (async () => {
+      try {
+        const dbJournals = await journalApi.getJournals();
+        if (dbJournals && dbJournals.length > 0) {
+          setJournals(dbJournals);
+        }
+      } catch (err) {
+        console.warn("[JournalScreen] DB journals fetch warning:", err);
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     try {
       fetchLocationAndWeather().catch(() => {});
@@ -127,16 +142,21 @@ export default function JournalScreen() {
       }
 
       const journalPayload = {
-        projectId: "prj_active_01",
-        projectName: project,
+        project,
         block,
-        activities: `${block} - ${worksDone}`,
-        weather: `${weather?.description || "Açık"}, ${weather?.temperature || 18}°C`,
         personnelCount: parseInt(personnelCount, 10) || 0,
-        equipmentData: { equipment: equipment || "1 Kule Vinç" },
-        notes: isgNotes || "Uygunsuzluk tespit edilmedi.",
-        isMockedGps: isMocked,
+        worksDone,
+        equipment: equipment || "1 Kule Vinç",
+        isgNotes: isgNotes || "Uygunsuzluk tespit edilmedi.",
+        weatherSummary: weather?.description || "Açık",
+        temperature: weather?.temperature || 18,
+        isMocked: isMocked || false,
+        latitude: location?.latitude,
+        longitude: location?.longitude,
       };
+
+      // Gerçek DB API çağrısı
+      await journalApi.createJournal(journalPayload);
 
       // ADIM 4: Önce NetInfo ile internet bağlantısını denetle
       const netState = await NetInfo.fetch();

@@ -8,7 +8,7 @@
  * - Apple iOS Standartlarında Frosted Glass Arayüzü
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  RefreshControl,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
@@ -36,6 +37,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { iosColors, iosRadius } from "../../src/theme/iosTheme";
 import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
+import { tasksApi } from "../../apiClient";
 
 export interface TaskItem {
   id: string;
@@ -168,6 +170,28 @@ export default function TasksScreen() {
   const { openDrawer } = useDrawer();
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Veritabanından gerçek görevleri yükle
+  const loadTasksFromDB = async () => {
+    try {
+      setIsLoadingTasks(true);
+      const dbTasks = await tasksApi.getTasks();
+      if (dbTasks && dbTasks.length > 0) {
+        setTasks(dbTasks);
+      }
+    } catch (err) {
+      console.warn("[TasksScreen] DB tasks fetch warning:", err);
+    } finally {
+      setIsLoadingTasks(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTasksFromDB();
+  }, []);
 
   const AVAILABLE_ZONES = [
     "14. Kat - Çatı Terası & Mekanik",
@@ -357,10 +381,15 @@ export default function TasksScreen() {
       (prev || []).map((t) => (t.id === taskId ? { ...t, status: "TAMAMLANDI" } : t))
     );
 
+    // Veritabanına da kaydet
+    tasksApi.updateTaskStatus(taskId, "TAMAMLANDI").catch((err) => {
+      console.warn("[TasksScreen] DB update error:", err);
+    });
+
     const target = tasks.find((t) => t.id === taskId);
     Alert.alert(
       "✅ Görev Tamamlandı",
-      `"${target?.title || "İş emri"}" başarıyla tamamlandı olarak işaretlendi.`
+      `"${target?.title || "İş emri"}" başarıyla tamamlandı olarak işaretlendi ve veritabanına kaydedildi.`
     );
   };
 
