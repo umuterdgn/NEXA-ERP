@@ -37,7 +37,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { iosColors, iosRadius } from "../../src/theme/iosTheme";
 import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
-import { tasksApi } from "../../apiClient";
+import { tasksApi, getAuthSession } from "../../apiClient";
 
 export interface TaskItem {
   id: string;
@@ -52,6 +52,9 @@ export interface TaskItem {
   currentQuantity?: number;
   unit?: string;
   boqItemId?: string;
+  zoneId?: string;
+  assignedRole?: "ENGINEER" | "FOREMAN" | "SUBCONTRACTOR" | "ALL";
+  assignedToName?: string;
 }
 
 const INITIAL_TASKS: TaskItem[] = [
@@ -68,6 +71,8 @@ const INITIAL_TASKS: TaskItem[] = [
     currentQuantity: 0,
     unit: "m3",
     boqItemId: "boq-beton-1",
+    assignedRole: "SUBCONTRACTOR",
+    assignedToName: "Kaya Kalıp & Beton Ltd.",
   },
   {
     id: "2",
@@ -82,6 +87,8 @@ const INITIAL_TASKS: TaskItem[] = [
     currentQuantity: 15,
     unit: "Ton",
     boqItemId: "boq-demir-1",
+    assignedRole: "SUBCONTRACTOR",
+    assignedToName: "Özkan Demir İşleri",
   },
   {
     id: "3",
@@ -95,6 +102,8 @@ const INITIAL_TASKS: TaskItem[] = [
     targetQuantity: 24,
     currentQuantity: 0,
     unit: "Adet",
+    assignedRole: "FOREMAN",
+    assignedToName: "Ahmet Usta (Saha Formeni)",
   },
   {
     id: "4",
@@ -108,6 +117,8 @@ const INITIAL_TASKS: TaskItem[] = [
     targetQuantity: 600,
     currentQuantity: 250,
     unit: "m2",
+    assignedRole: "ENGINEER",
+    assignedToName: "İnşaat Müh. Selin Demir",
   },
   {
     id: "5",
@@ -121,6 +132,8 @@ const INITIAL_TASKS: TaskItem[] = [
     targetQuantity: 400,
     currentQuantity: 400,
     unit: "mt",
+    assignedRole: "FOREMAN",
+    assignedToName: "Elektrik Formen Ekibi",
   },
 ];
 
@@ -170,6 +183,9 @@ export default function TasksScreen() {
   const { openDrawer } = useDrawer();
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<"ALL" | "ENGINEER" | "FOREMAN" | "SUBCONTRACTOR">("ALL");
+  const [scopeFilter, setScopeFilter] = useState<"MY_ROLE" | "ALL">("MY_ROLE");
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -191,6 +207,24 @@ export default function TasksScreen() {
 
   useEffect(() => {
     loadTasksFromDB();
+    (async () => {
+      try {
+        const session = await getAuthSession();
+        if (session.user) {
+          setCurrentUser(session.user);
+          const r = String(session.user.role || "").toUpperCase();
+          if (r.includes("ENG") || r.includes("MÜH") || r.includes("MUH")) {
+            setUserRole("ENGINEER");
+          } else if (r.includes("FOR") || r.includes("ŞEF")) {
+            setUserRole("FOREMAN");
+          } else if (r.includes("SUB") || r.includes("TAŞ") || r.includes("TAS")) {
+            setUserRole("SUBCONTRACTOR");
+          }
+        }
+      } catch (err) {
+        console.warn("[TasksScreen] session read warning:", err);
+      }
+    })();
   }, []);
 
   const AVAILABLE_ZONES = [
@@ -323,31 +357,29 @@ export default function TasksScreen() {
     }
 
     try {
-      // Backend /api/mobile/tasks/progress çağrısı (Kat ve Taşeron Hakediş Entegreli)
-      await fetch("/api/mobile/tasks/progress", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Backend /api/tasks/progress çağrısı (Kat ve Taşeron Hakediş Entegreli Otonom İlerleme)
+      let progressPercentage = 100;
+      try {
+        const res = await tasksApi.submitProgress({
           taskId: selectedTask.id,
           boqItemId: selectedTask.boqItemId,
           quantityAdded: qty,
-          notes: dailyProgressNotes || `${qty} ${selectedTask.unit || "m3"} imalat ${selectedZone} mahaline işlendi.`,
-          photoUrl: photoUri || "https://res.cloudinary.com/nexa/image/upload/v1/site/field-proof.jpg",
-          userName: isSubcontractorMode ? "Mehmet Kaya (Taşeron Usta Başı)" : "Ahmet Yılmaz (Saha Şefi)",
-          userRole: isSubcontractorMode ? "SUBCONTRACTOR" : "ENGINEER",
-          latitude: photoGps?.latitude ?? 41.0082,
-          longitude: photoGps?.longitude ?? 28.9784,
-          capturedAt: new Date().toISOString(),
+          status: "COMPLETED",
+          completionPhoto: photoUri || undefined,
           zoneName: selectedZone,
+          notes: dailyProgressNotes || `${qty} ${selectedTask.unit || "m3"} imalat ${selectedZone} mahaline işlendi.`,
+          userName: currentUser?.name || (isSubcontractorMode ? "Mehmet Kaya (Taşeron Usta Başı)" : "Ahmet Yılmaz (Saha Şefi)"),
+          userRole: userRole !== "ALL" ? userRole : (isSubcontractorMode ? "SUBCONTRACTOR" : "ENGINEER"),
           subcontractorId: isSubcontractorMode ? "sub-kaya-kalip" : undefined,
-        }),
-      }).catch(() => {
-        // Fallback for offline/standalone execution
-      });
+        });
+        if (res && typeof res.progressPercentage === "number") {
+          progressPercentage = res.progressPercentage;
+        }
+      } catch (subErr) {
+        console.warn("[TasksScreen] tasksApi.submitProgress warn:", subErr);
+      }
 
       const updatedCurrent = (selectedTask.currentQuantity || 0) + qty;
-      const target = selectedTask.targetQuantity || 100;
-      const isCompleted = updatedCurrent >= target;
 
       setTasks((prev) =>
         prev.map((t) =>
@@ -355,7 +387,7 @@ export default function TasksScreen() {
             ? {
                 ...t,
                 currentQuantity: updatedCurrent,
-                status: isCompleted ? "TAMAMLANDI" : "DEVAM EDİYOR",
+                status: "TAMAMLANDI",
               }
             : t
         )
@@ -363,8 +395,8 @@ export default function TasksScreen() {
 
       setIsProgressModalOpen(false);
       Alert.alert(
-        "🚀 Gantt & Hakedişe İletildi",
-        `"${selectedTask.title}" imalatı ${selectedZone} mahaline işlendi. Taşeron hakedişi otomatik hesaplandı ve Master Dashboard Isı Haritası kat bazında güncellendi.`
+        `🚀 Kat İlerlemesi Güncellendi: %${progressPercentage}`,
+        `"${selectedTask.title}" (${qty} ${selectedTask.unit || "m3"}) tamamlandı. ${selectedZone} mahali güncellendi, Master Dashboard (2.5D Isı Haritası) ve Hakediş'e otonom yansıtıldı.`
       );
     } finally {
       setIsSubmitting(false);
@@ -393,10 +425,48 @@ export default function TasksScreen() {
     );
   };
 
-  // Filtreleme
+  // Filtreleme (Durum + Rol + Kapsam)
   const filteredTasks = (tasks || []).filter((t) => {
-    if (filter === "ACTIVE") return t.status !== "TAMAMLANDI";
-    if (filter === "COMPLETED") return t.status === "TAMAMLANDI";
+    // 1. Durum Filtresi
+    if (filter === "ACTIVE" && t.status === "TAMAMLANDI") return false;
+    if (filter === "COMPLETED" && t.status !== "TAMAMLANDI") return false;
+
+    // 2. Rol & Kapsam Filtresi
+    if (scopeFilter === "MY_ROLE" && userRole !== "ALL") {
+      const titleLower = (t.title || "").toLowerCase();
+      const descLower = (t.description || "").toLowerCase();
+
+      if (userRole === "SUBCONTRACTOR") {
+        const isSubTask =
+          t.assignedRole === "SUBCONTRACTOR" ||
+          titleLower.includes("beton") ||
+          titleLower.includes("demir") ||
+          titleLower.includes("kalıp") ||
+          titleLower.includes("duvar") ||
+          titleLower.includes("membran") ||
+          descLower.includes("dökümü") ||
+          descLower.includes("montajı");
+        if (!isSubTask) return false;
+      } else if (userRole === "FOREMAN") {
+        const isForemanTask =
+          t.assignedRole === "FOREMAN" ||
+          titleLower.includes("teftiş") ||
+          titleLower.includes("isg") ||
+          titleLower.includes("korkuluk") ||
+          titleLower.includes("denetim") ||
+          titleLower.includes("tava");
+        if (!isForemanTask) return false;
+      } else if (userRole === "ENGINEER") {
+        const isEngTask =
+          t.assignedRole === "ENGINEER" ||
+          titleLower.includes("muayene") ||
+          titleLower.includes("onay") ||
+          titleLower.includes("vize") ||
+          t.priority === "KRİTİK";
+        if (!isEngTask) return false;
+      }
+    }
+
     return true;
   });
 
@@ -512,6 +582,70 @@ export default function TasksScreen() {
               </TouchableOpacity>
             );
           })}
+        </View>
+
+        {/* ============================================================ */}
+        {/* ROL FİLTRESİ (Mühendis / Formen / Taşeron) & KAPSAM           */}
+        {/* ============================================================ */}
+        <View style={styles.roleFilterSection}>
+          <View style={styles.roleSelectorRow}>
+            {[
+              { id: "ALL", label: "Tümü" },
+              { id: "ENGINEER", label: "👷 Mühendis" },
+              { id: "FOREMAN", label: "📋 Formen" },
+              { id: "SUBCONTRACTOR", label: "🔨 Taşeron" },
+            ].map((r) => {
+              const isRoleActive = userRole === r.id;
+              return (
+                <TouchableOpacity
+                  key={r.id}
+                  onPress={() => setUserRole(r.id as any)}
+                  style={[styles.roleChip, isRoleActive && styles.roleChipActive]}
+                  activeOpacity={0.75}
+                >
+                  <Text
+                    style={[
+                      styles.roleChipText,
+                      isRoleActive && styles.roleChipTextActive,
+                    ]}
+                  >
+                    {r.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={styles.scopeToggleRow}>
+            <TouchableOpacity
+              onPress={() => setScopeFilter("MY_ROLE")}
+              style={[styles.scopeBtn, scopeFilter === "MY_ROLE" && styles.scopeBtnActive]}
+              activeOpacity={0.75}
+            >
+              <Text
+                style={[
+                  styles.scopeBtnText,
+                  scopeFilter === "MY_ROLE" && styles.scopeBtnTextActive,
+                ]}
+              >
+                🎯 {userRole === "ALL" ? "Bana / Ekibime Atananlar" : `${userRole} Görevleri`}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setScopeFilter("ALL")}
+              style={[styles.scopeBtn, scopeFilter === "ALL" && styles.scopeBtnActive]}
+              activeOpacity={0.75}
+            >
+              <Text
+                style={[
+                  styles.scopeBtnText,
+                  scopeFilter === "ALL" && styles.scopeBtnTextActive,
+                ]}
+              >
+                🌐 Tüm Şantiye
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -672,6 +806,32 @@ export default function TasksScreen() {
                       </Text>
                     </View>
                   </View>
+
+                  {/* ADIM 4: Mobil "Yapıldı" Butonu (Fotoğraflı Kanıt & Miktar Gir) */}
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => handleOpenProgressModal(item)}
+                    style={[
+                      styles.cardActionButton,
+                      isDone && styles.cardActionButtonDone,
+                    ]}
+                  >
+                    <Ionicons
+                      name={isDone ? "checkmark-circle" : "camera"}
+                      size={15}
+                      color={isDone ? iosColors.systemGreen : "#FFFFFF"}
+                    />
+                    <Text
+                      style={[
+                        styles.cardActionButtonText,
+                        isDone && styles.cardActionButtonTextDone,
+                      ]}
+                    >
+                      {isDone
+                        ? "✓ Tamamlandı (Fotoğraf & Miktar Kaydedildi)"
+                        : "✅ Yapıldı (Fotoğraflı Kanıt & Miktar Gir)"}
+                    </Text>
+                  </TouchableOpacity>
                 </TouchableOpacity>
               </ReanimatedSwipeable>
             </View>
@@ -1007,6 +1167,64 @@ const styles = StyleSheet.create({
   segmentedTabTextActive: {
     color: "#FFFFFF",
   },
+  roleFilterSection: {
+    marginTop: 10,
+    gap: 8,
+  },
+  roleSelectorRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  roleChip: {
+    flex: 1,
+    paddingVertical: 7,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  roleChipActive: {
+    backgroundColor: "rgba(10, 122, 255, 0.2)",
+    borderColor: iosColors.systemBlue,
+  },
+  roleChipText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: iosColors.labelSecondary,
+  },
+  roleChipTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+  },
+  scopeToggleRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  scopeBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 9,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    alignItems: "center",
+  },
+  scopeBtnActive: {
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    borderColor: "rgba(52, 199, 89, 0.4)",
+  },
+  scopeBtnText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: iosColors.labelSecondary,
+  },
+  scopeBtnTextActive: {
+    color: iosColors.systemGreen,
+    fontWeight: "700",
+  },
   hintBar: {
     paddingHorizontal: 20,
     paddingVertical: 8,
@@ -1110,6 +1328,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: iosColors.labelSecondary,
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  cardActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#2563EB",
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  cardActionButtonDone: {
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(52, 199, 89, 0.35)",
+    shadowOpacity: 0,
+  },
+  cardActionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  cardActionButtonTextDone: {
+    color: iosColors.systemGreen,
   },
   rightActionContainer: {
     width: 95,

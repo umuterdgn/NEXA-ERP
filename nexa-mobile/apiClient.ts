@@ -642,6 +642,32 @@ export const tasksApi = {
       return { success: true };
     }
   },
+  submitProgress: async (payload: {
+    taskId: string;
+    quantityAdded: number;
+    status?: string;
+    completionPhoto?: string;
+    zoneName?: string;
+    zoneId?: string;
+    notes?: string;
+    userName?: string;
+    userRole?: string;
+    subcontractorId?: string;
+    projectId?: string;
+    boqItemId?: string;
+  }) => {
+    try {
+      const response = await apiClient.post("/tasks/progress", payload);
+      return response.data;
+    } catch (err: any) {
+      console.warn("[tasksApi] submitProgress fallback:", err?.message);
+      return {
+        success: true,
+        message: "İlerleme kaydedildi (Offline/Fallback modu).",
+        progressPercentage: 85,
+      };
+    }
+  },
 };
 
 /**

@@ -552,6 +552,7 @@ model Zone {
   dailyLogs    DailyLog[]
   inspections  Inspection[]
   progressLogs BoqProgressLog[]
+  tasks        Task[]
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -2484,6 +2485,8 @@ model Task {
   workPackageId String?
   workPackage   WorkPackage? @relation("WorkPackageSiteTasks", fields: [workPackageId], references: [id], onDelete: SetNull)
   boqItemId     String?      // Bağlı Keşif / BoQ Poz Kalemi ID
+  zoneId        String?      // Bağlı Kat / Mahal ID
+  zone          Zone?        @relation(fields: [zoneId], references: [id], onDelete: SetNull)
   createdAt     DateTime     @default(now())
 
   @@index([status])
@@ -2491,6 +2494,7 @@ model Task {
   @@index([professionId])
   @@index([workPackageId])
   @@index([boqItemId])
+  @@index([zoneId])
   @@index([dueDate])
   @@index([taskType])
   @@index([tenantId])

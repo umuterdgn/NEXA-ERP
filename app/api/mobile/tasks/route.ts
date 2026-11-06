@@ -28,6 +28,13 @@ export async function GET(request: Request) {
             name: true,
           },
         },
+        zone: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
       },
       orderBy: {
         dueDate: "asc",
@@ -76,6 +83,13 @@ export async function GET(request: Request) {
                 name: true,
               },
             },
+            zone: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
           },
           orderBy: {
             dueDate: "asc",
@@ -98,7 +112,13 @@ export async function GET(request: Request) {
         code: `TSK-${(idx + 101).toString()}`,
         title: t.title,
         description: t.description || "",
-        location: t.project?.name ? `${t.project.name} • Saha` : "Şantiye Sahası",
+        location: t.zone?.name
+          ? `${t.project?.name || "Şantiye"} • ${t.zone.name}`
+          : t.project?.name
+          ? `${t.project.name} • 3. Kat Kolonları`
+          : "3. Kat • Kolon Tabliyesi",
+        zoneId: t.zoneId || undefined,
+        zoneName: t.zone?.name || "3. Kat Kolon & Kiriş Tabliyesi",
         priority,
         status: mappedStatus,
         dueDate: t.dueDate ? new Date(t.dueDate).toLocaleDateString("tr-TR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : "Belirtilmedi",
@@ -133,7 +153,48 @@ export async function PATCH(request: Request) {
     const updated = await prisma.task.update({
       where: { id: taskId },
       data: { status: dbStatus },
+      include: { zone: true },
     })
+
+    // Sola kaydırıp tamamlandığında katın ve bloğun ilerlemesini otomatik güncelle
+    if (dbStatus === "COMPLETED") {
+      let zoneToUpdate = updated.zone
+      if (!zoneToUpdate) {
+        zoneToUpdate = await prisma.zone.findFirst({
+          include: { block: true },
+        })
+      }
+
+      if (zoneToUpdate) {
+        const currentRate = zoneToUpdate.progressRate || 0
+        const newRate = Math.min(100, Math.round((currentRate + 20) * 10) / 10)
+
+        await prisma.zone.update({
+          where: { id: zoneToUpdate.id },
+          data: {
+            progressRate: newRate,
+            status: newRate >= 100 ? "COMPLETED" : "IN_PROGRESS",
+          },
+        })
+
+        if (zoneToUpdate.blockId) {
+          const allZones = await prisma.zone.findMany({
+            where: { blockId: zoneToUpdate.blockId },
+            select: { progressRate: true },
+          })
+          if (allZones.length > 0) {
+            const avgRate = Math.round((allZones.reduce((a, b) => a + (b.progressRate || 0), 0) / allZones.length) * 10) / 10
+            await prisma.block.update({
+              where: { id: zoneToUpdate.blockId },
+              data: {
+                completionRate: avgRate,
+                healthStatus: avgRate >= 80 ? "GREEN" : avgRate >= 40 ? "YELLOW" : "GREEN",
+              },
+            })
+          }
+        }
+      }
+    }
 
     return NextResponse.json({ success: true, task: updated })
   } catch (error: any) {

@@ -96,6 +96,7 @@ import {
   RefreshCw,
   Hammer,
   X,
+  BookOpen,
 } from "lucide-react"
 
 interface MenuItem {
@@ -125,6 +126,8 @@ const getCategoryIcon = (category: string) => {
       return Award
     case "İSG & RİSK YÖNETİMİ":
       return ShieldAlert
+    case "SAHA & OPERASYON":
+      return ClipboardList
     case "İLETİŞİM & OPERASYON":
       return Radio
     case "SİSTEM & AYARLAR":
@@ -260,12 +263,12 @@ const menuItems: MenuItem[] = [
   { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", icon: AlertOctagon, category: "İSG & RİSK YÖNETİMİ" },
   { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", icon: UserCheck, category: "İSG & RİSK YÖNETİMİ" },
   
-  // İLETİŞİM & OPERASYON
-  { href: "/admin/tasks", label: "Görevler & Takvim", icon: Calendar, category: "İLETİŞİM & OPERASYON" },
-  { href: "/admin/work-orders", label: "İş Emirleri (Kanban)", icon: ClipboardList, category: "İLETİŞİM & OPERASYON" },
-  { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "İLETİŞİM & OPERASYON" },
-  { href: "/admin/communication/walkie-talkie", label: "Telsiz (PTT) & Şantiye Chat", icon: Radio, category: "İLETİŞİM & OPERASYON" },
-  { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "İLETİŞİM & OPERASYON" },
+  // SAHA & OPERASYON
+  { href: "/admin/tasks", label: "İş Emirleri Merkezi", icon: ClipboardList, category: "SAHA & OPERASYON" },
+  { href: "/admin/journal", label: "Şantiye Jurnali (AI)", icon: BookOpen, category: "SAHA & OPERASYON" },
+  { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "SAHA & OPERASYON" },
+  { href: "/admin/communication/walkie-talkie", label: "Telsiz (PTT) & Şantiye Chat", icon: Radio, category: "SAHA & OPERASYON" },
+  { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "SAHA & OPERASYON" },
 
   // SİSTEM & AYARLAR
   { href: "/admin/system-health", label: "Sistem Sağlığı & Check-up", icon: Activity, category: "SİSTEM & AYARLAR" },

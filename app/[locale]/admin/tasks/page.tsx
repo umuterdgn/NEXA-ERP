@@ -8,8 +8,10 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
-import { Calendar, ListTodo, Clock, MapPin, User } from "lucide-react"
+import Link from "next/link"
+import { Calendar, ListTodo, Clock, MapPin, User, Table, ShieldAlert, Plus, CheckCircle2, AlertTriangle, Layers, ArrowUpRight, Search, Download } from "lucide-react"
 import { getProjectsForSelect, getPersonnelForSelect } from "@/app/actions/tasks"
+import TableToolbar from "@/components/ui/TableToolbar"
 
 export default function TasksPage() {
   const [projects, setProjects] = useState<any[]>([])
@@ -22,7 +24,8 @@ export default function TasksPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedTask, setSelectedTask] = useState<any>(null)
-  const [viewMode, setViewMode] = useState<"kanban" | "calendar">("kanban")
+  const [viewMode, setViewMode] = useState<"list" | "kanban" | "calendar">("list")
+  const [searchQuery, setSearchQuery] = useState("")
   const [selectedDate, setSelectedDate] = useState(new Date())
   
   const [formData, setFormData] = useState({
@@ -266,9 +269,19 @@ export default function TasksPage() {
     })
   }
 
-  const filteredTasks = selectedProjectId 
-    ? tasks.filter(task => task.projectId === selectedProjectId)
-    : tasks.filter(task => !selectedWorkerId || task.assignedTo === selectedWorkerId)
+  const filteredTasks = tasks.filter(task => {
+    if (selectedProjectId && task.projectId !== selectedProjectId) return false
+    if (selectedWorkerId && task.assignedTo !== selectedWorkerId) return false
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      const titleMatch = task.title?.toLowerCase().includes(q)
+      const descMatch = task.description?.toLowerCase().includes(q)
+      const typeMatch = task.taskType?.toLowerCase().includes(q)
+      const assignedMatch = task.assignedToName?.toLowerCase().includes(q) || task.assignedTo?.toLowerCase().includes(q)
+      if (!titleMatch && !descMatch && !typeMatch && !assignedMatch) return false
+    }
+    return true
+  })
 
   const todoTasks = filteredTasks.filter(task => task.status === "TODO")
   const inProgressTasks = filteredTasks.filter(task => task.status === "IN_PROGRESS")
@@ -363,45 +376,208 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="lg:mt-0 mt-16">
-      <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-white">
-          📋 Görevler & Takvim
-        </h1>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setViewMode("kanban")}
-            className={`px-4 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 ${
-              viewMode === "kanban" 
-                ? "bg-blue-600 text-white" 
-                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-            }`}
+    <div className="lg:mt-0 mt-16 max-w-[1700px] mx-auto p-2 sm:p-4">
+      {/* Üst Header: Başlık, Sekmeler ve Hızlı Aksiyon Butonları */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+              SAHA & OPERASYON
+            </span>
+            <span className="text-xs text-slate-400">Canlı İş Emri Havuzu</span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mt-1">
+            📋 İş Emirleri Merkezi
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Tüm şantiyeler, katlar ve taşeron ekipleri için birleştirilmiş saha operasyon yönetim masası.
+          </p>
+        </div>
+
+        {/* Sağ Taraf: Sekmeler & Hızlı İşlem Butonları */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Top Tabs: Liste, Kanban, Takvim */}
+          <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`px-3.5 py-1.5 rounded-lg transition text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+                viewMode === "list"
+                  ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <ListTodo className="w-4 h-4" />
+              Liste
+            </button>
+            <button
+              onClick={() => setViewMode("kanban")}
+              className={`px-3.5 py-1.5 rounded-lg transition text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+                viewMode === "kanban"
+                  ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              Kanban
+            </button>
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={`px-3.5 py-1.5 rounded-lg transition text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+                viewMode === "calendar"
+                  ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              Takvim
+            </button>
+          </div>
+
+          {/* DÖF Aç Butonu */}
+          <Link
+            href="/admin/qa-qc/ncr"
+            className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition"
           >
-            <ListTodo className="w-5 h-5" />
-            Kanban
-          </button>
-          <button
-            onClick={() => setViewMode("calendar")}
-            className={`px-4 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 ${
-              viewMode === "calendar" 
-                ? "bg-blue-600 text-white" 
-                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-            }`}
-          >
-            <Calendar className="w-5 h-5" />
-            Takvim
-          </button>
+            <ShieldAlert className="w-4 h-4" />
+            DÖF Aç
+          </Link>
+
+          {/* Hızlı İş Emri Ata Butonu */}
           <button
             onClick={openModal}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium flex items-center gap-2"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-600/20 flex items-center gap-1.5 transition"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Yeni Görev Ekle
+            <Plus className="w-4 h-4" />
+            İş Emri Ata
           </button>
         </div>
       </div>
+
+      {/* Global Arama ve Dinamik Dışa Aktar (Export) Toolbar */}
+      <TableToolbar
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="İş emri başlığı, proje, mahal veya sorumlu ara..."
+        data={filteredTasks}
+        title="İş Emirleri Listesi"
+        fileNamePrefix="Nexa_Is_Emirleri"
+        columns={[
+          { key: "id", label: "İş Emri No" },
+          { key: "title", label: "Başlık" },
+          { key: "taskType", label: "Görev Tipi" },
+          { key: "status", label: "Durum" },
+          { key: "dueDate", label: "Son Teslim" },
+        ]}
+      />
+
+      {/* ================================================================ */}
+      {/* 1. LİSTE GÖRÜNÜMÜ                                                */}
+      {/* ================================================================ */}
+      {viewMode === "list" && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden mb-8">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/50">
+                  <th className="py-3.5 px-4">İş Emri / Başlık</th>
+                  <th className="py-3.5 px-4">Görev Tipi</th>
+                  <th className="py-3.5 px-4">Proje / Mahal</th>
+                  <th className="py-3.5 px-4">Sorumlu</th>
+                  <th className="py-3.5 px-4">Son Teslim</th>
+                  <th className="py-3.5 px-4">Durum</th>
+                  <th className="py-3.5 px-4 text-right">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {filteredTasks.map((t, idx) => {
+                  const isDone = t.status === "DONE" || t.status === "COMPLETED"
+                  return (
+                    <tr
+                      key={t.id}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+                    >
+                      <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-slate-400">
+                            #{t.id.slice(-5).toUpperCase()}
+                          </span>
+                          <span>{t.title}</span>
+                        </div>
+                        {t.description ? (
+                          <div className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                            {t.description}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="py-3 px-4 text-xs font-medium text-slate-600 dark:text-slate-300">
+                        {t.taskType || "Genel İmalat"}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-500">
+                        {projects.find((p) => p.id === t.projectId)?.name || "Şantiye Sahası"}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-300">
+                        {workers.find((w) => w.id === t.assignedTo)?.name || t.assignedTo || "Atanmadı"}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-500">
+                        {t.dueDate
+                          ? new Date(t.dueDate).toLocaleDateString("tr-TR", {
+                              day: "numeric",
+                              month: "short",
+                            })
+                          : "-"}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                            isDone
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                              : t.status === "IN_PROGRESS"
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+                              : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                          }`}
+                        >
+                          {isDone
+                            ? "Tamamlandı"
+                            : t.status === "IN_PROGRESS"
+                            ? "Devam Ediyor"
+                            : "Bekliyor"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {!isDone && (
+                            <button
+                              onClick={() => handleUpdateStatus(t.id, "DONE")}
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1"
+                              title="Tamamlandı Olarak İşaretle"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Tamamla
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleEdit(t)}
+                            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition"
+                          >
+                            Düzenle
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+                {filteredTasks.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-slate-400 text-sm">
+                      Kayıtlı veya filtreyle eşleşen iş emri bulunamadı.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Project and Worker Filters */}
       {viewMode === "kanban" && (
