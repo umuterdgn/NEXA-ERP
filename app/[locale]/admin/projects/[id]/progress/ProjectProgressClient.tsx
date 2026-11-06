@@ -6,7 +6,7 @@
  * Şantiye İlerleme Takibi (Progress Tracking), Keşif/Metraj (BoQ) ve Gantt Zaman Çizelgesi
  */
 
-import { useState, useMemo, useTransition } from "react"
+import { useState, useMemo, useTransition, useEffect } from "react"
 import Link from "next/link"
 import { toast } from "react-hot-toast"
 import {
@@ -48,6 +48,7 @@ import {
   seedInitialBoqItems,
   getProjectProgressData
 } from "./actions"
+import ProgressEntryModal from "@/components/progress/ProgressEntryModal"
 
 interface ProjectProgressClientProps {
   projectId: string
@@ -103,6 +104,14 @@ export default function ProjectProgressClient({
       setSummary(res.summary)
     }
   }
+
+  // Periodic polling for real-time synchronization with mobile & other field updates
+  useEffect(() => {
+    const timer = setInterval(() => {
+      void reloadData()
+    }, 8000)
+    return () => clearInterval(timer)
+  }, [projectId])
 
   // Handle Seeding Template if empty
   const handleSeedTemplate = async () => {
@@ -795,175 +804,22 @@ export default function ProjectProgressClient({
       )}
 
       {/* ========================================================================= */}
-      {/* 4. ADIM 3: SAHADAN İLERLEME GİRİŞİ MODAL                                  */}
+      {/* 4. ADIM 3 & 4: SAHADAN İLERLEME GİRİŞİ MODAL (PERSONEL ATAMALI)           */}
       {/* ========================================================================= */}
-      {isUpdateModalOpen && selectedBoqItem && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-3xl border border-slate-800 max-w-xl w-full p-6 shadow-2xl relative">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <Hammer className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">Sahadan İlerleme Girişi</h3>
-                  <p className="text-xs text-slate-400">
-                    Gerçekleşen imalat miktarını ve saha görselini sisteme işleyin
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsUpdateModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitProgressUpdate} className="space-y-4 mt-5">
-              {/* Poz Bilgi Kartı */}
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-blue-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
-                    {selectedBoqItem.pozNo}
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    Birim Fiyat: {formatTRY(selectedBoqItem.unitPrice)}
-                  </span>
-                </div>
-                <div className="text-sm font-bold text-white">
-                  {selectedBoqItem.description}
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-900 font-mono">
-                  <span>
-                    Planlanan: <strong className="text-white">{selectedBoqItem.plannedQuantity} {selectedBoqItem.unit}</strong>
-                  </span>
-                  <span>
-                    Mevcut Gerçekleşen: <strong className="text-emerald-400">{selectedBoqItem.actualQuantity} {selectedBoqItem.unit}</strong>
-                  </span>
-                </div>
-              </div>
-
-              {/* Bugün Yapılan Miktar Girişi */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Bugün Sahada Yapılan / Eklenen Miktar ({selectedBoqItem.unit}) *
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="Örn: 50"
-                    value={additionalQty}
-                    onChange={(e) => setAdditionalQty(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-base font-bold focus:outline-none focus:border-emerald-500 font-mono"
-                    autoFocus
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
-                    {selectedBoqItem.unit}
-                  </span>
-                </div>
-
-                {/* Live Preview of New Total */}
-                {additionalQty && parseFloat(additionalQty) > 0 && (
-                  <div className="mt-2 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/40 text-xs text-emerald-300 flex items-center justify-between font-mono">
-                    <span>
-                      Yeni Toplam:{" "}
-                      <strong>
-                        {(selectedBoqItem.actualQuantity + parseFloat(additionalQty)).toLocaleString("tr-TR")} {selectedBoqItem.unit}
-                      </strong>
-                    </span>
-                    <span>
-                      Yeni İlerleme: %
-                      {Math.min(
-                        100,
-                        Math.round(
-                          ((selectedBoqItem.actualQuantity + parseFloat(additionalQty)) /
-                            selectedBoqItem.plannedQuantity) *
-                            1000
-                        ) / 10
-                      )}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* İlerleme Notu */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  İlerleme / İmalat Notu
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Örn: A Blok 3. kat döşeme ve kiriş betonu döküldü..."
-                  value={progressNotes}
-                  onChange={(e) => setProgressNotes(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 placeholder-slate-600 leading-relaxed"
-                />
-              </div>
-
-              {/* Ataşman / Fotoğraf Yükleme */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Saha Ataşmanı & Fotoğraf (Opsiyonel)
-                </label>
-                <div className="flex items-center gap-3">
-                  <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-950 border border-dashed border-slate-700 hover:border-slate-500 text-slate-400 hover:text-white text-xs transition-all">
-                    <Camera className="w-4 h-4 text-emerald-400" />
-                    <span>Fotoğraf veya Tutanak Seç</span>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {isUploading && (
-                    <RefreshCw className="w-4 h-4 animate-spin text-emerald-400 flex-shrink-0" />
-                  )}
-
-                  {attachmentUrl && !isUploading && (
-                    <a
-                      href={attachmentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-emerald-400 hover:underline flex items-center gap-1 font-medium flex-shrink-0"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Yüklendi
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {/* Modal Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsUpdateModalOpen(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending || isUploading}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-md shadow-emerald-950 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isPending ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  )}
-                  <span>İlerlemeyi Onayla & Veritabanına Yaz</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ProgressEntryModal
+        isOpen={isUpdateModalOpen && !!selectedBoqItem}
+        onClose={() => setIsUpdateModalOpen(false)}
+        boqItem={selectedBoqItem}
+        onSubmit={async (payload) => {
+          const res = await updateBoqProgress(payload)
+          if (res.success) {
+            toast.success(res.message || "İlerleme kaydedildi")
+            await reloadData()
+          } else {
+            toast.error(res.error || "İlerleme güncellenemedi")
+          }
+        }}
+      />
 
       {/* ========================================================================= */}
       {/* 5. YENİ POZ EKLEME MODAL                                                  */}

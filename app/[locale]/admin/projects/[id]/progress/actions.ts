@@ -220,6 +220,26 @@ export async function updateBoqProgress(payload: {
       },
     })
 
+    // ADIM 4: Personel performans günlüğüne / AuditLog'a bu başarıyı işle
+    try {
+      await prisma.auditLog.create({
+        data: {
+          projectId: currentItem.projectId,
+          action: "FIELD_PROGRESS_LOGGED",
+          entityType: "BoqProgressLog",
+          userName: createdByName || "Saha Personeli",
+          summary: `${createdByName || "Saha Personeli"} tarafından ${currentItem.pozNo} pozuna +${qty} ${currentItem.unit} imalat girişi tamamlandı ve puantaj/performansa işlendi.`,
+          newValues: {
+            boqItemId,
+            quantityAdded: qty,
+            performedBy: createdByName,
+          },
+        },
+      })
+    } catch {
+      // audit optional
+    }
+
     // 3. Projenin genel ağırlıklı ilerleme yüzdesini güncelle
     const allProjectItems = await prisma.boqItem.findMany({
       where: { projectId: currentItem.projectId },
@@ -291,6 +311,23 @@ export async function createBoqItem(
         subcontractorId: data.subcontractorId || null,
       },
     })
+
+    // ADIM 2: Eş zamanlı olarak Task (İş Emri) tablosuna kayıt oluştur
+    try {
+      await prisma.task.create({
+        data: {
+          projectId,
+          title: `${newItem.pozNo} - ${newItem.description}`,
+          description: `Keşif/Metraj İmalat Kalemi: ${newItem.description}. Planlanan Miktar: ${newItem.plannedQuantity} ${newItem.unit}`,
+          status: "TODO",
+          taskType: "SAHA_IMALAT",
+          boqItemId: newItem.id,
+          dueDate: newItem.endDate,
+        },
+      })
+    } catch (taskErr) {
+      console.warn("Task creation error:", taskErr)
+    }
 
     revalidatePath(`/admin/projects/${projectId}/progress`)
     return { success: true, item: newItem }
@@ -399,7 +436,7 @@ export async function seedInitialBoqItems(projectId: string) {
     ]
 
     for (const item of standardTemplates) {
-      await prisma.boqItem.create({
+      const createdItem = await prisma.boqItem.create({
         data: {
           projectId,
           pozNo: item.pozNo,
@@ -412,6 +449,28 @@ export async function seedInitialBoqItems(projectId: string) {
           endDate: item.endDate,
         },
       })
+
+      // Eş zamanlı Task (İş Emri) kaydı oluştur
+      try {
+        await prisma.task.create({
+          data: {
+            projectId,
+            title: `${createdItem.pozNo} - ${createdItem.description}`,
+            description: `Keşif/Metraj İmalat Kalemi: ${createdItem.description}. Planlanan Miktar: ${createdItem.plannedQuantity} ${createdItem.unit}`,
+            status:
+              createdItem.actualQuantity >= createdItem.plannedQuantity
+                ? "COMPLETED"
+                : createdItem.actualQuantity > 0
+                ? "IN_PROGRESS"
+                : "TODO",
+            taskType: "SAHA_IMALAT",
+            boqItemId: createdItem.id,
+            dueDate: createdItem.endDate,
+          },
+        })
+      } catch (err) {
+        // ignore
+      }
     }
 
     revalidatePath(`/admin/projects/${projectId}/progress`)

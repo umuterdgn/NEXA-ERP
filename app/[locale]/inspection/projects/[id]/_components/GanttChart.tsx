@@ -7,9 +7,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Gantt, Task, ViewMode } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Calendar, FileSpreadsheet, ArrowRight, Layers } from "lucide-react";
 
 interface GanttChartProps {
   projectId: string;
@@ -24,6 +25,7 @@ type GanttTaskRecord = {
 };
 
 export default function GanttChart({ projectId }: GanttChartProps) {
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -133,7 +135,40 @@ export default function GanttChart({ projectId }: GanttChartProps) {
   }
 
   if (!tasks || tasks.length === 0) {
-    return <div className="p-4 text-slate-500">Henüz iş planı oluşturulmadı.</div>;
+    return (
+      <div className="py-12 px-6 text-center bg-slate-900/60 rounded-2xl border border-dashed border-slate-700/80 flex flex-col items-center justify-center my-2">
+        <div className="w-16 h-16 rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4 shadow-lg shadow-blue-500/5">
+          <FileSpreadsheet className="w-8 h-8" />
+        </div>
+        <h4 className="text-lg font-bold text-white mb-1">
+          Henüz İş Planı (Gantt Şeması) Oluşturulmadı
+        </h4>
+        <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+          Projeye ait Keşif & Metraj (BoQ) pozları yüklendiğinde otomatik iş programı, Gantt zaman çizelgesi ve saha iş emirleri otonom olarak üretilir.
+        </p>
+
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push(`/admin/projects/${projectId}/progress`)}
+            className="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2.5 active:scale-95 group"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Excel'den Poz Yükle & Gantt Oluştur</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium transition-colors border border-slate-700 flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Manuel Görev Ekle</span>
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

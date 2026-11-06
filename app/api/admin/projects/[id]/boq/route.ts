@@ -281,6 +281,40 @@ export async function POST(
       skipDuplicates: false
     })
 
+    // ADIM 2: Eş zamanlı olarak BoqItem ve Task (İş Emri) kayıtları oluştur
+    for (const item of dataToInsert) {
+      try {
+        const boqItem = await prisma.boqItem.create({
+          data: {
+            projectId,
+            tenantId: tenantId || null,
+            pozNo: item.pozNo || `P-${Date.now().toString().slice(-4)}`,
+            description: item.name || "İmalat Kalemi",
+            unit: item.unit || "m3",
+            plannedQuantity: item.plannedQuantity || 0,
+            unitPrice: item.unitPrice || 0,
+            totalPrice: item.totalBudget || 0,
+            actualQuantity: 0,
+          }
+        })
+
+        // Eş zamanlı Task (İş Emri) kaydı: BoqItem.id referansını bağla
+        await prisma.task.create({
+          data: {
+            projectId,
+            tenantId: tenantId || null,
+            title: `${boqItem.pozNo} - ${boqItem.description}`,
+            description: `Keşif/Metraj Kalemi: ${boqItem.description}. Planlanan Miktar: ${boqItem.plannedQuantity} ${boqItem.unit}. Birim Fiyat: ${boqItem.unitPrice} ₺`,
+            status: "TODO",
+            taskType: "SAHA_IMALAT",
+            boqItemId: boqItem.id,
+          }
+        })
+      } catch (syncErr) {
+        console.warn("BoqItem/Task sync error:", item.pozNo, syncErr)
+      }
+    }
+
     // AuditLog kaydı oluştur
     try {
       await prisma.auditLog.create({

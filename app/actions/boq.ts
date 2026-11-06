@@ -332,6 +332,22 @@ export async function createBoqItem(
       },
     })
 
+    // ADIM 2: Eş zamanlı olarak Task (İş Emri) tablosuna kayıt oluştur
+    try {
+      await prisma.task.create({
+        data: {
+          projectId,
+          title: `${newItem.pozNo} - ${newItem.description}`,
+          description: `Keşif/Metraj Kalemi: ${newItem.description}. Planlanan Miktar: ${newItem.plannedQuantity} ${newItem.unit}. Birim Fiyat: ${newItem.unitPrice} ₺`,
+          status: "TODO",
+          taskType: "SAHA_IMALAT",
+          boqItemId: newItem.id,
+        },
+      })
+    } catch (taskErr) {
+      console.warn("Task creation error in boq.ts:", taskErr)
+    }
+
     // Genel ağırlıklı ilerlemeyi güncelle
     await recalculateProjectWeightedProgress(projectId)
 
@@ -460,7 +476,7 @@ export async function seedBoqTemplate(projectId: string) {
 
       const totalPrice = Number((item.plannedQuantity * item.unitPrice).toFixed(2))
 
-      await prisma.boqItem.create({
+      const createdBoq = await prisma.boqItem.create({
         data: {
           projectId,
           pozNo: item.pozNo,
@@ -473,6 +489,22 @@ export async function seedBoqTemplate(projectId: string) {
           requiredMaterialId: matId,
         },
       })
+
+      // Eş zamanlı Task kaydı
+      try {
+        await prisma.task.create({
+          data: {
+            projectId,
+            title: `${createdBoq.pozNo} - ${createdBoq.description}`,
+            description: `Keşif/Metraj Kalemi: ${createdBoq.description}. Planlanan Miktar: ${createdBoq.plannedQuantity} ${createdBoq.unit}`,
+            status: createdBoq.actualQuantity >= createdBoq.plannedQuantity ? "COMPLETED" : createdBoq.actualQuantity > 0 ? "IN_PROGRESS" : "TODO",
+            taskType: "SAHA_IMALAT",
+            boqItemId: createdBoq.id,
+          },
+        })
+      } catch (err) {
+        // ignore
+      }
     }
 
     await recalculateProjectWeightedProgress(projectId)

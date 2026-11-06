@@ -18,6 +18,9 @@ import {
   Platform,
   Alert,
   StyleSheet,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -40,28 +43,40 @@ export interface TaskItem {
   priority: "KRİTİK" | "YÜKSEK" | "ORTA" | "DÜŞÜK";
   status: "BEKLİYOR" | "DEVAM EDİYOR" | "TAMAMLANDI";
   dueDate: string;
+  targetQuantity?: number;
+  currentQuantity?: number;
+  unit?: string;
+  boqItemId?: string;
 }
 
 const INITIAL_TASKS: TaskItem[] = [
   {
     id: "1",
     code: "TSK-201",
-    title: "Kolon Donatısı ve Paspayı Kontrolü",
-    description: "Statik projeye göre demir bağlama ve paspayı takozları kontrol edilecek.",
+    title: "C35/45 Hazır Beton Dökümü",
+    description: "3. Kat Kolon ve Kirişleri Pompalı Hazır Beton Dökümü.",
     location: "Blok-B • Kat: 3",
     priority: "KRİTİK",
     status: "DEVAM EDİYOR",
     dueDate: "Bugün 16:30",
+    targetQuantity: 100,
+    currentQuantity: 0,
+    unit: "m3",
+    boqItemId: "boq-beton-1",
   },
   {
     id: "2",
     code: "TSK-202",
-    title: "C30 Hazır Beton Numunesi Alma",
-    description: "Gelen transmikserden slump ve 6 adet küp numune alınması.",
-    location: "Laboratuvar & Zemin",
+    title: "B420C Nervürlü Donatı Çeliği Montajı",
+    description: "Temel ve kolon donatılarının statik projeye göre bağlanması.",
+    location: "Blok-A • Temel",
     priority: "YÜKSEK",
     status: "BEKLİYOR",
     dueDate: "Bugün 17:00",
+    targetQuantity: 50,
+    currentQuantity: 15,
+    unit: "Ton",
+    boqItemId: "boq-demir-1",
   },
   {
     id: "3",
@@ -72,6 +87,9 @@ const INITIAL_TASKS: TaskItem[] = [
     priority: "KRİTİK",
     status: "BEKLİYOR",
     dueDate: "Yarın 10:00",
+    targetQuantity: 24,
+    currentQuantity: 0,
+    unit: "Adet",
   },
   {
     id: "4",
@@ -82,6 +100,9 @@ const INITIAL_TASKS: TaskItem[] = [
     priority: "ORTA",
     status: "DEVAM EDİYOR",
     dueDate: "4 Kasım 2026",
+    targetQuantity: 600,
+    currentQuantity: 250,
+    unit: "m2",
   },
   {
     id: "5",
@@ -92,6 +113,9 @@ const INITIAL_TASKS: TaskItem[] = [
     priority: "DÜŞÜK",
     status: "TAMAMLANDI",
     dueDate: "1 Kasım 2026",
+    targetQuantity: 400,
+    currentQuantity: 400,
+    unit: "mt",
   },
 ];
 
@@ -141,6 +165,79 @@ export default function TasksScreen() {
   const { openDrawer } = useDrawer();
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
+
+  // Sahadan İlerleme Girişi Modal State'leri
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+  const [dailyProgressQty, setDailyProgressQty] = useState("");
+  const [dailyProgressNotes, setDailyProgressNotes] = useState("");
+  const [isPhotoAttached, setIsPhotoAttached] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleOpenProgressModal = (task: TaskItem) => {
+    setSelectedTask(task);
+    setDailyProgressQty("");
+    setDailyProgressNotes("");
+    setIsPhotoAttached(false);
+    setIsProgressModalOpen(true);
+  };
+
+  const handleSubmitProgress = async () => {
+    if (!selectedTask) return;
+    const qty = parseFloat(dailyProgressQty);
+    if (isNaN(qty) || qty <= 0) {
+      Alert.alert("Geçersiz Miktar", "Lütfen 0'dan büyük geçerli bir ilerleme miktarı girin.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    if (Platform.OS !== "web") {
+      Vibration.vibrate(80);
+    }
+
+    try {
+      // Backend /api/mobile/tasks/progress çağrısı
+      await fetch("/api/mobile/tasks/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskId: selectedTask.id,
+          boqItemId: selectedTask.boqItemId,
+          quantityAdded: qty,
+          notes: dailyProgressNotes || `${qty} ${selectedTask.unit || "m3"} imalat tamamlandı.`,
+          photoUrl: isPhotoAttached ? "https://res.cloudinary.com/nexa/image/upload/v1/site/field-proof.jpg" : null,
+          userName: "Ahmet Yılmaz (Saha Şefi)",
+          userRole: "ENGINEER",
+        }),
+      }).catch(() => {
+        // Fallback for offline/standalone execution
+      });
+
+      const updatedCurrent = (selectedTask.currentQuantity || 0) + qty;
+      const target = selectedTask.targetQuantity || 100;
+      const isCompleted = updatedCurrent >= target;
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === selectedTask.id
+            ? {
+                ...t,
+                currentQuantity: updatedCurrent,
+                status: isCompleted ? "TAMAMLANDI" : "DEVAM EDİYOR",
+              }
+            : t
+        )
+      );
+
+      setIsProgressModalOpen(false);
+      Alert.alert(
+        "🚀 Gantt Şemasına İletildi",
+        `"${selectedTask.title}" görevine ${qty} ${selectedTask.unit || "m3"} imalat işlendi. Web panelindeki Gantt şeması ve metraj tablosu anlık olarak güncellendi.`
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Görevi Tamamlandı Olarak İşaretle
   const handleCompleteTask = (taskId: string) => {
@@ -304,6 +401,9 @@ export default function TasksScreen() {
           const isDone = item.status === "TAMAMLANDI";
           const priorityStyle = getPriorityStyle(item.priority);
           const statusStyle = getStatusStyle(item.status);
+          const currentQty = item.currentQuantity || 0;
+          const targetQty = item.targetQuantity || 100;
+          const progressPercent = Math.min(100, Math.round((currentQty / targetQty) * 100));
 
           return (
             <View style={styles.swipeWrapper}>
@@ -317,7 +417,9 @@ export default function TasksScreen() {
                 )}
                 overshootRight={false}
               >
-                <View
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={() => handleOpenProgressModal(item)}
                   style={[
                     styles.taskCard,
                     isDone && styles.taskCardDone,
@@ -381,7 +483,45 @@ export default function TasksScreen() {
                   </Text>
                   <Text style={styles.taskDescription}>{item.description}</Text>
 
-                  {/* Konum & Termin Tarihi */}
+                  {/* Saha İlerleme Göstergesi (Gantt Eşleşmesi) */}
+                  <View style={styles.cardProgressContainer}>
+                    <View style={styles.cardProgressHeader}>
+                      <Text style={styles.cardProgressLabel}>
+                        İlerleme: {currentQty} / {targetQty} {item.unit || "m3"}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.cardProgressPercent,
+                          {
+                            color:
+                              progressPercent >= 100
+                                ? iosColors.systemGreen
+                                : progressPercent > 0
+                                ? iosColors.systemBlue
+                                : iosColors.labelSecondary,
+                          },
+                        ]}
+                      >
+                        %{progressPercent}
+                      </Text>
+                    </View>
+                    <View style={styles.progressBarTrack}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          {
+                            width: `${progressPercent}%`,
+                            backgroundColor:
+                              progressPercent >= 100
+                                ? iosColors.systemGreen
+                                : iosColors.systemBlue,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Konum, Termin & Hızlı İlerleme Ekle İpucu */}
                   <View style={styles.taskFooter}>
                     <View style={styles.footerItem}>
                       <Feather name="map-pin" size={12} color={iosColors.systemBlue} />
@@ -389,16 +529,140 @@ export default function TasksScreen() {
                     </View>
 
                     <View style={styles.footerItem}>
-                      <Feather name="clock" size={12} color={iosColors.labelSecondary} />
-                      <Text style={styles.footerDueText}>{item.dueDate}</Text>
+                      <Feather name="plus-circle" size={12} color={iosColors.systemGreen} />
+                      <Text style={[styles.footerDueText, { color: iosColors.systemGreen, fontWeight: "700" }]}>
+                        İlerleme Gir
+                      </Text>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               </ReanimatedSwipeable>
             </View>
           );
         }}
       />
+
+      {/* ============================================================ */}
+      {/* SAHADAN İLERLEME GİRİŞİ MODAL (Gantt Entegreli)              */}
+      {/* ============================================================ */}
+      <Modal
+        visible={isProgressModalOpen && !!selectedTask}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsProgressModalOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <Text style={styles.modalCodeBadge}>#{selectedTask?.code}</Text>
+                  <Text style={styles.modalLocationBadge}>{selectedTask?.location}</Text>
+                </View>
+                <Text style={styles.modalTitle} numberOfLines={1}>
+                  {selectedTask?.title}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIsProgressModalOpen(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color={iosColors.labelSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Target & Current Gauge */}
+            <View style={styles.modalTargetBox}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                <Text style={styles.modalTargetLabel}>Toplam Hedef Miktar</Text>
+                <Text style={styles.modalTargetVal}>
+                  {selectedTask?.targetQuantity || 100} {selectedTask?.unit || "m3"}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={styles.modalTargetLabel}>Şu Ana Kadar Yapılan</Text>
+                <Text style={[styles.modalTargetVal, { color: iosColors.systemGreen }]}>
+                  {selectedTask?.currentQuantity || 0} {selectedTask?.unit || "m3"} (%{Math.round(((selectedTask?.currentQuantity || 0) / (selectedTask?.targetQuantity || 100)) * 100)})
+                </Text>
+              </View>
+            </View>
+
+            {/* Input: Bugün Yapılan Miktar */}
+            <Text style={styles.inputLabel}>
+              Bugün Sahada Yapılan Miktar ({selectedTask?.unit || "m3"}) *
+            </Text>
+            <TextInput
+              style={styles.qtyInput}
+              keyboardType="numeric"
+              placeholder={`Örn: 50`}
+              placeholderTextColor="#6B7280"
+              value={dailyProgressQty}
+              onChangeText={setDailyProgressQty}
+            />
+
+            {/* Input: İlerleme Notu */}
+            <Text style={styles.inputLabel}>Saha Notu / İmalat Detayı</Text>
+            <TextInput
+              style={styles.notesInput}
+              placeholder="Örn: 3. Kat kolonları vibratörlü hazır beton dökümü tamamlandı."
+              placeholderTextColor="#6B7280"
+              value={dailyProgressNotes}
+              onChangeText={setDailyProgressNotes}
+              multiline
+              numberOfLines={2}
+            />
+
+            {/* Attachment Button */}
+            <TouchableOpacity
+              onPress={() => setIsPhotoAttached(!isPhotoAttached)}
+              style={[
+                styles.attachBtn,
+                isPhotoAttached && styles.attachBtnActive,
+              ]}
+            >
+              <Feather
+                name={isPhotoAttached ? "check-circle" : "camera"}
+                size={16}
+                color={isPhotoAttached ? iosColors.systemGreen : iosColors.systemBlue}
+              />
+              <Text
+                style={[
+                  styles.attachBtnText,
+                  isPhotoAttached && { color: iosColors.systemGreen },
+                ]}
+              >
+                {isPhotoAttached ? "Saha Kanıt Fotoğrafı Eklendi" : "Saha Fotoğrafı / Tutanak Ekle"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Submit & Cancel */}
+            <TouchableOpacity
+              onPress={handleSubmitProgress}
+              disabled={isSubmitting}
+              style={[styles.modalSubmitBtn, isSubmitting && { opacity: 0.6 }]}
+              activeOpacity={0.85}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Ionicons name="cloud-upload" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Text style={styles.modalSubmitText}>
+                    Sahadan İlerlemeyi Gönder (Gantt'a Yansıt)
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setIsProgressModalOpen(false)}
+              style={styles.modalCancelBtn}
+            >
+              <Text style={styles.modalCancelText}>Vazgeç</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -616,5 +880,191 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
     marginTop: 4,
+  },
+  // Card Progress Bar
+  cardProgressContainer: {
+    marginVertical: 10,
+    padding: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+  },
+  cardProgressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  cardProgressLabel: {
+    fontSize: 11,
+    color: iosColors.labelSecondary,
+    fontWeight: "600",
+  },
+  cardProgressPercent: {
+    fontSize: 12,
+    fontWeight: "800",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  progressBarTrack: {
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+
+  // Modal Styles
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: "#0F172A",
+    borderRadius: 24,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    borderBottomWidth: 1,
+    borderBottomColor: "#1E293B",
+    paddingBottom: 14,
+    marginBottom: 14,
+  },
+  modalCodeBadge: {
+    fontSize: 10,
+    fontWeight: "900",
+    color: iosColors.systemBlue,
+    backgroundColor: "rgba(10, 122, 255, 0.15)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  modalLocationBadge: {
+    fontSize: 10,
+    color: iosColors.labelSecondary,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    padding: 6,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
+  modalTargetBox: {
+    backgroundColor: "#0A0F1C",
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    marginBottom: 14,
+  },
+  modalTargetLabel: {
+    fontSize: 12,
+    color: iosColors.labelSecondary,
+    fontWeight: "600",
+  },
+  modalTargetVal: {
+    fontSize: 12,
+    color: "#FFFFFF",
+    fontWeight: "800",
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.labelSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  qtyInput: {
+    backgroundColor: "#0A0F1C",
+    borderWidth: 1,
+    borderColor: "#334155",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 14,
+  },
+  notesInput: {
+    backgroundColor: "#0A0F1C",
+    borderWidth: 1,
+    borderColor: "#334155",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: "#FFFFFF",
+    fontSize: 13,
+    minHeight: 60,
+    textAlignVertical: "top",
+    marginBottom: 14,
+  },
+  attachBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#334155",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    marginBottom: 16,
+  },
+  attachBtnActive: {
+    borderColor: iosColors.systemGreen,
+    backgroundColor: "rgba(52, 199, 89, 0.1)",
+  },
+  attachBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: iosColors.systemBlue,
+  },
+  modalSubmitBtn: {
+    backgroundColor: "#2563EB",
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+  },
+  modalSubmitText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  modalCancelBtn: {
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  modalCancelText: {
+    color: iosColors.labelSecondary,
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

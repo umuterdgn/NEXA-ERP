@@ -2482,12 +2482,14 @@ model Task {
   taskType      String? // Görev tipi: Beton Kontrolü, Demir Kontrolü, Evrak Teslimi vb.
   workPackageId String?
   workPackage   WorkPackage? @relation("WorkPackageSiteTasks", fields: [workPackageId], references: [id], onDelete: SetNull)
+  boqItemId     String?      // Bağlı Keşif / BoQ Poz Kalemi ID
   createdAt     DateTime     @default(now())
 
   @@index([status])
   @@index([projectId])
   @@index([professionId])
   @@index([workPackageId])
+  @@index([boqItemId])
   @@index([dueDate])
   @@index([taskType])
   @@index([tenantId])
