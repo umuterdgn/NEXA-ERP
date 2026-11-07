@@ -1337,7 +1337,6 @@ export async function toggleConceptTemplate(id: string) {
 
 // Re-export Franchise Rollout Stage-Gate, FF&E, Legal and Punch List functions
 export {
-  ROLLOUT_STAGES,
   validateStageGateTransition,
   updateRolloutBoardStage,
   getRolloutBoardData,
@@ -1349,5 +1348,4 @@ export {
   createRolloutPunchListItem,
   updateRolloutPunchStatus,
 } from "./franchise-rollout"
-export type { RolloutStageKey, StageGateDefinition, FfeItem, LegalPermitItem, PunchListItemExt } from "./franchise-rollout"
 

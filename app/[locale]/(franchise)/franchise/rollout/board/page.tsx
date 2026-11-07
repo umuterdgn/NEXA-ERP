@@ -40,7 +40,9 @@ import RolloutSubNav from "@/components/franchise/RolloutSubNav"
 import toast from "react-hot-toast"
 import {
   ROLLOUT_STAGES,
-  RolloutStageKey,
+  type RolloutStageKey,
+} from "@/lib/constants/franchise-constants"
+import {
   getRolloutBoardData,
   updateRolloutBoardStage,
   validateStageGateTransition,
@@ -274,15 +276,6 @@ export default function RolloutBoardPage() {
     } finally {
       setIsUpdating(false)
     }
-  }
-
-    const res = await updateRolloutBoardStage(storeId, targetStage)
-    if (res.success) {
-      setProjects((prev) =>
-        prev.map((p) => (p.id === storeId ? { ...p, status: targetStage } : p))
-      )
-    }
-    setIsUpdating(false)
   }
 
   // Filtreleme

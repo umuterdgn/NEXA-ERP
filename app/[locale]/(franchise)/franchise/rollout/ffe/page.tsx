@@ -33,10 +33,10 @@ import {
   Plus,
 } from "lucide-react"
 import RolloutSubNav from "@/components/franchise/RolloutSubNav"
+import type { FfeItem } from "@/lib/constants/franchise-constants"
 import {
   getRolloutFfeData,
   updateFfeItemStatus,
-  FfeItem,
 } from "@/app/actions/franchise-rollout"
 
 export default function RolloutFfePage() {

@@ -37,11 +37,11 @@ import {
   AlertOctagon,
 } from "lucide-react"
 import RolloutSubNav from "@/components/franchise/RolloutSubNav"
+import type { PunchListItemExt } from "@/lib/constants/franchise-constants"
 import {
   getRolloutPunchListData,
   createRolloutPunchListItem,
   updateRolloutPunchStatus,
-  PunchListItemExt,
 } from "@/app/actions/franchise-rollout"
 
 export default function RolloutPunchListPage() {

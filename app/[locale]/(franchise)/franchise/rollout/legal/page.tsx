@@ -34,10 +34,10 @@ import {
   UploadCloud,
 } from "lucide-react"
 import RolloutSubNav from "@/components/franchise/RolloutSubNav"
+import type { LegalPermitItem } from "@/lib/constants/franchise-constants"
 import {
   getRolloutLegalData,
   updateLegalPermitStatus,
-  LegalPermitItem,
 } from "@/app/actions/franchise-rollout"
 
 export default function RolloutLegalPage() {
