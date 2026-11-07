@@ -265,7 +265,7 @@ const menuItems: MenuItem[] = [
   
   // SAHA & OPERASYON
   { href: "/admin/tasks", label: "İş Emirleri Merkezi", icon: ClipboardList, category: "SAHA & OPERASYON" },
-  { href: "/admin/journal", label: "Şantiye Jurnali (AI)", icon: BookOpen, category: "SAHA & OPERASYON" },
+  { href: "/admin/operations/journal", label: "Şantiye Jurnali (AI)", icon: BookOpen, category: "SAHA & OPERASYON" },
   { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "SAHA & OPERASYON" },
   { href: "/admin/communication/walkie-talkie", label: "Telsiz (PTT) & Şantiye Chat", icon: Radio, category: "SAHA & OPERASYON" },
   { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "SAHA & OPERASYON" },

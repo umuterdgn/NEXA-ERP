@@ -14,10 +14,28 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get("projectId")
     const status = searchParams.get("status")
+    const userId = searchParams.get("userId")
+    const role = searchParams.get("role")
 
     const whereClause: any = {}
     if (projectId) whereClause.projectId = projectId
-    if (status && status !== "ALL") whereClause.status = status
+
+    if (status && status !== "ALL") {
+      if (status === "ACTIVE") {
+        whereClause.status = { in: ["BEKLİYOR", "TODO", "IN_PROGRESS", "DEVAM EDİYOR"] }
+      } else if (status === "COMPLETED") {
+        whereClause.status = { in: ["TAMAMLANDI", "COMPLETED", "DONE"] }
+      } else {
+        whereClause.status = status
+      }
+    }
+
+    if (userId) {
+      whereClause.OR = [
+        { assignedTo: userId },
+        { assignedTo: null },
+      ]
+    }
 
     let tasks = await prisma.task.findMany({
       where: whereClause,

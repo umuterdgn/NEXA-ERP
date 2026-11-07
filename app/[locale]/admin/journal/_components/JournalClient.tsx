@@ -48,6 +48,12 @@ export default function JournalClient({
     new Date().toISOString().split("T")[0]
   )
   const [journalContent, setJournalContent] = useState<string>("")
+  const [worksDone, setWorksDone] = useState<string>("")
+  const [weatherSummary, setWeatherSummary] = useState<string>("Açık / Güneşli, 19°C • Rüzgar: 12 km/s")
+  const [temperature, setTemperature] = useState<number>(19)
+  const [isgNotes, setIsgNotes] = useState<string>(
+    "Çalışma öncesi TBM (Toolbox) İSG bilgilendirmesi yapıldı. Herhangi bir iş kazası yaşanmadı. KKD kullanımı tamdır."
+  )
   const [completedTasksCount, setCompletedTasksCount] = useState<number>(0)
   const [workerCount, setWorkerCount] = useState<number>(45)
   const [isLoadingDraft, setIsLoadingDraft] = useState<boolean>(false)
@@ -68,8 +74,12 @@ export default function JournalClient({
       if (res.ok) {
         const data = await res.json()
         setJournalContent(data.aiDraftText || "")
+        setWorksDone(data.worksDone || "")
+        setWeatherSummary(data.weatherSummary || "Açık / Güneşli, 19°C • Rüzgar: 12 km/s")
+        setTemperature(data.temperature || 19)
         setCompletedTasksCount(data.tasksCount || 0)
         setWorkerCount(data.workerCount || 45)
+        toast.success("✨ Bugünün jurnali (iş emirleri, hava durumu, personel) başarıyla çekildi!", { icon: "📊" })
       }
     } catch (err) {
       console.warn("AI draft fetch error:", err)
@@ -79,8 +89,9 @@ export default function JournalClient({
   }
 
   const handleSaveAndBroadcast = async () => {
-    if (!journalContent.trim()) {
-      toast.error("Lütfen jurnal içeriğini boş bırakmayın.")
+    const finalWorksDone = worksDone.trim() || journalContent.trim()
+    if (!finalWorksDone) {
+      toast.error("Lütfen imalat ve jurnal içeriğini boş bırakmayın.")
       return
     }
 
@@ -92,26 +103,26 @@ export default function JournalClient({
         body: JSON.stringify({
           project: projects.find((p) => p.id === selectedProjectId)?.name || "Merkez Rezidans",
           block: "Tüm Sahalar",
-          personnelCount: workerCount,
-          worksDone: journalContent,
-          equipment: "1 Kule Vinç, 2 Transmikser",
-          isgNotes: "İSG saha denetimleri tamamlandı, uygunsuzluk yok.",
-          weatherSummary: "Açık / Güneşli",
-          temperature: 19,
+          personnelCount: Number(workerCount) || 45,
+          worksDone: finalWorksDone,
+          equipment: "1 Kule Vinç, 2 Transmikser, 1 Mobil Beton Pompası",
+          isgNotes,
+          weatherSummary,
+          temperature: Number(temperature) || 19,
         }),
       })
 
       if (res.ok) {
         const data = await res.json()
-        toast.success("✅ Günlük Şantiye Jurnali onaylandı ve merkez ofise iletildi!")
+        toast.success("✅ Günlük Şantiye Jurnali onaylandı ve merkez ofise kaydedildi!")
         setJournals((prev) => [
           {
             id: data.journal?.id || `JRN-${Date.now().toString().slice(-4)}`,
             date: "Bugün (" + new Date().toLocaleDateString("tr-TR") + ")",
             rawDate: selectedDate,
             projectName: projects.find((p) => p.id === selectedProjectId)?.name || "Merkez Proje",
-            workerCount,
-            engineerNotes: journalContent.slice(0, 100) + "...",
+            workerCount: Number(workerCount) || 45,
+            engineerNotes: (finalWorksDone || journalContent).slice(0, 100) + "...",
             status: "SUBMITTED",
           },
           ...prev,
@@ -178,61 +189,147 @@ export default function JournalClient({
         </div>
       </div>
 
-      {/* Ana Çalışma Alanı: Sol Taraf AI Jurnal Oluşturucu, Sağ Taraf Canlı İmalat Metrikleri */}
+      {/* AI & Otomasyon Aksiyon Paneli */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-amber-600/10 border border-blue-200 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20">
+            <Sparkles className="w-5 h-5 animate-pulse" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Otonom Şantiye Jurnali Motoru
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              O gün kapanan tüm iş emirlerini, Open-Meteo canlı hava durumunu ve turnike puantaj verisini tek tıkla forma döker.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={fetchAiDraft}
+          disabled={isLoadingDraft}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoadingDraft ? "animate-spin" : ""}`} />
+          {isLoadingDraft ? "Saha Verileri Çekiliyor..." : "✨ Bugünün Jurnalini Oluştur"}
+        </button>
+      </div>
+
+      {/* Ana Çalışma Alanı: Sol Taraf Jurnal Formu & İmalatlar, Sağ Taraf Canlı Saha Metrikleri */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sol Kolon (2 Birim): AI Jurnal Editörü */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-500 animate-pulse" />
+        {/* Sol Kolon (2 Birim): Form Alanları */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                Otomatik AI Taslak Metni
+                Günlük İmalat & Saha Jurnali Formu
               </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Otomatik dolan alanları kontrol edip gerekirse ekleme yapabilir ve kaydedebilirsiniz.
+              </p>
             </div>
-            <button
-              onClick={fetchAiDraft}
-              disabled={isLoadingDraft}
-              className="flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingDraft ? "animate-spin" : ""}`} />
-              Yeniden Derle
-            </button>
           </div>
 
-          <div className="relative">
+          {/* 1. Bugün Yapılan İmalatlar (Autofill from Completed Tasks) */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4 text-blue-500" />
+                Bugün Yapılan İmalatlar (Tamamlanan Görevlerden Otomatik) *
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                {completedTasksCount} İş Emri Entegre
+              </span>
+            </label>
             <textarea
-              rows={14}
+              rows={5}
+              value={worksDone}
+              onChange={(e) => setWorksDone(e.target.value)}
+              placeholder="Tamamlanan görevler buraya otomatik olarak maddeler halinde yazılır..."
+              className="w-full bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl p-3 font-mono text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* 2. Hava Durumu ve Personel Sayısı (2 Kolon) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Sun className="w-4 h-4 text-amber-500" />
+                Hava Durumu (Open-Meteo API) *
+              </label>
+              <input
+                type="text"
+                value={weatherSummary}
+                onChange={(e) => setWeatherSummary(e.target.value)}
+                placeholder="Örn: Açık / Güneşli, 19°C • Rüzgar: 12 km/s"
+                className="w-full bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-purple-500" />
+                Sahadaki Aktif Personel Sayısı (Turnike / Puantaj) *
+              </label>
+              <input
+                type="number"
+                value={workerCount}
+                onChange={(e) => setWorkerCount(Number(e.target.value))}
+                placeholder="Örn: 45"
+                className="w-full bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold"
+              />
+            </div>
+          </div>
+
+          {/* 3. İSG ve Saha Kalite Notları */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              İSG ve Saha Denetim Notları
+            </label>
+            <input
+              type="text"
+              value={isgNotes}
+              onChange={(e) => setIsgNotes(e.target.value)}
+              placeholder="Örn: Toolbox toplantısı yapıldı, KKD eksiksiz."
+              className="w-full bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* 4. Tüm Jurnal Özeti (AI Destekli Bütünleşik Metin) */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-blue-500" />
+              Tüm Jurnal Taslağı (Genel Merkez & Raporlama Özeti)
+            </label>
+            <textarea
+              rows={7}
               value={journalContent}
               onChange={(e) => setJournalContent(e.target.value)}
-              placeholder="Yapay zeka günün kapanan iş emirlerini tarıyor..."
-              className="w-full bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl p-4 font-mono text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Yapay zeka günün kapanan iş emirlerini tarayarak rapor derliyor..."
+              className="w-full bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl p-3 font-mono text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {isLoadingDraft && (
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm rounded-xl flex items-center justify-center gap-2 text-white text-xs font-bold">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                İş Emirleri Taranıyor & AI Jurnali Yazılıyor...
-              </div>
-            )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+          {/* Alt Kontroller & Kaydet */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
             <div className="text-xs text-slate-400 flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Gerektiğinde metin üzerinde düzenleme yapıp onaylayabilirsiniz.
+              Şantiye Şefi otomatik dolan metni okuyup manuel düzenleme yapabilir.
             </div>
 
             <button
               onClick={handleSaveAndBroadcast}
               disabled={isSubmitting || isLoadingDraft}
-              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/20 transition disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/20 transition disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
-              {isSubmitting ? "İletiliyor..." : "Jurnali Onayla ve Merkeze Gönder"}
+              {isSubmitting ? "Kaydediliyor..." : "Kaydet (Şantiye Jurnalini Onayla)"}
             </button>
           </div>
         </div>
 
-        {/* Sağ Kolon (1 Birim): Bugünün Canlı Saha Kartları */}
+        {/* Sağ Kolon (1 Birim): Canlı Saha & Metrik Kartları */}
         <div className="space-y-4">
           {/* İmalat & Görev Özeti Kartı */}
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">

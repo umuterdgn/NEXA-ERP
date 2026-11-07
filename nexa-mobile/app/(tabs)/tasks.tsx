@@ -189,11 +189,15 @@ export default function TasksScreen() {
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Veritabanından gerçek görevleri yükle
-  const loadTasksFromDB = async () => {
+  // Veritabanından personele / role göre gerçek görevleri yükle
+  const loadTasksFromDB = async (customUser?: any) => {
     try {
       setIsLoadingTasks(true);
-      const dbTasks = await tasksApi.getTasks();
+      const user = customUser || currentUser;
+      const dbTasks = await tasksApi.getTasks({
+        userId: user?.id,
+        role: userRole !== "ALL" ? userRole : undefined,
+      });
       if (dbTasks && dbTasks.length > 0) {
         setTasks(dbTasks);
       }
@@ -206,7 +210,6 @@ export default function TasksScreen() {
   };
 
   useEffect(() => {
-    loadTasksFromDB();
     (async () => {
       try {
         const session = await getAuthSession();
@@ -220,9 +223,13 @@ export default function TasksScreen() {
           } else if (r.includes("SUB") || r.includes("TAŞ") || r.includes("TAS")) {
             setUserRole("SUBCONTRACTOR");
           }
+          loadTasksFromDB(session.user);
+        } else {
+          loadTasksFromDB();
         }
       } catch (err) {
         console.warn("[TasksScreen] session read warning:", err);
+        loadTasksFromDB();
       }
     })();
   }, []);

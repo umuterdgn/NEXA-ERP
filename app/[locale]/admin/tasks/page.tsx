@@ -33,9 +33,11 @@ export default function TasksPage() {
     description: "",
     projectId: "",
     assignedTo: "",
+    location: "A Blok - 3. Kat",
+    priority: "ORTA",
     dueDate: "",
     dueTime: "",
-    taskType: ""
+    taskType: "Saha İmalatı"
   })
 
   useEffect(() => {
@@ -109,13 +111,16 @@ export default function TasksPage() {
           description: formData.description,
           projectId: formData.projectId || null,
           assignedTo: formData.assignedTo || null,
+          location: formData.location || "A Blok - 3. Kat",
+          priority: formData.priority || "ORTA",
           dueDate: dueDate?.toISOString() || null,
-          taskType: formData.taskType || null
+          status: "BEKLİYOR",
+          taskType: formData.taskType || "Saha İmalatı"
         })
       })
 
       if (response.ok) {
-        toast.success("Görev başarıyla eklendi")
+        toast.success("Yeni iş emri atandı (status: BEKLİYOR) ve mobil ekibe anlık bildirim iletildi!", { icon: "🚀" })
         fetchAllTasks()
         closeModal()
       } else {
@@ -175,6 +180,8 @@ export default function TasksPage() {
       description: task.description || "",
       projectId: task.projectId || "",
       assignedTo: task.assignedTo || "",
+      location: task.zone?.name || "A Blok - 3. Kat",
+      priority: task.priority || "ORTA",
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
       dueTime: task.dueDate ? new Date(task.dueDate).toTimeString().split(' ')[0].substring(0, 5) : "",
       taskType: task.taskType || ""
@@ -237,6 +244,8 @@ export default function TasksPage() {
       description: "",
       projectId: "",
       assignedTo: "",
+      location: "A Blok - 3. Kat",
+      priority: "ORTA",
       dueDate: "",
       dueTime: "",
       taskType: ""
@@ -249,9 +258,11 @@ export default function TasksPage() {
       description: "",
       projectId: selectedProjectId,
       assignedTo: "",
+      location: "A Blok - 3. Kat",
+      priority: "ORTA",
       dueDate: "",
       dueTime: "",
-      taskType: ""
+      taskType: "Saha İmalatı"
     })
     setIsModalOpen(true)
   }
@@ -263,6 +274,8 @@ export default function TasksPage() {
       description: "",
       projectId: selectedProjectId,
       assignedTo: "",
+      location: "A Blok - 3. Kat",
+      priority: "ORTA",
       dueDate: "",
       dueTime: "",
       taskType: ""
@@ -1018,127 +1031,177 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* New Task Modal */}
+      {/* New Task Modal - İş Emri Ata (Merkezden Sahaya Mobil Entegrasyonu) */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-lg mx-4 shadow-2xl">
-            <h3 className="text-xl font-semibold text-white mb-6">Yeni Görev Ekle</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">⚡ Yeni İş Emri Ata</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Merkezden atanan iş emri sahadaki personelin mobil uygulamasına anında düşer.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Başlık */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Başlık *</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                  Görev / İş Emri Başlığı *
+                </label>
                 <input
                   type="text"
                   name="title"
+                  placeholder="Örn: C35/45 Hazır Beton Dökümü veya Donatı Montajı"
                   value={formData.title}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
                   required
                 />
               </div>
 
+              {/* Görevlendirilen Personel / Taşeron (Select) */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Açıklama</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white resize-none"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Proje (Opsiyonel)</label>
-                <select
-                  name="projectId"
-                  value={formData.projectId}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                >
-                  <option value="">Proje Seçin</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name || project.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Atanan Kişi (Opsiyonel)</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                  Görevlendirilen Personel / Taşeron *
+                </label>
                 <select
                   name="assignedTo"
                   value={formData.assignedTo}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
+                  required
                 >
-                  <option value="">Kişi Seçin</option>
-                  {workers.map((worker) => (
-                    <option key={worker.id} value={worker.id}>
-                      {worker.name || `${worker.firstName || ""} ${worker.lastName || ""}`.trim() || "İsimsiz"}
-                    </option>
-                  ))}
+                  <option value="">Personel veya Taşeron Seçiniz</option>
+                  <optgroup label="Taşeron Ekipleri">
+                    <option value="sub-kaya-kalip">Kaya Kalıp & Beton Ltd. (Taşeron)</option>
+                    <option value="sub-ozkan-demir">Özkan Demir İşleri Ltd. (Taşeron)</option>
+                    <option value="sub-duvar-alci">Akdeniz Duvar & Alçı Sıva (Taşeron)</option>
+                    <option value="sub-elektrik-tesisat">Güneş Elektrik & Mekanik (Taşeron)</option>
+                  </optgroup>
+                  <optgroup label="Saha Personeli & Formenler">
+                    <option value="usr-foreman-1">Ahmet Usta (Kalıp Formeni)</option>
+                    <option value="usr-foreman-2">Mehmet Kaya (Demirci Usta Başı)</option>
+                    <option value="usr-eng-1">İnşaat Müh. Selin Demir (Saha Şefi)</option>
+                    {workers.map((worker) => (
+                      <option key={worker.id} value={worker.id}>
+                        {worker.name || `${worker.firstName || ""} ${worker.lastName || ""}`.trim() || "Saha Personeli"}
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
 
+              {/* Konum (A Blok - 3. Kat) (Select) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                    Konum (Kat / Mahal) *
+                  </label>
+                  <select
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
+                  >
+                    <option value="A Blok - 3. Kat">A Blok - 3. Kat</option>
+                    <option value="A Blok - 4. Kat">A Blok - 4. Kat</option>
+                    <option value="A Blok - Temel">A Blok - Temel & Perde</option>
+                    <option value="B Blok - 3. Kat">B Blok - 3. Kat Kolonları</option>
+                    <option value="B Blok - 2. Kat">B Blok - 2. Kat Tabliyesi</option>
+                    <option value="Zemin Kat - Giriş / Lobi">Zemin Kat - Giriş / Lobi</option>
+                    <option value="Bodrum -1 Kapalı Otopark">Bodrum -1 Kapalı Otopark</option>
+                    <option value="Bodrum -2 Radye Temel">Bodrum -2 Radye Temel</option>
+                    <option value="Dış Cephe İskelesi">Dış Cephe İskelesi</option>
+                  </select>
+                </div>
+
+                {/* Öncelik (Select) */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                    Öncelik Seviyesi *
+                  </label>
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
+                  >
+                    <option value="KRİTİK">🔴 KRİTİK (İvedilikle)</option>
+                    <option value="YÜKSEK">🟠 YÜKSEK</option>
+                    <option value="ORTA">🔵 ORTA (Normal)</option>
+                    <option value="DÜŞÜK">⚪ DÜŞÜK</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Bitiş Tarihi & Saat (Datepicker) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                    Bitiş Tarihi *
+                  </label>
+                  <input
+                    type="date"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                    Bitiş Saati (Opsiyonel)
+                  </label>
+                  <input
+                    type="time"
+                    name="dueTime"
+                    value={formData.dueTime}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Açıklama */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Son Tarih (Opsiyonel)</label>
-                <input
-                  type="date"
-                  name="dueDate"
-                  value={formData.dueDate}
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                  Saha Açıklaması & Not
+                </label>
+                <textarea
+                  name="description"
+                  placeholder="İmalat öncesi güvenlik kontrolü, kullanılacak ekipman ve iş detayı..."
+                  value={formData.description}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm resize-none"
+                  rows={2}
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Saat (Opsiyonel)</label>
-                <input
-                  type="time"
-                  name="dueTime"
-                  value={formData.dueTime}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Görev Tipi (Opsiyonel)</label>
-                <select
-                  name="taskType"
-                  value={formData.taskType}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                >
-                  <option value="">Görev Tipi Seçin</option>
-                  <option value="Beton Kontrolü">Beton Kontrolü</option>
-                  <option value="Demir Kontrolü">Demir Kontrolü</option>
-                  <option value="Evrak Teslimi">Evrak Teslimi</option>
-                  <option value="Saha Denetimi">Saha Denetimi</option>
-                  <option value="Malzeme Kontrolü">Malzeme Kontrolü</option>
-                  <option value="İSG Kontrolü">İSG Kontrolü</option>
-                  <option value="Toplantı">Toplantı</option>
-                  <option value="Diğer">Diğer</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-3">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition"
                   disabled={isSubmitting}
                 >
-                  İptal
+                  Vazgeç
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Ekleniyor..." : "Ekle"}
+                  {isSubmitting ? "İletiliyor..." : "🚀 Görevi Ata & Mobil Cihaza Gönder"}
                 </button>
               </div>
             </form>

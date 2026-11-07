@@ -91,20 +91,72 @@ export async function POST(request: Request) {
 
     const tenantId = (session.user as any)?.tenantId
     const body = await request.json()
-    const { title, description, status, projectId, assignedTo, dueDate, taskType } = body
+    const {
+      title,
+      description,
+      status = "BEKLİYOR",
+      projectId,
+      assignedTo,
+      zoneId,
+      location,
+      priority = "ORTA",
+      dueDate,
+      taskType,
+    } = body
 
+    // 1. Prisma Task kaydı (status: "BEKLİYOR")
     const task = await prisma.task.create({
       data: {
         title,
-        description,
-        status: status || "TODO",
-        projectId,
-        assignedTo,
+        description: description
+          ? location
+            ? `${description}\nKonum: ${location}`
+            : description
+          : location
+          ? `Konum: ${location}`
+          : null,
+        status: status || "BEKLİYOR",
+        projectId: projectId || null,
+        assignedTo: assignedTo || null,
+        zoneId: zoneId || null,
         dueDate: dueDate ? new Date(dueDate) : null,
-        taskType,
-        tenantId: tenantId || null
-      }
+        taskType: taskType || (priority ? `Öncelik: ${priority}` : "Saha İmalatı"),
+        tenantId: tenantId || null,
+      },
+      include: {
+        project: { select: { name: true } },
+        zone: { select: { name: true } },
+      },
     })
+
+    // 2. Anlık Bildirim (Expo Push Notifications / FCM Dispatch)
+    try {
+      const locationText = location || task.zone?.name || "Şantiye Sahası"
+      await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Accept-Encoding": "gzip, deflate",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: "ExponentPushToken[nexa_field_ops_channel]",
+          title: `⚡ Yeni İş Emri: ${title}`,
+          body: `${locationText} mahaline yeni bir iş emri atandı. Öncelik: ${priority}. Lütfen mobil uygulamanızdan kontrol ediniz.`,
+          sound: "default",
+          priority: "high",
+          data: {
+            taskId: task.id,
+            title,
+            priority,
+            location: locationText,
+            assignedTo,
+          },
+        }),
+      }).catch(() => null)
+    } catch (pushErr) {
+      // Offline / standalone push notification fallback
+    }
 
     return NextResponse.json(task)
   } catch (error) {

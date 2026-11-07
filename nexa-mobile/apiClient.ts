@@ -622,10 +622,11 @@ export const concreteCastingApi = {
  * 10. Mobil Görevler & İş Emirleri API
  */
 export const tasksApi = {
-  getTasks: async (projectId?: string) => {
+  getTasks: async (params?: { projectId?: string; userId?: string; role?: string; status?: string } | string) => {
     try {
+      const queryParams = typeof params === "string" ? { projectId: params } : params;
       const response = await apiClient.get("/mobile/tasks", {
-        params: projectId ? { projectId } : undefined,
+        params: queryParams,
       });
       return response.data?.tasks || [];
     } catch (err: any) {

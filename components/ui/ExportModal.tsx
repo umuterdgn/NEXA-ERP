@@ -88,6 +88,13 @@ export default function ExportModal({
         const itemDate = new Date(item.createdAt || item.date || item.dueDate || item.startDate || Date.now())
         return itemDate >= past7
       })
+    } else if (dateRange === "THIS_MONTH") {
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      result = result.filter((item) => {
+        const itemDate = new Date(item.createdAt || item.date || item.dueDate || item.startDate || Date.now())
+        return itemDate >= startOfMonth
+      })
     } else if (dateRange === "CUSTOM") {
       const start = new Date(startDate)
       const end = new Date(endDate)
@@ -260,7 +267,7 @@ export default function ExportModal({
                     : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
-                Özel Aralık
+                Özel Tarih Seç
               </button>
             </div>
 
@@ -292,20 +299,9 @@ export default function ExportModal({
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
               <Filter className="w-3.5 h-3.5 text-blue-500" />
-              Veri Durumu
+              Durum Filtresi
             </label>
             <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setFilterType("ALL")}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition ${
-                  filterType === "ALL"
-                    ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600 dark:text-blue-400"
-                    : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                }`}
-              >
-                Tüm Kayıtlar
-              </button>
               <button
                 type="button"
                 onClick={() => setFilterType("ACTIVE")}
@@ -315,7 +311,7 @@ export default function ExportModal({
                     : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
-                Aktif / Devam Eden
+                Sadece Aktif
               </button>
               <button
                 type="button"
@@ -327,6 +323,17 @@ export default function ExportModal({
                 }`}
               >
                 Tamamlananlar
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType("ALL")}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition ${
+                  filterType === "ALL"
+                    ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600 dark:text-blue-400"
+                    : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                }`}
+              >
+                Tümü
               </button>
             </div>
           </div>
