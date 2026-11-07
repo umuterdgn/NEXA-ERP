@@ -23,10 +23,13 @@ import {
   Building2,
   FileText,
   AlertCircle,
-  Paperclip
+  Paperclip,
+  MapPin,
+  X
 } from "lucide-react"
 import { getSubcontractorTasks, updateSiteInstructionStatus } from "./actions"
 import { toast } from "react-hot-toast"
+import TaskMiniMapWeb from "@/components/tasks/TaskMiniMapWeb"
 
 interface InstructionItem {
   id: string
@@ -37,6 +40,9 @@ interface InstructionItem {
   status: string
   attachments: string[]
   createdAt: string
+  zoneName?: string
+  zoneType?: string
+  coordinates?: any
   project?: {
     id: string
     name?: string | null
@@ -51,6 +57,7 @@ export default function SubcontractorTasksPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<string>("ALL")
   const [searchQuery, setSearchQuery] = useState<string>("")
+  const [selectedTaskForDetail, setSelectedTaskForDetail] = useState<InstructionItem | null>(null)
 
   const loadTasks = async () => {
     setLoading(true)
@@ -383,10 +390,79 @@ export default function SubcontractorTasksPage() {
                     <Camera className="w-3.5 h-3.5 text-orange-400" />
                     <span>Kanıt Yükle</span>
                   </Link>
+
+                  <button
+                    onClick={() => setSelectedTaskForDetail(task)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 text-xs font-medium transition flex items-center gap-1.5"
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Harita</span>
+                  </button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ADIM 2: Personel Görev Detayı (Web Portal Mini Map Modalı) */}
+      {selectedTaskForDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <span className="text-[11px] font-bold text-sky-400 bg-sky-950/60 border border-sky-800/60 px-2 py-0.5 rounded-md">
+                  {selectedTaskForDetail.project?.name || "Şantiye Sahası"}
+                </span>
+                <h3 className="text-base sm:text-lg font-bold text-white mt-1">
+                  {selectedTaskForDetail.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedTaskForDetail(null)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* ADIM 2: Ekranın Üst Kısmında Görevin Bağlı Olduğu Mini Map */}
+            <div className="mb-4">
+              <TaskMiniMapWeb
+                taskTitle={selectedTaskForDetail.title}
+                zoneName={selectedTaskForDetail.project?.name ? `${selectedTaskForDetail.project.name} • Görev Parseli` : "3. Kat Kolon & Kiriş Sahası"}
+                zoneType={selectedTaskForDetail.priority === "URGENT" || selectedTaskForDetail.priority === "HIGH" ? "DANGER_ZONE" : "POLYGON"}
+                coordinates={selectedTaskForDetail.coordinates || [
+                  { lat: 36.5875, lng: 36.1730 },
+                  { lat: 36.5882, lng: 36.1732 },
+                  { lat: 36.5880, lng: 36.1742 },
+                  { lat: 36.5873, lng: 36.1739 },
+                ]}
+                height={175}
+              />
+            </div>
+
+            {/* Açıklama */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
+              <p className="text-[11px] text-slate-400 mb-1 font-semibold uppercase tracking-wider">
+                GÖREV TALİMATI / DETAY:
+              </p>
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                {selectedTaskForDetail.description}
+              </p>
+            </div>
+
+            {/* Alt Kapat Butonu */}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setSelectedTaskForDetail(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -26,8 +26,10 @@ import {
   Building,
   AlertTriangle,
   Upload,
-  Send
+  Send,
+  MapPin
 } from "lucide-react"
+import TaskMiniMapWeb from "@/components/tasks/TaskMiniMapWeb"
 
 interface PersonnelPortalProps {
   data: {
@@ -56,6 +58,7 @@ export function PersonnelPortal({ data }: PersonnelPortalProps) {
   const [showRequestModal, setShowRequestModal] = useState(false)
   const [showISGModal, setShowISGModal] = useState(false)
   const [showNearMissModal, setShowNearMissModal] = useState(false)
+  const [selectedTaskForDetail, setSelectedTaskForDetail] = useState<any | null>(null)
   const [isgImage, setIsgImage] = useState<File | null>(null)
   const [isgDescription, setIsgDescription] = useState("")
   const [isgType, setIsgType] = useState("TEHLIKE")
@@ -440,8 +443,17 @@ export function PersonnelPortal({ data }: PersonnelPortalProps) {
                     {task.description && (
                       <p className="text-slate-400 text-sm mb-2">{task.description}</p>
                     )}
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
-                      <span>{formatDate(task.createdAt)}</span>
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-700/60">
+                      <div className="flex items-center gap-4 text-xs text-slate-400">
+                        <span>{formatDate(task.createdAt)}</span>
+                      </div>
+                      <button
+                        onClick={() => setSelectedTaskForDetail(task)}
+                        className="px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-semibold flex items-center gap-1.5 transition"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>Harita & Konum</span>
+                      </button>
                     </div>
                   </div>
                 ))
@@ -862,6 +874,63 @@ export function PersonnelPortal({ data }: PersonnelPortalProps) {
           </div>
         </div>
       )}
+      {/* ADIM 2: Personel Görev Detayı (Web Portal Mini Map Modalı) */}
+      {selectedTaskForDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <span className="text-[11px] font-bold text-sky-400 bg-sky-950/60 border border-sky-800/60 px-2 py-0.5 rounded-md">
+                  {data.personnel.currentSite || "Şantiye Sahası"}
+                </span>
+                <h3 className="text-base sm:text-lg font-bold text-white mt-1">
+                  {selectedTaskForDetail.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedTaskForDetail(null)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <TaskMiniMapWeb
+                taskTitle={selectedTaskForDetail.title}
+                zoneName={selectedTaskForDetail.zoneName || "3. Kat Kolon Tabliyesi"}
+                zoneType={selectedTaskForDetail.priority === "KRİTİK" ? "DANGER_ZONE" : "POLYGON"}
+                coordinates={selectedTaskForDetail.coordinates || [
+                  { lat: 36.5875, lng: 36.1730 },
+                  { lat: 36.5882, lng: 36.1732 },
+                  { lat: 36.5880, lng: 36.1742 },
+                  { lat: 36.5873, lng: 36.1739 },
+                ]}
+                height={170}
+              />
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4">
+              <p className="text-[11px] text-slate-400 mb-1 font-semibold uppercase tracking-wider">
+                GÖREV AÇIKLAMASI:
+              </p>
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                {selectedTaskForDetail.description || "Görev sahası ve imalat talimatı sistemde kayıtlıdır."}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end">
+              <button
+                onClick={() => setSelectedTaskForDetail(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   )
 }

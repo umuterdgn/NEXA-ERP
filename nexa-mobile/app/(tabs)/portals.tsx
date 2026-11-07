@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
+import { useMobileTheme } from "../../src/context/ThemeContext";
 import { startDriverLocationTracking, stopDriverLocationTracking, isDriverTrackingActive } from "../../src/tasks/backgroundLocationTask";
 import {
   getAuthSession,
@@ -46,6 +47,8 @@ const PORTALS_LIST: { key: PortalKey; label: string; icon: keyof typeof Ionicons
 
 export default function PortalsScreen() {
   const { openDrawer } = useDrawer();
+  const { theme } = useMobileTheme();
+  const isDark = theme === "dark" || theme === "monochrome";
 
   const [activePortal, setActivePortal] = useState<PortalKey>("damage");
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -972,6 +975,7 @@ function DriverRoutePortal({ currentUser }: { currentUser?: any }) {
               latitudeDelta: 0.015,
               longitudeDelta: 0.015,
             }}
+            userInterfaceStyle={isDark ? "dark" : "light"}
           >
             {/* Sürücü Mevcut Konum */}
             <Marker coordinate={driverCoord} title="Mevcut Konum" description="Transmikser">

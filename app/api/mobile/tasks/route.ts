@@ -116,6 +116,18 @@ export async function GET(request: Request) {
       }
     }
 
+    // Sanal çit ve GIS poligonlarını çek
+    const geofenceZones = await prisma.geofenceZone.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        coordinates: true,
+        projectId: true,
+      },
+    }).catch(() => [])
+
     const mappedTasks = tasks.map((t, idx) => {
       let priority: "KRİTİK" | "YÜKSEK" | "ORTA" | "DÜŞÜK" = "ORTA"
       if (t.taskType?.includes("Beton") || t.taskType?.includes("İSG")) priority = "KRİTİK"
@@ -124,6 +136,48 @@ export async function GET(request: Request) {
       let mappedStatus: "BEKLİYOR" | "DEVAM EDİYOR" | "TAMAMLANDI" = "BEKLİYOR"
       if (t.status === "DONE" || t.status === "COMPLETED") mappedStatus = "TAMAMLANDI"
       else if (t.status === "IN_PROGRESS") mappedStatus = "DEVAM EDİYOR"
+
+      // Poligon ve Çizgi Eşleştirmesi (Mini Map için)
+      const matchedGeofence =
+        geofenceZones.find((g) => g.id === t.zoneId) ||
+        geofenceZones.find((g) => t.zone?.name && g.name.toLowerCase().includes(t.zone.name.toLowerCase())) ||
+        geofenceZones.find((g) => t.projectId && g.projectId === t.projectId) ||
+        geofenceZones[0]
+
+      let zoneCoordinates: any = matchedGeofence?.coordinates || null
+      let zoneType =
+        matchedGeofence?.type ||
+        (t.taskType?.includes("Boru") || t.taskType?.includes("Elektrik") || t.title.includes("Tava")
+          ? "POLYLINE"
+          : t.taskType?.includes("İSG") || priority === "KRİTİK"
+          ? "DANGER_ZONE"
+          : "POLYGON")
+
+      // Varsayılan koordinat desteği
+      if (!zoneCoordinates || (Array.isArray(zoneCoordinates) && zoneCoordinates.length === 0)) {
+        if (zoneType === "POLYLINE") {
+          zoneCoordinates = [
+            { latitude: 36.5862, longitude: 36.1715 },
+            { latitude: 36.5872, longitude: 36.1726 },
+            { latitude: 36.5878, longitude: 36.1735 },
+            { latitude: 36.5885, longitude: 36.1742 },
+          ]
+        } else if (zoneType === "DANGER_ZONE") {
+          zoneCoordinates = [
+            { latitude: 36.5886, longitude: 36.1722 },
+            { latitude: 36.5892, longitude: 36.1732 },
+            { latitude: 36.5888, longitude: 36.1740 },
+            { latitude: 36.5881, longitude: 36.1731 },
+          ]
+        } else {
+          zoneCoordinates = [
+            { latitude: 36.5875, longitude: 36.1730 },
+            { latitude: 36.5882, longitude: 36.1732 },
+            { latitude: 36.5880, longitude: 36.1742 },
+            { latitude: 36.5873, longitude: 36.1739 },
+          ]
+        }
+      }
 
       return {
         id: t.id,
@@ -135,8 +189,10 @@ export async function GET(request: Request) {
           : t.project?.name
           ? `${t.project.name} • 3. Kat Kolonları`
           : "3. Kat • Kolon Tabliyesi",
-        zoneId: t.zoneId || undefined,
-        zoneName: t.zone?.name || "3. Kat Kolon & Kiriş Tabliyesi",
+        zoneId: t.zoneId || matchedGeofence?.id || undefined,
+        zoneName: t.zone?.name || matchedGeofence?.name || "3. Kat Kolon & Kiriş Tabliyesi",
+        zoneCoordinates,
+        zoneType,
         priority,
         status: mappedStatus,
         dueDate: t.dueDate ? new Date(t.dueDate).toLocaleDateString("tr-TR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : "Belirtilmedi",

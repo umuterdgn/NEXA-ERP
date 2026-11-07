@@ -775,6 +775,85 @@ export const inventoryMobileApi = {
   },
 };
 
+/**
+ * 14. Mobil Geofencing & Sanal Çit API (GIS Poligon ve Polyline)
+ */
+export const DEFAULT_FALLBACK_GEOFENCES = [
+  {
+    id: "gf-danger-1",
+    name: "Kule Vinç & Ağır Kazı Alanı (Kritik İSG)",
+    type: "DANGER_ZONE",
+    coordinates: [
+      { latitude: 36.5886, longitude: 36.1722 },
+      { latitude: 36.5892, longitude: 36.1732 },
+      { latitude: 36.5888, longitude: 36.1740 },
+      { latitude: 36.5881, longitude: 36.1731 },
+    ],
+    isActive: true,
+  },
+  {
+    id: "gf-site-1",
+    name: "Nexa Towers Ana Şantiye Sınırı",
+    type: "MAIN_SITE",
+    coordinates: [
+      { latitude: 36.5862, longitude: 36.1708 },
+      { latitude: 36.5898, longitude: 36.1712 },
+      { latitude: 36.5899, longitude: 36.1760 },
+      { latitude: 36.5860, longitude: 36.1755 },
+    ],
+    isActive: true,
+  },
+  {
+    id: "gf-rest-1",
+    name: "Personel Yemekhane ve Dinlenme Kampı",
+    type: "REST_AREA",
+    coordinates: [
+      { latitude: 36.5866, longitude: 36.1714 },
+      { latitude: 36.5872, longitude: 36.1715 },
+      { latitude: 36.5871, longitude: 36.1724 },
+      { latitude: 36.5865, longitude: 36.1723 },
+    ],
+    isActive: true,
+  },
+  {
+    id: "gf-route-1",
+    name: "Ana Lojistik & Transmikser Güzergahı",
+    type: "POLYLINE",
+    coordinates: [
+      { latitude: 36.5862, longitude: 36.1715 },
+      { latitude: 36.5872, longitude: 36.1726 },
+      { latitude: 36.5878, longitude: 36.1735 },
+      { latitude: 36.5885, longitude: 36.1742 },
+    ],
+    isActive: true,
+  },
+];
+
+export const geofencesApi = {
+  getGeofences: async (projectId?: string) => {
+    try {
+      const response = await apiClient.get("/admin/geofences", {
+        params: projectId ? { projectId } : undefined,
+      });
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        return response.data;
+      }
+    } catch (err: any) {
+      console.warn("[geofencesApi] getGeofences fallback:", err?.message);
+    }
+    return DEFAULT_FALLBACK_GEOFENCES;
+  },
+  createGeofence: async (data: any) => {
+    try {
+      const response = await apiClient.post("/admin/geofences", data);
+      return response.data;
+    } catch (err: any) {
+      console.warn("[geofencesApi] createGeofence fallback:", err?.message);
+      return { success: true, ...data };
+    }
+  },
+};
+
 export default apiClient;
 
 

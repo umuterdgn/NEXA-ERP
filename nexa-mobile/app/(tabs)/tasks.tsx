@@ -38,6 +38,9 @@ import Animated, {
 import { iosColors, iosRadius } from "../../src/theme/iosTheme";
 import { useDrawer } from "../../src/components/navigation/DrawerSidebar";
 import { tasksApi, getAuthSession } from "../../apiClient";
+import TaskMiniMap from "../../src/components/common/TaskMiniMap";
+import { useGeofencingProtection } from "../../src/hooks/useGeofencingProtection";
+import { normalizeCoordinates, isUserInZone } from "../../src/lib/geofencing";
 
 export interface TaskItem {
   id: string;
@@ -53,6 +56,9 @@ export interface TaskItem {
   unit?: string;
   boqItemId?: string;
   zoneId?: string;
+  zoneName?: string;
+  zoneType?: "POLYGON" | "POLYLINE" | "DANGER_ZONE" | string;
+  zoneCoordinates?: any;
   assignedRole?: "ENGINEER" | "FOREMAN" | "SUBCONTRACTOR" | "ALL";
   assignedToName?: string;
 }
@@ -71,6 +77,13 @@ const INITIAL_TASKS: TaskItem[] = [
     currentQuantity: 0,
     unit: "m3",
     boqItemId: "boq-beton-1",
+    zoneType: "POLYGON",
+    zoneCoordinates: [
+      { latitude: 36.5875, longitude: 36.1730 },
+      { latitude: 36.5882, longitude: 36.1732 },
+      { latitude: 36.5880, longitude: 36.1742 },
+      { latitude: 36.5873, longitude: 36.1739 },
+    ],
     assignedRole: "SUBCONTRACTOR",
     assignedToName: "Kaya Kalıp & Beton Ltd.",
   },
@@ -87,6 +100,13 @@ const INITIAL_TASKS: TaskItem[] = [
     currentQuantity: 15,
     unit: "Ton",
     boqItemId: "boq-demir-1",
+    zoneType: "POLYGON",
+    zoneCoordinates: [
+      { latitude: 36.5866, longitude: 36.1732 },
+      { latitude: 36.5874, longitude: 36.1735 },
+      { latitude: 36.5872, longitude: 36.1745 },
+      { latitude: 36.5864, longitude: 36.1741 },
+    ],
     assignedRole: "SUBCONTRACTOR",
     assignedToName: "Özkan Demir İşleri",
   },
@@ -95,13 +115,20 @@ const INITIAL_TASKS: TaskItem[] = [
     code: "TSK-203",
     title: "İSG Güvenlik Filesi ve Korkuluk Teftişi",
     description: "Cephe iskelesi ankrajları ve güvenlik file bağlantı kontrolü.",
-    location: "Tüm Katlar (Dış Cephe)",
+    location: "Kule Vinç Çevresi • Riskli Alan",
     priority: "KRİTİK",
     status: "BEKLİYOR",
     dueDate: "Yarın 10:00",
     targetQuantity: 24,
     currentQuantity: 0,
     unit: "Adet",
+    zoneType: "DANGER_ZONE",
+    zoneCoordinates: [
+      { latitude: 36.5886, longitude: 36.1722 },
+      { latitude: 36.5892, longitude: 36.1732 },
+      { latitude: 36.5888, longitude: 36.1740 },
+      { latitude: 36.5881, longitude: 36.1731 },
+    ],
     assignedRole: "FOREMAN",
     assignedToName: "Ahmet Usta (Saha Formeni)",
   },
@@ -117,6 +144,13 @@ const INITIAL_TASKS: TaskItem[] = [
     targetQuantity: 600,
     currentQuantity: 250,
     unit: "m2",
+    zoneType: "POLYGON",
+    zoneCoordinates: [
+      { latitude: 36.5868, longitude: 36.1718 },
+      { latitude: 36.5875, longitude: 36.1720 },
+      { latitude: 36.5873, longitude: 36.1728 },
+      { latitude: 36.5866, longitude: 36.1726 },
+    ],
     assignedRole: "ENGINEER",
     assignedToName: "İnşaat Müh. Selin Demir",
   },
@@ -125,13 +159,20 @@ const INITIAL_TASKS: TaskItem[] = [
     code: "TSK-205",
     title: "Elektrik Tava & Borulama Denetimi",
     description: "Otopark katı asma tavan altı galvaniz tava montajı.",
-    location: "Kapalı Otopark",
+    location: "Ana Altyapı Hat Güzergahı",
     priority: "DÜŞÜK",
     status: "TAMAMLANDI",
     dueDate: "1 Kasım 2026",
     targetQuantity: 400,
     currentQuantity: 400,
     unit: "mt",
+    zoneType: "POLYLINE",
+    zoneCoordinates: [
+      { latitude: 36.5862, longitude: 36.1715 },
+      { latitude: 36.5872, longitude: 36.1726 },
+      { latitude: 36.5878, longitude: 36.1735 },
+      { latitude: 36.5885, longitude: 36.1742 },
+    ],
     assignedRole: "FOREMAN",
     assignedToName: "Elektrik Formen Ekibi",
   },
@@ -188,6 +229,9 @@ export default function TasksScreen() {
   const [scopeFilter, setScopeFilter] = useState<"MY_ROLE" | "ALL">("MY_ROLE");
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ADIM 3: Geofencing & İSG Riskli Alan Koruması
+  const { userLocation, isInsideDangerZone, activeDangerZone } = useGeofencingProtection();
 
   // Veritabanından personele / role göre gerçek görevleri yükle
   const loadTasksFromDB = async (customUser?: any) => {
@@ -335,28 +379,10 @@ export default function TasksScreen() {
     }
   };
 
-  const handleSubmitProgress = async () => {
+  // ADIM 3: Görev Tamamlama ve İlerleme Gönderimi (Anti-Fraud GPS Doğrulaması)
+  const executeProgressSubmission = async (outsideWarningAccepted: boolean = false) => {
     if (!selectedTask) return;
     const qty = parseFloat(dailyProgressQty);
-    if (isNaN(qty) || qty <= 0) {
-      Alert.alert("Geçersiz Miktar", "Lütfen 0'dan büyük geçerli bir ilerleme miktarı girin.");
-      return;
-    }
-
-    // ADIM 1: Kat / Mahal Zorunluluğu Kontrolü
-    if (!selectedZone) {
-      Alert.alert("Kat/Mahal Zorunludur", "Lütfen imalatın yapıldığı Kat / Mahali seçin.");
-      return;
-    }
-
-    // ADIM 1: Fotoğraf Zorunluluğu Kontrolü
-    if (!isPhotoAttached && !photoUri) {
-      Alert.alert(
-        "Fotoğraf Zorunludur",
-        "Saha ilerleme kaydı için canlı kamera ile imalat kanıt fotoğrafı çekilmesi zorunludur!"
-      );
-      return;
-    }
 
     setIsSubmitting(true);
     if (Platform.OS !== "web") {
@@ -364,7 +390,6 @@ export default function TasksScreen() {
     }
 
     try {
-      // Backend /api/tasks/progress çağrısı (Kat ve Taşeron Hakediş Entegreli Otonom İlerleme)
       let progressPercentage = 100;
       try {
         const res = await tasksApi.submitProgress({
@@ -374,7 +399,7 @@ export default function TasksScreen() {
           status: "COMPLETED",
           completionPhoto: photoUri || undefined,
           zoneName: selectedZone,
-          notes: dailyProgressNotes || `${qty} ${selectedTask.unit || "m3"} imalat ${selectedZone} mahaline işlendi.`,
+          notes: `${dailyProgressNotes || ""}${outsideWarningAccepted ? " [⚠️ GEOFENCE DIŞI GPS İŞARETLENDİ]" : ""}`.trim(),
           userName: currentUser?.name || (isSubcontractorMode ? "Mehmet Kaya (Taşeron Usta Başı)" : "Ahmet Yılmaz (Saha Şefi)"),
           userRole: userRole !== "ALL" ? userRole : (isSubcontractorMode ? "SUBCONTRACTOR" : "ENGINEER"),
           subcontractorId: isSubcontractorMode ? "sub-kaya-kalip" : undefined,
@@ -403,11 +428,70 @@ export default function TasksScreen() {
       setIsProgressModalOpen(false);
       Alert.alert(
         `🚀 Kat İlerlemesi Güncellendi: %${progressPercentage}`,
-        `"${selectedTask.title}" (${qty} ${selectedTask.unit || "m3"}) tamamlandı. ${selectedZone} mahali güncellendi, Master Dashboard (2.5D Isı Haritası) ve Hakediş'e otonom yansıtıldı.`
+        `"${selectedTask.title}" (${qty} ${selectedTask.unit || "m3"}) tamamlandı. ${selectedZone} mahali güncellendi, Master Dashboard (2.5D Isı Haritası) ve Hakediş'e otonom yansıtıldı.${outsideWarningAccepted ? "\n\n⚠️ Not: Konum görev çiti dışında olduğundan denetim bayrağı ile işaretlendi." : ""}`
       );
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmitProgress = async () => {
+    if (!selectedTask) return;
+    const qty = parseFloat(dailyProgressQty);
+    if (isNaN(qty) || qty <= 0) {
+      Alert.alert("Geçersiz Miktar", "Lütfen 0'dan büyük geçerli bir ilerleme miktarı girin.");
+      return;
+    }
+
+    // ADIM 1: Kat / Mahal Zorunluluğu Kontrolü
+    if (!selectedZone) {
+      Alert.alert("Kat/Mahal Zorunludur", "Lütfen imalatın yapıldığı Kat / Mahali seçin.");
+      return;
+    }
+
+    // ADIM 1: Fotoğraf Zorunluluğu Kontrolü
+    if (!isPhotoAttached && !photoUri) {
+      Alert.alert(
+        "Fotoğraf Zorunludur",
+        "Saha ilerleme kaydı için canlı kamera ile imalat kanıt fotoğrafı çekilmesi zorunludur!"
+      );
+      return;
+    }
+
+    // ADIM 3: Görev Anti-Fraud Doğrulaması (GPS & Sanal Çit Kontrolü)
+    const taskCoords = normalizeCoordinates(selectedTask.zoneCoordinates);
+    if (taskCoords.length > 0) {
+      const currentLoc = photoGps
+        ? { latitude: photoGps.latitude, longitude: photoGps.longitude }
+        : userLocation;
+
+      if (currentLoc) {
+        const isInside = isUserInZone(currentLoc, {
+          id: selectedTask.zoneId || selectedTask.id,
+          name: selectedTask.title,
+          type: selectedTask.zoneType || "POLYGON",
+          coordinates: taskCoords,
+        });
+
+        if (!isInside) {
+          Alert.alert(
+            "⚠️ Saha Konum Uyarısı (Anti-Fraud)",
+            "Sistem, görev alanının dışında olduğunuzu tespit etti. Fotoğraflı kanıtınız GPS ile işaretlenecektir. Devam edilsin mi?",
+            [
+              { text: "Vazgeç", style: "cancel" },
+              {
+                text: "Devam Et",
+                style: "destructive",
+                onPress: () => executeProgressSubmission(true),
+              },
+            ]
+          );
+          return;
+        }
+      }
+    }
+
+    await executeProgressSubmission(false);
   };
 
   // Görevi Tamamlandı Olarak İşaretle
@@ -656,6 +740,21 @@ export default function TasksScreen() {
         </View>
       </View>
 
+      {/* ADIM 3: İSG Riskli Alan (DANGER_ZONE) Uyarısı */}
+      {isInsideDangerZone && activeDangerZone && (
+        <View style={styles.dangerAlertBanner}>
+          <Ionicons name="warning" size={20} color="#FFFFFF" />
+          <View style={{ flex: 1, marginLeft: 8 }}>
+            <Text style={styles.dangerAlertTitle}>
+              ⚠️ İSG UYARISI: {activeDangerZone.name.toUpperCase()}
+            </Text>
+            <Text style={styles.dangerAlertDesc}>
+              Riskli alana giriş yaptınız! Baret ve KKD kontrolü yapın.
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Kaydırma İpucu Notu */}
       <View style={styles.hintBar}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -875,213 +974,235 @@ export default function TasksScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Target & Current Gauge */}
-            <View style={styles.modalTargetBox}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-                <Text style={styles.modalTargetLabel}>Toplam Hedef Miktar</Text>
-                <Text style={styles.modalTargetVal}>
-                  {selectedTask?.targetQuantity || 100} {selectedTask?.unit || "m3"}
-                </Text>
-              </View>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={styles.modalTargetLabel}>Şu Ana Kadar Yapılan</Text>
-                <Text style={[styles.modalTargetVal, { color: iosColors.systemGreen }]}>
-                  {selectedTask?.currentQuantity || 0} {selectedTask?.unit || "m3"} (%{Math.round(((selectedTask?.currentQuantity || 0) / (selectedTask?.targetQuantity || 100)) * 100)})
-                </Text>
-              </View>
-            </View>
+            {/* ADIM 2: Personel Görev Detayı (Mobil Mini Map) */}
+            {selectedTask && (
+              <TaskMiniMap
+                taskTitle={selectedTask.title}
+                taskCode={selectedTask.code}
+                zoneName={selectedTask.location || selectedTask.zoneName || "Görev Sahası"}
+                zoneType={selectedTask.zoneType || "POLYGON"}
+                coordinates={normalizeCoordinates(selectedTask.zoneCoordinates)}
+                userLocation={
+                  photoGps
+                    ? { latitude: photoGps.latitude, longitude: photoGps.longitude }
+                    : userLocation
+                }
+                height={150}
+              />
+            )}
 
-            {/* ADIM 1: İlgili Kat / Mahal Seçimi (ZORUNLU) */}
-            <View style={{ marginBottom: 14 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <Text style={styles.inputLabel}>İlgili Kat / Mahal (Zone) *</Text>
-                <Text style={{ fontSize: 10, fontWeight: "800", color: iosColors.systemBlue }}>
-                  * Zorunlu
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
-                {AVAILABLE_ZONES.slice(0, 4).map((zone) => {
-                  const isSelected = selectedZone === zone;
-                  return (
-                    <TouchableOpacity
-                      key={zone}
-                      onPress={() => setSelectedZone(zone)}
-                      style={[
-                        styles.zoneChip,
-                        isSelected && styles.zoneChipActive,
-                      ]}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.zoneChipText,
-                          isSelected && styles.zoneChipTextActive,
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {zone.split(" - ")[0]}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                {AVAILABLE_ZONES.slice(4).map((zone) => {
-                  const isSelected = selectedZone === zone;
-                  return (
-                    <TouchableOpacity
-                      key={zone}
-                      onPress={() => setSelectedZone(zone)}
-                      style={[
-                        styles.zoneChip,
-                        isSelected && styles.zoneChipActive,
-                      ]}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.zoneChipText,
-                          isSelected && styles.zoneChipTextActive,
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {zone.split(" - ")[0]}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <Text style={styles.selectedZoneSubtitle}>
-                📍 Seçili Mahal: <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>{selectedZone}</Text>
-              </Text>
-            </View>
-
-            {/* ADIM 1 & 2: Taşeron Hakediş Otomasyonu */}
-            <View style={styles.subcontractorBadge}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Ionicons name="briefcase" size={14} color={iosColors.systemOrange} />
-                <Text style={styles.subcontractorTitle}>Taşeron Hakedişi:</Text>
-                <Text style={styles.subcontractorName}>Kaya Kalıp & Demir Ltd.</Text>
-              </View>
-              <Text style={styles.subcontractorDesc}>
-                İlerleme girildiğinde Kasım 2026 hakediş tutarına otomatik eklenecektir.
-              </Text>
-            </View>
-
-            {/* Input: Bugün Yapılan Miktar */}
-            <Text style={styles.inputLabel}>
-              Bugün Sahada Yapılan Miktar ({selectedTask?.unit || "m3"}) *
-            </Text>
-            <TextInput
-              style={styles.qtyInput}
-              keyboardType="numeric"
-              placeholder={`Örn: 50`}
-              placeholderTextColor="#6B7280"
-              value={dailyProgressQty}
-              onChangeText={setDailyProgressQty}
-            />
-
-            {/* Input: İlerleme Notu */}
-            <Text style={styles.inputLabel}>Saha Notu / İmalat Detayı</Text>
-            <TextInput
-              style={styles.notesInput}
-              placeholder="Örn: 3. Kat kolonları vibratörlü hazır beton dökümü tamamlandı."
-              placeholderTextColor="#6B7280"
-              value={dailyProgressNotes}
-              onChangeText={setDailyProgressNotes}
-              multiline
-              numberOfLines={2}
-            />
-
-            {/* ADIM 1 & 2: Saha İmalat Kanıtı (Canlı Kamera - ZORUNLU) */}
-            <View style={{ marginBottom: 16 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <Text style={styles.inputLabel}>
-                  Saha İmalat Kanıtı (Canlı Kamera) *
-                </Text>
-                <Text style={{ fontSize: 10, fontWeight: "800", color: iosColors.systemRed }}>
-                  * Zorunlu
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={handleTakeLivePhoto}
-                disabled={isCapturingPhoto}
-                style={[
-                  styles.attachBtn,
-                  isPhotoAttached && styles.attachBtnActive,
-                ]}
-                activeOpacity={0.8}
-              >
-                {isCapturingPhoto ? (
-                  <ActivityIndicator color={iosColors.systemBlue} size="small" />
-                ) : (
-                  <Feather
-                    name={isPhotoAttached ? "check-circle" : "camera"}
-                    size={18}
-                    color={isPhotoAttached ? iosColors.systemGreen : iosColors.systemBlue}
-                  />
-                )}
-                <Text
-                  style={[
-                    styles.attachBtnText,
-                    isPhotoAttached && { color: iosColors.systemGreen },
-                  ]}
-                >
-                  {isPhotoAttached
-                    ? "✓ Canlı Fotoğraf Çekildi (Yeniden Çek)"
-                    : "Kamera ile Canlı Fotoğraf Çek (GPS Damgalı)"}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Fotoğraf ve GPS/Zaman Damgası Önizleme */}
-              {photoUri && (
-                <View style={styles.photoPreviewCard}>
-                  <Image source={{ uri: photoUri }} style={styles.photoThumbnail} />
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
-                      <Ionicons name="shield-checkmark" size={13} color={iosColors.systemGreen} />
-                      <Text style={styles.antiFraudTag}>Anti-Fraud Doğrulandı</Text>
-                    </View>
-                    <Text style={styles.photoMetaText}>
-                      📍 {photoGps ? `${photoGps.latitude.toFixed(4)}°N, ${photoGps.longitude.toFixed(4)}°E` : "41.0082°N, 28.9784°E"}
-                    </Text>
-                    <Text style={styles.photoMetaText}>
-                      🕒 {photoTimestamp || "Şimdi"} {photoGps?.isMocked ? "⚠️ (Mock GPS)" : "✓ (Orijinal)"}
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </View>
-
-            {/* Submit & Cancel */}
-            <TouchableOpacity
-              onPress={handleSubmitProgress}
-              disabled={isSubmitting}
-              style={[styles.modalSubmitBtn, isSubmitting && { opacity: 0.6 }]}
-              activeOpacity={0.85}
+            <ScrollView
+              style={{ maxHeight: 380 }}
+              showsVerticalScrollIndicator={false}
             >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Ionicons name="cloud-upload" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.modalSubmitText}>
-                    Sahadan İlerlemeyi Gönder (Gantt'a Yansıt)
+              {/* Target & Current Gauge */}
+              <View style={styles.modalTargetBox}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                  <Text style={styles.modalTargetLabel}>Toplam Hedef Miktar</Text>
+                  <Text style={styles.modalTargetVal}>
+                    {selectedTask?.targetQuantity || 100} {selectedTask?.unit || "m3"}
                   </Text>
                 </View>
-              )}
-            </TouchableOpacity>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={styles.modalTargetLabel}>Şu Ana Kadar Yapılan</Text>
+                  <Text style={[styles.modalTargetVal, { color: iosColors.systemGreen }]}>
+                    {selectedTask?.currentQuantity || 0} {selectedTask?.unit || "m3"} (%{Math.round(((selectedTask?.currentQuantity || 0) / (selectedTask?.targetQuantity || 100)) * 100)})
+                  </Text>
+                </View>
+              </View>
 
-            <TouchableOpacity
-              onPress={() => setIsProgressModalOpen(false)}
-              style={styles.modalCancelBtn}
-            >
-              <Text style={styles.modalCancelText}>Vazgeç</Text>
-            </TouchableOpacity>
+              {/* ADIM 1: İlgili Kat / Mahal Seçimi (ZORUNLU) */}
+              <View style={{ marginBottom: 14 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <Text style={styles.inputLabel}>İlgili Kat / Mahal (Zone) *</Text>
+                  <Text style={{ fontSize: 10, fontWeight: "800", color: iosColors.systemBlue }}>
+                    * Zorunlu
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                  {AVAILABLE_ZONES.slice(0, 4).map((zone) => {
+                    const isSelected = selectedZone === zone;
+                    return (
+                      <TouchableOpacity
+                        key={zone}
+                        onPress={() => setSelectedZone(zone)}
+                        style={[
+                          styles.zoneChip,
+                          isSelected && styles.zoneChipActive,
+                        ]}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.zoneChipText,
+                            isSelected && styles.zoneChipTextActive,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {zone.split(" - ")[0]}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  {AVAILABLE_ZONES.slice(4).map((zone) => {
+                    const isSelected = selectedZone === zone;
+                    return (
+                      <TouchableOpacity
+                        key={zone}
+                        onPress={() => setSelectedZone(zone)}
+                        style={[
+                          styles.zoneChip,
+                          isSelected && styles.zoneChipActive,
+                        ]}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.zoneChipText,
+                            isSelected && styles.zoneChipTextActive,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {zone.split(" - ")[0]}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={styles.selectedZoneSubtitle}>
+                  📍 Seçili Mahal: <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>{selectedZone}</Text>
+                </Text>
+              </View>
+
+              {/* ADIM 1 & 2: Taşeron Hakediş Otomasyonu */}
+              <View style={styles.subcontractorBadge}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Ionicons name="briefcase" size={14} color={iosColors.systemOrange} />
+                  <Text style={styles.subcontractorTitle}>Taşeron Hakedişi:</Text>
+                  <Text style={styles.subcontractorName}>Kaya Kalıp & Demir Ltd.</Text>
+                </View>
+                <Text style={styles.subcontractorDesc}>
+                  İlerleme girildiğinde Kasım 2026 hakediş tutarına otomatik eklenecektir.
+                </Text>
+              </View>
+
+              {/* Input: Bugün Yapılan Miktar */}
+              <Text style={styles.inputLabel}>
+                Bugün Sahada Yapılan Miktar ({selectedTask?.unit || "m3"}) *
+              </Text>
+              <TextInput
+                style={styles.qtyInput}
+                keyboardType="numeric"
+                placeholder={`Örn: 50`}
+                placeholderTextColor="#6B7280"
+                value={dailyProgressQty}
+                onChangeText={setDailyProgressQty}
+              />
+
+              {/* Input: İlerleme Notu */}
+              <Text style={styles.inputLabel}>Saha Notu / İmalat Detayı</Text>
+              <TextInput
+                style={styles.notesInput}
+                placeholder="Örn: 3. Kat kolonları vibratörlü hazır beton dökümü tamamlandı."
+                placeholderTextColor="#6B7280"
+                value={dailyProgressNotes}
+                onChangeText={setDailyProgressNotes}
+                multiline
+                numberOfLines={2}
+              />
+
+              {/* ADIM 1 & 2: Saha İmalat Kanıtı (Canlı Kamera - ZORUNLU) */}
+              <View style={{ marginBottom: 16 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <Text style={styles.inputLabel}>
+                    Saha İmalat Kanıtı (Canlı Kamera) *
+                  </Text>
+                  <Text style={{ fontSize: 10, fontWeight: "800", color: iosColors.systemRed }}>
+                    * Zorunlu
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleTakeLivePhoto}
+                  disabled={isCapturingPhoto}
+                  style={[
+                    styles.attachBtn,
+                    isPhotoAttached && styles.attachBtnActive,
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  {isCapturingPhoto ? (
+                    <ActivityIndicator color={iosColors.systemBlue} size="small" />
+                  ) : (
+                    <Feather
+                      name={isPhotoAttached ? "check-circle" : "camera"}
+                      size={18}
+                      color={isPhotoAttached ? iosColors.systemGreen : iosColors.systemBlue}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.attachBtnText,
+                      isPhotoAttached && { color: iosColors.systemGreen },
+                    ]}
+                  >
+                    {isPhotoAttached
+                      ? "✓ Canlı Fotoğraf Çekildi (Yeniden Çek)"
+                      : "Kamera ile Canlı Fotoğraf Çek (GPS Damgalı)"}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Fotoğraf ve GPS/Zaman Damgası Önizleme */}
+                {photoUri && (
+                  <View style={styles.photoPreviewCard}>
+                    <Image source={{ uri: photoUri }} style={styles.photoThumbnail} />
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                        <Ionicons name="shield-checkmark" size={13} color={iosColors.systemGreen} />
+                        <Text style={styles.antiFraudTag}>Anti-Fraud Doğrulandı</Text>
+                      </View>
+                      <Text style={styles.photoMetaText}>
+                        📍 {photoGps ? `${photoGps.latitude.toFixed(4)}°N, ${photoGps.longitude.toFixed(4)}°E` : "41.0082°N, 28.9784°E"}
+                      </Text>
+                      <Text style={styles.photoMetaText}>
+                        🕒 {photoTimestamp || "Şimdi"} {photoGps?.isMocked ? "⚠️ (Mock GPS)" : "✓ (Orijinal)"}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* Submit & Cancel */}
+              <TouchableOpacity
+                onPress={handleSubmitProgress}
+                disabled={isSubmitting}
+                style={[styles.modalSubmitBtn, isSubmitting && { opacity: 0.6 }]}
+                activeOpacity={0.85}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons name="cloud-upload" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.modalSubmitText}>
+                      Sahadan İlerlemeyi Gönder (Gantt'a Yansıt)
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setIsProgressModalOpen(false)}
+                style={styles.modalCancelBtn}
+              >
+                <Text style={styles.modalCancelText}>Vazgeç</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1230,6 +1351,54 @@ const styles = StyleSheet.create({
   },
   scopeBtnTextActive: {
     color: iosColors.systemGreen,
+    fontWeight: "700",
+  },
+  dangerAlertBanner: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 4,
+    backgroundColor: "rgba(239, 68, 68, 0.92)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#EF4444",
+    shadowColor: "#EF4444",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  dangerAlertTitle: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+  dangerAlertDesc: {
+    color: "#FEE2E2",
+    fontSize: 11,
+    fontWeight: "500",
+    marginTop: 1,
+  },
+  taskZoneBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginTop: 6,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+  },
+  taskZoneBadgeText: {
+    fontSize: 10,
     fontWeight: "700",
   },
   hintBar: {

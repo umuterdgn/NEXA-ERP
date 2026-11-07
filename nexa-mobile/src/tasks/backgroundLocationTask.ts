@@ -10,9 +10,13 @@
 
 import * as TaskManager from "expo-task-manager";
 import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
+import { Vibration, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../lib/api";
 import { locationSocket } from "../services/LocationSocket";
+import { isPointInPolygon } from "../lib/geofencing";
+import { DEFAULT_FALLBACK_GEOFENCES } from "../../apiClient";
 
 export const BACKGROUND_LOCATION_TASK = "BACKGROUND_LOCATION_TASK";
 export const ATTENDANCE_TRACKING_KEY = "@nexa_attendance_tracking_active";
@@ -131,6 +135,30 @@ export function registerBackgroundLocationTask() {
               altitude: altitude ? Math.round(altitude) : null,
               timestamp,
             });
+
+            // 3. Arka Plan İSG Riskli Alan (DANGER_ZONE) Sanal Çit Kontrolü
+            try {
+              const dangerZones = DEFAULT_FALLBACK_GEOFENCES.filter((g) => g.type === "DANGER_ZONE");
+              for (const dz of dangerZones) {
+                const isInside = isPointInPolygon({ latitude, longitude }, dz.coordinates);
+                if (isInside) {
+                  if (Platform.OS !== "web") {
+                    Vibration.vibrate([0, 500, 200, 500]);
+                  }
+                  Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: "⚠️ İSG Kritik Güvenlik Uyarısı!",
+                      body: "⚠️ Uyarı: Riskli alana giriş yaptınız! Baret ve KKD kontrolü yapın.",
+                      sound: true,
+                    },
+                    trigger: null,
+                  }).catch(() => null);
+                  break;
+                }
+              }
+            } catch (dzErr) {
+              console.warn("[BackgroundLocationTask] DangerZone check error:", dzErr);
+            }
 
             console.log(
               `[BackgroundLocationTask] 🛰️ Konum iletildi: [${latitude.toFixed(5)}, ${longitude.toFixed(
