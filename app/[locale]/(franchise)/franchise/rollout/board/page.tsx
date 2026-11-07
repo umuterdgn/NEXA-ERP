@@ -40,7 +40,9 @@ import RolloutSubNav from "@/components/franchise/RolloutSubNav"
 import toast from "react-hot-toast"
 import {
   ROLLOUT_STAGES,
-  RolloutStageKey,
+  type RolloutStageKey,
+} from "@/lib/constants/franchise-constants"
+import {
   getRolloutBoardData,
   updateRolloutBoardStage,
   validateStageGateTransition,
@@ -212,29 +214,16 @@ export default function RolloutBoardPage() {
     setIsUpdating(true)
 
     try {
-      const apiRes = await fetch("/api/franchise/rollout/update-stage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: storeId,
-          newStage: targetStage,
-          currentStage: previousStage,
-        }),
-      })
+      const res = await updateRolloutBoardStage(storeId, targetStage)
 
-      const data = await apiRes.json()
-
-      if (!apiRes.ok || !data.success) {
+      if (!res.success) {
         // UI tarafında kartı eski yerine geri sektir (Revert)
         setProjects((prev) =>
           prev.map((p) => (p.id === storeId ? { ...p, status: previousStage } : p))
         )
 
-        const toastMsg = data.missingDoc
-          ? `Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz: ${data.missingDoc}`
-          : data.error || "Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz"
-
-        toast.error(toastMsg, {
+        const errorMsg = res.error || "Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz"
+        toast.error(errorMsg, {
           duration: 6000,
           position: "bottom-right",
           style: {
@@ -246,17 +235,19 @@ export default function RolloutBoardPage() {
           },
         })
 
-        setBlockerModal({
-          isOpen: true,
-          title: "Zorunlu Onay Kapısı (Stage-Gate) Engeli",
-          reason: data.reason || data.error || "Gerekli onaylar eksik.",
-          missingItem: data.missingDoc,
-          storeName: store.name,
-          targetStage: ROLLOUT_STAGES.find((s) => s.key === targetStage)?.label,
-          blockingDetails: data.details,
-          storeId,
-          canForceOverride: true,
-        })
+        if (res.blocked && res.validation) {
+          setBlockerModal({
+            isOpen: true,
+            title: "Zorunlu Onay Kapısı (Stage-Gate) Engeli",
+            reason: res.validation.reason || "Gerekli onaylar eksik.",
+            missingItem: res.validation.missingDoc,
+            storeName: store.name,
+            targetStage: ROLLOUT_STAGES.find((s) => s.key === targetStage)?.label,
+            blockingDetails: res.validation.details,
+            storeId,
+            canForceOverride: true,
+          })
+        }
         return
       }
 
@@ -276,30 +267,21 @@ export default function RolloutBoardPage() {
     }
   }
 
-  const res = await updateRolloutBoardStage(storeId, targetStage)
-  if (res.success) {
-    setProjects((prev) =>
-      prev.map((p) => (p.id === storeId ? { ...p, status: targetStage } : p))
-    )
-  }
-  setIsUpdating(false)
-}
+  // Filtreleme
+  const filteredProjects = projects.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.city && p.city.toLowerCase().includes(searchQuery.toLowerCase()))
+    const matchesCity = cityFilter === "ALL" || p.city === cityFilter
+    return matchesSearch && matchesCity
+  })
 
-// Filtreleme
-const filteredProjects = projects.filter((p) => {
-  const matchesSearch =
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (p.city && p.city.toLowerCase().includes(searchQuery.toLowerCase()))
-  const matchesCity = cityFilter === "ALL" || p.city === cityFilter
-  return matchesSearch && matchesCity
-})
+  const uniqueCities = Array.from(new Set(projects.map((p) => p.city).filter(Boolean)))
 
-const uniqueCities = Array.from(new Set(projects.map((p) => p.city).filter(Boolean)))
-
-return (
-  <div className="w-full space-y-6 pb-12">
-    {/* Sub-Navigation Header */}
-    <RolloutSubNav activeTab="board" />
+  return (
+    <div className="w-full space-y-6 pb-12">
+      {/* Sub-Navigation Header */}
+      <RolloutSubNav activeTab="board" />
 
     {/* Top Header & Actions */}
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-800 pb-5">
