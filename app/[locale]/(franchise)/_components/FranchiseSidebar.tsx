@@ -7,3 +7,4 @@
 
 import FranchiseSidebar from "@/components/franchise/Sidebar"
 export default FranchiseSidebar
+
