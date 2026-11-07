@@ -200,3 +200,4 @@ export function useGeofencingProtection(options: UseGeofencingProtectionOptions 
     reloadGeofences: loadGeofences,
   };
 }
+

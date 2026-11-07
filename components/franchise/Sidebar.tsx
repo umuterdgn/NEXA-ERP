@@ -52,12 +52,13 @@ const franchiseNavigation: MenuItem[] = [
   { href: "/franchise/rollout-map", labelKey: "locations", icon: MapPin, categoryKey: "mainMenu" },
 
   // FRANCHISE & ROLLOUT (Core)
+  { href: "/franchise/rollout/board", labelKey: "rolloutBoard", icon: Kanban, categoryKey: "core" },
+  { href: "/franchise/rollout/ffe", labelKey: "rolloutFfe", icon: Box, categoryKey: "core" },
+  { href: "/franchise/rollout/legal", labelKey: "rolloutLegal", icon: FileCheck2, categoryKey: "core" },
+  { href: "/franchise/rollout/punch-list", labelKey: "punchList", icon: ClipboardCheck, categoryKey: "core" },
   { href: "/franchise/rollout-map", labelKey: "rolloutMap", icon: Map, categoryKey: "core" },
-  { href: "/franchise/rollout", labelKey: "rolloutKanban", icon: Kanban, categoryKey: "core" },
   { href: "/franchise/stage-gates", labelKey: "stageGates", icon: ShieldCheck, categoryKey: "core" },
-  { href: "/franchise/templates", labelKey: "templates", icon: Box, categoryKey: "core" },
-  { href: "/franchise/permits", labelKey: "permits", icon: FileCheck2, categoryKey: "core" },
-  { href: "/franchise/punch-list", labelKey: "punchList", icon: ClipboardCheck, categoryKey: "core" },
+  { href: "/franchise/templates", labelKey: "templates", icon: Boxes, categoryKey: "core" },
 
   // PROJE & TASARIM
   { href: "/franchise/bim", labelKey: "bim", icon: Boxes, categoryKey: "projectDesign" },

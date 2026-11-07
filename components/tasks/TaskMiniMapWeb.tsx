@@ -292,3 +292,4 @@ export default function TaskMiniMapWeb({
     </div>
   )
 }
+

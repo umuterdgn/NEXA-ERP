@@ -1236,3 +1236,20 @@ export async function toggleConceptTemplate(id: string) {
     return { success: false, error: error.message || "Şablon durumu güncellenemedi." }
   }
 }
+
+// Re-export Franchise Rollout Stage-Gate, FF&E, Legal and Punch List functions
+export {
+  ROLLOUT_STAGES,
+  validateStageGateTransition,
+  updateRolloutBoardStage,
+  getRolloutBoardData,
+  getRolloutFfeData,
+  updateFfeItemStatus,
+  getRolloutLegalData,
+  updateLegalPermitStatus,
+  getRolloutPunchListData,
+  createRolloutPunchListItem,
+  updateRolloutPunchStatus,
+} from "./franchise-rollout"
+export type { RolloutStageKey, StageGateDefinition, FfeItem, LegalPermitItem, PunchListItemExt } from "./franchise-rollout"
+

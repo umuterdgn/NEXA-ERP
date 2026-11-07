@@ -42,6 +42,7 @@ import {
   getFranchisePersonnelAndSubcontractors,
 } from "@/app/actions/franchise"
 import CreateRolloutModal from "@/components/franchise/CreateRolloutModal"
+import RolloutSubNav from "@/components/franchise/RolloutSubNav"
 
 interface StageGate {
   id: string
@@ -214,6 +215,9 @@ export default function FranchiseRolloutPage() {
 
   return (
     <div className="w-full space-y-6 pb-8">
+      {/* Rollout Sub-Navigation */}
+      <RolloutSubNav activeTab="board" />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
