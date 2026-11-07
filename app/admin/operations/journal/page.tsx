@@ -9,3 +9,4 @@ import { redirect } from "next/navigation"
 export default function OperationsJournalRedirect() {
   redirect("/tr/admin/operations/journal")
 }
+
