@@ -139,3 +139,4 @@ export interface PunchListItemExt {
   createdAt: string
   taskId?: string // Otomatik oluşturulan Task / DÖF ID'si
 }
+

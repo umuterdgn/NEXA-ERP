@@ -276,11 +276,10 @@ export default function RolloutFfePage() {
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                statusFilter === tab.key
+              className={`px-3 py-1.5 rounded-lg font-medium transition ${statusFilter === tab.key
                   ? "bg-amber-500 text-slate-950 font-bold shadow"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
