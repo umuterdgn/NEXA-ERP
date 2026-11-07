@@ -457,6 +457,7 @@ export async function createRolloutProject(
     let name = ""
     let city = ""
     let locationType = "STREET"
+    let conceptType = "Cadde Mağazası"
     let budgetVal: number = 0
     let lat: number | undefined | null
     let lng: number | undefined | null
@@ -469,6 +470,7 @@ export async function createRolloutProject(
       name = ((fd.get("name") as string) || "").trim()
       city = ((fd.get("city") as string) || "").trim()
       locationType = (((fd.get("locationType") as string) || "STREET").trim()).toUpperCase()
+      conceptType = ((fd.get("conceptType") as string) || "Cadde Mağazası").trim()
       const b = fd.get("budget") || fd.get("totalBudget")
       if (b) budgetVal = parseFloat(b as string) || 0
       status = (fd.get("status") as string) || "KIRALAMA"
@@ -479,6 +481,7 @@ export async function createRolloutProject(
       name = (obj.name || "").trim()
       city = (obj.city || "").trim()
       locationType = ((obj.locationType || "STREET").trim()).toUpperCase()
+      conceptType = (obj.conceptType || "Cadde Mağazası").trim()
       budgetVal = obj.totalBudget ?? obj.budget ?? 0
       lat = obj.lat
       lng = obj.lng
@@ -586,7 +589,102 @@ export async function createRolloutProject(
       },
     })
 
+    // ============================================================================
+    // ADIM 3: FF&E DEMİRBAŞ ŞABLON OTOMASYONU (BULK INSERT)
+    // ConceptTemplate tablosundan veya standart franchise konsept listesinden
+    // demirbaş listesini çekip yeni şubenin EquipmentLogistics tablosuna
+    // "Siparişi Bekleniyor" statüsünde topluca (createMany) ekle.
+    // ============================================================================
+    try {
+      // 1. Konsepte özel demirbaşları belirle
+      let templateFixtures: any[] = []
+
+      const dbTemplate = await prisma.conceptTemplate.findFirst({
+        where: {
+          tenantId,
+          OR: [
+            { name: { contains: conceptType, mode: "insensitive" } },
+            { name: { contains: locationType, mode: "insensitive" } },
+          ],
+        },
+      })
+
+      if (dbTemplate && (dbTemplate as any).fixturesJson && Array.isArray((dbTemplate as any).fixturesJson)) {
+        templateFixtures = (dbTemplate as any).fixturesJson
+      } else {
+        // Standart Franchise Konsept Demirbaş Listesi
+        templateFixtures = [
+          {
+            code: "FFE-BAR-01",
+            name: "1x Sanremo Cafe Racer Endüstriyel Espresso Makinesi",
+            category: "Bar & Mutfak",
+            quantity: 1,
+            unit: "Adet",
+            supplier: "Barista Tech Ltd.",
+          },
+          {
+            code: "FFE-FUR-02",
+            name: "5x Konsept Masif Meşe Masa ve Sandalye Grubu",
+            category: "Mobilya & Dekor",
+            quantity: 5,
+            unit: "Takım",
+            supplier: "Studio Craft Mobilya",
+          },
+          {
+            code: "FFE-POS-03",
+            name: "1x Ingenico Dokunmatik POS & Yazarkasa Terminali",
+            category: "Bilişim & POS",
+            quantity: 1,
+            unit: "Set",
+            supplier: "POS Sistemleri A.Ş.",
+          },
+          {
+            code: "FFE-BAR-04",
+            name: "1x Brema CB 425A Kristal Buz Makinesi",
+            category: "Bar & Mutfak",
+            quantity: 1,
+            unit: "Adet",
+            supplier: "Endüstriyel Soğutma Market",
+          },
+          {
+            code: "FFE-ADV-05",
+            name: "1x Dış Cephe Işıklı Alüminyum LED Logo Tabelası",
+            category: "Reklam & Tabela",
+            quantity: 1,
+            unit: "Takım",
+            supplier: "NeonLine Endüstriyel Reklam",
+          },
+          {
+            code: "FFE-REF-06",
+            name: "1x Sevel Çift Katlı Pasta & Meze Soğutucu Teşhir Dolabı",
+            category: "Bar & Mutfak",
+            quantity: 1,
+            unit: "Adet",
+            supplier: "Sevel Soğutma Sistemleri",
+          },
+        ]
+      }
+
+      // 2. EquipmentLogistics tablosuna "Siparişi Bekleniyor" statüsünde topluca ekle
+      await prisma.equipmentLogistics.createMany({
+        data: templateFixtures.map((item) => ({
+          tenantId,
+          rolloutProjectId: project.id,
+          code: item.code || "FFE-ITEM",
+          name: item.name,
+          category: item.category || "Bar & Mutfak",
+          quantity: item.quantity || 1,
+          unit: item.unit || "Adet",
+          supplier: item.supplier || "Merkez Lojistik Deposu",
+          status: "Siparişi Bekleniyor", // ADIM 3 kuralı: Siparişi Bekleniyor statüsü
+        })),
+      })
+    } catch (ffeErr) {
+      console.warn("EquipmentLogistics bulk insert fallback:", ffeErr)
+    }
+
     revalidatePath("/franchise/rollout")
+    revalidatePath("/franchise/rollout/ffe")
     revalidatePath("/franchise/stage-gates")
     revalidatePath("/franchise/rollout-map")
 

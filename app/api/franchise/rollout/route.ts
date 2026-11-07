@@ -294,6 +294,68 @@ export async function POST(request: Request) {
       },
     })
 
+    // ADIM 3: Standart demirbaş şablonunu otomatik EquipmentLogistics tablosuna "Siparişi Bekleniyor" olarak ekle
+    try {
+      const templateFixtures = [
+        {
+          code: "FFE-BAR-01",
+          name: "1x Sanremo Cafe Racer Endüstriyel Espresso Makinesi",
+          category: "Bar & Mutfak",
+          quantity: 1,
+          unit: "Adet",
+          supplier: "Barista Tech Ltd.",
+        },
+        {
+          code: "FFE-FUR-02",
+          name: "5x Konsept Masif Meşe Masa ve Sandalye Grubu",
+          category: "Mobilya & Dekor",
+          quantity: 5,
+          unit: "Takım",
+          supplier: "Studio Craft Mobilya",
+        },
+        {
+          code: "FFE-POS-03",
+          name: "1x Ingenico Dokunmatik POS & Yazarkasa Terminali",
+          category: "Bilişim & POS",
+          quantity: 1,
+          unit: "Set",
+          supplier: "POS Sistemleri A.Ş.",
+        },
+        {
+          code: "FFE-BAR-04",
+          name: "1x Brema CB 425A Kristal Buz Makinesi",
+          category: "Bar & Mutfak",
+          quantity: 1,
+          unit: "Adet",
+          supplier: "Endüstriyel Soğutma Market",
+        },
+        {
+          code: "FFE-ADV-05",
+          name: "1x Dış Cephe Işıklı Alüminyum LED Logo Tabelası",
+          category: "Reklam & Tabela",
+          quantity: 1,
+          unit: "Takım",
+          supplier: "NeonLine Endüstriyel Reklam",
+        },
+      ]
+
+      await prisma.equipmentLogistics.createMany({
+        data: templateFixtures.map((item) => ({
+          tenantId,
+          rolloutProjectId: project.id,
+          code: item.code,
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          unit: item.unit,
+          supplier: item.supplier,
+          status: "Siparişi Bekleniyor",
+        })),
+      })
+    } catch (eLogErr) {
+      console.warn("API Rollout POST equipmentLogistics createMany fallback:", eLogErr)
+    }
+
     return NextResponse.json({ project, success: true }, { status: 201 })
   } catch (error: any) {
     console.error("❌ Rollout POST Error:", error)

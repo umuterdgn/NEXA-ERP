@@ -230,6 +230,25 @@ export async function PATCH(request: Request) {
       include: { zone: true },
     })
 
+    // ADIM 4: Taşeron işi tamamladığında/fotoğraf yüklediğinde, bağlı Punch List "FIXED" (Çözüldü - Onay Bekliyor) durumuna döner
+    try {
+      if (dbStatus === "COMPLETED" || dbStatus === "IN_PROGRESS") {
+        if (updated.punchListId) {
+          await prisma.punchList.updateMany({
+            where: { id: updated.punchListId },
+            data: { status: "FIXED" },
+          })
+        } else {
+          await prisma.punchList.updateMany({
+            where: { taskId: updated.id },
+            data: { status: "FIXED" },
+          })
+        }
+      }
+    } catch (punchErr) {
+      console.warn("Mobile Task to PunchList sync error:", punchErr)
+    }
+
     // Sola kaydırıp tamamlandığında katın ve bloğun ilerlemesini otomatik güncelle
     if (dbStatus === "COMPLETED") {
       let zoneToUpdate = updated.zone

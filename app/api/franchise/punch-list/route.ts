@@ -90,6 +90,32 @@ export async function POST(request: Request) {
       },
     })
 
+    // ADIM 4: Taşeronun havuzuna otomatik DÖF (İş Emri) fırlat ve bağla
+    try {
+      const task = await prisma.task.create({
+        data: {
+          tenantId: tenantId || null,
+          projectId: projectId || undefined,
+          punchListId: item.id,
+          title: `[DÖF - Punch List] ${defectDesc.slice(0, 50)}...`,
+          description: `TESLİMAT ÖNCESİ KUSUR (PUNCH LIST)\nKusur: ${defectDesc}\nSorumlu: ${subcontractorId || "Taşeron"}\nTermin: ${deadline}\nLütfen düzeltmeyi tamamlayıp kanıt fotoğrafını yükleyin.`,
+          status: "TODO",
+          taskType: "DÖF",
+          assignedTo: subcontractorId || null,
+          dueDate: new Date(deadline),
+        },
+      })
+
+      // PunchList kaydına taskId'yi bağla
+      await prisma.punchList.update({
+        where: { id: item.id },
+        data: { taskId: task.id },
+      })
+      ;(item as any).taskId = task.id
+    } catch (taskErr) {
+      console.warn("Otomatik DÖF Task oluşturma fallback:", taskErr)
+    }
+
     return NextResponse.json({ punchList: item }, { status: 201 })
   } catch (error: any) {
     console.error("❌ Punch List POST Error:", error)

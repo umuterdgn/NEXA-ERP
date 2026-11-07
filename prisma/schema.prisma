@@ -378,6 +378,7 @@ model Project {
   bimIssues                BimIssue[]
   subcontractorContracts   SubcontractorContract[]
   deductions               Deduction[]
+  equipmentLogistics       EquipmentLogistics[]
   materialRequests         MaterialRequest[]
   projectTasks             ProjectTask[]
   projectDocuments         ProjectDocument[]
@@ -2487,6 +2488,7 @@ model Task {
   boqItemId     String?      // Bağlı Keşif / BoQ Poz Kalemi ID
   zoneId        String?      // Bağlı Kat / Mahal ID
   zone          Zone?        @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  punchListId   String?      // Bağlı Franchise Punch List (Kusur / Denetim) ID'si
   createdAt     DateTime     @default(now())
 
   @@index([status])
@@ -2495,6 +2497,7 @@ model Task {
   @@index([workPackageId])
   @@index([boqItemId])
   @@index([zoneId])
+  @@index([punchListId])
   @@index([dueDate])
   @@index([taskType])
   @@index([tenantId])
@@ -4738,6 +4741,7 @@ model PunchList {
   photoUrl        String?
   deadline        DateTime // Düzeltme için son tarih
   status          String   @default("OPEN") // OPEN, FIXED, VERIFIED
+  taskId          String?  // Otomatik açılan DÖF / İş Emri ID'si
   createdAt       DateTime @default(now())
 
   @@index([projectId])
@@ -5054,6 +5058,7 @@ model RolloutProject {
   stageGates        StageGate[]
   expenses          RolloutExpense[]
   workProofs        RolloutWorkProof[]
+  equipmentLogistics EquipmentLogistics[]
 
   @@index([tenantId])
   @@index([status])
@@ -5126,9 +5131,38 @@ model ConceptTemplate {
   name        String   // Örn: "AVM İçi Kiosk", "500m2 Cadde Mağazası"
   baseBudget  Float
   phasesJson  Json     // Şablonun standart iş adımları (Gantt verisi vb.)
+  fixturesJson Json?   // Standart franchise FF&E demirbaş şablon listesi
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
 }
+
+// YENİ: Franchise Şube Demirbaş Lojistik Takip Modeli (FF&E)
+model EquipmentLogistics {
+  id               String          @id @default(cuid())
+  tenantId         String?         // SaaS: Kiracı ID
+  rolloutProjectId String?
+  rolloutProject   RolloutProject? @relation(fields: [rolloutProjectId], references: [id], onDelete: Cascade)
+  projectId        String?
+  project          Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  code             String?         // Örn: FFE-BAR-001
+  name             String          // Örn: Espresso Makinesi
+  category         String          @default("Bar & Mutfak") // Bar & Mutfak, Bilişim & POS, Reklam & Tabela, Mobilya, İklimlendirme
+  quantity         Int             @default(1)
+  unit             String          @default("Adet")
+  supplier         String?
+  status           String          @default("Siparişi Bekleniyor") // Siparişi Bekleniyor, Siparişte, Yolda, Depoda, Sahaya Kuruldu
+  orderDate        DateTime?
+  etaDate          DateTime?
+  serialNo         String?
+  trackingInfo     Json?           // GPS ve kargo takip bilgileri
+  createdAt        DateTime        @default(now())
+
+  @@index([rolloutProjectId])
+  @@index([projectId])
+  @@index([status])
+  @@index([tenantId])
+}
+

@@ -231,6 +231,29 @@ export async function POST(request: Request) {
           completionPhoto: photoUrl || null,
         },
       })
+
+      // ADIM 4: Taşeron kanıt fotoğrafı yüklediğinde Punch List kaydı otomatik "Çözüldü - Onay Bekliyor" (FIXED) olur
+      try {
+        if (targetTask.punchListId) {
+          await prisma.punchList.updateMany({
+            where: { id: targetTask.punchListId },
+            data: {
+              status: "FIXED",
+              photoUrl: photoUrl || null,
+            },
+          })
+        } else {
+          await prisma.punchList.updateMany({
+            where: { taskId: targetTask.id },
+            data: {
+              status: "FIXED",
+              photoUrl: photoUrl || null,
+            },
+          })
+        }
+      } catch (punchSyncErr) {
+        console.warn("PunchList sync fallback:", punchSyncErr)
+      }
     }
 
     // 6. Projenin genel ağırlıklı ilerlemesini (Gantt) güncelle

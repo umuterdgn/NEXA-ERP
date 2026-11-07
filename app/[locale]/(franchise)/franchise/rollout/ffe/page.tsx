@@ -80,7 +80,7 @@ export default function RolloutFfePage() {
 
   const handleStatusChange = async (
     itemId: string,
-    newStatus: "Siparişte" | "Yolda" | "Depoda" | "Sahaya Kuruldu"
+    newStatus: "Siparişi Bekleniyor" | "Siparişte" | "Yolda" | "Depoda" | "Sahaya Kuruldu"
   ) => {
     try {
       setUpdatingId(itemId)
@@ -267,6 +267,7 @@ export default function RolloutFfePage() {
         <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
           {[
             { key: "ALL", label: "Tümü" },
+            { key: "Siparişi Bekleniyor", label: "Bekleniyor" },
             { key: "Siparişte", label: "Siparişte" },
             { key: "Yolda", label: "Yolda" },
             { key: "Depoda", label: "Depoda" },
@@ -317,12 +318,13 @@ export default function RolloutFfePage() {
                   const isYolda = item.status === "Yolda"
 
                   // Durum rozeti renkleri
-                  const statusColors = {
+                  const statusColors: any = {
+                    "Siparişi Bekleniyor": "bg-purple-500/10 text-purple-400 border-purple-500/30",
                     Siparişte: "bg-sky-500/10 text-sky-400 border-sky-500/30",
                     Yolda: "bg-amber-500/10 text-amber-300 border-amber-500/40 ring-1 ring-amber-500/20",
                     Depoda: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
                     "Sahaya Kuruldu": "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-                  }[item.status]
+                  }[item.status] || "bg-slate-800 text-slate-400 border-slate-700"
 
                   return (
                     <tr
@@ -389,6 +391,9 @@ export default function RolloutFfePage() {
                           }
                           className={`text-xs font-semibold rounded-lg px-2.5 py-1.5 border focus:outline-none focus:ring-1 focus:ring-amber-500 transition cursor-pointer ${statusColors}`}
                         >
+                          <option value="Siparişi Bekleniyor" className="bg-slate-900 text-purple-400">
+                            ⏳ Siparişi Bekleniyor
+                          </option>
                           <option value="Siparişte" className="bg-slate-900 text-sky-400">
                             Siparişte
                           </option>
@@ -591,3 +596,4 @@ export default function RolloutFfePage() {
     </div>
   )
 }
+

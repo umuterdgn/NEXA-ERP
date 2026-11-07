@@ -218,7 +218,7 @@ export interface FfeItem {
   supplier: string
   storeId: string
   storeName: string
-  status: "Siparişte" | "Yolda" | "Depoda" | "Sahaya Kuruldu"
+  status: "Siparişi Bekleniyor" | "Siparişte" | "Yolda" | "Depoda" | "Sahaya Kuruldu"
   orderDate: string
   etaDate: string
   serialNo?: string
@@ -931,12 +931,47 @@ export async function getRolloutBoardData() {
 export async function getRolloutFfeData(storeId?: string) {
   try {
     let items = [...INITIAL_FFE_ITEMS]
+
+    // Prisma DB EquipmentLogistics tablosundan çek (ADIM 3 Entegrasyonu)
+    try {
+      const dbEquipments = await prisma.equipmentLogistics.findMany({
+        where: storeId && storeId !== "ALL" ? { rolloutProjectId: storeId } : {},
+        include: { rolloutProject: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+      })
+
+      if (dbEquipments && dbEquipments.length > 0) {
+        const mappedDbItems: FfeItem[] = dbEquipments.map((e) => ({
+          id: e.id,
+          code: e.code || "FFE-ITEM",
+          name: e.name,
+          category: (e.category as any) || "Bar & Mutfak",
+          quantity: e.quantity,
+          unit: e.unit,
+          supplier: e.supplier || "Merkez Tedarik Deposu",
+          storeId: e.rolloutProjectId || "store-custom",
+          storeName: e.rolloutProject?.name || "Franchise Şubesi",
+          status: (e.status as any) || "Siparişi Bekleniyor",
+          orderDate: e.orderDate ? e.orderDate.toISOString().split("T")[0] : "2026-11-01",
+          etaDate: e.etaDate ? e.etaDate.toISOString().split("T")[0] : "2026-11-15",
+          serialNo: e.serialNo || undefined,
+          trackingInfo: (e.trackingInfo as any) || undefined,
+        }))
+
+        // DB kalemlerini öncelikli ekle
+        items = [...mappedDbItems, ...items.filter((i) => !mappedDbItems.some((m) => m.id === i.id))]
+      }
+    } catch {
+      // Offline fallback
+    }
+
     if (storeId && storeId !== "ALL") {
       items = items.filter((i) => i.storeId === storeId)
     }
 
     // KPI Özetleri
     const totalCount = items.length
+    const waitingOrderCount = items.filter((i) => i.status === "Siparişi Bekleniyor").length
     const onOrderCount = items.filter((i) => i.status === "Siparişte").length
     const inTransitCount = items.filter((i) => i.status === "Yolda").length
     const inWarehouseCount = items.filter((i) => i.status === "Depoda").length
@@ -948,6 +983,7 @@ export async function getRolloutFfeData(storeId?: string) {
       items,
       stats: {
         totalCount,
+        waitingOrderCount,
         onOrderCount,
         inTransitCount,
         inWarehouseCount,
@@ -962,18 +998,24 @@ export async function getRolloutFfeData(storeId?: string) {
 
 export async function updateFfeItemStatus(
   itemId: string,
-  newStatus: "Siparişte" | "Yolda" | "Depoda" | "Sahaya Kuruldu"
+  newStatus: "Siparişi Bekleniyor" | "Siparişte" | "Yolda" | "Depoda" | "Sahaya Kuruldu"
 ) {
   try {
     const item = INITIAL_FFE_ITEMS.find((i) => i.id === itemId)
-    if (!item) {
-      return { success: false, error: "Demirbaş bulunamadı." }
+    if (item) {
+      item.status = newStatus
     }
 
-    item.status = newStatus
+    // Prisma DB güncellemesi
+    try {
+      await prisma.equipmentLogistics.updateMany({
+        where: { id: itemId },
+        data: { status: newStatus },
+      })
+    } catch {}
 
     // Eğer Yolda yapıldıysa ve takip bilgisi yoksa otomatik gerçekçi GPS telemetrisi bağla
-    if (newStatus === "Yolda" && !item.trackingInfo) {
+    if (newStatus === "Yolda" && item && !item.trackingInfo) {
       item.trackingInfo = {
         carrierName: "Nexa Özel Lojistik Filosu",
         driverName: "Sefa Gündüz",
@@ -983,6 +1025,13 @@ export async function updateFfeItemStatus(
         originCity: "Nexa Lojistik Üssü",
         destinationCity: item.storeName,
         currentLat: 40.864,
+        currentLng: 29.358,
+        speedKmH: 74,
+        etaRemaining: "45 dakika",
+        batteryLevel: 96,
+        cargoTemp: "+22°C",
+      }
+    }
         currentLng: 29.358,
         speedKmH: 74,
         etaRemaining: "45 dakika",
@@ -1170,13 +1219,34 @@ export async function createRolloutPunchListItem(data: {
     INITIAL_PUNCH_ITEMS.unshift(newPunchItem)
 
     // ============================================================================
-    // OTOMATİK DÖF (DÜZELTİCİ ÖNLEYİCİ FAALİYET) / İŞ EMRİ OLUŞTURULMASI
+    // ADIM 4: OTOMATİK DÖF (İŞ EMRİ) VE ÇAPRAZ TAŞERON BAĞLANTISI
     // ============================================================================
     try {
       const tenantId = await getFranchiseTenantId().catch(() => null)
-      await prisma.task.create({
+
+      // 1. Prisma PunchList kaydı oluştur
+      let dbPunch: any = null
+      try {
+        dbPunch = await prisma.punchList.create({
+          data: {
+            tenantId: tenantId || null,
+            projectId: data.storeId,
+            inspectorId: "Bölge Müdürü",
+            subcontractorId: data.subcontractorId,
+            defectDesc: data.defectDesc,
+            photoUrl: data.photoUrl || null,
+            deadline: new Date(data.deadline),
+            status: "OPEN",
+          },
+        })
+      } catch {}
+
+      // 2. Taşeronun havuzuna otomatik DÖF (İş Emri) fırlat
+      const createdTask = await prisma.task.create({
         data: {
           tenantId: tenantId || undefined,
+          projectId: data.storeId,
+          punchListId: dbPunch?.id || newPunchId,
           title: `[DÖF - Punch List] ${data.defectDesc.slice(0, 60)}...`,
           description: `MAHAL: ${data.locationFloor || "Genel"} | ŞUBE: ${storeName} | KUSUR: ${data.defectDesc}`,
           status: "TODO",
@@ -1185,8 +1255,15 @@ export async function createRolloutPunchListItem(data: {
           dueDate: new Date(data.deadline),
         },
       })
-    } catch {
-      // Prisma offline mode handled gracefully
+
+      if (dbPunch && createdTask) {
+        await prisma.punchList.update({
+          where: { id: dbPunch.id },
+          data: { taskId: createdTask.id },
+        })
+      }
+    } catch (err) {
+      console.warn("Prisma punch list task sync fallback:", err)
     }
 
     revalidatePath("/franchise/rollout/punch-list")
@@ -1217,6 +1294,14 @@ export async function updateRolloutPunchStatus(
 
     item.status = newStatus
 
+    // Prisma DB PunchList güncellemesi
+    try {
+      await prisma.punchList.updateMany({
+        where: { id: itemId },
+        data: { status: newStatus },
+      })
+    } catch {}
+
     // Eğer bağlı Task varsa onu da senkronize et
     if (item.taskId) {
       try {
@@ -1237,3 +1322,4 @@ export async function updateRolloutPunchStatus(
     return { success: false, error: error.message }
   }
 }
+

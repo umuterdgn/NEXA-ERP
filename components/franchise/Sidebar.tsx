@@ -3,9 +3,10 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Franchise & Zincir Mağaza Portalı - Özel Navigasyon Menüsü (Sidebar)
+ * Akordiyon (Collapsible) Kategori Mimarisi
  */
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Link, usePathname } from "@/i18n/routing"
 import { signOut, useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
@@ -35,6 +36,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   LogOut,
 } from "lucide-react"
 
@@ -106,6 +108,34 @@ export default function FranchiseSidebar({
 
   const categoryKeys = Array.from(new Set(franchiseNavigation.map((i) => i.categoryKey)))
 
+  // Aktif sayfanın bulunduğu kategoriyi tespit et
+  const activeNavItem = franchiseNavigation.find(
+    (item) => pathname === item.href || (item.href !== "/franchise/dashboard" && pathname?.startsWith(item.href))
+  )
+  const initialActiveCategory = activeNavItem?.categoryKey || "core"
+
+  // Akordiyon (Collapsible) State: Sadece aktif sayfanın kategorisi varsayılan olarak açık
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
+    [initialActiveCategory]: true,
+  })
+
+  // Sayfa değiştikçe aktif olan kategoriyi otomatik aç
+  useEffect(() => {
+    if (activeNavItem?.categoryKey) {
+      setOpenCategories((prev) => ({
+        ...prev,
+        [activeNavItem.categoryKey]: true,
+      }))
+    }
+  }, [pathname, activeNavItem?.categoryKey])
+
+  const toggleCategory = (catKey: string) => {
+    setOpenCategories((prev) => ({
+      ...prev,
+      [catKey]: !prev[catKey],
+    }))
+  }
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -160,60 +190,99 @@ export default function FranchiseSidebar({
           </div>
         </div>
 
-        {/* Scrollable Navigation Menu */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-800">
+        {/* Scrollable Navigation Menu (Accordion Layout) */}
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
           {categoryKeys.map((catKey) => {
             const items = franchiseNavigation.filter((i) => i.categoryKey === catKey)
+            const isOpen = !!openCategories[catKey]
+            const hasActivePage = items.some(
+              (i) => pathname === i.href || (i.href !== "/franchise/dashboard" && pathname?.startsWith(i.href))
+            )
+
             return (
-              <div key={catKey} className="space-y-1">
-                {!isCollapsed && (
-                  <h3 className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    {t(catKey)}
-                  </h3>
-                )}
-                {items.map((item, idx) => {
-                  const Icon = item.icon
-                  const label = t(item.labelKey)
-                  const isActive = pathname === item.href || (item.href !== "/franchise/dashboard" && pathname?.startsWith(item.href))
-
-                  return (
-                    <Link
-                      key={`${item.href}-${idx}`}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
-                        isActive
-                          ? "bg-gradient-to-r from-amber-500/20 to-rose-500/10 text-amber-300 border border-amber-500/30 shadow-sm shadow-amber-950/40"
-                          : "text-slate-300 hover:bg-slate-900 hover:text-white border border-transparent"
+              <div
+                key={catKey}
+                className={`rounded-xl transition-all duration-200 ${
+                  hasActivePage && !isCollapsed
+                    ? "bg-slate-900/40 border border-amber-500/20 p-1"
+                    : "border border-transparent"
+                }`}
+              >
+                {/* Accordion Category Header Button */}
+                {!isCollapsed ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(catKey)}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200 hover:bg-slate-900/70 transition group select-none"
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className={hasActivePage ? "text-amber-400 font-extrabold" : "text-slate-400"}>
+                        {t(catKey)}
+                      </span>
+                      {hasActivePage && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                      )}
+                    </div>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 text-slate-500 group-hover:text-slate-300 ${
+                        isOpen ? "rotate-0 text-amber-400" : "-rotate-90"
                       }`}
-                      title={isCollapsed ? label : undefined}
-                    >
-                      <Icon
-                        className={`h-4 w-4 shrink-0 transition-colors ${
-                          isActive
-                            ? "text-amber-400"
-                            : "text-slate-400 group-hover:text-amber-400"
-                        }`}
-                      />
+                    />
+                  </button>
+                ) : (
+                  <div className="h-1 bg-slate-850 rounded-full my-2 mx-2" />
+                )}
 
-                      {!isCollapsed && (
-                        <div className="flex flex-1 items-center justify-between overflow-hidden">
-                          <span className="truncate">{label}</span>
-                          {item.hasBadge && (
-                            <span className="ml-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
-                              {t("badgeNew")}
-                            </span>
+                {/* Sub-Items List (Collapsible) */}
+                {(isOpen || isCollapsed) && (
+                  <div className={`space-y-1 mt-1 ${!isCollapsed ? "pl-1" : ""}`}>
+                    {items.map((item, idx) => {
+                      const Icon = item.icon
+                      const label = t(item.labelKey)
+                      const isActive =
+                        pathname === item.href ||
+                        (item.href !== "/franchise/dashboard" && pathname?.startsWith(item.href))
+
+                      return (
+                        <Link
+                          key={`${item.href}-${idx}`}
+                          href={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                            isActive
+                              ? "bg-gradient-to-r from-amber-500/20 to-rose-500/10 text-amber-300 border border-amber-500/30 shadow-sm shadow-amber-950/40"
+                              : "text-slate-300 hover:bg-slate-900 hover:text-white border border-transparent"
+                          }`}
+                          title={isCollapsed ? label : undefined}
+                        >
+                          <Icon
+                            className={`h-4 w-4 shrink-0 transition-colors ${
+                              isActive
+                                ? "text-amber-400"
+                                : "text-slate-400 group-hover:text-amber-400"
+                            }`}
+                          />
+
+                          {!isCollapsed && (
+                            <div className="flex flex-1 items-center justify-between overflow-hidden">
+                              <span className="truncate">{label}</span>
+                              {item.hasBadge && (
+                                <span className="ml-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
+                                  {t("badgeNew")}
+                                </span>
+                              )}
+                            </div>
                           )}
-                        </div>
-                      )}
 
-                      {/* Active indicator bar */}
-                      {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-amber-400" />
-                      )}
-                    </Link>
-                  )
-                })}
+                          {/* Active indicator bar */}
+                          {isActive && (
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-amber-400" />
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )
           })}

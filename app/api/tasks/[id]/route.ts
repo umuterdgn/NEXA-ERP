@@ -22,8 +22,36 @@ export async function PATCH(
 
     const task = await prisma.task.update({
       where: { id },
-      data: { status }
+      data: {
+        status,
+        ...(body.completionPhoto ? { completionPhoto: body.completionPhoto } : {})
+      }
     })
+
+    // ADIM 4: Taşeron işi tamamladığında bağlı Punch List otomatik "Çözüldü - Onay Bekliyor" (FIXED) olur
+    try {
+      if (status === "DONE" || status === "COMPLETED") {
+        if (task.punchListId) {
+          await prisma.punchList.updateMany({
+            where: { id: task.punchListId },
+            data: {
+              status: "FIXED",
+              photoUrl: body.completionPhoto || task.completionPhoto || undefined
+            }
+          })
+        } else {
+          await prisma.punchList.updateMany({
+            where: { taskId: task.id },
+            data: {
+              status: "FIXED",
+              photoUrl: body.completionPhoto || task.completionPhoto || undefined
+            }
+          })
+        }
+      }
+    } catch (punchErr) {
+      console.warn("Task [id] to PunchList sync fallback:", punchErr)
+    }
 
     return NextResponse.json(task)
   } catch (error) {

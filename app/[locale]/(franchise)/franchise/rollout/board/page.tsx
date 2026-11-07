@@ -37,6 +37,7 @@ import {
   Loader2,
 } from "lucide-react"
 import RolloutSubNav from "@/components/franchise/RolloutSubNav"
+import toast from "react-hot-toast"
 import {
   ROLLOUT_STAGES,
   RolloutStageKey,
@@ -126,36 +127,80 @@ export default function RolloutBoardPage() {
       return
     }
 
-    // 1. Validation Kontrolü
+    const previousStage = store.status
     setIsUpdating(true)
-    const validation = await validateStageGateTransition(storeId, targetStage)
 
-    if (!validation.allowed) {
-      setIsUpdating(false)
-      setDraggedStoreId(null)
-      setBlockerModal({
-        isOpen: true,
-        title: "Zorunlu Onay Kapısı (Stage-Gate) Engeli",
-        reason: validation.reason || "Bu aşamaya geçiş için zorunlu şartlar sağlanmadı.",
-        missingItem: validation.missingItem,
-        storeName: store.name,
-        targetStage: ROLLOUT_STAGES.find((s) => s.key === targetStage)?.label,
-        blockingDetails: validation.blockingDetails,
-        storeId,
-        canForceOverride: true,
+    try {
+      // 1. Backend Katı Doğrulama Motorunu (/api/franchise/rollout/update-stage) çağır
+      const apiRes = await fetch("/api/franchise/rollout/update-stage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: storeId,
+          newStage: targetStage,
+          currentStage: previousStage,
+        }),
       })
-      return
-    }
 
-    // Geçişe izin verildi
-    const res = await updateRolloutBoardStage(storeId, targetStage)
-    if (res.success) {
+      const data = await apiRes.json()
+
+      if (!apiRes.ok || !data.success) {
+        // Eksikse API'den HTTP 400 hatası döndü:
+        // UI tarafında kartı eski yerine geri sektir (Revert)
+        setProjects((prev) =>
+          prev.map((p) => (p.id === storeId ? { ...p, status: previousStage } : p))
+        )
+
+        // "Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz" şeklinde bir Toast uyarı çıkar
+        const toastMsg = data.missingDoc
+          ? `Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz: ${data.missingDoc}`
+          : data.error || "Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz"
+
+        toast.error(toastMsg, {
+          duration: 6000,
+          position: "bottom-right",
+          style: {
+            background: "#1e1b4b",
+            color: "#f87171",
+            border: "1px solid #ef4444",
+            fontSize: "12px",
+            fontWeight: "600",
+          },
+        })
+
+        // Detaylı Blocker Alert Modalını da aç
+        setBlockerModal({
+          isOpen: true,
+          title: "Zorunlu Onay Kapısı (Stage-Gate) Engeli",
+          reason: data.reason || data.error || "Gerekli belgeler veya onaylar eksik olduğu için aşama geçişi engellendi.",
+          missingItem: data.missingDoc,
+          storeName: store.name,
+          targetStage: ROLLOUT_STAGES.find((s) => s.key === targetStage)?.label,
+          blockingDetails: data.details,
+          storeId,
+          canForceOverride: true,
+        })
+        return
+      }
+
+      // Başarılı geçiş
       setProjects((prev) =>
         prev.map((p) => (p.id === storeId ? { ...p, status: targetStage } : p))
       )
+      toast.success(`Şube "${ROLLOUT_STAGES.find((s) => s.key === targetStage)?.name}" aşamasına taşındı.`, {
+        position: "bottom-right",
+      })
+    } catch (err: any) {
+      console.error("Drop stage error:", err)
+      // Kartı eski haline revert et
+      setProjects((prev) =>
+        prev.map((p) => (p.id === storeId ? { ...p, status: previousStage } : p))
+      )
+      toast.error("Aşama güncellenirken sunucu bağlantı hatası oluştu.")
+    } finally {
+      setIsUpdating(false)
+      setDraggedStoreId(null)
     }
-    setIsUpdating(false)
-    setDraggedStoreId(null)
   }
 
   // Manuel Taşıma (Select veya Modal ile)
@@ -163,24 +208,73 @@ export default function RolloutBoardPage() {
     const store = projects.find((p) => p.id === storeId)
     if (!store || store.status === targetStage) return
 
+    const previousStage = store.status
     setIsUpdating(true)
-    const validation = await validateStageGateTransition(storeId, targetStage)
 
-    if (!validation.allowed) {
-      setIsUpdating(false)
-      setBlockerModal({
-        isOpen: true,
-        title: "Zorunlu Onay Kapısı (Stage-Gate) Engeli",
-        reason: validation.reason || "Bu aşamaya geçiş engellendi.",
-        missingItem: validation.missingItem,
-        storeName: store.name,
-        targetStage: ROLLOUT_STAGES.find((s) => s.key === targetStage)?.label,
-        blockingDetails: validation.blockingDetails,
-        storeId,
-        canForceOverride: true,
+    try {
+      const apiRes = await fetch("/api/franchise/rollout/update-stage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: storeId,
+          newStage: targetStage,
+          currentStage: previousStage,
+        }),
       })
-      return
+
+      const data = await apiRes.json()
+
+      if (!apiRes.ok || !data.success) {
+        // UI tarafında kartı eski yerine geri sektir (Revert)
+        setProjects((prev) =>
+          prev.map((p) => (p.id === storeId ? { ...p, status: previousStage } : p))
+        )
+
+        const toastMsg = data.missingDoc
+          ? `Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz: ${data.missingDoc}`
+          : data.error || "Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz"
+
+        toast.error(toastMsg, {
+          duration: 6000,
+          position: "bottom-right",
+          style: {
+            background: "#1e1b4b",
+            color: "#f87171",
+            border: "1px solid #ef4444",
+            fontSize: "12px",
+            fontWeight: "600",
+          },
+        })
+
+        setBlockerModal({
+          isOpen: true,
+          title: "Zorunlu Onay Kapısı (Stage-Gate) Engeli",
+          reason: data.reason || data.error || "Gerekli onaylar eksik.",
+          missingItem: data.missingDoc,
+          storeName: store.name,
+          targetStage: ROLLOUT_STAGES.find((s) => s.key === targetStage)?.label,
+          blockingDetails: data.details,
+          storeId,
+          canForceOverride: true,
+        })
+        return
+      }
+
+      setProjects((prev) =>
+        prev.map((p) => (p.id === storeId ? { ...p, status: targetStage } : p))
+      )
+      toast.success(`Şube "${ROLLOUT_STAGES.find((s) => s.key === targetStage)?.name}" aşamasına taşındı.`, {
+        position: "bottom-right",
+      })
+    } catch (err: any) {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === storeId ? { ...p, status: previousStage } : p))
+      )
+      toast.error("Aşama güncellenirken hata oluştu.")
+    } finally {
+      setIsUpdating(false)
     }
+  }
 
     const res = await updateRolloutBoardStage(storeId, targetStage)
     if (res.success) {
@@ -670,3 +764,4 @@ export default function RolloutBoardPage() {
     </div>
   )
 }
+

@@ -63,6 +63,29 @@ export async function POST(request: Request) {
             description: notes ? `${targetTask.description || ""}\n${notes}` : undefined,
           },
         })
+
+        // ADIM 4: Taşeron işi tamamladığında/fotoğraf yüklediğinde bağlı Punch List otomatik "Çözüldü - Onay Bekliyor" (FIXED) olur
+        try {
+          if (targetTask.punchListId) {
+            await prisma.punchList.updateMany({
+              where: { id: targetTask.punchListId },
+              data: {
+                status: "FIXED",
+                photoUrl: completionPhoto || targetTask.completionPhoto || undefined,
+              },
+            })
+          } else {
+            await prisma.punchList.updateMany({
+              where: { taskId: targetTask.id },
+              data: {
+                status: "FIXED",
+                photoUrl: completionPhoto || targetTask.completionPhoto || undefined,
+              },
+            })
+          }
+        } catch (punchErr) {
+          console.warn("Task progress to PunchList sync fallback:", punchErr)
+        }
       }
     }
 

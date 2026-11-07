@@ -28,6 +28,7 @@ export default function CreateRolloutModal({
     name: "",
     city: "İstanbul",
     locationType: "STREET", // "STREET" | "MALL" | "KIOSK"
+    conceptType: "Cadde Mağazası", // "Cadde Mağazası" | "AVM İçi" | "Kiosk / Express"
     budget: "",
     regionalManagerId: "",
     branchManagerId: "",
@@ -54,6 +55,7 @@ export default function CreateRolloutModal({
         payload.append("name", formData.name.trim())
         payload.append("city", formData.city.trim())
         payload.append("locationType", formData.locationType)
+        payload.append("conceptType", formData.conceptType)
         if (formData.budget) {
           payload.append("budget", formData.budget)
           payload.append("totalBudget", formData.budget)
@@ -76,6 +78,7 @@ export default function CreateRolloutModal({
           name: "",
           city: "İstanbul",
           locationType: "STREET",
+          conceptType: "Cadde Mağazası",
           budget: "",
           regionalManagerId: "",
           branchManagerId: "",
@@ -174,6 +177,32 @@ export default function CreateRolloutModal({
                 <option value="KIOSK">{t("kioskStore")}</option>
               </select>
             </div>
+          </div>
+
+          {/* Konsept Tipi (FF&E Demirbaş Şablonu) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-slate-300">
+                Konsept Tipi (Otomatik FF&E Demirbaş Şablonu) <span className="text-rose-500">*</span>
+              </label>
+              <span className="text-[10px] text-amber-400 font-semibold">
+                Lojistik Takip Otomatik Dolar
+              </span>
+            </div>
+            <select
+              name="conceptType"
+              value={formData.conceptType}
+              onChange={(e) => setFormData({ ...formData, conceptType: e.target.value })}
+              className="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+              disabled={isPending}
+            >
+              <option value="Cadde Mağazası">☕ Cadde Mağazası (Standart Demirbaş Paketi - 1x Espresso, 4x POS, 18x Masa)</option>
+              <option value="AVM İçi">🏬 AVM İçi Mağaza (Standart AVM Paketi - 1x Espresso, 3x POS, Buz Makinesi)</option>
+              <option value="Kiosk / Express">⚡ Kiosk & Express (Kompakt Paket - 1x Mini Espresso, 2x POS, 4x Bistro)</option>
+            </select>
+            <p className="text-[10px] text-slate-500 mt-1">
+              Seçilen konsepte ait demirbaşlar (Espresso makinesi, POS, mobilyalar vb.) şubenin EquipmentLogistics tablosuna &quot;Siparişi Bekleniyor&quot; statüsünde otomatik olarak eklenir.
+            </p>
           </div>
 
           {/* Tahmini Kurulum Bütçesi */}
