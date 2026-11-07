@@ -6,6 +6,7 @@
 
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useTheme } from "next-themes";
 import { 
   MapContainer, 
   TileLayer, 
@@ -20,6 +21,16 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { toast } from "react-hot-toast";
 import * as turf from "@turf/turf";
+import { Marker } from "react-leaflet";
+import IosMapPopup, { IosPopupType, IosMarkerData, IosZoneData } from "@/components/map/IosMapPopup";
+import {
+  createEngineerDivIcon,
+  createDriverDivIcon,
+  createStorageDivIcon,
+  createIsgDivIcon,
+  resolveMarkerRole
+} from "@/components/map/mapIcons";
+import { Layers, Pencil, Spline, Undo, Check, X as CloseIcon } from "lucide-react";
 
 // Leaflet default icon fix
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -29,7 +40,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-export type ZoneType = 'MAIN_SITE' | 'DANGER_ZONE' | 'REST_AREA';
+export type ZoneType = 'MAIN_SITE' | 'DANGER_ZONE' | 'REST_AREA' | 'POLYLINE';
 
 export interface SiteZone {
   id?: string;
@@ -121,6 +132,16 @@ const ZONE_STYLE_CONFIG: Record<ZoneType, {
     label: 'Dinlenme Alanı (Yeşil)',
     badgeBg: 'bg-emerald-500/20',
     badgeText: 'text-emerald-400'
+  },
+  POLYLINE: {
+    color: '#f59e0b',
+    fillColor: '#f59e0b',
+    fillOpacity: 0.4,
+    weight: 4,
+    dashArray: '6, 6',
+    label: 'Yatay Hat / Boru / Yol',
+    badgeBg: 'bg-amber-500/20',
+    badgeText: 'text-amber-400'
   }
 };
 
@@ -168,6 +189,8 @@ function buildTurfPolygon(coords: { lat: number; lng: number }[]) {
 
 export default function SiteMasterPlan({ projectLat, projectLng, projectId, userLocation }: Props) {
   const [zones, setZones] = useState<SiteZone[]>([]);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLiveTracking, setIsLiveTracking] = useState(true);
@@ -178,6 +201,16 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawZoneType, setDrawZoneType] = useState<ZoneType>('MAIN_SITE');
   const [drawingPoints, setDrawingPoints] = useState<{ lat: number; lng: number }[]>([]);
+  const [drawShape, setDrawShape] = useState<'POLYGON' | 'POLYLINE'>('POLYGON');
+  const [popupState, setPopupState] = useState<{
+    isOpen: boolean;
+    type: IosPopupType;
+    markerData?: IosMarkerData | null;
+    zoneData?: IosZoneData | null;
+  }>({
+    isOpen: false,
+    type: "ZONE_POLYGON"
+  });
 
   // Modallar
   const [saveModalOpen, setSaveModalOpen] = useState(false);
@@ -264,18 +297,16 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
     useMapEvents({
       click(e) {
         if (!isDrawing) return;
-        // Eğer 3 veya daha fazla nokta varsa ve kullanıcı başlangıç noktasına yakın bir yere tıkladıysa şekli kapat
-        if (drawingPoints.length >= 3) {
+        if (drawShape === 'POLYGON' && drawingPoints.length >= 3) {
           const first = drawingPoints[0];
           const dLat = Math.abs(e.latlng.lat - first.lat);
           const dLng = Math.abs(e.latlng.lng - first.lng);
-          if (dLat < 0.00025 && dLng < 0.00025) {
+          if (dLat < 0.0003 && dLng < 0.0003) {
             setSaveModalOpen(true);
             return;
           }
         }
-        const newPoint = { lat: e.latlng.lat, lng: e.latlng.lng };
-        setDrawingPoints((prev) => [...prev, newPoint]);
+        setDrawingPoints((prev) => [...prev, { lat: e.latlng.lat, lng: e.latlng.lng }]);
       }
     });
     return null;
@@ -287,8 +318,9 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
       toast.error("Lütfen alan adını girin");
       return;
     }
-    if (drawingPoints.length < 3) {
-      toast.error("Poligon oluşturmak için en az 3 köşe noktası gereklidir");
+    const minPts = drawShape === 'POLYLINE' ? 2 : 3;
+    if (drawingPoints.length < minPts) {
+      toast.error(drawShape === 'POLYLINE' ? "Çizgi (Polyline) için en az 2 nokta gereklidir" : "Poligon oluşturmak için en az 3 köşe noktası gereklidir");
       return;
     }
 
@@ -300,8 +332,8 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
           projectId,
           name: modalForm.title,
           title: modalForm.title,
-          type: drawZoneType,
-          zoneType: drawZoneType,
+          type: drawShape === 'POLYLINE' ? 'POLYLINE' : drawZoneType,
+          zoneType: drawShape === 'POLYLINE' ? 'POLYLINE' : drawZoneType,
           coordinates: drawingPoints,
           polygonCoordinates: drawingPoints,
           supervisor: modalForm.supervisor || undefined
@@ -529,69 +561,67 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Çizim Başlat Butonu */}
+          {/* Çizim Başlat Butonları (ADIM 2: Poligon ve Yatay Proje Polyline) */}
           {!isDrawing ? (
-            <button
-              onClick={() => {
-                setIsDrawing(true);
-                setDrawingPoints([]);
-                toast("Poligon çizim modu devrede! Haritaya tıklayarak köşe noktaları ekleyin.", {
-                  icon: "✏️"
-                });
-              }}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-600/20 flex items-center gap-1.5 transition active:scale-95"
-            >
-              <span>✏️</span>
-              <span>Yeni Poligon Çiz</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  setIsDrawing(true);
+                  setDrawShape('POLYGON');
+                  setDrawingPoints([]);
+                  toast("Poligon çizim modu devrede! Haritaya tıklayarak köşe noktaları ekleyin.");
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-600/20 flex items-center gap-1.5 transition active:scale-95"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Poligon Çiz</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsDrawing(true);
+                  setDrawShape('POLYLINE');
+                  setDrawingPoints([]);
+                  toast("Yatay hat (Polyline) modu devrede! Otoyol, boru hattı veya tünel güzergahı çizin.");
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-600/20 flex items-center gap-1.5 transition active:scale-95"
+              >
+                <Spline className="w-3.5 h-3.5" />
+                <span>Hat (Polyline) Çiz</span>
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2 bg-slate-800/90 border border-cyan-500/40 rounded-xl p-1.5">
-              {/* Bölge Türü Seçimi */}
-              <div className="flex items-center gap-1">
-                {(Object.keys(ZONE_STYLE_CONFIG) as ZoneType[]).map((type) => {
-                  const cfg = ZONE_STYLE_CONFIG[type];
-                  const isActive = drawZoneType === type;
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => setDrawZoneType(type)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
-                        isActive
-                          ? 'bg-slate-700 text-white ring-1 ring-white/30 shadow'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <span className="mr-1" style={{ color: cfg.color }}>●</span>
-                      {type === 'MAIN_SITE' ? 'Ana Şantiye' : type === 'DANGER_ZONE' ? 'Kırmızı Alan' : 'Dinlenme'}
-                    </button>
-                  );
-                })}
-              </div>
+              <span className="text-cyan-400 font-bold px-1.5 text-xs flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                {drawShape === 'POLYGON' ? 'Poligon' : 'Polyline'} ({drawingPoints.length} nokta)
+              </span>
 
               {/* Geri Al */}
               <button
                 onClick={() => setDrawingPoints((pts) => pts.slice(0, -1))}
                 disabled={drawingPoints.length === 0}
-                className="px-2.5 py-1 bg-slate-700/80 hover:bg-slate-600 disabled:opacity-40 text-slate-200 text-xs rounded-lg transition"
+                className="px-2.5 py-1 bg-slate-700/80 hover:bg-slate-600 disabled:opacity-40 text-slate-200 text-xs rounded-lg transition flex items-center gap-1"
                 title="Son noktayı sil"
               >
-                ↩ Geri Al
+                <Undo className="w-3 h-3" />
+                <span>Geri</span>
               </button>
 
-              {/* Poligonu Tamamla */}
+              {/* Tamamla */}
               <button
                 onClick={() => {
-                  if (drawingPoints.length < 3) {
-                    toast.error("Poligon için en az 3 köşe noktası işaretlemelisiniz!");
+                  const minPoints = drawShape === 'POLYLINE' ? 2 : 3;
+                  if (drawingPoints.length < minPoints) {
+                    toast.error(drawShape === 'POLYLINE' ? "En az 2 nokta eklemelisiniz!" : "Poligon için en az 3 nokta gereklidir!");
                     return;
                   }
                   setSaveModalOpen(true);
                 }}
-                disabled={drawingPoints.length < 3}
-                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs rounded-lg transition shadow-md shadow-emerald-600/30 flex items-center gap-1"
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition shadow-md flex items-center gap-1"
               >
-                <span>✓</span>
-                <span>Tamamla ({drawingPoints.length})</span>
+                <Check className="w-3.5 h-3.5" />
+                <span>Tamamla</span>
               </button>
 
               {/* İptal */}
@@ -640,6 +670,17 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
 
       {/* Leaflet Map Body */}
       <div className="h-[550px] w-full rounded-xl overflow-hidden border border-slate-800 relative z-0">
+        <IosMapPopup
+          isOpen={popupState.isOpen}
+          onClose={() => setPopupState(prev => ({ ...prev, isOpen: false }))}
+          type={popupState.type}
+          markerData={popupState.markerData}
+          zoneData={popupState.zoneData}
+          onDeleteZone={(zoneId) => {
+            setDeleteModal({ isOpen: true, zoneId });
+            setPopupState(prev => ({ ...prev, isOpen: false }));
+          }}
+        />
         {loading ? (
           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-400">
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2" />
@@ -653,22 +694,69 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
             style={{ width: "100%", height: "100%" }}
             className={`w-full h-full ${isDrawing ? 'cursor-crosshair' : ''}`}
           >
-            {/* Google Hybrid / Satellite Map Tiles */}
-            <TileLayer
-              attribution="&copy; Google Maps"
-              maxNativeZoom={19}
-              maxZoom={22}
-              url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-            />
+            {/* Dynamic Theme Tiles: CartoDB Dark Matter for Dark Mode / CartoDB Positron for Light Mode */}
+            {isDark ? (
+              <TileLayer
+                key="carto-dark-matter-site"
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                subdomains="abcd"
+                maxZoom={20}
+              />
+            ) : (
+              <TileLayer
+                key="carto-positron-site"
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                subdomains="abcd"
+                maxZoom={20}
+              />
+            )}
 
             {/* Click Event Listener */}
             <MapDrawingHandler />
 
-            {/* 1. Kayıtlı Poligon Sanal Çitler (SiteZone Polygons) */}
+            {/* 1. Kayıtlı Poligon Sanal Çitler & Polyline Yatay Hatlar */}
             {zones.map((zone) => {
               const cfg = ZONE_STYLE_CONFIG[zone.zoneType] || ZONE_STYLE_CONFIG.MAIN_SITE;
+              const isPoly = zone.zoneType === 'POLYLINE';
 
-              // Eğer poligon koordinatları varsa Polygon çiz
+              if (isPoly && zone.polygonCoordinates && zone.polygonCoordinates.length >= 2) {
+                const positions: [number, number][] = zone.polygonCoordinates.map((p) => [p.lat, p.lng]);
+                return (
+                  <Polyline
+                    key={zone.id || Math.random()}
+                    positions={positions}
+                    pathOptions={{
+                      color: '#f59e0b',
+                      weight: 4.5,
+                      dashArray: '6, 6',
+                      interactive: !isDrawing
+                    }}
+                    eventHandlers={{
+                      click: (e) => {
+                        L.DomEvent.stopPropagation(e as any);
+                        if (!isDrawing) {
+                          setPopupState({
+                            isOpen: true,
+                            type: "POLYLINE",
+                            zoneData: {
+                              id: zone.id || "",
+                              title: zone.title,
+                              type: "POLYLINE",
+                              projectId,
+                              pointsCount: zone.polygonCoordinates?.length || 0,
+                              supervisor: zone.supervisor,
+                              isPolyline: true
+                            }
+                          });
+                        }
+                      }
+                    }}
+                  />
+                );
+              }
+
               if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
                 const positions: [number, number][] = zone.polygonCoordinates.map((p) => [p.lat, p.lng]);
                 return (
@@ -680,48 +768,30 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
                       fillColor: cfg.fillColor,
                       fillOpacity: cfg.fillOpacity,
                       weight: cfg.weight,
-                      dashArray: cfg.dashArray
+                      dashArray: cfg.dashArray,
+                      interactive: !isDrawing // ADIM 2 FIX: Alt katman pasifleştirildi, iç içe çizim serbest!
                     }}
-                  >
-                    <Popup>
-                      <div className="p-3 min-w-[210px] text-slate-800">
-                        <div className="flex items-center justify-between border-b pb-2 mb-2">
-                          <h4 className="font-bold text-sm text-slate-900">{zone.title}</h4>
-                          <span
-                            className="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
-                            style={{ backgroundColor: `${cfg.color}25`, color: cfg.color }}
-                          >
-                            {zone.zoneType}
-                          </span>
-                        </div>
-                        <div className="text-xs space-y-1 text-slate-600">
-                          <p>📐 <strong>Köşe Sayısı:</strong> {zone.polygonCoordinates.length} Nokta</p>
-                          {zone.supervisor && (
-                            <p>👤 <strong>Sorumlu Amir:</strong> {zone.supervisor}</p>
-                          )}
-                          <p className="text-[11px] text-slate-500 italic mt-1">
-                            {zone.zoneType === 'DANGER_ZONE'
-                              ? '⚠️ Baret takmayan personel girdiğinde anlık İSG alarmı tetiklenir.'
-                              : zone.zoneType === 'REST_AREA'
-                              ? '☕ Personel mola ve güvenli toplanma alanı.'
-                              : '🟦 Ana şantiye çevreleme çiti.'}
-                          </p>
-                        </div>
-                        {zone.id && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setDeleteModal({ isOpen: true, zoneId: zone.id! });
-                            }}
-                            className="mt-3 w-full py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-semibold transition"
-                          >
-                            Poligonu Sil
-                          </button>
-                        )}
-                      </div>
-                    </Popup>
-                  </LeafletPolygon>
+                    eventHandlers={{
+                      click: (e) => {
+                        L.DomEvent.stopPropagation(e as any);
+                        if (!isDrawing) {
+                          setPopupState({
+                            isOpen: true,
+                            type: "ZONE_POLYGON",
+                            zoneData: {
+                              id: zone.id || "",
+                              title: zone.title,
+                              type: zone.zoneType,
+                              projectId,
+                              pointsCount: zone.polygonCoordinates?.length || 0,
+                              supervisor: zone.supervisor,
+                              isPolyline: false
+                            }
+                          });
+                        }
+                      }
+                    }}
+                  />
                 );
               }
 
@@ -779,114 +849,43 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId, user
               </>
             )}
 
-            {/* 3. Canlı BLE Personel Radarı (İkonlar ve Pop-up Bilgi Kartları) */}
+            {/* 3. Canlı BLE Personel Radarı (iOS Rol Bazlı İşaretçiler & iOS Popup) */}
             {isLiveTracking &&
               workers.map((worker) => {
-                const isDanger = worker.inDanger;
-                const markerColor = isDanger
-                  ? '#ef4444'
-                  : !worker.hasHelmet
-                  ? '#f59e0b'
-                  : '#3b82f6';
+                const roleType = resolveMarkerRole(worker);
+                let markerIcon = createEngineerDivIcon(worker.name);
+                if (roleType === 'DRIVER') markerIcon = createDriverDivIcon(worker.name);
+                else if (roleType === 'STORAGE') markerIcon = createStorageDivIcon(worker.name);
+                else if (roleType === 'ISG') markerIcon = createIsgDivIcon(worker.name);
 
                 return (
-                  <CircleMarker
+                  <Marker
                     key={worker.id}
-                    center={[worker.lat, worker.lng]}
-                    radius={isDanger ? 11 : 7}
-                    interactive={true}
-                    pathOptions={{
-                      color: markerColor,
-                      fillColor: markerColor,
-                      fillOpacity: 0.95,
-                      weight: isDanger ? 3 : 2,
-                      className: isDanger ? 'animate-ping duration-1000' : 'transition-all duration-700'
+                    position={[worker.lat, worker.lng]}
+                    icon={markerIcon}
+                    eventHandlers={{
+                      click: () => {
+                        setPopupState({
+                          isOpen: true,
+                          type: "WORKER",
+                          markerData: {
+                            id: worker.id,
+                            name: worker.name,
+                            roleType,
+                            roleTitle: worker.position,
+                            department: worker.department,
+                            latitude: worker.lat,
+                            longitude: worker.lng,
+                            pulse: worker.pulse,
+                            battery: worker.battery,
+                            hasHelmet: worker.hasHelmet,
+                            inDanger: worker.inDanger,
+                            zoneName: worker.currentZoneName
+                          }
+                        });
+                      }
                     }}
-                  >
-                    <Popup className="ble-worker-popup">
-                      <div className="p-3.5 min-w-[240px] text-slate-800">
-                        {/* Başlık & İsim */}
-                        <div className="flex items-start justify-between border-b pb-2 mb-2">
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm">👷</span>
-                              <h4 className="font-bold text-slate-900 text-sm">{worker.name}</h4>
-                            </div>
-                            <p className="text-[11px] text-slate-500">{worker.position} - {worker.department}</p>
-                          </div>
-                          {isDanger && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-300 animate-pulse">
-                              TEHLİKE
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Kritik İSG & Poligon Durum Rozeti */}
-                        <div className="mb-2.5">
-                          <div
-                            className={`p-2 rounded-lg text-xs font-semibold flex items-center justify-between ${
-                              isDanger
-                                ? 'bg-red-50 text-red-800 border border-red-200'
-                                : 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            <span>📍 Konum:</span>
-                            <span className="truncate max-w-[150px] font-mono text-[11px]">
-                              {worker.currentZoneName}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Canlı Telemetri: Nabız, Pil, Baret */}
-                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                          {/* Nabız (Pulse) */}
-                          <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                            <span className="text-slate-500 text-[10px] block">❤️ Nabız</span>
-                            <span className={`font-bold font-mono ${worker.pulse > 105 ? 'text-red-600' : 'text-slate-800'}`}>
-                              {worker.pulse} bpm
-                            </span>
-                          </div>
-
-                          {/* BLE Pil (Battery) */}
-                          <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                            <span className="text-slate-500 text-[10px] block">🔋 BLE Pil</span>
-                            <span className={`font-bold font-mono ${worker.battery < 25 ? 'text-red-500' : 'text-emerald-700'}`}>
-                              %{worker.battery}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Baret / KKD Onay Durumu */}
-                        <div className="mb-3">
-                          <div
-                            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between ${
-                              worker.hasHelmet
-                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                : 'bg-amber-50 text-amber-900 border border-amber-300 font-bold'
-                            }`}
-                          >
-                            <span className="flex items-center gap-1">
-                              <span>🪖</span>
-                              <span>Baret / KKD:</span>
-                            </span>
-                            <span>{worker.hasHelmet ? 'Onaylı' : '⚠️ SİNYAL YOK!'}</span>
-                          </div>
-                        </div>
-
-                        {/* Detay Linki */}
-                        <div className="flex gap-2">
-                          <a
-                            href={`/admin/personnel`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded text-center transition"
-                          >
-                            Personel Kartı
-                          </a>
-                        </div>
-                      </div>
-                    </Popup>
-                  </CircleMarker>
+                  />
                 );
               })}
 

@@ -2,14 +2,38 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * BLE Equipment & Personnel Tracking Map with Polygon Geofencing & Turf.js Engine
+ * Nexa ERP - BLE Equipment & Personnel Tracking Map with Nested Polygons, Polyline Drawing, Role Markers & iOS Popup
  */
 
-import React, { useEffect, useMemo, useState } from "react"
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon as LeafletPolygon, CircleMarker, useMap } from "react-leaflet"
+import React, { useEffect, useMemo, useState, useRef } from "react"
+import { useTheme } from "next-themes"
+import { 
+  MapContainer, 
+  TileLayer, 
+  Marker, 
+  Polygon as LeafletPolygon, 
+  Polyline, 
+  CircleMarker, 
+  useMap,
+  useMapEvents
+} from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import * as turf from "@turf/turf"
+import IosMapPopup, { 
+  IosPopupType, 
+  IosProjectData, 
+  IosMarkerData, 
+  IosZoneData 
+} from "@/components/map/IosMapPopup"
+import {
+  createEngineerDivIcon,
+  createDriverDivIcon,
+  createStorageDivIcon,
+  createIsgDivIcon,
+  createProjectPinIcon,
+  resolveMarkerRole
+} from "@/components/map/mapIcons"
 
 export interface BleEquipment {
   id: string
@@ -42,9 +66,10 @@ export interface BleEquipment {
 export interface BleSiteZone {
   id: string
   title: string
-  zoneType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA"
+  zoneType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | "POLYLINE" | string
   polygonCoordinates?: { lat: number; lng: number }[]
   supervisor?: string
+  projectId?: string
 }
 
 export interface LiveBleWorker {
@@ -52,14 +77,15 @@ export interface LiveBleWorker {
   name: string
   department: string
   position: string
+  role?: string
   latitude: number
   longitude: number
-  pulse: number // bpm
-  battery: number // %
+  pulse: number
+  battery: number
   hasHelmet: boolean
   inDanger: boolean
   currentZoneName: string
-  currentZoneType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | null
+  currentZoneType: string | null
 }
 
 export interface ActiveRadarPersonnel {
@@ -77,7 +103,7 @@ export interface ActiveRadarPersonnel {
   hasHelmet?: boolean
   inDanger?: boolean
   currentZoneName?: string
-  currentZoneType?: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | null
+  currentZoneType?: string | null
 }
 
 export interface GeofenceZoneItem {
@@ -85,11 +111,25 @@ export interface GeofenceZoneItem {
   name?: string
   title?: string
   type?: string
-  zoneType?: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | string
+  zoneType?: string
   coordinates?: any
   polygonCoordinates?: { lat: number; lng: number }[]
   supervisor?: string
   projectId?: string
+}
+
+export interface ProjectItem {
+  id: string
+  title?: string | null
+  name?: string | null
+  city?: string | null
+  district?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  progress?: number
+  healthScore?: number
+  activeWorkers?: number
+  totalBlocks?: number
 }
 
 export interface BleEquipmentMapProps {
@@ -99,13 +139,23 @@ export interface BleEquipmentMapProps {
   siteZones?: BleSiteZone[]
   zones?: GeofenceZoneItem[]
   activeRadars?: ActiveRadarPersonnel[]
+  projects?: ProjectItem[]
   highlightedId?: string | null
   searchQuery?: string
   onSelectEquipment?: (equipment: BleEquipment) => void
+  onSelectProject?: (project: ProjectItem) => void
+  onDeleteZone?: (zoneId: string) => void
   selectedProjectName?: string
+  // Drawing mode props
+  isDrawing?: boolean
+  drawShape?: "POLYGON" | "POLYLINE"
+  drawZoneType?: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA"
+  drawingPoints?: { lat: number; lng: number }[]
+  onAddDrawingPoint?: (pt: { lat: number; lng: number }) => void
+  onFinishDrawing?: () => void
 }
 
-const ZONE_COLORS = {
+const ZONE_COLORS: Record<string, { stroke: string; fill: string; opacity: number; title: string }> = {
   MAIN_SITE: {
     stroke: '#2563eb',
     fill: '#3b82f6',
@@ -123,6 +173,12 @@ const ZONE_COLORS = {
     fill: '#10b981',
     opacity: 0.25,
     title: 'Dinlenme / Toplanma Alanı'
+  },
+  POLYLINE: {
+    stroke: '#f59e0b',
+    fill: '#f59e0b',
+    opacity: 0.6,
+    title: 'Yatay Hat (Boru/Yol)'
   }
 }
 
@@ -142,18 +198,49 @@ function MapViewController({
     if (targetPoint) {
       map.flyTo(targetPoint, 17, {
         animate: true,
-        duration: 1.2,
+        duration: 1.5,
         easeLinearity: 0.25
       })
-    } else if (center) {
+    } else if (center && center[0] && center[1]) {
       map.flyTo(center, zoom, {
         animate: true,
-        duration: 1.5,
+        duration: 1.8,
         easeLinearity: 0.25
       })
     }
   }, [map, center, zoom, targetPoint])
 
+  return null
+}
+
+// Drawing Click Event Handler
+function MapDrawingEvents({
+  isDrawing,
+  onAddPoint,
+  onClosePolygon,
+  drawingPoints
+}: {
+  isDrawing: boolean
+  onAddPoint: (pt: { lat: number; lng: number }) => void
+  onClosePolygon: () => void
+  drawingPoints: { lat: number; lng: number }[]
+}) {
+  useMapEvents({
+    click(e) {
+      if (!isDrawing) return
+      // If closing polygon
+      if (drawingPoints.length >= 3) {
+        const first = drawingPoints[0]
+        const dLat = Math.abs(e.latlng.lat - first.lat)
+        const dLng = Math.abs(e.latlng.lng - first.lng)
+        if (dLat < 0.0003 && dLng < 0.0003) {
+          onClosePolygon()
+          return
+        }
+      }
+      onAddPoint({ lat: e.latlng.lat, lng: e.latlng.lng })
+    }
+  })
   return null
 }
 
@@ -177,115 +264,6 @@ export function formatTimeAgo(dateString?: string | null): string {
   }
 }
 
-// Create custom animated divIcons
-function createBlePinIcon(
-  status: string,
-  isHighlighted: boolean,
-  isSearched: boolean,
-  name: string
-) {
-  const isLost = status.toUpperCase() === "KAYIP" || status.toUpperCase() === "LOST"
-
-  if (isHighlighted || isSearched) {
-    return L.divIcon({
-      className: "custom-ble-pin",
-      iconSize: [44, 44],
-      iconAnchor: [22, 22],
-      popupAnchor: [0, -24],
-      html: `
-        <div style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;">
-          <div style="position: absolute; inset: -8px; border-radius: 9999px; background: rgba(6, 182, 212, 0.4); filter: blur(6px); animation: pulse 1.5s infinite;"></div>
-          <div style="position: absolute; width: 40px; height: 40px; border-radius: 9999px; border: 2px solid #06b6d4; background: rgba(8, 145, 178, 0.25); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-          <div style="position: relative; width: 32px; height: 32px; border-radius: 9999px; background: #0891b2; border: 2.5px solid #22d3ee; box-shadow: 0 0 16px #06b6d4, 0 0 30px #0891b2; display: flex; align-items: center; justify-content: center; color: white;">
-            <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <span style="position: absolute; bottom: -20px; font-size: 10px; font-weight: 700; color: #22d3ee; text-shadow: 0 0 8px #0891b2; white-space: nowrap; background: rgba(15, 23, 42, 0.9); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(6, 182, 212, 0.4);">${name.slice(0, 16)}</span>
-        </div>
-      `
-    })
-  }
-
-  if (isLost) {
-    return L.divIcon({
-      className: "custom-ble-pin",
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
-      popupAnchor: [0, -20],
-      html: `
-        <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-          <div style="position: absolute; width: 36px; height: 36px; border-radius: 9999px; background: rgba(239, 68, 68, 0.2); animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-          <div style="position: relative; width: 28px; height: 28px; border-radius: 9999px; background: #dc2626; border: 2px solid #fca5a5; box-shadow: 0 0 12px rgba(239, 68, 68, 0.8); display: flex; align-items: center; justify-content: center; color: white;">
-            <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-        </div>
-      `
-    })
-  }
-
-  return L.divIcon({
-    className: "custom-ble-pin",
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -20],
-    html: `
-      <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-        <div style="position: absolute; width: 32px; height: 32px; border-radius: 9999px; background: rgba(16, 185, 129, 0.25); animation: pulse 2s infinite;"></div>
-        <div style="position: relative; width: 26px; height: 26px; border-radius: 9999px; background: #059669; border: 2px solid #6ee7b7; box-shadow: 0 0 10px rgba(16, 185, 129, 0.7); display: flex; align-items: center; justify-content: center; color: white;">
-          <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
-          </svg>
-        </div>
-      </div>
-    `
-  })
-}
-
-// Center point marker for the project hub
-function createProjectHubIcon(projectName: string) {
-  return L.divIcon({
-    className: "custom-project-pin",
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -22],
-    html: `
-      <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-        <div style="position: absolute; inset: -4px; border-radius: 12px; background: rgba(59, 130, 246, 0.3); filter: blur(4px);"></div>
-        <div style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #1e40af, #3b82f6); border: 2px solid #93c5fd; box-shadow: 0 0 16px rgba(59, 130, 246, 0.8); display: flex; align-items: center; justify-content: center; color: white;">
-          <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-        </div>
-      </div>
-    `
-  })
-}
-
-// Worker DivIcon (Realistic Hardhat BLE Badge)
-function createWorkerBleIcon(inDanger: boolean, hasHelmet: boolean, name: string) {
-  const bg = inDanger ? "#dc2626" : hasHelmet ? "#0284c7" : "#ea580c"
-  const ring = inDanger ? "#f87171" : hasHelmet ? "#38bdf8" : "#fb923c"
-
-  return L.divIcon({
-    className: "custom-worker-pin",
-    iconSize: [34, 34],
-    iconAnchor: [17, 17],
-    popupAnchor: [0, -18],
-    html: `
-      <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
-        ${inDanger ? `<div style="position: absolute; width: 34px; height: 34px; border-radius: 9999px; background: rgba(239, 68, 68, 0.4); animation: ping 1.5s infinite;"></div>` : ''}
-        <div style="position: relative; width: 26px; height: 26px; border-radius: 9999px; background: ${bg}; border: 2px solid ${ring}; box-shadow: 0 0 10px ${bg}; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px;">
-          👷
-        </div>
-        <span style="position: absolute; bottom: -18px; font-size: 9px; font-weight: 700; color: white; white-space: nowrap; background: rgba(15, 23, 42, 0.9); padding: 0.5px 5px; border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.2);">${name.split(' ')[0]}</span>
-      </div>
-    `
-  })
-}
-
 // Helper: Build closed GeoJSON Polygon from array
 function toTurfPolygon(coords: { lat: number; lng: number }[]) {
   if (!coords || coords.length < 3) return null
@@ -305,20 +283,43 @@ function toTurfPolygon(coords: { lat: number; lng: number }[]) {
 
 export default function BleEquipmentMap({
   center,
-  zoom = 16,
+  zoom = 5,
   equipments,
   siteZones = [],
   zones = [],
   activeRadars = [],
+  projects = [],
   highlightedId,
   searchQuery = "",
   onSelectEquipment,
-  selectedProjectName = "Şantiye Sahası"
+  onSelectProject,
+  onDeleteZone,
+  selectedProjectName = "Genel Şantiye Haritası",
+  isDrawing = false,
+  drawShape = "POLYGON",
+  drawZoneType = "MAIN_SITE",
+  drawingPoints = [],
+  onAddDrawingPoint,
+  onFinishDrawing
 }: BleEquipmentMapProps) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
   const isSearchActive = searchQuery.trim().length > 0
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
-  // Unified Poligon Sanal Çitler (SiteZone + Prisma GeofenceZone)
+  // iOS Style Overlay Popup State (No more Leaflet default balloon popups!)
+  const [popupState, setPopupState] = useState<{
+    isOpen: boolean
+    type: IosPopupType
+    projectData?: IosProjectData | null
+    markerData?: IosMarkerData | null
+    zoneData?: IosZoneData | null
+  }>({
+    isOpen: false,
+    type: "PROJECT"
+  })
+
+  // Unified Poligon Sanal Çitler & Polylines
   const allZones = useMemo<BleSiteZone[]>(() => {
     const res: BleSiteZone[] = []
     const seen = new Set<string>()
@@ -340,23 +341,46 @@ export default function BleEquipmentMap({
           const raw = z.polygonCoordinates || z.coordinates
           if (typeof raw === "string") {
             try {
-              coords = JSON.parse(raw)
+              const parsed = JSON.parse(raw)
+              if (Array.isArray(parsed)) {
+                coords = parsed
+              } else if (parsed && parsed.type === "Feature" && parsed.geometry?.coordinates) {
+                const gCoords = parsed.geometry.coordinates
+                if (parsed.geometry.type === "Polygon") {
+                  coords = gCoords[0]?.map((c: any) => ({ lat: c[1], lng: c[0] }))
+                } else if (parsed.geometry.type === "LineString") {
+                  coords = gCoords?.map((c: any) => ({ lat: c[1], lng: c[0] }))
+                }
+              }
             } catch {}
           } else if (Array.isArray(raw)) {
             coords = raw
+          } else if (raw && typeof raw === "object") {
+            if (raw.type === "Feature" && raw.geometry?.coordinates) {
+              const gCoords = raw.geometry.coordinates
+              if (raw.geometry.type === "Polygon") {
+                coords = gCoords[0]?.map((c: any) => ({ lat: c[1], lng: c[0] }))
+              } else if (raw.geometry.type === "LineString") {
+                coords = gCoords?.map((c: any) => ({ lat: c[1], lng: c[0] }))
+              }
+            } else if (raw.coordinates && Array.isArray(raw.coordinates)) {
+              coords = raw.coordinates
+            }
           }
 
-          let zType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" = "MAIN_SITE"
-          const rawType = (z.zoneType || z.type || "").toUpperCase()
-          if (rawType.includes("DANGER") || rawType.includes("RISK")) zType = "DANGER_ZONE"
-          else if (rawType.includes("REST")) zType = "REST_AREA"
+          let zType = (z.zoneType || z.type || "MAIN_SITE").toUpperCase()
+          if (zType.includes("POLYLINE") || zType.includes("LINE")) zType = "POLYLINE"
+          else if (zType.includes("DANGER") || zType.includes("RISK")) zType = "DANGER_ZONE"
+          else if (zType.includes("REST")) zType = "REST_AREA"
+          else zType = "MAIN_SITE"
 
           res.push({
             id: z.id,
-            title: z.title || z.name || "Sanal Çit",
+            title: z.title || z.name || (zType === "POLYLINE" ? "Yatay Hat" : "Sanal Çit"),
             zoneType: zType,
             polygonCoordinates: coords,
-            supervisor: z.supervisor
+            supervisor: z.supervisor,
+            projectId: z.projectId
           })
         }
       }
@@ -365,10 +389,10 @@ export default function BleEquipmentMap({
     return res
   }, [siteZones, zones])
 
-  // Live BLE Workers State (100% Prisma DB - Sıfır Mock Veri)
+  // Live BLE Workers State
   const [liveWorkers, setLiveWorkers] = useState<LiveBleWorker[]>([])
 
-  // Initialize and stream real workers from activeRadars
+  // Initialize real workers from activeRadars
   useEffect(() => {
     if (!activeRadars || activeRadars.length === 0) {
       setLiveWorkers([])
@@ -385,12 +409,12 @@ export default function BleEquipmentMap({
         const lat = r.lastKnownLat!
         const lng = r.lastKnownLng!
 
-        // Turf calculation for initial zone detection
+        // Turf calculation for zone detection
         const pt = turf.point([lng, lat])
         let detectedZone: BleSiteZone | null = null
 
         for (const zone of allZones) {
-          if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
+          if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3 && zone.zoneType !== "POLYLINE") {
             const poly = toTurfPolygon(zone.polygonCoordinates)
             if (poly && turf.booleanPointInPolygon(pt, poly)) {
               detectedZone = zone
@@ -404,6 +428,7 @@ export default function BleEquipmentMap({
           name: displayName,
           department: r.department || "Saha Operasyon",
           position: r.position || r.role || "Saha Personeli",
+          role: r.role,
           latitude: lat,
           longitude: lng,
           pulse: r.pulse ?? 76,
@@ -418,23 +443,22 @@ export default function BleEquipmentMap({
     setLiveWorkers(initialWorkers)
   }, [activeRadars, allZones])
 
-  // Canlı BLE telemetri ve otonom Turf.js point-in-polygon motoru (Yalnızca gerçek personeller için)
+  // Pulse & telemetry timer with proper unmount cleanup
   useEffect(() => {
     if (liveWorkers.length === 0) return
 
     const interval = setInterval(() => {
       setLiveWorkers((prev) =>
         prev.map((w) => {
-          const newLat = w.latitude + (Math.random() - 0.5) * 0.00004
-          const newLng = w.longitude + (Math.random() - 0.5) * 0.00004
+          const newLat = w.latitude + (Math.random() - 0.5) * 0.00003
+          const newLng = w.longitude + (Math.random() - 0.5) * 0.00003
           const newPulse = Math.max(68, Math.min(125, w.pulse + (Math.random() > 0.5 ? 1 : -1)))
 
-          // Turf calculation
           const pt = turf.point([newLng, newLat])
           let detectedZone: BleSiteZone | null = null
 
           for (const zone of allZones) {
-            if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
+            if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3 && zone.zoneType !== "POLYLINE") {
               const poly = toTurfPolygon(zone.polygonCoordinates)
               if (poly && turf.booleanPointInPolygon(pt, poly)) {
                 detectedZone = zone
@@ -443,27 +467,23 @@ export default function BleEquipmentMap({
             }
           }
 
-          const inDanger = detectedZone?.zoneType === "DANGER_ZONE"
-          const zoneName = detectedZone ? detectedZone.title : "Genel Şantiye Sahası"
-          const zoneType = detectedZone ? detectedZone.zoneType : null
-
           return {
             ...w,
             latitude: newLat,
             longitude: newLng,
             pulse: newPulse,
-            inDanger,
-            currentZoneName: zoneName,
-            currentZoneType: zoneType
+            inDanger: detectedZone?.zoneType === "DANGER_ZONE",
+            currentZoneName: detectedZone ? detectedZone.title : "Genel Şantiye Sahası",
+            currentZoneType: detectedZone ? detectedZone.zoneType : null
           }
         })
       )
-    }, 3500)
+    }, 4000)
 
     return () => clearInterval(interval)
   }, [liveWorkers.length, allZones])
 
-  // Filter equipments: if search query exists, only show matching equipments!
+  // Filter equipments
   const visibleEquipments = useMemo(() => {
     if (!isSearchActive) return equipments
 
@@ -476,7 +496,7 @@ export default function BleEquipmentMap({
     })
   }, [equipments, isSearchActive, normalizedQuery])
 
-  // Focused target point if one equipment is highlighted or first search result
+  // Focused target point
   const targetPoint = useMemo<[number, number] | null>(() => {
     if (highlightedId) {
       const found = equipments.find((e) => e.id === highlightedId)
@@ -490,57 +510,69 @@ export default function BleEquipmentMap({
     return null
   }, [highlightedId, equipments, isSearchActive, visibleEquipments])
 
+  // Role icon resolver
+  const getMarkerIcon = (item: { role?: string; position?: string; department?: string; category?: string; type?: string; name: string }) => {
+    const role = resolveMarkerRole(item)
+    switch (role) {
+      case "ENGINEER":
+        return createEngineerDivIcon(item.name)
+      case "DRIVER":
+        return createDriverDivIcon(item.name)
+      case "STORAGE":
+        return createStorageDivIcon(item.name)
+      case "ISG":
+        return createIsgDivIcon(item.name)
+      default:
+        return createEngineerDivIcon(item.name)
+    }
+  }
+
   return (
     <div className="relative w-full h-full bg-slate-950 overflow-hidden rounded-xl border border-slate-800 z-0">
-      {/* Global CSS for Leaflet Popups in Dark Mode */}
-      <style jsx global>{`
-        .leaflet-popup-content-wrapper {
-          background: rgba(15, 23, 42, 0.95) !important;
-          backdrop-filter: blur(12px) !important;
-          border: 1px solid rgba(51, 65, 85, 0.8) !important;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 20px rgba(6, 182, 212, 0.15) !important;
-          border-radius: 14px !important;
-          color: #f1f5f9 !important;
-          padding: 0 !important;
-        }
-        .leaflet-popup-content {
-          margin: 0 !important;
-          line-height: 1.4 !important;
-        }
-        .leaflet-popup-tip {
-          background: rgba(15, 23, 42, 0.95) !important;
-          border: 1px solid rgba(51, 65, 85, 0.8) !important;
-        }
-        .leaflet-container {
-          background: #090d16 !important;
-          font-family: inherit !important;
-        }
-        .dark-map-tiles {
-          filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%) !important;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.15); }
-        }
-      `}</style>
+      {/* iOS Frosted Glass Popup Overlay */}
+      <IosMapPopup
+        isOpen={popupState.isOpen}
+        onClose={() => setPopupState((prev) => ({ ...prev, isOpen: false }))}
+        type={popupState.type}
+        projectData={popupState.projectData}
+        markerData={popupState.markerData}
+        zoneData={popupState.zoneData}
+        onFlyTo={(coords) => {
+          if (onSelectProject && popupState.projectData) {
+            onSelectProject(popupState.projectData as any)
+          }
+        }}
+        onDeleteZone={onDeleteZone}
+      />
 
       <MapContainer
         center={center}
         zoom={zoom}
         maxZoom={22}
         style={{ height: "100%", width: "100%" }}
-        className="z-0 h-full w-full"
+        className={`z-0 h-full w-full ${isDrawing ? "cursor-crosshair" : ""}`}
         scrollWheelZoom={true}
       >
-        {/* Esri World Imagery (Yüksek Çözünürlüklü Uydu Haritası - 18 Max Native Zoom, 22 Dijital Zoom) */}
-        <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          attribution='&copy; <a href="https://www.esri.com/">Esri</a>, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-          maxNativeZoom={18}
-          maxZoom={22}
-        />
+        {/* Dynamic Theme Tiles: CartoDB Dark Matter for Dark Mode / CartoDB Positron for Light Mode */}
+        {isDark ? (
+          <TileLayer
+            key="carto-dark-matter"
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            subdomains="abcd"
+            maxZoom={20}
+          />
+        ) : (
+          <TileLayer
+            key="carto-positron"
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            subdomains="abcd"
+            maxZoom={20}
+          />
+        )}
 
-        {/* Esri Hybrid Sokak, Sınır ve Yer İsimleri Şeffaf Katmanı */}
+        {/* Esri Hybrid Reference Overlay */}
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
           attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
@@ -551,11 +583,95 @@ export default function BleEquipmentMap({
         {/* Dynamic View Controller */}
         <MapViewController center={center} zoom={zoom} targetPoint={targetPoint} />
 
-        {/* 1. Poligon Sanal Çitler (Polygon Geofences per prompt specifications) */}
+        {/* Drawing Events Listener */}
+        {isDrawing && onAddDrawingPoint && (
+          <MapDrawingEvents
+            isDrawing={isDrawing}
+            onAddPoint={onAddDrawingPoint}
+            onClosePolygon={() => {
+              if (onFinishDrawing) onFinishDrawing()
+            }}
+            drawingPoints={drawingPoints}
+          />
+        )}
+
+        {/* 1. All Projects Markers (Türkiye / Bölge Geneli Harita Görünümü) */}
+        {projects.map((proj) => {
+          if (!proj.latitude || !proj.longitude) return null
+          return (
+            <Marker
+              key={proj.id}
+              position={[proj.latitude, proj.longitude]}
+              icon={createProjectPinIcon(proj.title || proj.name || "Şantiye")}
+              eventHandlers={{
+                click: () => {
+                  setPopupState({
+                    isOpen: true,
+                    type: "PROJECT",
+                    projectData: {
+                      id: proj.id,
+                      title: proj.title || proj.name || "Şantiye",
+                      name: proj.name || proj.title,
+                      city: proj.city,
+                      district: proj.district,
+                      activeWorkers: proj.activeWorkers,
+                      totalBlocks: proj.totalBlocks,
+                      healthScore: proj.healthScore,
+                      progress: proj.progress,
+                      latitude: proj.latitude,
+                      longitude: proj.longitude
+                    }
+                  })
+                  if (onSelectProject) onSelectProject(proj)
+                }
+              }}
+            />
+          )
+        })}
+
+        {/* 2. Poligon Sanal Çitler & Polyline Yatay Hatlar */}
         {allZones.map((zone) => {
+          if (!zone.polygonCoordinates || zone.polygonCoordinates.length < 2) return null
+          const isPoly = zone.zoneType === "POLYLINE"
           const cfg = ZONE_COLORS[zone.zoneType] || ZONE_COLORS.MAIN_SITE
-          if (zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
-            const positions: [number, number][] = zone.polygonCoordinates.map((c) => [c.lat, c.lng])
+          const positions: [number, number][] = zone.polygonCoordinates.map((c) => [c.lat, c.lng])
+
+          // ADIM 2 FIX: When isDrawing is true, interactive is set to false so clicking inside an existing polygon passes to the map drawer!
+          if (isPoly) {
+            return (
+              <Polyline
+                key={zone.id}
+                positions={positions}
+                pathOptions={{
+                  color: "#f59e0b",
+                  weight: 4.5,
+                  dashArray: "6, 6",
+                  interactive: !isDrawing
+                }}
+                eventHandlers={{
+                  click: (e) => {
+                    L.DomEvent.stopPropagation(e as any)
+                    if (isDrawing) return
+                    setPopupState({
+                      isOpen: true,
+                      type: "POLYLINE",
+                      zoneData: {
+                        id: zone.id,
+                        title: zone.title,
+                        type: "POLYLINE",
+                        projectId: zone.projectId,
+                        pointsCount: zone.polygonCoordinates?.length || 0,
+                        supervisor: zone.supervisor,
+                        isPolyline: true
+                      }
+                    })
+                  }
+                }}
+              />
+            )
+          }
+
+          if (zone.polygonCoordinates.length >= 3) {
             return (
               <LeafletPolygon
                 key={zone.id}
@@ -564,277 +680,146 @@ export default function BleEquipmentMap({
                   color: cfg.stroke,
                   fillColor: cfg.fill,
                   fillOpacity: cfg.opacity,
-                  weight: 2
+                  weight: 2,
+                  interactive: !isDrawing
                 }}
-              >
-                <Popup>
-                  <div className="p-3 text-white min-w-[200px]">
-                    <div className="flex items-center justify-between border-b border-slate-700/80 pb-1.5 mb-2">
-                      <h4 className="font-bold text-sm text-cyan-300">{zone.title}</h4>
-                      <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-slate-800 text-slate-300">
-                        {zone.zoneType}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300">
-                      Köşe Noktaları: {zone.polygonCoordinates.length} Nokta
-                    </p>
-                    {zone.supervisor && (
-                      <p className="text-xs text-slate-400 mt-1">
-                        Sorumlu: {zone.supervisor}
-                      </p>
-                    )}
-                  </div>
-                </Popup>
-              </LeafletPolygon>
+                eventHandlers={{
+                  click: (e) => {
+                    L.DomEvent.stopPropagation(e as any)
+                    if (isDrawing) return
+                    setPopupState({
+                      isOpen: true,
+                      type: "ZONE_POLYGON",
+                      zoneData: {
+                        id: zone.id,
+                        title: zone.title,
+                        type: zone.zoneType,
+                        projectId: zone.projectId,
+                        pointsCount: zone.polygonCoordinates?.length || 0,
+                        supervisor: zone.supervisor,
+                        isPolyline: false
+                      }
+                    })
+                  }
+                }}
+              />
             )
           }
+
           return null
         })}
 
-        {/* 2. Project Center Hub */}
-        {center && center[0] && center[1] && center[0] !== 0 && (
-          <Marker position={center} icon={createProjectHubIcon(selectedProjectName)}>
-            <Popup>
-              <div className="p-3.5 min-w-[220px]">
-              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-700/60">
-                <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
-                  GPS
-                </div>
-                <div>
-                  <h4 className="font-semibold text-white text-sm leading-tight">
-                    {selectedProjectName}
-                  </h4>
-                  <p className="text-xs text-blue-400">Şantiye Merkez Noktası</p>
-                </div>
-              </div>
-              <div className="text-xs text-slate-300 space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Enlem:</span>
-                  <span className="font-mono text-slate-200">{center[0].toFixed(5)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Boylam:</span>
-                  <span className="font-mono text-slate-200">{center[1].toFixed(5)}</span>
-                </div>
-              </div>
-            </div>
-          </Popup>
-        </Marker>
-        )}
-
-        {/* 3. Live Streaming BLE Personnel (Workers) */}
+        {/* 3. Canlı BLE Personeller (Mühendis, Şoför, İSG, İşçi) */}
         {liveWorkers.map((worker) => {
-          const workerIcon = createWorkerBleIcon(worker.inDanger, worker.hasHelmet, worker.name)
+          const roleType = resolveMarkerRole(worker)
+          const markerIcon = getMarkerIcon(worker)
+
           return (
             <Marker
               key={worker.id}
               position={[worker.latitude, worker.longitude]}
-              icon={workerIcon}
-            >
-              <Popup>
-                <div className="p-4 min-w-[250px] max-w-[300px]">
-                  {/* Header */}
-                  <div className="flex items-start justify-between border-b border-slate-800 pb-2 mb-2">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">👷</span>
-                        <h4 className="font-bold text-white text-sm leading-tight">{worker.name}</h4>
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {worker.position} - {worker.department}
-                      </p>
-                    </div>
-                    {worker.inDanger ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse">
-                        TEHLİKE
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
-                        GÜVENLİ
-                      </span>
-                    )}
-                  </div>
-
-                  {/* O an içinde bulunduğu Poligon Sanal Çit */}
-                  <div className="mb-2.5">
-                    <div
-                      className={`p-2 rounded-lg text-xs font-semibold flex items-center justify-between border ${
-                        worker.inDanger
-                          ? "bg-red-950/40 border-red-500/40 text-red-300"
-                          : "bg-slate-900 border-slate-800 text-slate-200"
-                      }`}
-                    >
-                      <span className="text-slate-400">📍 Bulunduğu Alan:</span>
-                      <span className="font-mono truncate max-w-[140px] text-cyan-300">
-                        {worker.currentZoneName}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Nabız & BLE Pil Telemetrisi */}
-                  <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
-                    <div className="bg-slate-900/90 border border-slate-800 p-2 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block">❤️ Nabız:</span>
-                      <span className={`font-mono font-bold ${worker.pulse > 105 ? 'text-red-400' : 'text-slate-200'}`}>
-                        {worker.pulse} bpm
-                      </span>
-                    </div>
-                    <div className="bg-slate-900/90 border border-slate-800 p-2 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block">🔋 BLE Pil:</span>
-                      <span className="font-mono font-bold text-emerald-400">
-                        %{worker.battery}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Baret & KKD Durumu */}
-                  <div className="mb-3">
-                    <div
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between border ${
-                        worker.hasHelmet
-                          ? "bg-emerald-950/30 border-emerald-500/30 text-emerald-300"
-                          : "bg-amber-950/30 border-amber-500/40 text-amber-300 font-bold"
-                      }`}
-                    >
-                      <span>🪖 Baret Sinyali:</span>
-                      <span>{worker.hasHelmet ? "Onaylı" : "⚠️ BARET YOK"}</span>
-                    </div>
-                  </div>
-
-                  {/* Action */}
-                  <a
-                    href="/admin/personnel"
-                    className="block w-full py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white text-xs font-semibold rounded text-center transition"
-                  >
-                    Personel Detayına Git
-                  </a>
-                </div>
-              </Popup>
-            </Marker>
+              icon={markerIcon}
+              eventHandlers={{
+                click: () => {
+                  setPopupState({
+                    isOpen: true,
+                    type: "WORKER",
+                    markerData: {
+                      id: worker.id,
+                      name: worker.name,
+                      roleType,
+                      roleTitle: worker.position,
+                      department: worker.department,
+                      latitude: worker.latitude,
+                      longitude: worker.longitude,
+                      pulse: worker.pulse,
+                      battery: worker.battery,
+                      hasHelmet: worker.hasHelmet,
+                      inDanger: worker.inDanger,
+                      zoneName: worker.currentZoneName
+                    }
+                  })
+                }
+              }}
+            />
           )
         })}
 
-        {/* 4. Equipment BLE Markers */}
+        {/* 4. Canlı BLE Demirbaşlar & Ekipmanlar (Ambar, Depo, Araç) */}
         {visibleEquipments.map((eq) => {
-          const isHighlighted = eq.id === highlightedId
-          const isSearched = isSearchActive
-          const isLost = eq.status.toUpperCase() === "KAYIP" || eq.status.toUpperCase() === "LOST"
-          const pinIcon = createBlePinIcon(eq.status, isHighlighted, isSearched, eq.name)
+          const roleType = resolveMarkerRole(eq)
+          const eqIcon = getMarkerIcon(eq)
 
           return (
             <Marker
               key={eq.id}
               position={[eq.latitude, eq.longitude]}
-              icon={pinIcon}
+              icon={eqIcon}
               eventHandlers={{
                 click: () => {
+                  setPopupState({
+                    isOpen: true,
+                    type: "EQUIPMENT",
+                    markerData: {
+                      id: eq.id,
+                      name: eq.name,
+                      roleType,
+                      roleTitle: eq.category || eq.type,
+                      department: eq.assignedTo?.department,
+                      bleTagId: eq.bleTagId,
+                      serialNumber: eq.serialNumber,
+                      latitude: eq.latitude,
+                      longitude: eq.longitude,
+                      status: eq.status,
+                      assignedTo: eq.assignedTo?.name
+                    }
+                  })
                   if (onSelectEquipment) onSelectEquipment(eq)
                 }
               }}
-            >
-              <Popup>
-                <div className="p-4 min-w-[260px] max-w-[320px]">
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-3 mb-2.5 pb-2.5 border-b border-slate-800">
-                    <div>
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700/80 mb-1">
-                        {eq.category || eq.type}
-                      </span>
-                      <h4 className="font-bold text-white text-sm leading-snug">
-                        {eq.name}
-                      </h4>
-                    </div>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shrink-0 ${
-                        isLost
-                          ? "bg-red-500/15 text-red-400 border border-red-500/30"
-                          : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          isLost ? "bg-red-400 animate-pulse" : "bg-emerald-400"
-                        }`}
-                      />
-                      {isLost ? "Kayıp" : "Aktif"}
-                    </span>
-                  </div>
-
-                  {/* Details Body */}
-                  <div className="space-y-2 text-xs">
-                    {/* BLE Etiket No */}
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/80 border border-slate-800/80">
-                      <span className="text-slate-400 flex items-center gap-1.5">
-                        <svg
-                          className="w-3.5 h-3.5 text-cyan-400"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M12 2a1 1 0 0 0-.6.2l-5 4a1 1 0 0 0 1.2 1.6L11 5.08V11H6a1 1 0 1 0 0 2h5v5.92l-3.4-2.72a1 1 0 1 0-1.2 1.6l5 4A1 1 0 0 0 13 21v-7.59l4.3 4.3a1 1 0 0 0 1.4-1.42L14.41 12l4.3-4.3a1 1 0 0 0-1.42-1.4L13 10.58V3a1 1 0 0 0-1-1zm1 5.41 2.3 2.3L13 12.01V7.41zm0 9.18 2.3-2.3L13 11.99v4.6z" />
-                        </svg>
-                        BLE Etiket No:
-                      </span>
-                      <span className="font-mono font-semibold text-cyan-300">
-                        {eq.bleTagId}
-                      </span>
-                    </div>
-
-                    {/* Son Görülme Zamanı */}
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-slate-400 flex items-center gap-1.5">
-                        <svg
-                          className="w-3.5 h-3.5 text-slate-500"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        Son Görülme:
-                      </span>
-                      <span className="font-medium text-slate-200">
-                        {formatTimeAgo(eq.lastSeenAt)}
-                      </span>
-                    </div>
-
-                    {/* Sorumlu / Zimmet */}
-                    {eq.assignedTo && (
-                      <div className="flex items-center justify-between px-1">
-                        <span className="text-slate-400">Zimmetli:</span>
-                        <span className="font-medium text-slate-200 truncate max-w-[140px]">
-                          {eq.assignedTo.name}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* GPS Koordinatları */}
-                    <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 font-mono">
-                      <span>GPS:</span>
-                      <span>
-                        {eq.latitude.toFixed(5)}, {eq.longitude.toFixed(5)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center gap-2">
-                    <a
-                      href={`/admin/equipments`}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 text-center font-medium text-xs transition border border-cyan-500/30 hover:border-cyan-400/50"
-                    >
-                      Demirbaş Kartı
-                    </a>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+            />
           )
         })}
+
+        {/* 5. Çizim Modu Önizleme (Active Drawing Points & Guides) */}
+        {isDrawing && drawingPoints.length > 0 && (
+          <>
+            <Polyline
+              positions={drawingPoints.map((p) => [p.lat, p.lng])}
+              pathOptions={{
+                color: drawShape === "POLYLINE" ? "#f59e0b" : ZONE_COLORS[drawZoneType]?.stroke || "#2563eb",
+                weight: drawShape === "POLYLINE" ? 4 : 2.5,
+                dashArray: "5, 5"
+              }}
+            />
+
+            {drawShape === "POLYGON" && drawingPoints.length >= 3 && (
+              <LeafletPolygon
+                positions={drawingPoints.map((p) => [p.lat, p.lng])}
+                pathOptions={{
+                  color: ZONE_COLORS[drawZoneType]?.stroke || "#2563eb",
+                  fillColor: ZONE_COLORS[drawZoneType]?.fill || "#3b82f6",
+                  fillOpacity: 0.25,
+                  weight: 2
+                }}
+              />
+            )}
+
+            {drawingPoints.map((pt, idx) => (
+              <CircleMarker
+                key={idx}
+                center={[pt.lat, pt.lng]}
+                radius={idx === 0 ? 8 : 4}
+                pathOptions={{
+                  color: idx === 0 ? "#10b981" : "#ffffff",
+                  fillColor: idx === 0 ? "#10b981" : "#3b82f6",
+                  fillOpacity: 1,
+                  weight: 2
+                }}
+              />
+            ))}
+          </>
+        )}
       </MapContainer>
     </div>
   )

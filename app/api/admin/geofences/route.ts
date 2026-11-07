@@ -1,7 +1,7 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * GeofenceZone API - Poligon Sanal Çit & İSG Alan Yönetimi
+ * GeofenceZone API - Poligon Sanal Çit, Polyline Yatay Hat & İSG Alan Yönetimi (GeoJSON Destekli)
  */
 
 import { NextRequest, NextResponse } from "next/server"
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
           if (typeof coords === "string") {
             try { coords = JSON.parse(coords) } catch {}
           }
-          if (Array.isArray(coords) && coords.length >= 3) {
+          if (Array.isArray(coords) && coords.length >= (sz.zoneType === "POLYLINE" ? 2 : 3)) {
             await prisma.geofenceZone.create({
               data: {
                 projectId,
@@ -104,27 +104,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Koordinatları doğrula
+    // Koordinatları doğrula (GeoJSON veya Array formatı)
     const rawCoords = coordinates || polygonCoordinates
     let coordsArray: Array<{ lat: number; lng: number }> = []
+
     if (Array.isArray(rawCoords)) {
       coordsArray = rawCoords.map((pt: any) => ({
-        lat: Number(pt.lat),
-        lng: Number(pt.lng)
+        lat: Number(pt.lat ?? pt[1]),
+        lng: Number(pt.lng ?? pt[0])
       }))
+    } else if (rawCoords && typeof rawCoords === "object") {
+      // GeoJSON Feature veya Geometry desteği
+      if (rawCoords.type === "Feature" && rawCoords.geometry) {
+        const geom = rawCoords.geometry
+        if (geom.type === "Polygon") {
+          coordsArray = geom.coordinates[0]?.map((c: any) => ({ lat: Number(c[1]), lng: Number(c[0]) })) || []
+        } else if (geom.type === "LineString") {
+          coordsArray = geom.coordinates?.map((c: any) => ({ lat: Number(c[1]), lng: Number(c[0]) })) || []
+        }
+      } else if (rawCoords.coordinates && Array.isArray(rawCoords.coordinates)) {
+        coordsArray = rawCoords.coordinates.map((pt: any) => ({
+          lat: Number(pt.lat ?? pt[1]),
+          lng: Number(pt.lng ?? pt[0])
+        }))
+      }
     }
 
-    if (coordsArray.length < 3) {
+    // Alan tipi: MAIN_SITE (Mavi), DANGER_ZONE (Kırmızı), REST_AREA (Yeşil), POLYLINE (Yatay Hat / Yol / Boru Hattı)
+    let finalType = (bodyType || zoneType || "MAIN_SITE").toUpperCase()
+    if (!["MAIN_SITE", "DANGER_ZONE", "REST_AREA", "POLYLINE"].includes(finalType)) {
+      finalType = "MAIN_SITE"
+    }
+
+    const minPoints = finalType === "POLYLINE" ? 2 : 3
+    if (coordsArray.length < minPoints) {
       return NextResponse.json(
-        { error: "Poligon sanal çit için en az 3 köşe noktası girilmelidir" },
+        { error: finalType === "POLYLINE" ? "Çizgi (Polyline) için en az 2 nokta girilmelidir" : "Poligon sanal çit için en az 3 köşe noktası girilmelidir" },
         { status: 400 }
       )
-    }
-
-    // Alan tipi: MAIN_SITE (Mavi), DANGER_ZONE (Kırmızı), REST_AREA (Yeşil)
-    let finalType = bodyType || zoneType || "MAIN_SITE"
-    if (!["MAIN_SITE", "DANGER_ZONE", "REST_AREA"].includes(finalType)) {
-      finalType = "MAIN_SITE"
     }
 
     // TenantId belirleme
@@ -152,7 +169,7 @@ export async function POST(request: NextRequest) {
     // 2. Geriye dönük uyumluluk: SiteZone tablosunu da besle
     const sumLat = coordsArray.reduce((acc, p) => acc + p.lat, 0) / coordsArray.length
     const sumLng = coordsArray.reduce((acc, p) => acc + p.lng, 0) / coordsArray.length
-    const category = finalType === "DANGER_ZONE" ? "RISK" : finalType === "REST_AREA" ? "REST_AREA" : "BUILDING"
+    const category = finalType === "DANGER_ZONE" ? "RISK" : finalType === "REST_AREA" ? "REST_AREA" : finalType === "POLYLINE" ? "STORAGE" : "BUILDING"
 
     await prisma.siteZone.create({
       data: {
@@ -165,6 +182,39 @@ export async function POST(request: NextRequest) {
         polygonCoordinates: coordsArray
       }
     }).catch((err) => console.warn("SiteZone sync warning:", err))
+
+    // 3. Kat/Mahal Zone Tablosu Senkronizasyonu (Task.zoneId referans bütünlüğü için)
+    try {
+      let defaultBlock = await prisma.block.findFirst({
+        where: { projectId }
+      })
+      if (!defaultBlock) {
+        defaultBlock = await prisma.block.create({
+          data: {
+            projectId,
+            tenantId,
+            name: "Saha & Güzergah Parseli",
+            code: "BLK-SAHA",
+            totalFloors: 1,
+            completionRate: 50
+          }
+        })
+      }
+      if (defaultBlock) {
+        await prisma.zone.create({
+          data: {
+            id: geofence.id,
+            tenantId,
+            blockId: defaultBlock.id,
+            name: zoneName,
+            areaType: finalType === "POLYLINE" ? "POLYLINE" : "POLYGON",
+            status: "IN_PROGRESS"
+          }
+        }).catch(() => null)
+      }
+    } catch (e) {
+      console.warn("Zone table sync warning:", e)
+    }
 
     return NextResponse.json(geofence, { status: 201 })
   } catch (error: any) {

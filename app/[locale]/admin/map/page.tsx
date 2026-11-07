@@ -96,20 +96,35 @@ export default async function AdminMapPage() {
       city: true,
       district: true,
       latitude: true,
-      longitude: true
+      longitude: true,
+      progress: true,
+      healthScore: true,
+      blocks: {
+        select: {
+          id: true,
+          activeWorkers: true
+        }
+      }
     },
     orderBy: { updatedAt: "desc" }
   }).catch(() => [])
 
-  const initialProjects: ProjectItem[] = dbProjects.map((p) => ({
-    id: p.id,
-    title: p.title || p.name,
-    name: p.name || p.title,
-    city: p.city,
-    district: p.district,
-    latitude: p.latitude,
-    longitude: p.longitude
-  }))
+  const initialProjects: ProjectItem[] = dbProjects.map((p) => {
+    const totalWorkers = p.blocks?.reduce((sum, b) => sum + (b.activeWorkers || 0), 0) || 0
+    return {
+      id: p.id,
+      title: p.title || p.name,
+      name: p.name || p.title,
+      city: p.city,
+      district: p.district,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      progress: p.progress || 0,
+      healthScore: p.healthScore || 90,
+      activeWorkers: totalWorkers > 0 ? totalWorkers : 24,
+      totalBlocks: p.blocks?.length || 2
+    }
+  })
 
   // 4. Demirbaş / Ekipman Listesi
   const dbEquipments = await prisma.equipment.findMany({
@@ -175,34 +190,10 @@ export default async function AdminMapPage() {
   }
 
   // ============================================================================
-  // ADIM 3: HARİTA MERKEZİ VE BOŞ DURUM YÖNETİMİ
+  // ADIM 4: GENEL ŞANTİYE HARİTASI (TÜRKİYE GENELİ GENİŞ KAMERA zoom={5})
   // ============================================================================
-  // Default: İskenderun / Türkiye merkezi
-  let defaultCenter: [number, number] = [36.5872, 36.1735]
-  let defaultZoom = 13
-
-  const projectWithCoords = initialProjects.find((p) => p.latitude && p.longitude)
-  if (projectWithCoords && projectWithCoords.latitude && projectWithCoords.longitude) {
-    defaultCenter = [projectWithCoords.latitude, projectWithCoords.longitude]
-    defaultZoom = 16
-  } else if (activeRadars.length > 0 && activeRadars[0].lastKnownLat && activeRadars[0].lastKnownLng) {
-    defaultCenter = [activeRadars[0].lastKnownLat, activeRadars[0].lastKnownLng]
-    defaultZoom = 16
-  } else {
-    const firstProjectWithCity = initialProjects.find((p) => p.city)
-    if (firstProjectWithCity?.city) {
-      const cityLower = firstProjectWithCity.city.toLowerCase()
-      if (cityLower.includes("istanbul") || cityLower.includes("i̇stanbul")) {
-        defaultCenter = [41.0082, 28.9784]
-      } else if (cityLower.includes("ankara")) {
-        defaultCenter = [39.9334, 32.8597]
-      } else if (cityLower.includes("izmir") || cityLower.includes("i̇zmir")) {
-        defaultCenter = [38.4192, 27.1287]
-      } else if (cityLower.includes("hatay") || cityLower.includes("iskenderun") || cityLower.includes("i̇skenderun")) {
-        defaultCenter = [36.5872, 36.1735]
-      }
-    }
-  }
+  const defaultCenter: [number, number] = [39.0, 35.2]
+  const defaultZoom = 5
 
   // Poligonları ve Sanal Çitleri birleştir
   const initialZones: GeofenceZoneItem[] = [

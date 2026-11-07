@@ -12,8 +12,27 @@ import { useRouter } from "next/navigation"
 import dynamic from 'next/dynamic'
 import ProjectFiles from "@/components/ProjectFiles"
 import ProjectReminders from "@/components/ProjectReminders"
-import ProjectDailyLogs from "@/components/ProjectDailyLogs"
-import GeofencedCheckIn from "@/components/GeofencedCheckIn"
+import {
+  Activity,
+  BookOpen,
+  Camera,
+  Calculator,
+  Info,
+  Archive,
+  Map as MapIcon,
+  Box,
+  Compass,
+  Calendar,
+  ClipboardList,
+  FolderGit2,
+  ShieldCheck,
+  Network,
+  Bell,
+  FileSpreadsheet,
+  Edit,
+  Trash2,
+  Download
+} from "lucide-react"
 import StructureTree from "@/components/StructureTree"
 import { toast } from "react-hot-toast"
 import { jsPDF } from "jspdf"
@@ -110,22 +129,21 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   })
 
   const tabs = [
-    { id: "canli-saha", label: "📡 Şantiye Özeti (Canlı)" },
-    { id: "jurnaller", label: "📋 Şantiye Defteri (Jurnaller)" },
-    { id: "saha-galerisi", label: "📸 Saha Galerisi" },
-    { id: "boq", label: "📊 Keşif & Metraj (BoQ)" },
-    { id: "kunya", label: "Proje Künyesi" },
-    { id: "arsiv", label: "Arşiv ve Evraklar" },
-    { id: "gunluk", label: "Şantiye Günlüğü" },
-    { id: "vaziyet", label: "🗺️ Vaziyet Planı" },
-    { id: "bim", label: "3D BIM Modeli" },
-    { id: "drone", label: "🚁 Drone Analizi" },
-    { id: "gantt", label: "📅 İş Programı (Gantt)" },
-    { id: "instructions", label: "📋 Saha Talimatları (Kanban)" },
-    { id: "dokumanlar", label: "📁 Dokümanlar & Revizyonlar" },
-    { id: "denetim", label: "Yapı Denetim Arşivi" },
-    { id: "yapi-agaci", label: "🏗️ Yapı Ağacı (Dijital İkiz)" },
-    { id: "hatirlatici", label: "Hatırlatıcılar" }
+    { id: "canli-saha", label: "Şantiye Özeti (Canlı)", icon: Activity },
+    { id: "jurnaller", label: "Şantiye Defteri (Jurnaller)", icon: BookOpen },
+    { id: "saha-galerisi", label: "Saha Galerisi", icon: Camera },
+    { id: "boq", label: "Keşif & Metraj (BoQ)", icon: Calculator },
+    { id: "kunya", label: "Proje Künyesi", icon: Info },
+    { id: "arsiv", label: "Arşiv ve Evraklar", icon: Archive },
+    { id: "vaziyet", label: "Vaziyet Planı & Harita", icon: MapIcon },
+    { id: "bim", label: "3D BIM Modeli", icon: Box },
+    { id: "drone", label: "Drone Analizi", icon: Compass },
+    { id: "gantt", label: "İş Programı (Gantt)", icon: Calendar },
+    { id: "instructions", label: "Saha Talimatları (Kanban)", icon: ClipboardList },
+    { id: "dokumanlar", label: "Dokümanlar & Revizyonlar", icon: FolderGit2 },
+    { id: "denetim", label: "Yapı Denetim Arşivi", icon: ShieldCheck },
+    { id: "yapi-agaci", label: "Yapı Ağacı (Dijital İkiz)", icon: Network },
+    { id: "hatirlatici", label: "Hatırlatıcılar", icon: Bell }
   ]
 
   const handleSave = async () => {
@@ -320,13 +338,14 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 setActiveTab(tab.id)
               }
             }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap snap-start ${
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap snap-start ${
               activeTab === tab.id
                 ? "border-blue-500 text-blue-400"
                 : "border-transparent text-slate-400 hover:text-slate-200"
             }`}
           >
-            {tab.label}
+            <tab.icon className="w-4 h-4 shrink-0" />
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>
@@ -655,7 +674,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <span>📊 Proje Keşif & Metraj (BoQ)</span>
+                  <span className="flex items-center gap-2"><Calculator className="w-5 h-5 text-emerald-400" /> Proje Keşif & Metraj (BoQ)</span>
                   <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                     Excel Bulk Upload Aktif
                   </span>
@@ -668,7 +687,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 onClick={() => router.push(`/admin/projects/${project.id}/boq`)}
                 className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer"
               >
-                <span>📁 Excel'den Poz Yükle & Yönet</span>
+                <span className="flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" /> Excel'den Poz Yükle & Yönet</span>
               </button>
             </div>
             <div className="p-4 bg-slate-800/40 rounded-xl border border-slate-800 flex items-center justify-between text-xs text-slate-300">
@@ -701,30 +720,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
           </div>
         )}
 
-        {activeTab === "gunluk" && (
-          <div className="space-y-4">
-            <div className="bg-red-900/20 border-2 border-red-600 rounded-xl p-6">
-              <button
-                onClick={() => router.push(`/admin/projects/${project.id}/markup`)}
-                className="w-full flex items-center justify-center gap-3 bg-red-600 hover:bg-red-500 text-white py-4 rounded-lg font-bold text-lg transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-                Yapı Denetim / Hasar Tespit Çizimi Yap
-              </button>
-            </div>
-            <GeofencedCheckIn 
-              projectId={project.id}
-              projectLat={project.latitude}
-              projectLng={project.longitude}
-              radius={project.geofenceRadius}
-            />
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-              <ProjectDailyLogs projectId={project.id} />
-            </div>
-          </div>
-        )}
+        
 
         {activeTab === "vaziyet" && (
           <SiteMasterPlan
@@ -1081,7 +1077,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                   rel="noopener noreferrer" 
                   className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors flex items-center gap-2 shadow-lg"
                 >
-                  📐 DXF İndir
+                  <span className="flex items-center gap-1.5"><Download className="w-4 h-4" /> DXF İndir</span>
                 </a>
               )}
               <button
