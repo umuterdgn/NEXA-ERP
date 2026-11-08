@@ -543,8 +543,10 @@ export async function validateStageGateTransition(
   allowed: boolean
   code?: string
   missingItem?: string
+  missingDoc?: string
   reason?: string
   blockingDetails?: any
+  details?: any
 }> {
   try {
     // 1. Projeyi bul
@@ -600,9 +602,14 @@ export async function validateStageGateTransition(
           allowed: false,
           code: "MISSING_ARCHITECTURAL_APPROVAL",
           missingItem: "Onaylı Mimari Uygulama Projesi (.dwg / .pdf)",
+          missingDoc: "Onaylı Mimari Uygulama Projesi (.dwg / .pdf)",
           reason:
             "ZORUNLU ONAY KAPISI ENGELİ (Stage-Gate): Onaylı Mimari Uygulama Projesi yüklenip onaylanmadan şantiye imalatına geçilemez!",
           blockingDetails: {
+            requiredStage: "Mimari Proje & Onay",
+            requiredAction: "Lütfen Mimari Proje evrakını yükleyiniz veya Mimari Proje sekmesinden onay alınız.",
+          },
+          details: {
             requiredStage: "Mimari Proje & Onay",
             requiredAction: "Lütfen Mimari Proje evrakını yükleyiniz veya Mimari Proje sekmesinden onay alınız.",
           },
@@ -619,6 +626,7 @@ export async function validateStageGateTransition(
           allowed: false,
           code: "MISSING_CONSTRUCTION_GATE",
           missingItem: "Şantiye İlerleme & İnce İmalat Kabulü",
+          missingDoc: "Şantiye İlerleme & İnce İmalat Kabulü",
           reason: "Şantiye kaba ve ince imalat süreci tamamlanmadan FF&E demirbaş montajına geçilemez.",
         }
       }
@@ -637,8 +645,18 @@ export async function validateStageGateTransition(
           allowed: false,
           code: "PUNCH_LIST_BLOCKER",
           missingItem: `Sıfır Kusur Şartı (${openDefects.length} Adet Açık Kusur Bulunuyor)`,
+          missingDoc: `Sıfır Kusur Şartı (${openDefects.length} Adet Açık Kusur Bulunuyor)`,
           reason: `AÇILIŞ KİLİDİ (Pre-Opening Blocker): Bu şubede henüz doğrulanmamış (VERIFIED yapılmamış) ${openDefects.length} adet kusur kaydı bulunmaktadır. Tüm Punch List maddeleri kapatılmadan şube Açılışa Hazır statüsüne alınamaz!`,
           blockingDetails: {
+            openDefectsCount: openDefects.length,
+            defects: openDefects.map((d) => ({
+              id: d.id,
+              desc: d.defectDesc,
+              status: d.status,
+              priority: d.priority,
+            })),
+          },
+          details: {
             openDefectsCount: openDefects.length,
             defects: openDefects.map((d) => ({
               id: d.id,
@@ -660,8 +678,12 @@ export async function validateStageGateTransition(
           allowed: false,
           code: "LEGAL_PERMITS_BLOCKER",
           missingItem: `Resmi İzinler & Ruhsat Onayı (${pendingPermits.map((p) => p.permitName).join(", ")})`,
+          missingDoc: `Resmi İzinler & Ruhsat Onayı (${pendingPermits.map((p) => p.permitName).join(", ")})`,
           reason: `RESMİ İZİN ENGELİ: Şantiye için kritik yol üstündeki resmi izinler (${pendingPermits.length} adet) henüz onaylanmamıştır. İtfaiye Uygunluk ve İşyeri Ruhsatı olmadan şube açılış provası yapılamaz!`,
           blockingDetails: {
+            pendingPermits: pendingPermits.map((p) => p.permitName),
+          },
+          details: {
             pendingPermits: pendingPermits.map((p) => p.permitName),
           },
         }

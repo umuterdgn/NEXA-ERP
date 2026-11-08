@@ -97,6 +97,7 @@ export async function POST(request: Request) {
           return NextResponse.json(
             {
               error: "Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz",
+              missingItem: "Onaylı 3D BIM Modeli veya 2D Mimari Uygulama Çizimi",
               missingDoc: "Onaylı 3D BIM Modeli veya 2D Mimari Uygulama Çizimi",
               code: "MISSING_ARCHITECTURAL_BIM",
               reason:
@@ -176,6 +177,7 @@ export async function POST(request: Request) {
           return NextResponse.json(
             {
               error: "Eksik belgeleri yüklemeden bu aşamaya geçemezsiniz",
+              missingItem: missingItems.join(" ve "),
               missingDoc: missingItems.join(" ve "),
               code: "MISSING_MANDATORY_PERMITS",
               reason:
