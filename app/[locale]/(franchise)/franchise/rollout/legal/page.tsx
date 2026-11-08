@@ -41,7 +41,7 @@ import {
 } from "@/app/actions/franchise-rollout"
 
 export default function RolloutLegalPage() {
-  const [permits, setPermits] = useState<any[]>([])
+  const [permits, setPermits] = useState<(LegalPermitItem & { hasDelayRisk?: boolean; delayDays?: number; diffDays?: number })[]>([])
   const [cpmAnalysis, setCpmAnalysis] = useState<any>({
     hasGlobalDelayRisk: false,
     maxDelayDays: 0,
@@ -337,13 +337,13 @@ export default function RolloutLegalPage() {
                   const hasDelay = permit.hasDelayRisk
                   const isUpdating = updatingId === permit.id
 
-                  const statusColors: any = {
+                  const statusColors: Record<string, string> = {
                     BAŞVURU_YAPILMADI: "bg-slate-800 text-slate-400 border-slate-700",
                     EVRAK_INCELEMESI: "bg-sky-500/10 text-sky-400 border-sky-500/30",
                     KESIF_BEKLENIYOR: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
                     ONAYLANDI: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-bold",
                     GECIKMEDE: "bg-rose-500/10 text-rose-400 border-rose-500/40 font-bold animate-pulse",
-                  }[permit.status] || "bg-slate-800 text-slate-300"
+                  }
 
                   return (
                     <tr
@@ -423,7 +423,9 @@ export default function RolloutLegalPage() {
                           disabled={isUpdating}
                           value={permit.status}
                           onChange={(e) => handleUpdateStatus(permit.id, e.target.value)}
-                          className={`text-xs rounded-lg px-2.5 py-1.5 border focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer ${statusColors}`}
+                          className={`text-xs rounded-lg px-2.5 py-1.5 border focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer ${
+                            statusColors[permit.status as keyof typeof statusColors] || statusColors[permit.status] || "bg-slate-800 text-slate-300"
+                          }`}
                         >
                           <option value="BAŞVURU_YAPILMADI" className="bg-slate-900 text-slate-400">
                             Başvuru Yapılmadı
