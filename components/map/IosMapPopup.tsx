@@ -35,7 +35,7 @@ export type IosPopupType = "PROJECT" | "WORKER" | "EQUIPMENT" | "ZONE_POLYGON" |
 export interface IosProjectData {
   id: string
   title: string
-  name?: string
+  name?: string | null
   city?: string | null
   district?: string | null
   activeWorkers?: number

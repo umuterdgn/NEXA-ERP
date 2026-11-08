@@ -611,13 +611,13 @@ export default function BleEquipmentMap({
                     projectData: {
                       id: proj.id,
                       title: proj.title || proj.name || "Şantiye",
-                      name: proj.name || proj.title,
-                      city: proj.city,
-                      district: proj.district,
-                      activeWorkers: proj.activeWorkers,
-                      totalBlocks: proj.totalBlocks,
-                      healthScore: proj.healthScore,
-                      progress: proj.progress,
+                      name: proj.name || proj.title || "",
+                      city: proj.city || "",
+                      district: proj.district || "",
+                      activeWorkers: proj.activeWorkers || 0,
+                      totalBlocks: proj.totalBlocks || 0,
+                      healthScore: proj.healthScore || 0,
+                      progress: proj.progress || 0,
                       latitude: proj.latitude,
                       longitude: proj.longitude
                     }
