@@ -38,6 +38,8 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react"
 
 interface MenuItem {
@@ -138,19 +140,43 @@ export default function FranchiseSidebar({
 
   return (
     <>
+      {/* Mobile Top Bar */}
+      <div className="fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur-md px-4 md:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-slate-300 hover:bg-slate-900 transition"
+          aria-label={mobileOpen ? "Menüyü kapat" : "Menüyü aç"}
+        >
+          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+        <div className="flex items-center gap-2">
+          {tenantLogo && (
+            <img
+              src={tenantLogo}
+              alt={tenantName}
+              className="h-7 w-7 rounded-lg object-contain bg-slate-900 border border-slate-800 p-0.5"
+            />
+          )}
+          <span className="text-xs font-bold text-white tracking-wide truncate max-w-[160px]">{tenantName}</span>
+        </div>
+        <div className="w-10" />
+      </div>
+
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-[99] bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-[100] lg:z-[100] flex flex-col border-r border-slate-800/80 bg-slate-950/95 backdrop-blur-xl text-slate-100 transition-all duration-300 ${
-          isCollapsed ? "w-20" : "w-64"
-        } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+        className={`fixed inset-y-0 left-0 transform transition-transform duration-300 z-50 flex flex-col border-r border-slate-800/80 bg-slate-950/95 backdrop-blur-xl text-slate-100 ${
+          isCollapsed ? "md:w-20" : "md:w-64"
+        } w-64 max-w-[85vw] ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         {/* Header / Logo */}
         <div className="flex h-16 items-center justify-between border-b border-slate-800/80 px-4">

@@ -21,7 +21,7 @@ function Loader() {
 }
 
 function Model({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
+  const { scene } = useGLTF(url, true);
   
   useEffect(() => {
     return () => {
@@ -39,7 +39,10 @@ export default function ThreeDViewer({ modelUrl }: { modelUrl?: string }) {
   // Sadece istemci tarafında (Client-side) render olmasını garantiye alıyoruz
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    if (modelUrl && modelUrl.startsWith('http')) {
+      useGLTF.preload(modelUrl, true);
+    }
+  }, [modelUrl]);
 
   if (!isMounted || !modelUrl || !modelUrl.startsWith('http')) return null;
 
@@ -48,6 +51,8 @@ export default function ThreeDViewer({ modelUrl }: { modelUrl?: string }) {
       {/* Key prop'u sayesinde URL değiştiğinde veya bileşen yenilendiğinde WebGL context sıfırdan başlar */}
       <Canvas 
         key={modelUrl}
+        dpr={[1, 2]}
+        performance={{ min: 0.5 }}
         camera={{ far: 20000, near: 0.1, fov: 45, position: [50, 50, 50] }}
         gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance" }}
       >

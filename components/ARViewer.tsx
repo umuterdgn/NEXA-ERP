@@ -38,7 +38,7 @@ function AR3DModel({
   elevation: number
   onLoaded?: () => void
 }) {
-  const { scene } = useGLTF(url)
+  const { scene } = useGLTF(url, true)
 
   useEffect(() => {
     if (!scene) return
@@ -244,6 +244,8 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
         className="absolute inset-0 w-full h-full z-10 pointer-events-auto"
       >
         <Canvas
+          dpr={[1, 2]}
+          performance={{ min: 0.5 }}
           camera={{ position: [0, 8, 22], fov: 45 }}
           gl={{
             alpha: true,

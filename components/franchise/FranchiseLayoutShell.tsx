@@ -15,8 +15,8 @@ export default function FranchiseLayoutShell({ children }: { children: React.Rea
     <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100 w-full">
       <FranchiseSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       <main
-        className={`flex-1 h-screen overflow-y-auto w-full transition-all duration-300 p-6 ${
-          isCollapsed ? "lg:ml-20" : "lg:ml-64"
+        className={`flex-1 h-screen overflow-y-auto w-full ml-0 transition-all duration-300 p-6 pt-16 md:pt-6 ${
+          isCollapsed ? "md:ml-20" : "md:ml-64"
         }`}
       >
         {children}

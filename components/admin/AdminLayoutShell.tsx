@@ -20,17 +20,19 @@ export default function AdminLayoutShell({ children }: { children: React.ReactNo
   }, [])
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <div className="flex-shrink-0 h-full">
-        <AdminSidebar
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          sidebarWidth={sidebarWidth}
-          setSidebarWidth={setSidebarWidth}
-        />
-      </div>
-      <main className="flex-1 h-full overflow-y-auto bg-slate-50 dark:bg-[#0A0F1C]">
-        <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 min-h-full">
+    <div className="flex h-screen w-full overflow-hidden relative">
+      <AdminSidebar
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        sidebarWidth={sidebarWidth}
+        setSidebarWidth={setSidebarWidth}
+      />
+      <main
+        className={`flex-1 h-full overflow-y-auto bg-slate-50 dark:bg-[#0A0F1C] ml-0 w-full transition-all duration-300 ${
+          isCollapsed ? "md:ml-20" : "md:ml-64"
+        }`}
+      >
+        <div className="p-4 sm:p-6 lg:p-8 pt-16 md:pt-8 min-h-full w-full max-w-full">
           {children}
         </div>
       </main>

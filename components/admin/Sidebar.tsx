@@ -401,7 +401,7 @@ export default function AdminSidebar({
 
   const stageGateHref = activeProjectId ? `/franchise/stage-gates/${activeProjectId}` : "/franchise/stage-gates"
 
-  const userRole = session?.user?.role as string
+  const userRole = (session?.user as any)?.role as string
   const userCompanyType = propCompanyType || (session?.user as any)?.companyType as string | undefined
   const isFranchise = userCompanyType === "FRANCHISE"
   const isSubcontractor = userRole === "SUBCONTRACTOR"
@@ -576,7 +576,7 @@ export default function AdminSidebar({
   return (
     <>
       {/* Mobile Header */}
-      <div className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pb-safe pt-safe lg:hidden">
+      <div className="fixed left-0 right-0 top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pb-safe pt-safe md:hidden">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -613,11 +613,12 @@ export default function AdminSidebar({
         </div>
       </div>
 
-      {/* Mobile Overlay */}
+      {/* Mobile Backdrop (Overlay) */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-[9990] bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
 
@@ -626,11 +627,9 @@ export default function AdminSidebar({
         style={{
           width: isCollapsed ? undefined : `${currentWidth}px`,
         }}
-        className={`fixed lg:relative left-0 top-0 z-[100] lg:z-auto h-full flex-shrink-0 ${
-          isResizing ? "" : "transition-all duration-200"
-        } ${
-          isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
-        } ${isCollapsed ? "lg:w-20" : ""} w-[85vw] max-w-[480px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-[#111827] relative group/sidebar flex flex-col`}
+        className={`fixed inset-y-0 left-0 transform transition-transform duration-300 z-50 ${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        } ${isCollapsed ? "md:w-20" : "md:w-64"} w-64 max-w-[85vw] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-[#111827] flex flex-col`}
       >
         {/* Drag Handle / Resizer */}
         {!isCollapsed && (

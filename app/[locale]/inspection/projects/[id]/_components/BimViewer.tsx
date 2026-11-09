@@ -282,7 +282,7 @@ function GltfModel({
   // URL boşsa veya hatalıysa render'ı iptal et
   if (!url || url.trim() === "") return null
 
-  const { scene } = useGLTF(url)
+  const { scene } = useGLTF(url, true)
 
   // 1. Element counts calculated once when scene loads
   useEffect(() => {
@@ -1929,6 +1929,8 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
           >
             <Canvas
               key={safeUrl || activeModelUrl}
+              dpr={[1, 2]}
+              performance={{ min: 0.5 }}
               camera={{ far: 20000, near: 0.1, fov: 45, position: [35, 30, 35] }}
               gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance", antialias: true }}
               onPointerDown={(e) => {

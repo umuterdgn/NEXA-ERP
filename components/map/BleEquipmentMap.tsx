@@ -307,6 +307,11 @@ export default function BleEquipmentMap({
   const isSearchActive = searchQuery.trim().length > 0
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // iOS Style Overlay Popup State (No more Leaflet default balloon popups!)
   const [popupState, setPopupState] = useState<{
     isOpen: boolean
@@ -525,6 +530,14 @@ export default function BleEquipmentMap({
       default:
         return createEngineerDivIcon(item.name)
     }
+  }
+
+  if (typeof window === "undefined" || !mounted) {
+    return (
+      <div className="w-full h-full min-h-[500px] flex flex-col items-center justify-center bg-slate-950 rounded-xl border border-slate-800 text-slate-400 p-8">
+        <p className="text-sm font-medium animate-pulse text-cyan-400">Harita yükleniyor...</p>
+      </div>
+    )
   }
 
   return (

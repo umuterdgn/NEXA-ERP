@@ -83,7 +83,7 @@ function DroneMesh({ url, annotations }: { url: string; annotations: MockDroneRi
   // FlightHelmet Khronos reposunda çoklu dosya (gltf) olarak saklandığından,
   // 404 hatasını önlemek ve aşama değişiminde gerçek farklı bir 3D model render etmek için dahili GLB modeline bağlanır.
   const resolvedUrl = url.includes("FlightHelmet") ? "/models/bina.glb" : url
-  const { scene } = useGLTF(resolvedUrl)
+  const { scene } = useGLTF(resolvedUrl, true)
 
   return (
     <group>
@@ -367,6 +367,8 @@ export default function DroneDigitalTwin({
         }`}
       >
         <Canvas
+          dpr={[1, 2]}
+          performance={{ min: 0.5 }}
           camera={{ position: [3, 2.5, 3.5], fov: 45 }}
           shadows
           gl={{ antialias: true, alpha: true }}

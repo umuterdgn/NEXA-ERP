@@ -31,8 +31,27 @@ import type {
   ActiveRadarPersonnel, 
   GeofenceZoneItem 
 } from "@/components/map/BleEquipmentMap"
-import { formatTimeAgo } from "@/components/map/BleEquipmentMap"
 import NewDiscoveryModal from "@/components/discovery/NewDiscoveryModal"
+
+function formatTimeAgo(dateString?: string | null): string {
+  if (!dateString) return "Bilinmiyor"
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffSec < 60) return "Az önce"
+    const diffMin = Math.floor(diffSec / 60)
+    if (diffMin < 60) return `${diffMin} dakika önce`
+    const diffHour = Math.floor(diffMin / 60)
+    if (diffHour < 24) return `${diffHour} saat önce`
+    const diffDay = Math.floor(diffHour / 24)
+    if (diffDay < 30) return `${diffDay} gün önce`
+    return date.toLocaleDateString("tr-TR")
+  } catch {
+    return "Bilinmiyor"
+  }
+}
 
 const BleEquipmentMap = dynamic(
   () => import("@/components/map/BleEquipmentMap"),
