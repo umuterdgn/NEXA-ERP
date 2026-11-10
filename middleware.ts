@@ -4,7 +4,50 @@ import NextAuth from 'next-auth';
 import { authConfig } from '@/lib/auth.config';
 
 const locales = ['tr', 'en', 'de', 'ru', 'ar'];
-const publicPages = ['/login', '/register']; // Giriş gerektirmeyen sayfalar
+
+// Giriş gerektirmeyen herkese açık kurumsal tanıtım, pazarlama ve yasal sayfalar
+const publicPages = [
+  '',
+  '/',
+  '/login',
+  '/register',
+  '/hakkimizda',
+  '/about',
+  '/ozellikler',
+  '/features',
+  '/basari-hikayeleri',
+  '/blog',
+  '/sss',
+  '/faq',
+  '/iletisim',
+  '/contact',
+  '/hizmetlerimiz',
+  '/projelerimiz',
+  '/demo',
+  '/track',
+  '/check-in',
+  '/unauthorized',
+];
+
+function isPublicRoute(pathname: string): boolean {
+  // Strip locale prefix if present (e.g. /tr/hakkimizda -> /hakkimizda, /en -> /)
+  const localePattern = new RegExp(`^/(${locales.join('|')})(/.*)?$`, 'i');
+  const match = pathname.match(localePattern);
+  const pathWithoutLocale = match ? (match[2] || '/') : pathname;
+
+  const normalized = pathWithoutLocale.length > 1 && pathWithoutLocale.endsWith('/')
+    ? pathWithoutLocale.slice(0, -1)
+    : pathWithoutLocale;
+
+  if (normalized === '/' || normalized === '') {
+    return true;
+  }
+
+  return publicPages.some((page) => {
+    if (!page || page === '/') return false;
+    return normalized === page || normalized.startsWith(`${page}/`);
+  });
+}
 
 const intlMiddleware = createIntlMiddleware({
   locales,
@@ -39,7 +82,7 @@ const withAuth = (
     }
 
     // ADIM 1: INVESTOR / CLIENT Rolü Yönlendirmesi
-    const userRole = (req.auth?.user?.role as string)?.toUpperCase();
+    const userRole = ((req.auth?.user as any)?.role as string)?.toUpperCase();
     if (userRole === "INVESTOR" || userRole === "CLIENT") {
       const pathname = req.nextUrl.pathname;
       const isInvestorPath = pathname.includes('/investor');
@@ -47,7 +90,8 @@ const withAuth = (
         pathname.startsWith('/api') ||
         pathname.includes('/login') ||
         pathname.includes('/register') ||
-        pathname.includes('/unauthorized');
+        pathname.includes('/unauthorized') ||
+        isPublicRoute(pathname);
 
       if (!isInvestorPath && !isIgnored) {
         const investorUrl = req.nextUrl.clone();
@@ -77,11 +121,7 @@ const authMiddleware = withAuth(
 );
 
 export default function middleware(req: NextRequest) {
-  const publicPathnameRegex = RegExp(
-    `^(/(${locales.join('|')}))?(${publicPages.join('|')})?/?$`,
-    'i'
-  );
-  const isPublicPage = publicPathnameRegex.test(req.nextUrl.pathname);
+  const isPublicPage = isPublicRoute(req.nextUrl.pathname);
 
   if (isPublicPage) {
     return intlMiddleware(req);

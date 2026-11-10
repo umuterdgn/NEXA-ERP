@@ -41,7 +41,12 @@ export default function Navbar() {
   ]
 
   const isLinkActive = (href: string) => {
-    if (href === '/') return pathname === '/'
+    if (href === '/') return pathname === '/' || pathname === '/tr'
+    if (href === '/about' || href === '/hakkimizda') return pathname?.includes('/about') || pathname?.includes('/hakkimizda')
+    if (href === '/features' || href === '/ozellikler') return pathname?.includes('/features') || pathname?.includes('/ozellikler')
+    if (href === '/blog' || href === '/basari-hikayeleri') return pathname?.includes('/blog') || pathname?.includes('/basari-hikayeleri')
+    if (href === '/faq' || href === '/sss') return pathname?.includes('/faq') || pathname?.includes('/sss')
+    if (href === '/iletisim' || href === '/contact') return pathname?.includes('/iletisim') || pathname?.includes('/contact')
     return pathname?.startsWith(href)
   }
 

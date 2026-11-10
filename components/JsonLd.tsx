@@ -11,15 +11,15 @@ export default function JsonLd() {
       {
         "@type": "SoftwareApplication",
         "@id": "https://www.nxerp.com.tr/#software",
-        "name": "Nexa ERP",
-        "applicationCategory": "BusinessApplication, Construction Management Software, Building Inspection Software, Enterprise Resource Planning (ERP)",
+        "name": "Nexa ERP / Nexa Yazılım",
+        "applicationCategory": "BusinessApplication, ConstructionManagementSoftware",
         "operatingSystem": "Web, iOS, Android, Windows, macOS",
-        "description": "Büyük ölçekli inşaat ve yapı denetim projeleri için geliştirilmiş; çevrimdışı (offline-first) PWA mimarisi, 3D BIM/IFC dijital ikiz entegrasyonu, Excel'den BoQ yükleme, BLE Beacon aktif İSG risk yönetimi ve yapay zeka destekli otonom hakediş işletim sistemi.",
+        "description": "Nexa ERP; inşaat takip uygulaması, şantiye takip programı, inşaat erp ve otonom şantiye işletim sistemleri sunan yeni nesil B2B SaaS platformudur.",
         "url": "https://www.nxerp.com.tr",
         "offers": {
           "@type": "Offer",
           "price": "0",
-          "priceCurrency": "USD",
+          "priceCurrency": "TRY",
           "description": "B2B SaaS - Kurumsal Demo ve Teklif Usulü"
         },
         "featureList": [
@@ -43,9 +43,10 @@ export default function JsonLd() {
         ]
       },
       {
-        "@type": "Organization",
+        "@type": ["Organization", "LocalBusiness"],
         "@id": "https://www.nxerp.com.tr/#organization",
-        "name": "Nexa ERP - NXA Software",
+        "name": "Nexa ERP / Nexa Yazılım",
+        "legalName": "Nexa Yazılım Teknolojileri A.Ş.",
         "url": "https://www.nxerp.com.tr",
         "logo": {
           "@type": "ImageObject",
@@ -53,7 +54,7 @@ export default function JsonLd() {
         },
         "telephone": "+90 505 147 77 29",
         "email": "nxglobalinfo@gmail.com",
-        "description": "İnşaat ve yapı denetim sektörünün dijital dönüşümüne liderlik eden, 5D BIM, yapay zeka ve BLE IoT destekli yeni nesil SaaS ERP sağlayıcısı.",
+        "description": "İskenderun, Hatay merkezli ulusal ve uluslararası inşaat firmalarına hizmet veren; 5D BIM, yapay zeka, IoT ve şantiye takip ERP çözümleri sunan SaaS yazılım şirketi.",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "İskenderun Teknik Üniversitesi (İSTE) Kampüsü, Teknopark Binası",
@@ -62,6 +63,26 @@ export default function JsonLd() {
           "postalCode": "31200",
           "addressCountry": "TR"
         },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 36.5794,
+          "longitude": 36.1751
+        },
+        "areaServed": [
+          {
+            "@type": "Country",
+            "name": "Türkiye",
+            "description": "İskenderun, Hatay merkezli ulusal/uluslararası SaaS"
+          },
+          {
+            "@type": "AdministrativeArea",
+            "name": "Hatay"
+          },
+          {
+            "@type": "AdministrativeArea",
+            "name": "İskenderun"
+          }
+        ],
         "contactPoint": {
           "@type": "ContactPoint",
           "telephone": "+90 505 147 77 29",
