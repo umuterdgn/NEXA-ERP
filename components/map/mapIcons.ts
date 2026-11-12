@@ -4,10 +4,16 @@
  * Nexa ERP - iOS Style Custom Map Icons (divIcon)
  */
 
-import L from "leaflet"
+function getLeaflet(): any {
+  if (typeof window === "undefined") return null
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("leaflet")
+}
 
 // 1. Mühendis (Mavi zeminli baret ikonu)
 export function createEngineerDivIcon(name: string) {
+  const L = getLeaflet()
+  if (!L) return undefined as any
   return L.divIcon({
     className: "custom-engineer-marker",
     iconSize: [40, 40],
@@ -28,6 +34,8 @@ export function createEngineerDivIcon(name: string) {
 
 // 2. Şoför / Araç (Turuncu zeminli kamyon ikonu)
 export function createDriverDivIcon(name: string) {
+  const L = getLeaflet()
+  if (!L) return undefined as any
   return L.divIcon({
     className: "custom-driver-marker",
     iconSize: [40, 40],
@@ -49,6 +57,8 @@ export function createDriverDivIcon(name: string) {
 
 // 3. Ambar / Depo (Gri zeminli paket ikonu)
 export function createStorageDivIcon(name: string) {
+  const L = getLeaflet()
+  if (!L) return undefined as any
   return L.divIcon({
     className: "custom-storage-marker",
     iconSize: [40, 40],
@@ -69,6 +79,8 @@ export function createStorageDivIcon(name: string) {
 
 // 4. İSG Güvenlik (Kırmızı zeminli kalkan ikonu)
 export function createIsgDivIcon(name: string) {
+  const L = getLeaflet()
+  if (!L) return undefined as any
   return L.divIcon({
     className: "custom-isg-marker",
     iconSize: [40, 40],
@@ -89,6 +101,8 @@ export function createIsgDivIcon(name: string) {
 
 // 5. Şantiye Proje Noktası (Türkiye genel görünümü için)
 export function createProjectPinIcon(title: string) {
+  const L = getLeaflet()
+  if (!L) return undefined as any
   return L.divIcon({
     className: "custom-project-pin",
     iconSize: [44, 44],

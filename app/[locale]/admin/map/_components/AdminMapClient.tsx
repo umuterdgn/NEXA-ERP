@@ -30,7 +30,7 @@ import type {
   BleSiteZone, 
   ActiveRadarPersonnel, 
   GeofenceZoneItem 
-} from "@/components/map/BleEquipmentMap"
+} from "@/components/map/types"
 import NewDiscoveryModal from "@/components/discovery/NewDiscoveryModal"
 
 function formatTimeAgo(dateString?: string | null): string {
@@ -466,7 +466,7 @@ export default function AdminMapClient({
       </header>
 
       {/* Main Map Body with Overlays */}
-      <div className="relative flex-1 w-full h-full min-h-0 z-0">
+      <div className="relative flex-1 w-full h-full min-h-0 z-0 isolate">
         {/* Floating Search & Filter Bar */}
         <div className="absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-auto z-30 w-[calc(100%-16px)] md:w-96 flex flex-col gap-2 pointer-events-none">
           <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-xl border border-slate-800/90 rounded-2xl p-2.5 shadow-2xl shadow-black/80 flex flex-col gap-2">
@@ -582,26 +582,28 @@ export default function AdminMapClient({
         )}
 
         {/* Leaflet BleEquipmentMap Container */}
-        <BleEquipmentMap
-          center={mapCenter}
-          zoom={mapZoom}
-          equipments={filteredEquipments}
-          zones={zones}
-          activeRadars={activeRadars}
-          projects={projects}
-          highlightedId={highlightedEquipmentId}
-          searchQuery={searchQuery}
-          onSelectEquipment={(eq) => setHighlightedEquipmentId(eq.id)}
-          onSelectProject={handleSelectProject}
-          onDeleteZone={handleDeleteZone}
-          selectedProjectName={selectedProjectTitle}
-          isDrawing={isDrawing}
-          drawShape={drawShape}
-          drawZoneType={drawZoneType}
-          drawingPoints={drawingPoints}
-          onAddDrawingPoint={(pt) => setDrawingPoints(prev => [...prev, pt])}
-          onFinishDrawing={() => setIsSaveModalOpen(true)}
-        />
+        <div className="relative z-0 isolate w-full h-full">
+          <BleEquipmentMap
+            center={mapCenter}
+            zoom={mapZoom}
+            equipments={filteredEquipments}
+            zones={zones}
+            activeRadars={activeRadars}
+            projects={projects}
+            highlightedId={highlightedEquipmentId}
+            searchQuery={searchQuery}
+            onSelectEquipment={(eq) => setHighlightedEquipmentId(eq.id)}
+            onSelectProject={handleSelectProject}
+            onDeleteZone={handleDeleteZone}
+            selectedProjectName={selectedProjectTitle}
+            isDrawing={isDrawing}
+            drawShape={drawShape}
+            drawZoneType={drawZoneType}
+            drawingPoints={drawingPoints}
+            onAddDrawingPoint={(pt) => setDrawingPoints(prev => [...prev, pt])}
+            onFinishDrawing={() => setIsSaveModalOpen(true)}
+          />
+        </div>
 
         {/* Drawing Save Modal (ADIM 2 & ADIM 5) */}
         {isSaveModalOpen && (

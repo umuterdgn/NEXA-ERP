@@ -52,12 +52,23 @@ import {
   Map as MapIcon,
 } from "lucide-react";
 
-// Harita Merkezini Dinamik Olarak Güncelleyen Yardımcı Bileşen
+// Harita Merkezini Dinamik Olarak Güncelleyen ve Unmount Temizliği Yapan Bileşen
 function MapCenterUpdater({ center, zoom }: { center: [number, number]; zoom?: number }) {
   const map = useMap();
   useEffect(() => {
     map.setView(center, zoom || map.getZoom());
   }, [center, zoom, map]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        map.stop();
+        map.off();
+        map.remove();
+      } catch {}
+    };
+  }, [map]);
+
   return null;
 }
 
@@ -449,7 +460,7 @@ export default function LiveSituationRiskMap({
       )}
 
       {/* 2. LEAFLET HARİTA ALANI */}
-      <div className="flex-1 w-full relative z-0 min-h-[520px]">
+      <div className="flex-1 w-full relative z-0 isolate min-h-[520px]">
         <MapContainer
           center={siteCoordinates}
           zoom={18}

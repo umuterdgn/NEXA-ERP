@@ -112,7 +112,7 @@ function createRolloutPinIcon(cat: PinCategory, isSelected: boolean, name?: stri
   });
 }
 
-// Seçilen Mağazaya Yumuşak Odaklanma Kontrolcüsü
+// Seçilen Mağazaya Yumuşak Odaklanma & Temizlik Kontrolcüsü
 function MapViewController({
   selectedProject,
 }: {
@@ -124,7 +124,22 @@ function MapViewController({
     if (selectedProject?.latitude && selectedProject?.longitude) {
       map.flyTo([selectedProject.latitude, selectedProject.longitude], 12, { duration: 1.2 });
     }
+    return () => {
+      try {
+        map.stop();
+      } catch {}
+    };
   }, [selectedProject, map]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        map.stop();
+        map.off();
+        map.remove();
+      } catch {}
+    };
+  }, [map]);
 
   return null;
 }
@@ -151,7 +166,7 @@ export default function RolloutLeafletMap({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-240px)] min-h-[500px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 z-0">
+    <div className="relative w-full h-[calc(100vh-240px)] min-h-[500px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 z-0 isolate">
       <style jsx global>{`
         .leaflet-popup-content-wrapper {
           background: #090d16 !important;

@@ -28,7 +28,7 @@ export default function AdminLayoutShell({ children }: { children: React.ReactNo
         setSidebarWidth={setSidebarWidth}
       />
       <main
-        className={`flex-1 h-full overflow-y-auto bg-slate-50 dark:bg-[#0A0F1C] ml-0 w-full transition-all duration-300 ${
+        className={`relative z-0 flex-1 h-full overflow-y-auto bg-slate-50 dark:bg-[#0A0F1C] ml-0 w-full transition-all duration-300 ${
           isCollapsed ? "md:ml-20" : "md:ml-64"
         }`}
       >

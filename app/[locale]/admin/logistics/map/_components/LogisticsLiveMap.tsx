@@ -278,7 +278,22 @@ function MapViewController({
       const bounds = L.latLngBounds(allPoints);
       map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
     }
+    return () => {
+      try {
+        map.stop();
+      } catch {}
+    };
   }, [selectedCoords, allPoints, map]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        map.stop();
+        map.off();
+        map.remove();
+      } catch {}
+    };
+  }, [map]);
 
   return null;
 }
@@ -606,7 +621,7 @@ export default function LogisticsLiveMap({ initialShipments }: LogisticsLiveMapP
       </div>
 
       {/* 2. Sağ / Harita Alanı */}
-      <div className="flex-1 relative h-full">
+      <div className="flex-1 relative h-full z-0 isolate">
         {/* Harita Katman Değiştirme Butonu */}
         <div className="absolute top-4 right-4 z-[400] flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-800 shadow-xl">
           <button

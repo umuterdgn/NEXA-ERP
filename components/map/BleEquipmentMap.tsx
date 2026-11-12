@@ -17,7 +17,6 @@ import {
   useMap,
   useMapEvents
 } from "react-leaflet"
-import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import * as turf from "@turf/turf"
 import IosMapPopup, { 
@@ -34,126 +33,25 @@ import {
   createProjectPinIcon,
   resolveMarkerRole
 } from "@/components/map/mapIcons"
+import type {
+  BleEquipment,
+  BleSiteZone,
+  LiveBleWorker,
+  ActiveRadarPersonnel,
+  GeofenceZoneItem,
+  MapProjectItem as ProjectItem,
+  BleEquipmentMapProps,
+} from "./types"
 
-export interface BleEquipment {
-  id: string
-  name: string
-  type: string
-  category?: string
-  status: "AKTIF" | "KAYIP" | string
-  rawStatus?: string
-  serialNumber?: string
-  bleTagId: string
-  latitude: number
-  longitude: number
-  lastSeenAt: string
-  projectId?: string | null
-  project?: {
-    id: string
-    title: string
-    name: string
-    latitude: number | null
-    longitude: number | null
-  } | null
-  assignedTo?: {
-    id: string
-    name: string
-    department?: string
-    phone?: string
-  } | null
+export type {
+  BleEquipment,
+  BleSiteZone,
+  LiveBleWorker,
+  ActiveRadarPersonnel,
+  GeofenceZoneItem,
+  BleEquipmentMapProps,
 }
-
-export interface BleSiteZone {
-  id: string
-  title: string
-  zoneType: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA" | "POLYLINE" | string
-  polygonCoordinates?: { lat: number; lng: number }[]
-  supervisor?: string
-  projectId?: string
-}
-
-export interface LiveBleWorker {
-  id: string
-  name: string
-  department: string
-  position: string
-  role?: string
-  latitude: number
-  longitude: number
-  pulse: number
-  battery: number
-  hasHelmet: boolean
-  inDanger: boolean
-  currentZoneName: string
-  currentZoneType: string | null
-}
-
-export interface ActiveRadarPersonnel {
-  id: string
-  name?: string
-  firstName?: string
-  lastName?: string
-  department?: string
-  position?: string
-  lastKnownLat: number | null
-  lastKnownLng: number | null
-  role?: string
-  pulse?: number
-  battery?: number
-  hasHelmet?: boolean
-  inDanger?: boolean
-  currentZoneName?: string
-  currentZoneType?: string | null
-}
-
-export interface GeofenceZoneItem {
-  id: string
-  name?: string
-  title?: string
-  type?: string
-  zoneType?: string
-  coordinates?: any
-  polygonCoordinates?: { lat: number; lng: number }[]
-  supervisor?: string
-  projectId?: string
-}
-
-export interface ProjectItem {
-  id: string
-  title?: string | null
-  name?: string | null
-  city?: string | null
-  district?: string | null
-  latitude?: number | null
-  longitude?: number | null
-  progress?: number
-  healthScore?: number
-  activeWorkers?: number
-  totalBlocks?: number
-}
-
-export interface BleEquipmentMapProps {
-  center: [number, number]
-  zoom?: number
-  equipments: BleEquipment[]
-  siteZones?: BleSiteZone[]
-  zones?: GeofenceZoneItem[]
-  activeRadars?: ActiveRadarPersonnel[]
-  projects?: ProjectItem[]
-  highlightedId?: string | null
-  searchQuery?: string
-  onSelectEquipment?: (equipment: BleEquipment) => void
-  onSelectProject?: (project: ProjectItem) => void
-  onDeleteZone?: (zoneId: string) => void
-  selectedProjectName?: string
-  // Drawing mode props
-  isDrawing?: boolean
-  drawShape?: "POLYGON" | "POLYLINE"
-  drawZoneType?: "MAIN_SITE" | "DANGER_ZONE" | "REST_AREA"
-  drawingPoints?: { lat: number; lng: number }[]
-  onAddDrawingPoint?: (pt: { lat: number; lng: number }) => void
-  onFinishDrawing?: () => void
-}
+export type { MapProjectItem as ProjectItem } from "./types"
 
 const ZONE_COLORS: Record<string, { stroke: string; fill: string; opacity: number; title: string }> = {
   MAIN_SITE: {
@@ -208,7 +106,32 @@ function MapViewController({
         easeLinearity: 0.25
       })
     }
+
+    return () => {
+      try {
+        map.stop()
+      } catch {}
+    }
   }, [map, center, zoom, targetPoint])
+
+  return null
+}
+
+// Cleanup controller to prevent Next.js router freezing on unmount
+function MapLifecycleController() {
+  const map = useMap()
+
+  useEffect(() => {
+    return () => {
+      try {
+        map.stop()
+        map.off()
+        map.remove()
+      } catch {
+        // Ignore if MapContainer already removed the instance
+      }
+    }
+  }, [map])
 
   return null
 }
@@ -308,8 +231,32 @@ export default function BleEquipmentMap({
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
   const [mounted, setMounted] = useState(false)
+  const leafletRef = useRef<any>(null)
+  const mapInstanceRef = useRef<any>(null)
+
   useEffect(() => {
     setMounted(true)
+    let active = true
+
+    if (typeof window !== "undefined") {
+      import("leaflet").then((mod) => {
+        if (active) {
+          leafletRef.current = mod.default || mod
+        }
+      })
+    }
+
+    return () => {
+      active = false
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.stop()
+          mapInstanceRef.current.off()
+          mapInstanceRef.current.remove()
+        } catch {}
+        mapInstanceRef.current = null
+      }
+    }
   }, [])
 
   // iOS Style Overlay Popup State (No more Leaflet default balloon popups!)
@@ -541,7 +488,7 @@ export default function BleEquipmentMap({
   }
 
   return (
-    <div className="relative w-full h-full bg-slate-950 overflow-hidden rounded-xl border border-slate-800 z-0">
+    <div className="relative w-full h-full bg-slate-950 overflow-hidden rounded-xl border border-slate-800 z-0 isolate">
       {/* iOS Frosted Glass Popup Overlay */}
       <IosMapPopup
         isOpen={popupState.isOpen}
@@ -559,13 +506,15 @@ export default function BleEquipmentMap({
       />
 
       <MapContainer
+        ref={mapInstanceRef}
         center={center}
         zoom={zoom}
         maxZoom={22}
         style={{ height: "100%", width: "100%" }}
-        className={`z-0 h-full w-full ${isDrawing ? "cursor-crosshair" : ""}`}
+        className={`relative z-0 h-full w-full ${isDrawing ? "cursor-crosshair" : ""}`}
         scrollWheelZoom={true}
       >
+        <MapLifecycleController />
         {/* Dynamic Theme Tiles: CartoDB Dark Matter for Dark Mode / CartoDB Positron for Light Mode */}
         {isDark ? (
           <TileLayer
@@ -663,7 +612,11 @@ export default function BleEquipmentMap({
                 }}
                 eventHandlers={{
                   click: (e) => {
-                    L.DomEvent.stopPropagation(e as any)
+                    if (leafletRef.current?.DomEvent) {
+                      leafletRef.current.DomEvent.stopPropagation(e as any)
+                    } else if ((e as any)?.originalEvent?.stopPropagation) {
+                      (e as any).originalEvent.stopPropagation()
+                    }
                     if (isDrawing) return
                     setPopupState({
                       isOpen: true,
@@ -698,7 +651,11 @@ export default function BleEquipmentMap({
                 }}
                 eventHandlers={{
                   click: (e) => {
-                    L.DomEvent.stopPropagation(e as any)
+                    if (leafletRef.current?.DomEvent) {
+                      leafletRef.current.DomEvent.stopPropagation(e as any)
+                    } else if ((e as any)?.originalEvent?.stopPropagation) {
+                      (e as any).originalEvent.stopPropagation()
+                    }
                     if (isDrawing) return
                     setPopupState({
                       isOpen: true,

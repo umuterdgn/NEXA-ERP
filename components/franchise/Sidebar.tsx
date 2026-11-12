@@ -141,7 +141,7 @@ export default function FranchiseSidebar({
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur-md px-4 md:hidden">
+      <div className="fixed top-0 left-0 right-0 z-[997] flex h-14 items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur-md px-4 md:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -167,14 +167,14 @@ export default function FranchiseSidebar({
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
+          className="fixed inset-0 z-[998] bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
           aria-hidden="true"
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 transform transition-transform duration-300 z-50 flex flex-col border-r border-slate-800/80 bg-slate-950/95 backdrop-blur-xl text-slate-100 ${
+        className={`fixed inset-y-0 left-0 transform transition-transform duration-300 z-[999] flex flex-col border-r border-slate-800/80 bg-slate-950/95 backdrop-blur-xl text-slate-100 ${
           isCollapsed ? "md:w-20" : "md:w-64"
         } w-64 max-w-[85vw] ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >

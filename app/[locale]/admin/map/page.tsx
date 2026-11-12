@@ -12,7 +12,7 @@ import type {
   BleEquipment, 
   ActiveRadarPersonnel, 
   GeofenceZoneItem 
-} from "@/components/map/BleEquipmentMap"
+} from "@/components/map/types"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +22,7 @@ export default async function AdminMapPage() {
     redirect("/login")
   }
 
-  const isSuperAdmin = session.user.role === "SUPER_ADMIN"
+  const isSuperAdmin = (session.user as any).role === "SUPER_ADMIN"
   const tenantId = (session.user as any)?.tenantId
 
   const tenantFilter = !isSuperAdmin

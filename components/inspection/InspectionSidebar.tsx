@@ -264,7 +264,7 @@ export default function InspectionSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-[100] lg:z-[100] h-full transition-all duration-300 ${
+        className={`fixed left-0 top-0 z-[9999] lg:z-[999] h-full transition-all duration-300 ${
           isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
         } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-[85vw] max-w-[320px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900`}
       >

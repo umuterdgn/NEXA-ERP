@@ -576,7 +576,7 @@ export default function AdminSidebar({
   return (
     <>
       {/* Mobile Header */}
-      <div className="fixed left-0 right-0 top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pb-safe pt-safe md:hidden">
+      <div className="fixed left-0 right-0 top-0 z-[997] border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pb-safe pt-safe md:hidden">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -616,7 +616,7 @@ export default function AdminSidebar({
       {/* Mobile Backdrop (Overlay) */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
+          className="fixed inset-0 z-[998] bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -627,7 +627,7 @@ export default function AdminSidebar({
         style={{
           width: isCollapsed ? undefined : `${currentWidth}px`,
         }}
-        className={`fixed inset-y-0 left-0 transform transition-transform duration-300 z-50 ${
+        className={`fixed inset-y-0 left-0 transform transition-transform duration-300 z-[999] ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         } ${isCollapsed ? "md:w-20" : "md:w-64"} w-64 max-w-[85vw] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-[#111827] flex flex-col`}
       >
