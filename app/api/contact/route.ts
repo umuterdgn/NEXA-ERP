@@ -6,6 +6,7 @@
 
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/nodemailer"
+import { prisma } from "@/lib/prisma"
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +18,23 @@ export async function POST(request: Request) {
         { error: "Gerekli alanlar eksik" },
         { status: 400 }
       )
+    }
+
+    if (subject === "demo" || String(subject).toLowerCase().includes("demo")) {
+      try {
+        await prisma.demoRequest.create({
+          data: {
+            companyName: String(name).trim(),
+            contactName: String(name).trim(),
+            email: String(email).trim().toLowerCase(),
+            phone: phone ? String(phone).trim() : null,
+            notes: String(message).trim(),
+            status: "NEW",
+          },
+        })
+      } catch (dbErr) {
+        console.error("Contact demo lead save error:", dbErr)
+      }
     }
 
     await sendEmail({

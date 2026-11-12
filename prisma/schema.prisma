@@ -5166,3 +5166,40 @@ model EquipmentLogistics {
   @@index([tenantId])
 }
 
+// ============================================================================
+// B2B SAAS LEADS & DEMO REQUESTS
+// ============================================================================
+
+model DemoRequest {
+  id            String   @id @default(cuid())
+  companyName   String
+  contactName   String
+  email         String
+  phone         String?
+  employeeCount String? // Örn: 10-50, 50-200
+  status        String   @default("NEW") // NEW, CONTACTED, DEMO_DONE, CONVERTED, REJECTED
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// B2B SaaS Web Trafik & Ziyaretçi Analitiği
+model WebTraffic {
+  id        String   @id @default(cuid())
+  path      String
+  ip        String?
+  userAgent String?
+  referer   String?
+  country   String?
+  city      String?
+  duration  Int?     @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([path])
+  @@index([createdAt])
+}
+
+

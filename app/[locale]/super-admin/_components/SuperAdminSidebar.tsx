@@ -23,6 +23,9 @@ import {
   Download,
   Newspaper,
   FileText,
+  Users,
+  TrendingUp,
+  Sparkles,
 } from "lucide-react"
 
 export default function SuperAdminSidebar({
@@ -40,6 +43,21 @@ export default function SuperAdminSidebar({
       href: "/superadmin/dashboard",
       label: "Komuta Merkezi",
       icon: LayoutDashboard,
+    },
+    {
+      href: "/superadmin/leads",
+      label: "Demo Talepleri (Leads)",
+      icon: Sparkles,
+    },
+    {
+      href: "/superadmin/tenants",
+      label: "Müşteri (Tenant) Yönetimi",
+      icon: Building2,
+    },
+    {
+      href: "/superadmin/analytics",
+      label: "Web Trafiği & Analitik",
+      icon: TrendingUp,
     },
     {
       href: "/superadmin/billing",

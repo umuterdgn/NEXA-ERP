@@ -6,8 +6,11 @@
  */
 
 import { motion } from "framer-motion"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import DemoRequestModal from "@/components/landing/DemoRequestModal"
+import DemoRequestSection from "@/components/landing/DemoRequestSection"
+import { recordWebTraffic } from "@/actions/super-admin/analytics"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -395,6 +398,15 @@ export default function LandingPageClient() {
   const [selectedCategory, setSelectedCategory] = useState<"all" | "construction" | "inspection">("all")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
+
+  useEffect(() => {
+    void recordWebTraffic({
+      path: typeof window !== "undefined" ? window.location.pathname : "/",
+      referer: typeof document !== "undefined" ? document.referrer || null : null,
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent || null : null,
+    })
+  }, [])
 
   const currentPreview = modulePreviews[selectedModule] || modulePreviews["/admin"]
 
@@ -1051,14 +1063,15 @@ export default function LandingPageClient() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
-              <Link
-                href="/iletisim"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 shadow-xl shadow-cyan-500/25 border border-cyan-400/40 transition-all transform hover:scale-105 active:scale-95"
+              <button
+                type="button"
+                onClick={() => setIsDemoModalOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 shadow-xl shadow-cyan-500/25 border border-cyan-400/40 transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-cyan-200" />
                 <span>Ücretsiz Demo Talebi</span>
                 <ArrowRight className="w-4 h-4 text-cyan-200" />
-              </Link>
+              </button>
 
               <a
                 href="#interactive-demo"
@@ -1565,6 +1578,9 @@ export default function LandingPageClient() {
         </div>
       </section>
 
+      {/* --- INLINE DEMO REQUEST SECTION --- */}
+      <DemoRequestSection />
+
       {/* --- B2B ENTERPRISE CTA SECTION --- */}
       <section className="py-20 px-4 border-t border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 via-blue-600/10 to-indigo-600/10 pointer-events-none" />
@@ -1592,13 +1608,14 @@ export default function LandingPageClient() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link
-                href="/iletisim"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white px-8 py-4 rounded-xl font-bold shadow-xl shadow-cyan-500/25 border border-cyan-400/40 text-sm transition-all transform hover:scale-105 active:scale-95"
+              <button
+                type="button"
+                onClick={() => setIsDemoModalOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white px-8 py-4 rounded-xl font-bold shadow-xl shadow-cyan-500/25 border border-cyan-400/40 text-sm transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <span>Ücretsiz Demo Talebi Oluştur</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
               <Link
                 href="/login"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-900/90 hover:bg-slate-800 text-slate-200 px-7 py-4 rounded-xl font-semibold border border-slate-700 text-sm transition-all"
@@ -1610,6 +1627,8 @@ export default function LandingPageClient() {
           </motion.div>
         </div>
       </section>
+
+      <DemoRequestModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </div>
   )
 }

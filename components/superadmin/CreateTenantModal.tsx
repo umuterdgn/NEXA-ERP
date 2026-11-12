@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import {
   Building2,
   UserCheck,
@@ -21,11 +21,21 @@ import {
   Link as LinkIcon
 } from "lucide-react"
 import { toast } from "react-hot-toast"
+import { updateDemoRequestStatus } from "@/actions/super-admin/leads"
+
+export interface CreateTenantInitialData {
+  companyName?: string
+  contactName?: string
+  email?: string
+  phone?: string
+  leadId?: string
+}
 
 interface CreateTenantModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  initialData?: CreateTenantInitialData | null
 }
 
 const AVAILABLE_MODULES = [
@@ -44,6 +54,7 @@ export default function CreateTenantModal({
   isOpen,
   onClose,
   onSuccess,
+  initialData,
 }: CreateTenantModalProps) {
   // 1. Firma Bilgileri
   const [name, setName] = useState("")
@@ -77,6 +88,24 @@ export default function CreateTenantModal({
   const [isWhiteLabelActive, setIsWhiteLabelActive] = useState(true)
 
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (isOpen && initialData) {
+      if (initialData.companyName) {
+        setName(initialData.companyName)
+        setSlug(toSlug(initialData.companyName))
+      }
+      if (initialData.contactName) {
+        setAdminName(initialData.contactName)
+      }
+      if (initialData.email) {
+        setAdminEmail(initialData.email)
+      }
+      if (!adminPassword) {
+        setAdminPassword("Nexa2026!")
+      }
+    }
+  }, [isOpen, initialData])
 
   // Firma Logosu Dosya Yükleme (Direct File Upload)
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,6 +224,18 @@ export default function CreateTenantModal({
 
       if (!res.ok) {
         throw new Error(data.error || "Firma oluşturulamadı")
+      }
+
+      if (initialData?.leadId) {
+        try {
+          await updateDemoRequestStatus(
+            initialData.leadId,
+            "CONVERTED",
+            "Tenant onboarding tamamlandı ve müşteri hesabına dönüştürüldü."
+          )
+        } catch (leadErr) {
+          console.error("Lead conversion status update failed:", leadErr)
+        }
       }
 
       toast.success(
