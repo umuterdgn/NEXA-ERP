@@ -515,22 +515,22 @@ export default function BleEquipmentMap({
         scrollWheelZoom={true}
       >
         <MapLifecycleController />
-        {/* Dynamic Theme Tiles: CartoDB Dark Matter for Dark Mode / CartoDB Positron for Light Mode */}
+        {/* Dynamic Theme Tiles: Free Esri Dark Gray / Esri Light Gray (No API Key Required) */}
         {isDark ? (
           <TileLayer
-            key="carto-dark-matter"
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            subdomains="abcd"
-            maxZoom={20}
+            key="esri-dark-gray"
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+            maxNativeZoom={16}
+            maxZoom={22}
           />
         ) : (
           <TileLayer
-            key="carto-positron"
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            subdomains="abcd"
-            maxZoom={20}
+            key="esri-light-gray"
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+            maxNativeZoom={16}
+            maxZoom={22}
           />
         )}
 

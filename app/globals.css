@@ -180,3 +180,15 @@ html.monochrome .bg-white {
   border-color: #ffffff !important;
   filter: grayscale(100%) contrast(130%);
 }
+
+/* Leaflet Haritasının Sidebar'ı Kilitlemesini Önleme */
+.leaflet-container {
+  z-index: 10 !important;
+}
+.leaflet-pane {
+  z-index: 10 !important;
+}
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20 !important;
+}
