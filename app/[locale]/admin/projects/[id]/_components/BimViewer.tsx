@@ -562,6 +562,280 @@ function IfcCanvasModel({
   return <primitive object={ifcModel as any} onClick={onClick} onPointerDown={onPointerDown} />
 }
 
+export interface Blueprint2DCoordinateItem {
+  id?: string
+  eleman: string
+  baslangic: { x: number; y: number }
+  bitis: { x: number; y: number }
+  yukseklik: number
+  kalinlik?: number
+  taban_kotu?: number
+  disiplin: "Mimari" | "Statik" | "Elektrik" | "Mekanik" | string
+  poz_no?: string
+}
+
+export interface Extruded3DBoxItem {
+  id: string
+  meshName: string
+  eleman: string
+  pozNo: string
+  disciplineGroup: "Mimari" | "Statik" | "Elektrik" | "Mekanik"
+  categoryKey: BimCategoryKey
+  position: [number, number, number]
+  rotation: [number, number, number]
+  boxArgs: [number, number, number]
+  color: string
+}
+
+const FALLBACK_2D_COORDINATE_DATA: Blueprint2DCoordinateItem[] = [
+  // MİMARİ DUVARLAR
+  { id: "EXT-M-01", eleman: "Tuğla Duvar (Kuzey Cephe)", baslangic: { x: -8, y: -6 }, bitis: { x: 8, y: -6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-02", eleman: "Tuğla Duvar (Güney Cephe)", baslangic: { x: -8, y: 6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-03", eleman: "Tuğla Duvar (Batı Cephe)", baslangic: { x: -8, y: -6 }, bitis: { x: -8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-04", eleman: "Tuğla Duvar (Doğu Cephe)", baslangic: { x: 8, y: -6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-05", eleman: "Gazbeton İç Bölme Duvarı (Salon)", baslangic: { x: -2, y: -6 }, bitis: { x: -2, y: 2 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-06", eleman: "Gazbeton İç Bölme Duvarı (Yatak Odası - 15m2)", baslangic: { x: -2, y: 2 }, bitis: { x: 8, y: 2 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-07", eleman: "1. Kat Dış Cephe Duvarı (Kuzey)", baslangic: { x: -8, y: -6 }, bitis: { x: 8, y: -6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-08", eleman: "1. Kat Dış Cephe Duvarı (Güney)", baslangic: { x: -8, y: 6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-09", eleman: "1. Kat Dış Cephe Duvarı (Batı)", baslangic: { x: -8, y: -6 }, bitis: { x: -8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-10", eleman: "1. Kat Dış Cephe Duvarı (Doğu)", baslangic: { x: 8, y: -6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-11", eleman: "1. Kat İç Bölme Duvarı", baslangic: { x: 2, y: -6 }, bitis: { x: 2, y: 6 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+
+  // STATİK TAŞIYICI SİSTEM
+  { id: "EXT-S-01", eleman: "C35/45 Radye Temel & Subasman Döşemesi", baslangic: { x: -8.5, y: 0 }, bitis: { x: 8.5, y: 0 }, yukseklik: 0.4, kalinlik: 13.0, taban_kotu: -0.4, disiplin: "Statik", poz_no: "15.150.1005" },
+  { id: "EXT-S-02", eleman: "C35/45 1. Kat Betonarme Döşeme Tabliyesi", baslangic: { x: -8.2, y: 0 }, bitis: { x: 8.2, y: 0 }, yukseklik: 0.25, kalinlik: 12.4, taban_kotu: 3.2, disiplin: "Statik", poz_no: "15.150.1005" },
+  { id: "EXT-S-03", eleman: "C35/45 Çatı Katı Betonarme Döşeme Tabliyesi", baslangic: { x: -8.2, y: 0 }, bitis: { x: 8.2, y: 0 }, yukseklik: 0.25, kalinlik: 12.4, taban_kotu: 6.6, disiplin: "Statik", poz_no: "15.150.1005" },
+  { id: "EXT-S-04", eleman: "S01 Betonarme Kolon (50x50cm)", baslangic: { x: -7.8, y: -5.8 }, bitis: { x: -7.3, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-05", eleman: "S02 Betonarme Kolon (50x50cm)", baslangic: { x: 0, y: -5.8 }, bitis: { x: 0.5, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-06", eleman: "S03 Betonarme Kolon (50x50cm)", baslangic: { x: 7.3, y: -5.8 }, bitis: { x: 7.8, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-07", eleman: "S04 Betonarme Kolon (50x50cm)", baslangic: { x: -7.8, y: 5.8 }, bitis: { x: -7.3, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-08", eleman: "S05 Betonarme Kolon (50x50cm)", baslangic: { x: 0, y: 5.8 }, bitis: { x: 0.5, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-09", eleman: "S06 Betonarme Kolon (50x50cm)", baslangic: { x: 7.3, y: 5.8 }, bitis: { x: 7.8, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-10", eleman: "P01 TBDY-2018 Deprem Perdesi (30x240cm)", baslangic: { x: -1.2, y: 0 }, bitis: { x: 1.2, y: 0 }, yukseklik: 6.8, kalinlik: 0.35, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-11", eleman: "K101 Ana Taşıyıcı Kiriş (30/60cm)", baslangic: { x: -7.8, y: 0 }, bitis: { x: 7.8, y: 0 }, yukseklik: 0.5, kalinlik: 0.35, taban_kotu: 2.75, disiplin: "Statik", poz_no: "15.150.1005" },
+  { id: "EXT-S-12", eleman: "K201 1. Kat Ana Taşıyıcı Kiriş (30/60cm)", baslangic: { x: -7.8, y: 0 }, bitis: { x: 7.8, y: 0 }, yukseklik: 0.5, kalinlik: 0.35, taban_kotu: 6.15, disiplin: "Statik", poz_no: "15.150.1005" },
+
+  // ELEKTRİK & ZAYIF AKIM
+  { id: "EXT-E-01", eleman: "E-POWR Kuvvetli Akım Ana Kablo Tavası (Zemin Kat)", baslangic: { x: -7, y: -2.5 }, bitis: { x: 7, y: -2.5 }, yukseklik: 0.18, kalinlik: 0.35, taban_kotu: 2.85, disiplin: "Elektrik", poz_no: "18.150.1003" },
+  { id: "EXT-E-02", eleman: "Yangın Algılama Hattı & Zayıf Akım Tavası (1. Kat)", baslangic: { x: -7, y: 2.5 }, bitis: { x: 7, y: 2.5 }, yukseklik: 0.18, kalinlik: 0.35, taban_kotu: 6.2, disiplin: "Elektrik", poz_no: "18.320.1008" },
+  { id: "EXT-E-03", eleman: "Düşey Elektrik Şaftı & Busbar Kanalı", baslangic: { x: -6.5, y: -4.5 }, bitis: { x: -6.1, y: -4.5 }, yukseklik: 6.5, kalinlik: 0.4, taban_kotu: 0, disiplin: "Elektrik", poz_no: "18.150.1003" },
+
+  // MEKANİK / TESİSAT
+  { id: "EXT-T-01", eleman: "M-HVAC Galvaniz Havalandırma Kanalı (Zemin Kat)", baslangic: { x: -7, y: 3.5 }, bitis: { x: 7, y: 3.5 }, yukseklik: 0.35, kalinlik: 0.45, taban_kotu: 2.65, disiplin: "Mekanik", poz_no: "19.200.1004" },
+  { id: "EXT-T-02", eleman: "M-PLUM Yangın Sprinkler & Temiz Su Boru Hattı (1. Kat)", baslangic: { x: -7, y: -3.5 }, bitis: { x: 7, y: -3.5 }, yukseklik: 0.25, kalinlik: 0.3, taban_kotu: 6.05, disiplin: "Mekanik", poz_no: "19.450.1002" },
+  { id: "EXT-T-03", eleman: "Mekanik Tesisat Düşey Kolon Şaftı", baslangic: { x: 6.1, y: -4.5 }, bitis: { x: 6.5, y: -4.5 }, yukseklik: 6.5, kalinlik: 0.4, taban_kotu: 0, disiplin: "Mekanik", poz_no: "19.450.1002" },
+]
+
+/**
+ * ADIM 2: 2D'den 3D'ye Otomatik Geometri Üretimi (generate3DFrom2DData)
+ * 2D PDF / DWG koordinatlarını ve yüksekliklerini React Three Fiber (<mesh>, <boxGeometry>)
+ * kutu/duvar verilerine çevirir ve disiplinlere ("Mimari", "Statik", "Elektrik", "Mekanik") göre gruplar.
+ */
+export function generate3DFrom2DData(
+  elements: Blueprint2DCoordinateItem[] = FALLBACK_2D_COORDINATE_DATA
+): {
+  groupedByDiscipline: Record<
+    "Mimari" | "Statik" | "Elektrik" | "Mekanik",
+    Extruded3DBoxItem[]
+  >
+  counts: Record<BimCategoryKey, number>
+} {
+  const source =
+    elements && elements.length > 0 ? elements : FALLBACK_2D_COORDINATE_DATA
+
+  const groupedByDiscipline: Record<
+    "Mimari" | "Statik" | "Elektrik" | "Mekanik",
+    Extruded3DBoxItem[]
+  > = {
+    Mimari: [],
+    Statik: [],
+    Elektrik: [],
+    Mekanik: [],
+  }
+
+  const counts: Record<BimCategoryKey, number> = {
+    statik: 0,
+    mimari: 0,
+    elektrik: 0,
+    mekanik: 0,
+  }
+
+  source.forEach((el, idx) => {
+    const startX = Number(el.baslangic?.x ?? 0)
+    const startZ = Number(el.baslangic?.y ?? 0)
+    const endX = Number(el.bitis?.x ?? 5)
+    const endZ = Number(el.bitis?.y ?? 0)
+    const height = Math.max(0.15, Number(el.yukseklik ?? 3.0))
+    const thickness = Math.max(0.15, Number(el.kalinlik ?? 0.25))
+    const baseY = Number(el.taban_kotu ?? 0)
+
+    const dx = endX - startX
+    const dz = endZ - startZ
+    const length = Math.max(0.4, Math.hypot(dx, dz))
+    const angleY = -Math.atan2(dz, dx)
+
+    const centerX = (startX + endX) / 2
+    const centerY = baseY + height / 2
+    const centerZ = (startZ + endZ) / 2
+
+    const rawDisc = (el.disiplin || "Mimari").toLowerCase()
+    let disciplineGroup: "Mimari" | "Statik" | "Elektrik" | "Mekanik" = "Mimari"
+    let categoryKey: BimCategoryKey = "mimari"
+    let color = "#f97316"
+
+    if (
+      rawDisc.includes("statik") ||
+      rawDisc.includes("beton") ||
+      rawDisc.includes("iskele") ||
+      rawDisc.includes("kalıp")
+    ) {
+      disciplineGroup = "Statik"
+      categoryKey = "statik"
+      color = "#3b82f6"
+    } else if (
+      rawDisc.includes("elektrik") ||
+      rawDisc.includes("zayıf akım") ||
+      rawDisc.includes("kablo")
+    ) {
+      disciplineGroup = "Elektrik"
+      categoryKey = "elektrik"
+      color = "#eab308"
+    } else if (
+      rawDisc.includes("mekanik") ||
+      rawDisc.includes("tesisat") ||
+      rawDisc.includes("hvac") ||
+      rawDisc.includes("boru")
+    ) {
+      disciplineGroup = "Mekanik"
+      categoryKey = "mekanik"
+      color = "#06b6d4"
+    }
+
+    const item: Extruded3DBoxItem = {
+      id: el.id || `EXT-3D-${idx + 1}`,
+      meshName: `${disciplineGroup}_${el.eleman || `Eleman_${idx + 1}`}`,
+      eleman: el.eleman || "Yapı Elemanı",
+      pozNo: el.poz_no || "15.220.1004",
+      disciplineGroup,
+      categoryKey,
+      position: [centerX, centerY, centerZ],
+      rotation: [0, angleY, 0],
+      boxArgs: [length, height, thickness],
+      color,
+    }
+
+    groupedByDiscipline[disciplineGroup].push(item)
+    counts[categoryKey] += 1
+  })
+
+  return { groupedByDiscipline, counts }
+}
+
+/**
+ * ADIM 2 & ADIM 3: React Three Fiber 2D->3D Otomatik Geometri (Extrusion) & Disiplin Katman Grupları
+ * <group name="Mimari">, <group name="Statik">, <group name="Elektrik">, <group name="Mekanik">
+ */
+function Extruded2DTo3DModel({
+  elements,
+  layerVisibility,
+  xRayOpacity,
+  completedElements,
+  onElementCounts,
+  onClick,
+  onPointerDown,
+}: {
+  elements: Blueprint2DCoordinateItem[]
+  layerVisibility: Record<BimCategoryKey, boolean>
+  xRayOpacity: number
+  completedElements?: Record<string, boolean>
+  onElementCounts?: (counts: Record<BimCategoryKey, number>) => void
+  onClick?: (e: any) => void
+  onPointerDown?: (e: any) => void
+}) {
+  const { groupedByDiscipline, counts } = React.useMemo(
+    () => generate3DFrom2DData(elements),
+    [elements]
+  )
+
+  useEffect(() => {
+    if (onElementCounts) {
+      onElementCounts(counts)
+    }
+  }, [counts])
+
+  const alpha = xRayOpacity / 100
+  const isTransparent = alpha < 0.99
+  const clampedOpacity = Math.max(0.08, alpha)
+  const isXRayActive = xRayOpacity < 70
+
+  const renderDisciplineMeshes = (
+    items: Extruded3DBoxItem[],
+    isStructuralOrArch: boolean
+  ) =>
+    items.map((item) => {
+      const isCompleted =
+        completedElements &&
+        (completedElements[item.meshName] || completedElements[item.id])
+      const meshColor = isCompleted ? "#10b981" : item.color
+      const emissiveColor = isCompleted
+        ? "#10b981"
+        : !isStructuralOrArch && isXRayActive
+        ? item.color
+        : "#000000"
+      const emissiveIntensity = isCompleted
+        ? 0.85
+        : !isStructuralOrArch && isXRayActive
+        ? 0.5
+        : 0
+
+      return (
+        <mesh
+          key={item.id}
+          name={item.meshName}
+          position={item.position}
+          rotation={item.rotation}
+          castShadow
+          receiveShadow
+          onClick={onClick}
+          onPointerDown={onPointerDown}
+        >
+          <boxGeometry args={item.boxArgs} />
+          <meshStandardMaterial
+            color={meshColor}
+            transparent={isStructuralOrArch ? isTransparent : false}
+            opacity={isStructuralOrArch ? clampedOpacity : 1.0}
+            depthWrite={isStructuralOrArch ? alpha > 0.4 : true}
+            roughness={isStructuralOrArch ? 0.65 : 0.25}
+            metalness={isStructuralOrArch ? 0.15 : 0.6}
+            emissive={emissiveColor}
+            emissiveIntensity={emissiveIntensity}
+          />
+        </mesh>
+      )
+    })
+
+  return (
+    <group name="Federated2DTo3DExtrusionRoot">
+      {/* ADIM 2 & ADIM 3: Disiplin bazlı <group name="..."> ve Katman (visible) Senkronizasyonu */}
+      <group name="Mimari" visible={layerVisibility.mimari}>
+        {renderDisciplineMeshes(groupedByDiscipline.Mimari, true)}
+      </group>
+
+      <group name="Statik" visible={layerVisibility.statik}>
+        {renderDisciplineMeshes(groupedByDiscipline.Statik, true)}
+      </group>
+
+      <group name="Elektrik" visible={layerVisibility.elektrik}>
+        {renderDisciplineMeshes(groupedByDiscipline.Elektrik, false)}
+      </group>
+
+      <group name="Mekanik" visible={layerVisibility.mekanik}>
+        {renderDisciplineMeshes(groupedByDiscipline.Mekanik, false)}
+      </group>
+    </group>
+  )
+}
+
 // Error Boundary for R3F Canvas
 class ModelErrorBoundary extends Component<
   { fallback: (error: Error, reset: () => void) => ReactNode; children: ReactNode },
@@ -771,6 +1045,27 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
     mekanik: 0,
   })
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false)
+
+  // ADIM 2: 2D PDF/DWG veya Prisma BoqItem Verisinden 3D Extrusion Elemanları
+  const [extrusionElements2D, setExtrusionElements2D] = useState<Blueprint2DCoordinateItem[]>(
+    FALLBACK_2D_COORDINATE_DATA
+  )
+  const [extrusionSource, setExtrusionSource] = useState<string>("DEFAULT_2D_BLUEPRINT")
+
+  useEffect(() => {
+    import("@/actions/ai-blueprint-parser")
+      .then(({ getProject2DExtrusionData }) => {
+        getProject2DExtrusionData(projectId)
+          .then((res) => {
+            if (res?.success && res.elements && res.elements.length > 0) {
+              setExtrusionElements2D(res.elements)
+              setExtrusionSource(res.source)
+            }
+          })
+          .catch((err) => console.warn("2D->3D Extrusion verisi çekilemedi:", err))
+      })
+      .catch(() => {})
+  }, [projectId])
 
   // Open layer panel automatically on desktop displays (>= 1024px), keep collapsed on mobile
   useEffect(() => {
@@ -1984,8 +2279,14 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                             : "bg-slate-900/40 border-slate-800/80 opacity-60"
                         }`}
                       >
-                        {/* Category Info */}
-                        <div className="flex items-start gap-2.5 min-w-0 pr-2">
+                        {/* Category Info + Checkbox */}
+                        <label className="flex items-start gap-2.5 min-w-0 pr-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isVisible}
+                            onChange={() => toggleCategory(cat.key)}
+                            className="mt-1 w-4 h-4 rounded border-slate-700 text-cyan-500 focus:ring-cyan-400 bg-slate-800 cursor-pointer accent-cyan-500 shrink-0"
+                          />
                           <span className="text-xl select-none mt-0.5">{cat.icon}</span>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
@@ -2011,7 +2312,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                             </div>
                             <p className="text-[10.5px] text-slate-400 truncate mt-0.5">{cat.elementsDesc}</p>
                           </div>
-                        </div>
+                        </label>
 
                         {/* Interactive Toggle Switch */}
                         <button
@@ -2058,32 +2359,18 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
           </div>
         )}
 
-      {/* Main 3D Viewport - ADIM 1: Viewer Dosya Tipi Koruması */}
-      {isNon3DActiveFile ? (
-        <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} flex flex-col items-center justify-center p-8 text-center bg-slate-950`}>
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-lg shadow-amber-500/10">
-            <AlertTriangle className="w-8 h-8" />
-          </div>
-          <h4 className="text-white font-bold text-lg mb-2">Desteklenmeyen Dosya Formatı</h4>
-          <p className="text-amber-200 text-sm font-semibold max-w-md mb-4 leading-relaxed">
-            Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.
-          </p>
-          {federatedModels.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                if (federatedModels[0]?.url) {
-                  setActiveModelUrl(federatedModels[0].url)
-                }
-              }}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg transition-all"
-            >
-              🏢 Kayıtlı 3D Modeli Aç ({federatedModels[0].name})
-            </button>
-          )}
-        </div>
-      ) : engineMode === "canvas" ? (
+      {/* Main 3D Viewport - ADIM 2 & ADIM 3: R3F 2D->3D Otomatik Extrusion & Federated BIM */}
+      {engineMode === "canvas" || isNon3DActiveFile ? (
         <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} ${isSnaggingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} bg-slate-950`}>
+          {/* 2D->3D Otomatik Geometri (Extrusion) Bilgi Rozeti */}
+          {(isNon3DActiveFile || (!federatedModels.length && (!safeUrl || safeUrl.trim() === ""))) && (
+            <div className="absolute top-16 left-4 z-30 bg-slate-900/90 backdrop-blur-md border border-cyan-500/40 rounded-xl px-3.5 py-2 shadow-xl flex items-center gap-2 text-xs text-cyan-300 pointer-events-none">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>
+                <strong>2D→3D R3F Extrusion Motoru Aktif:</strong> PDF/DWG &amp; Prisma BoQ koordinatlarından otomatik 3D model oluşturuldu ({extrusionElements2D.length} yapısal eleman • Kaynak: {extrusionSource}).
+              </span>
+            </div>
+          )}
           {/* Snagging Active Banner Hint */}
           {isSnaggingMode && (
             <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 bg-red-600/90 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-2xl backdrop-blur-md border border-red-400 flex items-center gap-2 animate-bounce pointer-events-none">
@@ -2106,7 +2393,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                 <h4 className="text-white font-semibold text-base mb-2">Model Formatı Uyarısı</h4>
                 <p className="text-slate-400 text-xs max-w-md mb-5 leading-relaxed">
                   Seçili dosya GLTF/GLB olarak çözümlenemedi ({err.message.slice(0, 100)}). IFC dosyanızı IFC motorunda
-                  açabilir veya örnek 3D yapıyı inceleyebilirsiniz.
+                  açabilir veya 2D→3D Extrusion yapısını inceleyebilirsiniz.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {effectiveUrl && (
@@ -2121,25 +2408,23 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                       🏛️ IFC Motorunda Aç
                     </button>
                   )}
-                  {federatedModels.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const first = federatedModels[0]
-                        if (first?.url) setActiveModelUrl(first.url)
-                        reset()
-                      }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5"
-                    >
-                      🏢 Modeli Yeniden Dene ({federatedModels[0]?.name || "BIM"})
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSafeUrl(null)
+                      setActiveModelUrl("")
+                      reset()
+                    }}
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5"
+                  >
+                    ✨ 2D→3D Otomatik Modeli Aç
+                  </button>
                 </div>
               </div>
             )}
           >
             <Canvas
-              key={safeUrl || activeModelUrl}
+              key={safeUrl || activeModelUrl || "r3f-extrusion-canvas"}
               dpr={[1, 2]}
               performance={{ min: 0.5 }}
               camera={{ far: 20000, near: 0.1, fov: 45, position: [35, 30, 35] }}
@@ -2167,7 +2452,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
               <Suspense fallback={<CanvasLoader />}>
                 <Bounds clip fit margin={1.2} observe>
                   <Center>
-                    {federatedModels && federatedModels.length > 0 ? (
+                    {!isNon3DActiveFile && federatedModels && federatedModels.length > 0 ? (
                       federatedModels
                         .filter((m) => m.visible && m.url)
                         .map((item) => (
@@ -2201,21 +2486,38 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                             )}
                           </group>
                         ))
-                    ) : !safeUrl || safeUrl.trim() === "" ? null : isIfcUrlOrFile(activeModelUrl, fileName) ? (
-                      <IfcCanvasModel
-                        url={safeUrl}
-                        layerVisibility={layerVisibility}
-                        xRayOpacity={xRayOpacity}
-                        onClick={handleModelClick}
-                        onPointerDown={(e: any) => {
-                          const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
-                          const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
-                          pointerDownPosRef.current = { x, y }
-                        }}
-                      />
+                    ) : !isNon3DActiveFile && safeUrl && safeUrl.trim() !== "" ? (
+                      isIfcUrlOrFile(activeModelUrl, fileName) ? (
+                        <IfcCanvasModel
+                          url={safeUrl}
+                          layerVisibility={layerVisibility}
+                          xRayOpacity={xRayOpacity}
+                          onClick={handleModelClick}
+                          onPointerDown={(e: any) => {
+                            const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                            const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                            pointerDownPosRef.current = { x, y }
+                          }}
+                        />
+                      ) : (
+                        <GltfModel
+                          url={safeUrl}
+                          layerVisibility={layerVisibility}
+                          xRayOpacity={xRayOpacity}
+                          completedElements={completedElements}
+                          onElementCounts={(counts) => setCategoryCounts(counts)}
+                          onClick={handleModelClick}
+                          onPointerDown={(e: any) => {
+                            const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                            const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                            pointerDownPosRef.current = { x, y }
+                          }}
+                        />
+                      )
                     ) : (
-                      <GltfModel
-                        url={safeUrl}
+                      /* ADIM 2 & ADIM 3: Hazır 3D model yoksa veya PDF/DWG yüklendiyse 2D Koordinatlardan Otomatik 3D Extrusion Modeli */
+                      <Extruded2DTo3DModel
+                        elements={extrusionElements2D}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                         completedElements={completedElements}

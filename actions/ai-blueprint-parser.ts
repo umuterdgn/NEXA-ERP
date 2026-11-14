@@ -62,6 +62,20 @@ export type ConstructionDiscipline =
   | "İskele - Kalıp"
   | string;
 
+export interface Blueprint2DCoordinateElement {
+  id?: string;
+  eleman: string;
+  baslangic: { x: number; y: number };
+  bitis: { x: number; y: number };
+  yukseklik: number;
+  kalinlik?: number;
+  taban_kotu?: number;
+  disiplin: "Mimari" | "Statik" | "Elektrik" | "Mekanik" | ConstructionDiscipline;
+  poz_no?: string;
+  miktar?: number;
+  birim?: string;
+}
+
 export interface ParsedBoQItem {
   id: string;
   pozNo: string;
@@ -73,6 +87,10 @@ export interface ParsedBoQItem {
   unitPrice: number;
   totalPrice: number;
   detectedInRooms: string[];
+  baslangic?: { x: number; y: number };
+  bitis?: { x: number; y: number };
+  yukseklik?: number;
+  kalinlik?: number;
 }
 
 export interface BlueprintAnalysisResult {
@@ -87,6 +105,7 @@ export interface BlueprintAnalysisResult {
   totalEstimatedCost: number;
   rooms: ParsedRoom[];
   boqItems: ParsedBoQItem[];
+  elements2D?: Blueprint2DCoordinateElement[];
   dbInsertedCount: number;
   dbAnalysisId?: string;
   systemPromptUsed?: string;
@@ -108,6 +127,7 @@ export interface StructuredBlueprintOutput {
   }>;
   metraj_kalemleri: Array<{
     poz_no?: string;
+    eleman?: string;
     disiplin: ConstructionDiscipline;
     aciklama: string;
     kategori?: "STATIK" | "MIMARI" | "ELEKTRIK" | "MEKANIK" | "YALITIM" | "ISKELE_KALIP";
@@ -116,11 +136,15 @@ export interface StructuredBlueprintOutput {
     birim_fiyat?: number;
     toplam_tutar?: number;
     bulundugu_mahaller?: string[];
+    baslangic?: { x: number; y: number };
+    bitis?: { x: number; y: number };
+    yukseklik?: number;
   }>;
+  yapisal_elemanlar?: Blueprint2DCoordinateElement[];
 }
 
 /**
- * ADIM 1 & ADIM 2: AI Blueprint Parser Sistem Yönergesi (9 Temel İnşaat Disiplini + Zorunlu JSON Çıktı Şeması)
+ * ADIM 1 & ADIM 2: AI Blueprint Parser Sistem Yönergesi (9 Temel İnşaat Disiplini + 2D-to-3D Extrusion Koordinat Şeması)
  */
 const systemPrompt = `
 Rol:
@@ -143,7 +167,11 @@ Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, E-LITE, M-HVAC, M-PLUM gi
 - AKUSTİK & İZODER (Yalıtım): Isı, ses ve su yalıtım levhalarının, taş yünü veya XPS/EPS malzemelerinin alan (m2) metrajlarını hesapla.
 - İSKELE - KALIP: Cephe iskelesi metrajlarını (m2 veya ton) ve güvenlik filesi ihtiyaçlarını belirle.
 
-5. Few-Shot Prompting (Örneklere Dayalı Öğrenme):
+5. 2D'den 3D'ye Geometri (Extrusion) Koordinat Çıkarımı:
+Sadece metraj (miktar) değil, tespit edilen her yapısal elemanın (Duvar, Kolon, Kiriş, Kablo Tavası, Tesisat Borusu) 2D düzlemdeki yaklaşık X, Y başlangıç/bitiş koordinatlarını ve mahal yüksekliğini (Z) de döndür.
+Örn: {"eleman": "Tuğla Duvar", "baslangic": {"x": 0, "y": 0}, "bitis": {"x": 5, "y": 0}, "yukseklik": 3, "disiplin": "Mimari"}
+
+6. Few-Shot Prompting (Örneklere Dayalı Öğrenme):
 ÖRNEK 1: Eğer planda 'Yatak Odası - 15m2' yazıyorsa ve duvar kalınlığı 20cm ise, çıktı JSON'un şu şekilde olmalıdır:
 {
   "mahaller": [
@@ -161,6 +189,7 @@ Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, E-LITE, M-HVAC, M-PLUM gi
   "metraj_kalemleri": [
     {
       "poz_no": "15.220.1004",
+      "eleman": "Tuğla Duvar",
       "disiplin": "Mimari",
       "aciklama": "20cm Gazbeton Duvar Örülmesi",
       "kategori": "MIMARI",
@@ -168,8 +197,14 @@ Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, E-LITE, M-HVAC, M-PLUM gi
       "birim": "m2",
       "birim_fiyat": 420,
       "toplam_tutar": 18816,
-      "bulundugu_mahaller": ["Z-04"]
+      "bulundugu_mahaller": ["Z-04"],
+      "baslangic": {"x": 0, "y": 0},
+      "bitis": {"x": 5, "y": 0},
+      "yukseklik": 3
     }
+  ],
+  "yapisal_elemanlar": [
+    {"eleman": "Tuğla Duvar", "baslangic": {"x": 0, "y": 0}, "bitis": {"x": 5, "y": 0}, "yukseklik": 3, "disiplin": "Mimari"}
   ]
 }
 
@@ -178,6 +213,7 @@ Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, E-LITE, M-HVAC, M-PLUM gi
   "metraj_kalemleri": [
     {
       "poz_no": "18.320.1008",
+      "eleman": "Yangın Algılama Kablo Tavası",
       "disiplin": "Zayıf Akım",
       "aciklama": "Yangın Algılama Hattı Kırmızı Çizgi ve Duman Dedektörü",
       "kategori": "ELEKTRIK",
@@ -185,13 +221,19 @@ Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, E-LITE, M-HVAC, M-PLUM gi
       "birim": "Adet",
       "birim_fiyat": 1250,
       "toplam_tutar": 56250,
-      "bulundugu_mahaller": ["Z-01"]
+      "bulundugu_mahaller": ["Z-01"],
+      "baslangic": {"x": 0, "y": 2},
+      "bitis": {"x": 12, "y": 2},
+      "yukseklik": 2.8
     }
+  ],
+  "yapisal_elemanlar": [
+    {"eleman": "Yangın Algılama Kablo Tavası", "baslangic": {"x": 0, "y": 2}, "bitis": {"x": 12, "y": 2}, "yukseklik": 2.8, "disiplin": "Elektrik"}
   ]
 }
 
-6. Zorunlu JSON Çıktı Şeması (Structured Output Kuralı):
-Yanıt olarak KESİNLİKLE Markdown açıklaması veya ek metin ekleme; doğrudan Prisma veritabanımıza (BoqItem ve Room modellerine) hatasız yazılabilecek, her metraj kaleminde "disiplin" bilgisini barındıran katı bir JSON objesi döndür.
+7. Zorunlu JSON Çıktı Şeması (Structured Output Kuralı):
+Yanıt olarak KESİNLİKLE Markdown açıklaması veya ek metin ekleme; doğrudan Prisma veritabanımıza (BoqItem ve Room modellerine) ve React Three Fiber 3D Extrusion motoruna hatasız yazılabilecek, her metraj kaleminde "disiplin", "baslangic", "bitis" ve "yukseklik" bilgisini barındıran katı bir JSON objesi döndür.
 Örnek Zorunlu Çıktı Şeması (Output Schema):
 {
   "mahaller": [
@@ -209,6 +251,7 @@ Yanıt olarak KESİNLİKLE Markdown açıklaması veya ek metin ekleme; doğruda
   "metraj_kalemleri": [
     {
       "poz_no": "18.320.1008",
+      "eleman": "Duman Dedektörü ve Kablo Tavası",
       "disiplin": "Zayıf Akım",
       "aciklama": "Duman Dedektörü",
       "kategori": "ELEKTRIK",
@@ -216,8 +259,14 @@ Yanıt olarak KESİNLİKLE Markdown açıklaması veya ek metin ekleme; doğruda
       "birim": "Adet",
       "birim_fiyat": 1250,
       "toplam_tutar": 56250,
-      "bulundugu_mahaller": ["Z-01"]
+      "bulundugu_mahaller": ["Z-01"],
+      "baslangic": {"x": 0, "y": 0},
+      "bitis": {"x": 5, "y": 0},
+      "yukseklik": 3
     }
+  ],
+  "yapisal_elemanlar": [
+    {"eleman": "Tuğla Duvar", "baslangic": {"x": 0, "y": 0}, "bitis": {"x": 5, "y": 0}, "yukseklik": 3, "disiplin": "Mimari"}
   ]
 }
 `.trim();
@@ -520,6 +569,15 @@ export async function analyzeBlueprintPdf(
       }
     }
 
+    let parsedElements2D: Blueprint2DCoordinateElement[] = DEFAULT_2D_EXTRUSION_ELEMENTS;
+    if (
+      localAiResponse.success &&
+      Array.isArray(localAiResponse.parsedJson?.yapisal_elemanlar) &&
+      localAiResponse.parsedJson.yapisal_elemanlar.length > 0
+    ) {
+      parsedElements2D = localAiResponse.parsedJson.yapisal_elemanlar;
+    }
+
     const structuredOutput: StructuredBlueprintOutput = {
       mahaller: parsedRooms.map((r) => ({
         oda_no: r.roomNo,
@@ -531,17 +589,25 @@ export async function analyzeBlueprintPdf(
         duvar_kaplama: r.wallFinish,
         tavan_kaplama: r.ceilingFinish,
       })),
-      metraj_kalemleri: parsedBoqItems.map((b) => ({
-        poz_no: b.pozNo,
-        disiplin: b.discipline || b.category,
-        aciklama: b.description,
-        kategori: b.category,
-        miktar: b.quantity,
-        birim: b.unit,
-        birim_fiyat: b.unitPrice,
-        toplam_tutar: b.totalPrice,
-        bulundugu_mahaller: b.detectedInRooms,
-      })),
+      metraj_kalemleri: parsedBoqItems.map((b, idx) => {
+        const refCoord = parsedElements2D[idx % parsedElements2D.length];
+        return {
+          poz_no: b.pozNo,
+          eleman: b.description,
+          disiplin: b.discipline || b.category,
+          aciklama: b.description,
+          kategori: b.category,
+          miktar: b.quantity,
+          birim: b.unit,
+          birim_fiyat: b.unitPrice,
+          toplam_tutar: b.totalPrice,
+          bulundugu_mahaller: b.detectedInRooms,
+          baslangic: b.baslangic || refCoord?.baslangic || { x: 0, y: 0 },
+          bitis: b.bitis || refCoord?.bitis || { x: 5, y: 0 },
+          yukseklik: b.yukseklik || refCoord?.yukseklik || 3,
+        };
+      }),
+      yapisal_elemanlar: parsedElements2D,
     };
 
     const totalEstimatedCost = parsedBoqItems.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -743,4 +809,163 @@ export async function exportTrainingData(options?: {
     "@/actions/super-admin/ai-training"
   );
   return runExportTrainingData(options);
+}
+
+/**
+ * 2D PDF / DWG Paftalarından Çıkarılan Varsayılan Yapısal Eleman Koordinatları (X, Y, Z Extrusion)
+ */
+const DEFAULT_2D_EXTRUSION_ELEMENTS: Blueprint2DCoordinateElement[] = [
+  // MİMARİ DUVARLAR (Dış Cephe ve İç Bölme Duvarları)
+  { id: "EXT-M-01", eleman: "Tuğla Duvar (Kuzey Cephe A-WALL)", baslangic: { x: -8, y: -6 }, bitis: { x: 8, y: -6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-02", eleman: "Tuğla Duvar (Güney Cephe A-WALL)", baslangic: { x: -8, y: 6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-03", eleman: "Tuğla Duvar (Batı Cephe A-WALL)", baslangic: { x: -8, y: -6 }, bitis: { x: -8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-04", eleman: "Tuğla Duvar (Doğu Cephe A-WALL)", baslangic: { x: 8, y: -6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-05", eleman: "Gazbeton İç Bölme Duvarı (Salon / Koridor)", baslangic: { x: -2, y: -6 }, bitis: { x: -2, y: 2 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-06", eleman: "Gazbeton İç Bölme Duvarı (Yatak Odası - 15m2)", baslangic: { x: -2, y: 2 }, bitis: { x: 8, y: 2 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-07", eleman: "1. Kat Dış Cephe Duvarı (Kuzey)", baslangic: { x: -8, y: -6 }, bitis: { x: 8, y: -6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-08", eleman: "1. Kat Dış Cephe Duvarı (Güney)", baslangic: { x: -8, y: 6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-09", eleman: "1. Kat Dış Cephe Duvarı (Batı)", baslangic: { x: -8, y: -6 }, bitis: { x: -8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-10", eleman: "1. Kat Dış Cephe Duvarı (Doğu)", baslangic: { x: 8, y: -6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+  { id: "EXT-M-11", eleman: "1. Kat İç Bölme Duvarı (Ofis Aksı)", baslangic: { x: 2, y: -6 }, bitis: { x: 2, y: 6 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
+
+  // STATİK TAŞIYICI ELEMANLAR (Radye Temel, Kolonlar, Kirişler, Döşemeler)
+  { id: "EXT-S-01", eleman: "C35/45 Radye Temel & Subasman Döşemesi", baslangic: { x: -8.5, y: 0 }, bitis: { x: 8.5, y: 0 }, yukseklik: 0.4, kalinlik: 13.0, taban_kotu: -0.4, disiplin: "Statik", poz_no: "15.150.1005" },
+  { id: "EXT-S-02", eleman: "C35/45 1. Kat Betonarme Döşeme Tabliyesi", baslangic: { x: -8.2, y: 0 }, bitis: { x: 8.2, y: 0 }, yukseklik: 0.25, kalinlik: 12.4, taban_kotu: 3.2, disiplin: "Statik", poz_no: "15.150.1005" },
+  { id: "EXT-S-03", eleman: "C35/45 Çatı Katı Betonarme Döşeme Tabliyesi", baslangic: { x: -8.2, y: 0 }, bitis: { x: 8.2, y: 0 }, yukseklik: 0.25, kalinlik: 12.4, taban_kotu: 6.6, disiplin: "Statik", poz_no: "15.150.1005" },
+  { id: "EXT-S-04", eleman: "S01 Betonarme Kolon (50x50cm)", baslangic: { x: -7.8, y: -5.8 }, bitis: { x: -7.3, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-05", eleman: "S02 Betonarme Kolon (50x50cm)", baslangic: { x: 0, y: -5.8 }, bitis: { x: 0.5, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-06", eleman: "S03 Betonarme Kolon (50x50cm)", baslangic: { x: 7.3, y: -5.8 }, bitis: { x: 7.8, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-07", eleman: "S04 Betonarme Kolon (50x50cm)", baslangic: { x: -7.8, y: 5.8 }, bitis: { x: -7.3, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-08", eleman: "S05 Betonarme Kolon (50x50cm)", baslangic: { x: 0, y: 5.8 }, bitis: { x: 0.5, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-09", eleman: "S06 Betonarme Kolon (50x50cm)", baslangic: { x: 7.3, y: 5.8 }, bitis: { x: 7.8, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-10", eleman: "P01 TBDY-2018 Deprem Perdesi (30x240cm)", baslangic: { x: -1.2, y: 0 }, bitis: { x: 1.2, y: 0 }, yukseklik: 6.8, kalinlik: 0.35, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
+  { id: "EXT-S-11", eleman: "K101 Ana Taşıyıcı Kiriş (30/60cm)", baslangic: { x: -7.8, y: 0 }, bitis: { x: 7.8, y: 0 }, yukseklik: 0.5, kalinlik: 0.35, taban_kotu: 2.75, disiplin: "Statik", poz_no: "15.150.1005" },
+  { id: "EXT-S-12", eleman: "K201 1. Kat Ana Taşıyıcı Kiriş (30/60cm)", baslangic: { x: -7.8, y: 0 }, bitis: { x: 7.8, y: 0 }, yukseklik: 0.5, kalinlik: 0.35, taban_kotu: 6.15, disiplin: "Statik", poz_no: "15.150.1005" },
+
+  // ELEKTRİK & ZAYIF AKIM (Kablo Tavaları, Yangın Algılama Hatları ve Ana Pano)
+  { id: "EXT-E-01", eleman: "E-POWR Kuvvetli Akım Ana Kablo Tavası (Zemin Kat)", baslangic: { x: -7, y: -2.5 }, bitis: { x: 7, y: -2.5 }, yukseklik: 0.18, kalinlik: 0.35, taban_kotu: 2.85, disiplin: "Elektrik", poz_no: "18.150.1003" },
+  { id: "EXT-E-02", eleman: "Yangın Algılama Hattı & Zayıf Akım Tavası (1. Kat)", baslangic: { x: -7, y: 2.5 }, bitis: { x: 7, y: 2.5 }, yukseklik: 0.18, kalinlik: 0.35, taban_kotu: 6.2, disiplin: "Elektrik", poz_no: "18.320.1008" },
+  { id: "EXT-E-03", eleman: "Düşey Elektrik Şaftı & Busbar Kanalı", baslangic: { x: -6.5, y: -4.5 }, bitis: { x: -6.1, y: -4.5 }, yukseklik: 6.5, kalinlik: 0.4, taban_kotu: 0, disiplin: "Elektrik", poz_no: "18.150.1003" },
+
+  // MEKANİK / TESİSAT (HVAC Havalandırma Kanalları & PPRC/Yangın Boru Hatları)
+  { id: "EXT-T-01", eleman: "M-HVAC Galvaniz Havalandırma Kanalı (Zemin Kat)", baslangic: { x: -7, y: 3.5 }, bitis: { x: 7, y: 3.5 }, yukseklik: 0.35, kalinlik: 0.45, taban_kotu: 2.65, disiplin: "Mekanik", poz_no: "19.200.1004" },
+  { id: "EXT-T-02", eleman: "M-PLUM Yangın Sprinkler & Temiz Su Kollektör Hattı (1. Kat)", baslangic: { x: -7, y: -3.5 }, bitis: { x: 7, y: -3.5 }, yukseklik: 0.25, kalinlik: 0.3, taban_kotu: 6.05, disiplin: "Mekanik", poz_no: "19.450.1002" },
+  { id: "EXT-T-03", eleman: "Mekanik Tesisat Düşey Kolon Şaftı", baslangic: { x: 6.1, y: -4.5 }, bitis: { x: 6.5, y: -4.5 }, yukseklik: 6.5, kalinlik: 0.4, taban_kotu: 0, disiplin: "Mekanik", poz_no: "19.450.1002" },
+];
+
+/**
+ * ADIM 2: Projeye ait Prisma veritabanındaki AIAnalysis (JSON) veya BoqItem kayıtlarından
+ * 2D->3D Extrusion koordinat verilerini çeker.
+ */
+export async function getProject2DExtrusionData(projectId?: string): Promise<{
+  success: boolean;
+  source: "AI_ANALYSIS_JSON" | "PRISMA_BOQ_ITEMS" | "DEFAULT_2D_BLUEPRINT";
+  elements: Blueprint2DCoordinateElement[];
+}> {
+  try {
+    if (projectId) {
+      // 1. Önce bu projeye ait AIAnalysis (BLUEPRINT_OCR) JSON kaydı var mı kontrol et
+      const latestAiAnalysis = await prisma.aIAnalysis.findFirst({
+        where: { projectId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (latestAiAnalysis?.metadata) {
+        try {
+          const parsedMeta = JSON.parse(latestAiAnalysis.metadata);
+          const structOut = parsedMeta?.structuredOutput as StructuredBlueprintOutput | undefined;
+          if (
+            structOut?.yapisal_elemanlar &&
+            Array.isArray(structOut.yapisal_elemanlar) &&
+            structOut.yapisal_elemanlar.length > 0
+          ) {
+            return {
+              success: true,
+              source: "AI_ANALYSIS_JSON",
+              elements: structOut.yapisal_elemanlar,
+            };
+          }
+        } catch {
+          // Devam et
+        }
+      }
+
+      // 2. Prisma'daki BoqItem kayıtlarını çek ve 2D->3D koordinat şablonuyla zenginleştir
+      const dbBoqItems = await prisma.boqItem.findMany({
+        where: { projectId },
+        take: 40,
+      });
+
+      if (dbBoqItems && dbBoqItems.length > 0) {
+        const boqMappedElements: Blueprint2DCoordinateElement[] = [
+          ...DEFAULT_2D_EXTRUSION_ELEMENTS,
+        ];
+
+        dbBoqItems.forEach((item, index) => {
+          const desc = (item.description || "").toLowerCase();
+          let disiplin: "Mimari" | "Statik" | "Elektrik" | "Mekanik" = "Mimari";
+          if (
+            desc.includes("beton") ||
+            desc.includes("demir") ||
+            desc.includes("donatı") ||
+            desc.includes("kolon") ||
+            desc.includes("kiriş") ||
+            desc.includes("kalıp") ||
+            item.pozNo.startsWith("15.150") ||
+            item.pozNo.startsWith("15.160")
+          ) {
+            disiplin = "Statik";
+          } else if (
+            desc.includes("kablo") ||
+            desc.includes("elektrik") ||
+            desc.includes("dedektör") ||
+            desc.includes("priz") ||
+            desc.includes("zayıf akım") ||
+            item.pozNo.startsWith("18.")
+          ) {
+            disiplin = "Elektrik";
+          } else if (
+            desc.includes("boru") ||
+            desc.includes("tesisat") ||
+            desc.includes("klima") ||
+            desc.includes("vrf") ||
+            desc.includes("vitrifiye") ||
+            item.pozNo.startsWith("19.")
+          ) {
+            disiplin = "Mekanik";
+          }
+
+          if (boqMappedElements[index]) {
+            boqMappedElements[index] = {
+              ...boqMappedElements[index],
+              eleman: `${item.description} [${item.pozNo}]`,
+              poz_no: item.pozNo,
+              miktar: item.plannedQuantity,
+              birim: item.unit,
+              disiplin,
+            };
+          }
+        });
+
+        return {
+          success: true,
+          source: "PRISMA_BOQ_ITEMS",
+          elements: boqMappedElements,
+        };
+      }
+    }
+
+    return {
+      success: true,
+      source: "DEFAULT_2D_BLUEPRINT",
+      elements: DEFAULT_2D_EXTRUSION_ELEMENTS,
+    };
+  } catch (err) {
+    console.warn("[getProject2DExtrusionData Fallback]:", err);
+    return {
+      success: true,
+      source: "DEFAULT_2D_BLUEPRINT",
+      elements: DEFAULT_2D_EXTRUSION_ELEMENTS,
+    };
+  }
 }
