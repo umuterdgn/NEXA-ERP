@@ -45,7 +45,42 @@ export async function createProjectDocumentAction(input: CreateProjectDocumentIn
       },
     });
 
-    // 2. Global Document tablosu ile de senkronize et (varsa)
+    // 2. ProjectFile tablosuna kaydet (Evraklar/Dosyalar sekmesi için)
+    try {
+      await prisma.projectFile.create({
+        data: {
+          projectId: input.projectId,
+          name: input.title.trim(),
+          url: input.fileUrl.trim(),
+          category: input.type || "Mimari",
+          tenantId: tenantId || null,
+          uploadedBy: session?.user?.name || userId || null,
+        },
+      });
+    } catch (fileErr) {
+      console.warn("ProjectFile sync warning:", fileErr);
+    }
+
+    // 3. Eğer 3D IFC veya GLB/GLTF ise BimFile tablosuna da ekle (BIM senkronizasyonu)
+    const lowerUrl = input.fileUrl.toLowerCase();
+    if (lowerUrl.endsWith(".ifc") || lowerUrl.endsWith(".glb") || lowerUrl.endsWith(".gltf")) {
+      try {
+        await prisma.bimFile.create({
+          data: {
+            projectId: input.projectId,
+            fileName: input.title.trim(),
+            fileUrl: input.fileUrl.trim(),
+            fileType: lowerUrl.split(".").pop() || "ifc",
+            isActive: true,
+            tenantId: tenantId || null,
+          },
+        });
+      } catch (bimErr) {
+        console.warn("BimFile sync warning:", bimErr);
+      }
+    }
+
+    // 4. Global Document tablosu ile de senkronize et
     try {
       if (userId) {
         await prisma.document.create({
@@ -69,11 +104,14 @@ export async function createProjectDocumentAction(input: CreateProjectDocumentIn
     }
 
     revalidatePath(`/admin/projects/${input.projectId}`);
+    revalidatePath(`/admin/projects/${input.projectId}/bim`);
+    revalidatePath(`/personnel/bim-viewer`);
+    revalidatePath(`/personnel/bim`);
 
     return {
       success: true,
       document: projectDoc,
-      message: "Proje belgesi başarıyla yüklendi ve arşivlendi.",
+      message: "Proje belgesi başarıyla veritabanına kaydedildi ve arşivlendi.",
     };
   } catch (error: any) {
     console.error("createProjectDocumentAction error:", error);

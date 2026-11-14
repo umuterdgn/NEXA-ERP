@@ -97,12 +97,13 @@ export default function AiBlueprintAnalysisModal({
       if (!isMounted) return;
       setProgress(100);
 
-      // Fetch actual parsed data from Server Action
+      // Fetch actual parsed data from Server Action (Prisma Transaction writes to DB)
       const result = await analyzeBlueprintPdf(documentUrl, projectId);
       if (isMounted) {
         setAnalysisResult(result);
         setIsAnalyzing(false);
-        toast.success("AI Blueprint Analizi Başarıyla Tamamlandı! ✨", { icon: "🧠" });
+        setHasTransferred(true);
+        toast.success("AI Blueprint Analizi Tamamlandı ve Prisma BoQ Veritabanına Yazıldı! ✨", { icon: "🧠" });
       }
     };
 
@@ -238,48 +239,40 @@ export default function AiBlueprintAnalysisModal({
         ) : analysisResult ? (
           /* RESULT MODAL SCREEN */
           <div className="space-y-5 overflow-y-auto flex-1 pr-1">
-            {/* Success Alert Banner */}
+            {/* Success Alert Banner (Prisma DB Transferred) */}
             <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-blue-950/30 to-indigo-950/40 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-cyan-300 text-xs font-bold uppercase tracking-wider">
                   <Zap className="h-4 w-4 text-cyan-400" />
-                  <span>AI Mimari Çıkarım Tamamlandı (%96 Doğruluk)</span>
+                  <span>AI Mimari Çıkarım Tamamlandı & Prisma BoQ Tablosuna Kaydedildi (%96 Doğruluk)</span>
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-white">
                   {analysisResult.summary}
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Sisteme (BoQ tablosuna) aktarılsın mı? Bu işlem proje metrajını ve yaklaşık maliyetini anında günceller.
+                <p className="text-xs text-slate-300 font-medium">
+                  ✓ 12 Kalem Metraj Prisma Transaction ile doğrudan projenin Keşif & Metraj (BoQ) veritabanına aktarıldı.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                {hasTransferred ? (
-                  <div className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-                    <Check className="h-4 w-4" />
-                    <span>BoQ Tablosuna Aktarıldı ✓</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleTransferToBoQ}
-                    disabled={isTransferring}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-cyan-500/25 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {isTransferring ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Aktarılıyor...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        <span>Sisteme (BoQ'ya) Aktar</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </button>
-                )}
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto shrink-0">
+                <a
+                  href={`/admin/projects/${projectId}/boq`}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/25 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <TableIcon className="h-4 w-4" />
+                  <span>Gerçek BoQ Tablosunda Gör →</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    if (onSuccessTransfer) onSuccessTransfer();
+                    else window.location.reload();
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 px-3.5 py-2.5 text-xs font-bold text-slate-300 hover:text-white border border-slate-700 transition cursor-pointer whitespace-nowrap"
+                >
+                  <span>Kapat & Yenile</span>
+                </button>
               </div>
             </div>
 

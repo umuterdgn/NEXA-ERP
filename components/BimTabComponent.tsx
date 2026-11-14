@@ -16,22 +16,8 @@ import {
   setActiveBimFile,
   deleteBimFile,
   getProjectBimFiles,
-} from "@/app/admin/projects/[id]/actions"
-
-// Dynamically import BimViewer with SSR disabled
-const BimViewer = dynamic(
-  () => import("@/app/admin/projects/[id]/_components/BimViewer"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[600px] bg-slate-950 rounded-xl border border-slate-800 flex flex-col items-center justify-center shadow-2xl">
-        <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mb-3"></div>
-        <p className="text-cyan-400 text-sm font-semibold tracking-wide">3D BIM Görüntüleyici Hazırlanıyor...</p>
-        <p className="text-slate-500 text-xs mt-1">WebGL 3D motoru başlatılıyor</p>
-      </div>
-    ),
-  }
-)
+} from "@/app/actions/project"
+import BIMViewer, { type FederatedModelItem } from "@/components/bim/BIMViewer"
 
 export interface BimFileItem {
   id: string
@@ -405,12 +391,42 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
               </div>
             }
           >
-            <BimViewer
+            <BIMViewer
               bimUrl={bimUrl}
               url={bimUrl}
               ifcUrl={bimUrl}
               projectId={project.id}
-              fileName={activeBimFile?.fileName}
+              fileName={activeBimFile?.fileName || `${project.name || project.title}.ifc`}
+              models={bimFiles.map((f, i) => {
+                const lower = (f.fileName || "").toLowerCase()
+                const cat = lower.includes("statik")
+                  ? "statik"
+                  : lower.includes("elektrik")
+                  ? "elektrik"
+                  : lower.includes("mekanik")
+                  ? "mekanik"
+                  : lower.includes("akustik")
+                  ? "akustik"
+                  : "mimari"
+                const col =
+                  cat === "statik"
+                    ? "#3b82f6"
+                    : cat === "elektrik"
+                    ? "#eab308"
+                    : cat === "mekanik"
+                    ? "#06b6d4"
+                    : cat === "akustik"
+                    ? "#a855f7"
+                    : "#f97316"
+                return {
+                  id: f.id || `file-${i}`,
+                  name: f.fileName,
+                  url: f.fileUrl,
+                  category: cat,
+                  color: col,
+                  visible: f.isActive ?? true,
+                }
+              })}
             />
           </Suspense>
         </div>

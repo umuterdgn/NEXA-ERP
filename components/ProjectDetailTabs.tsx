@@ -47,7 +47,7 @@ const SiteMasterPlan = dynamic(() => import('@/components/SiteMasterPlan'), { ss
 // Gantt Chart SSR'da hata verdiği için dynamic import kullanıyoruz
 const GanttChart = dynamic(() => import('@/app/admin/projects/[id]/_components/GanttChart'), { ssr: false })
 // Project Documents SSR'da hata verdiği için dynamic import kullanıyoruz
-const ProjectDocuments = dynamic(() => import('@/app/admin/projects/[id]/_components/ProjectDocuments'), { ssr: false })
+const ProjectDocuments = dynamic(() => import('@/app/[locale]/admin/projects/[id]/_components/ProjectDocuments'), { ssr: false })
 // 4D Drone Fotogrametri & Dijital İkiz
 const DroneDigitalTwin = dynamic(() => import('@/app/admin/projects/[id]/_components/DroneDigitalTwin'), { ssr: false })
 // Canlı Şantiye Özeti & İSG Radarı

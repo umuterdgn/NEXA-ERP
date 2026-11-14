@@ -594,27 +594,43 @@ class BimViewerErrorBoundary extends Component<
 export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models }: BimViewerProps) {
   const effectiveUrl = (bimUrl || url || ifcUrl || (models && models.length > 0 ? models[0].url : "") || "").trim()
 
-  // Federated BIM Disiplin Modelleri
-  const defaultFederated: FederatedModelItem[] = [
-    { id: "fed-mimari", name: "Mimari Model (Mimari.ifc)", url: effectiveUrl || "/sample.ifc", category: "mimari", color: "#f97316", visible: true },
-    { id: "fed-statik", name: "Statik Taşıyıcı Sistem (Statik.ifc)", url: "/model.ifc", category: "statik", color: "#3b82f6", visible: true },
-    { id: "fed-elektrik", name: "Elektrik & Zayıf Akım", url: "/models/elektrik.ifc", category: "elektrik", color: "#eab308", visible: true },
-    { id: "fed-mekanik", name: "Mekanik & Havalandırma (MEP)", url: "/models/mekanik.ifc", category: "mekanik", color: "#06b6d4", visible: true },
-    { id: "fed-akustik", name: "Akustik & Yalıtım", url: "/models/akustik.ifc", category: "akustik", color: "#a855f7", visible: false },
-  ]
-
+  // Federated BIM Disiplin Modelleri (Veritabanından Gelen Gerçek Modeller)
   const [federatedModels, setFederatedModels] = useState<FederatedModelItem[]>(() => {
     if (models && models.length > 0) {
       return models.map((m, i) => ({ ...m, id: m.id || `fed-${i}`, visible: m.visible !== false }))
     }
-    return defaultFederated
+    if (effectiveUrl) {
+      return [
+        {
+          id: "fed-primary",
+          name: fileName || "Ana Proje Modeli (IFC)",
+          url: effectiveUrl,
+          category: "mimari",
+          color: "#f97316",
+          visible: true,
+        },
+      ]
+    }
+    return []
   })
 
+  // Eğer projectId verilmişse ve modeller boşsa veritabanından dinamik çek
   useEffect(() => {
     if (models && models.length > 0) {
       setFederatedModels(models.map((m, i) => ({ ...m, id: m.id || `fed-${i}`, visible: m.visible !== false })))
+    } else if (projectId) {
+      import("@/actions/bim").then(({ getProjectFederatedBimModels }) => {
+        getProjectFederatedBimModels(projectId).then((fetched) => {
+          if (fetched && fetched.length > 0) {
+            setFederatedModels(fetched)
+            if (!activeModelUrl && fetched[0]?.url) {
+              setActiveModelUrl(fetched[0].url)
+            }
+          }
+        }).catch((err) => console.warn("Prisma BIM modelleri çekilemedi:", err))
+      })
     }
-  }, [models])
+  }, [models, projectId])
 
   const toggleFederatedModel = (id: string) => {
     setFederatedModels((prev) =>
@@ -2016,26 +2032,31 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                   açabilir veya örnek 3D yapıyı inceleyebilirsiniz.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEngineMode("ifc")
-                      setActiveModelUrl(effectiveUrl || "/sample.ifc")
-                    }}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5"
-                  >
-                    🏛️ IFC Motorunda Aç
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveModelUrl("/models/bina.glb")
-                      reset()
-                    }}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5"
-                  >
-                    🏢 3D Dijital İkiz Örneğini Aç (/bina.glb)
-                  </button>
+                  {effectiveUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEngineMode("ifc")
+                        setActiveModelUrl(effectiveUrl)
+                      }}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5"
+                    >
+                      🏛️ IFC Motorunda Aç
+                    </button>
+                  )}
+                  {federatedModels.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const first = federatedModels[0]
+                        if (first?.url) setActiveModelUrl(first.url)
+                        reset()
+                      }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5"
+                    >
+                      🏢 Modeli Yeniden Dene ({federatedModels[0]?.name || "BIM"})
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -2069,7 +2090,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
               <Suspense fallback={<CanvasLoader />}>
                 <Bounds clip fit margin={1.2} observe>
                   <Center>
-                    {models && models.length > 0 ? (
+                    {federatedModels && federatedModels.length > 0 ? (
                       federatedModels
                         .filter((m) => m.visible && m.url)
                         .map((item) => (
@@ -2267,11 +2288,11 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                 type="button"
                 onClick={() => {
                   setEngineMode("canvas")
-                  setActiveModelUrl("/models/bina.glb")
+                  if (effectiveUrl) setActiveModelUrl(effectiveUrl)
                 }}
                 className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-all"
               >
-                ⚡ 3D Canvas Motoruna Geç (/bina.glb)
+                ⚡ 3D Canvas Motoruna Geç
               </button>
             </div>
           )}
@@ -2347,11 +2368,11 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
           <button
             type="button"
             onClick={() => {
-              let currentModel = activeModelUrl || effectiveUrl || bimUrl || url || ifcUrl || ""
+              let currentModel = activeModelUrl || effectiveUrl || bimUrl || url || ifcUrl || (federatedModels[0]?.url) || ""
               if (currentModel.startsWith("blob:")) {
                 currentModel = effectiveUrl && !effectiveUrl.startsWith("blob:")
                   ? effectiveUrl
-                  : (bimUrl && !bimUrl.startsWith("blob:") ? bimUrl : "/models/bina.glb")
+                  : (federatedModels.find((m) => !m.url.startsWith("blob:"))?.url || "")
               }
               const targetUrl = currentModel
                 ? `/ar/${projectId}?url=${encodeURIComponent(currentModel)}`
