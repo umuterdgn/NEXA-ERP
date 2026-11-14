@@ -399,6 +399,51 @@ function GltfModel({
   return <primitive object={scene} onClick={onClick} onPointerDown={onPointerDown} />
 }
 
+// Desteklenen 3D Model Uzantısı Kontrolü (.ifc, .gltf, .glb)
+const SUPPORTED_3D_EXTS = [".ifc", ".gltf", ".glb"]
+const NON_3D_EXTS = [
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".svg",
+  ".bmp",
+  ".dwg",
+  ".dxf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".csv",
+  ".txt",
+  ".zip",
+  ".rar",
+]
+
+export function isValid3DModelUrl(url?: string | null, name?: string | null): boolean {
+  const cleanUrl = (url || "").split("?")[0].split("#")[0].toLowerCase().trim()
+  const cleanName = (name || "").split("?")[0].split("#")[0].toLowerCase().trim()
+
+  if (NON_3D_EXTS.some((ext) => cleanUrl.endsWith(ext) || cleanName.endsWith(ext))) {
+    return false
+  }
+  if (SUPPORTED_3D_EXTS.some((ext) => cleanUrl.endsWith(ext) || cleanName.endsWith(ext))) {
+    return true
+  }
+  if (cleanName && cleanName.includes(".")) {
+    return SUPPORTED_3D_EXTS.some((ext) => cleanName.endsWith(ext))
+  }
+  const lastSeg = cleanUrl.split("/").pop() || ""
+  if (lastSeg.includes(".")) {
+    return SUPPORTED_3D_EXTS.some((ext) => lastSeg.endsWith(ext))
+  }
+  return Boolean(cleanUrl)
+}
+
 // Helper to determine if a URL or filename represents an IFC model
 function isIfcUrlOrFile(url: string, name?: string): boolean {
   const u = (url || "").toLowerCase()
@@ -594,12 +639,14 @@ class BimViewerErrorBoundary extends Component<
 export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models }: BimViewerProps) {
   const effectiveUrl = (bimUrl || url || ifcUrl || (models && models.length > 0 ? models[0].url : "") || "").trim()
 
-  // Federated BIM Disiplin Modelleri (Veritabanından Gelen Gerçek Modeller)
+  // Federated BIM Disiplin Modelleri (Veritabanından Gelen Gerçek Modeller - Sadece .ifc, .gltf, .glb)
   const [federatedModels, setFederatedModels] = useState<FederatedModelItem[]>(() => {
     if (models && models.length > 0) {
-      return models.map((m, i) => ({ ...m, id: m.id || `fed-${i}`, visible: m.visible !== false }))
+      return models
+        .filter((m) => isValid3DModelUrl(m.url, m.name))
+        .map((m, i) => ({ ...m, id: m.id || `fed-${i}`, visible: m.visible !== false }))
     }
-    if (effectiveUrl) {
+    if (effectiveUrl && isValid3DModelUrl(effectiveUrl, fileName)) {
       return [
         {
           id: "fed-primary",
@@ -617,14 +664,19 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
   // Eğer projectId verilmişse ve modeller boşsa veritabanından dinamik çek
   useEffect(() => {
     if (models && models.length > 0) {
-      setFederatedModels(models.map((m, i) => ({ ...m, id: m.id || `fed-${i}`, visible: m.visible !== false })))
+      setFederatedModels(
+        models
+          .filter((m) => isValid3DModelUrl(m.url, m.name))
+          .map((m, i) => ({ ...m, id: m.id || `fed-${i}`, visible: m.visible !== false }))
+      )
     } else if (projectId) {
       import("@/actions/bim").then(({ getProjectFederatedBimModels }) => {
         getProjectFederatedBimModels(projectId).then((fetched) => {
           if (fetched && fetched.length > 0) {
-            setFederatedModels(fetched)
-            if (!activeModelUrl && fetched[0]?.url) {
-              setActiveModelUrl(fetched[0].url)
+            const validFetched = fetched.filter((m) => isValid3DModelUrl(m.url, m.name))
+            setFederatedModels(validFetched)
+            if (!activeModelUrl && validFetched[0]?.url) {
+              setActiveModelUrl(validFetched[0].url)
             }
           }
         }).catch((err) => console.warn("Prisma BIM modelleri çekilemedi:", err))
@@ -669,8 +721,10 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
     return () => clearTimeout(timer)
   }, [isFullscreen])
 
+  const isNon3DActiveFile = Boolean(activeModelUrl) && !isValid3DModelUrl(activeModelUrl, fileName)
+
   useEffect(() => {
-    if (!activeModelUrl) {
+    if (!activeModelUrl || !isValid3DModelUrl(activeModelUrl, fileName)) {
       setSafeUrl(null)
       return
     }
@@ -2004,8 +2058,31 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
           </div>
         )}
 
-      {/* Main 3D Viewport */}
-      {engineMode === "canvas" ? (
+      {/* Main 3D Viewport - ADIM 1: Viewer Dosya Tipi Koruması */}
+      {isNon3DActiveFile ? (
+        <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} flex flex-col items-center justify-center p-8 text-center bg-slate-950`}>
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-lg shadow-amber-500/10">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <h4 className="text-white font-bold text-lg mb-2">Desteklenmeyen Dosya Formatı</h4>
+          <p className="text-amber-200 text-sm font-semibold max-w-md mb-4 leading-relaxed">
+            Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.
+          </p>
+          {federatedModels.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (federatedModels[0]?.url) {
+                  setActiveModelUrl(federatedModels[0].url)
+                }
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg transition-all"
+            >
+              🏢 Kayıtlı 3D Modeli Aç ({federatedModels[0].name})
+            </button>
+          )}
+        </div>
+      ) : engineMode === "canvas" ? (
         <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} ${isSnaggingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} bg-slate-950`}>
           {/* Snagging Active Banner Hint */}
           {isSnaggingMode && (

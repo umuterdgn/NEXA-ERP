@@ -89,7 +89,7 @@ export default function AdminBimClient({ project, models }: AdminBimClientProps)
           ifcUrl={project.ifcModelUrl}
           bimUrl={project.bimModelUrl}
           projectId={project.id}
-          fileName={`${project.title || project.name}.ifc`}
+          fileName={models?.[0]?.name || modelUrl?.split("/").pop() || undefined}
         />
       </div>
     </div>

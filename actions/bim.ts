@@ -64,9 +64,63 @@ export async function detectDisciplineHelper(fileNameOrType: string): Promise<{ 
   return { category: "mimari", color: "#f97316" }
 }
 
+const SUPPORTED_3D_EXTENSIONS = [".ifc", ".gltf", ".glb"]
+const NON_3D_EXTENSIONS = [
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".svg",
+  ".bmp",
+  ".dwg",
+  ".dxf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".csv",
+  ".txt",
+  ".zip",
+  ".rar",
+]
+
+function isSupported3DFile(url?: string | null, fileName?: string | null, fileType?: string | null): boolean {
+  const cleanUrl = (url || "").split("?")[0].split("#")[0].toLowerCase().trim()
+  const cleanName = (fileName || "").split("?")[0].split("#")[0].toLowerCase().trim()
+  const cleanType = (fileType || "").toLowerCase().replace(/^\./, "").trim()
+
+  if (cleanType) {
+    if (["ifc", "gltf", "glb"].includes(cleanType)) return true
+    if (NON_3D_EXTENSIONS.includes(`.${cleanType}`)) return false
+  }
+
+  if (NON_3D_EXTENSIONS.some((ext) => cleanUrl.endsWith(ext) || cleanName.endsWith(ext))) {
+    return false
+  }
+
+  if (SUPPORTED_3D_EXTENSIONS.some((ext) => cleanUrl.endsWith(ext) || cleanName.endsWith(ext))) {
+    return true
+  }
+
+  if (cleanName && cleanName.includes(".")) {
+    return SUPPORTED_3D_EXTENSIONS.some((ext) => cleanName.endsWith(ext))
+  }
+
+  const lastSegment = cleanUrl.split("/").pop() || ""
+  if (lastSegment.includes(".")) {
+    return SUPPORTED_3D_EXTENSIONS.some((ext) => lastSegment.endsWith(ext))
+  }
+
+  return false
+}
+
 /**
- * ADIM 1: Veritabanındaki (Prisma) gerçek IFC ve BIM modellerini çeker
- * Mock ve hardcoded dosyalar yerine doğrudan projenin gerçek modellerini döner.
+ * ADIM 1 & 2: Veritabanındaki (Prisma) gerçek 3D IFC ve BIM modellerini (.ifc, .gltf, .glb) çeker
+ * PDF veya görsel gibi 3D olmayan dosyaları kesinlikle filtreler.
  */
 export async function getProjectFederatedBimModels(projectId: string): Promise<FederatedModelItem[]> {
   try {
@@ -78,14 +132,14 @@ export async function getProjectFederatedBimModels(projectId: string): Promise<F
       orderBy: { uploadedAt: "asc" },
     })
 
-    // 2. ProjectDocument tablosundaki IFC / 3D paftalar
+    // 2. ProjectDocument tablosundaki sadece 3D (.ifc, .glb, .gltf) dosyalar
     const projectDocs = await prisma.projectDocument.findMany({
       where: {
         projectId,
         OR: [
-          { fileUrl: { contains: ".ifc", mode: "insensitive" } },
-          { fileUrl: { contains: ".glb", mode: "insensitive" } },
-          { fileUrl: { contains: ".gltf", mode: "insensitive" } },
+          { fileUrl: { endsWith: ".ifc", mode: "insensitive" } },
+          { fileUrl: { endsWith: ".glb", mode: "insensitive" } },
+          { fileUrl: { endsWith: ".gltf", mode: "insensitive" } },
         ],
       },
       orderBy: { createdAt: "asc" },
@@ -100,9 +154,13 @@ export async function getProjectFederatedBimModels(projectId: string): Promise<F
     const models: FederatedModelItem[] = []
     const seenUrls = new Set<string>()
 
-    // BimFiles ekle
+    // BimFiles ekle (Sadece .ifc, .gltf, .glb formatları)
     for (const file of bimFiles) {
-      if (file.fileUrl && !seenUrls.has(file.fileUrl)) {
+      if (
+        file.fileUrl &&
+        !seenUrls.has(file.fileUrl) &&
+        isSupported3DFile(file.fileUrl, file.fileName, file.fileType)
+      ) {
         seenUrls.add(file.fileUrl)
         const disc = await detectDisciplineHelper(file.fileName || file.fileType || "")
         models.push({
@@ -116,14 +174,18 @@ export async function getProjectFederatedBimModels(projectId: string): Promise<F
       }
     }
 
-    // ProjectDocuments ekle
+    // ProjectDocuments ekle (Sadece .ifc, .gltf, .glb formatları)
     for (const doc of projectDocs) {
-      if (doc.fileUrl && !seenUrls.has(doc.fileUrl)) {
+      if (
+        doc.fileUrl &&
+        !seenUrls.has(doc.fileUrl) &&
+        isSupported3DFile(doc.fileUrl, doc.title, doc.type)
+      ) {
         seenUrls.add(doc.fileUrl)
         const disc = await detectDisciplineHelper(doc.title || doc.type || "")
         models.push({
           id: doc.id,
-          name: doc.title || "Proje Paftası",
+          name: doc.title || "3D BIM Modeli",
           url: doc.fileUrl,
           category: disc.category,
           color: disc.color,
@@ -132,8 +194,12 @@ export async function getProjectFederatedBimModels(projectId: string): Promise<F
       }
     }
 
-    // Ana Proje IFC veya BIM URL'si varsa ekle
-    if (project?.ifcModelUrl && !seenUrls.has(project.ifcModelUrl)) {
+    // Ana Proje IFC veya BIM URL'si varsa ve desteklenen 3D uzantısındaysa ekle
+    if (
+      project?.ifcModelUrl &&
+      !seenUrls.has(project.ifcModelUrl) &&
+      isSupported3DFile(project.ifcModelUrl, project.title)
+    ) {
       seenUrls.add(project.ifcModelUrl)
       const disc = await detectDisciplineHelper(project.title || "IFC")
       models.push({
@@ -144,7 +210,11 @@ export async function getProjectFederatedBimModels(projectId: string): Promise<F
         color: disc.color,
         visible: true,
       })
-    } else if (project?.bimModelUrl && !seenUrls.has(project.bimModelUrl)) {
+    } else if (
+      project?.bimModelUrl &&
+      !seenUrls.has(project.bimModelUrl) &&
+      isSupported3DFile(project.bimModelUrl, project.title)
+    ) {
       seenUrls.add(project.bimModelUrl)
       const disc = await detectDisciplineHelper(project.title || "BIM")
       models.push({

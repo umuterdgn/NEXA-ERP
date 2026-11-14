@@ -96,7 +96,7 @@ export default function PersonnelBimClient({ project, models }: PersonnelBimClie
           ifcUrl={project.ifcModelUrl}
           bimUrl={project.bimModelUrl}
           projectId={project.id}
-          fileName={`${projectName}.ifc`}
+          fileName={models?.[0]?.name || modelUrl?.split("/").pop() || undefined}
         />
       </div>
     </div>

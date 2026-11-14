@@ -9,16 +9,40 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
+const SUPPORTED_3D_EXTENSIONS = ["ifc", "gltf", "glb"]
+
+function is3DModelRecord(fileUrl?: string | null, fileName?: string | null, fileType?: string | null): boolean {
+  const extFromType = (fileType || "").toLowerCase().replace(/^\./, "").trim()
+  if (extFromType) {
+    return SUPPORTED_3D_EXTENSIONS.includes(extFromType)
+  }
+
+  const extFromName = (fileName || "").split("?")[0].split("#")[0].split(".").pop()?.toLowerCase().trim() || ""
+  if (extFromName && (fileName || "").includes(".")) {
+    return SUPPORTED_3D_EXTENSIONS.includes(extFromName)
+  }
+
+  const cleanUrl = (fileUrl || "").split("?")[0].split("#")[0].toLowerCase().trim()
+  return SUPPORTED_3D_EXTENSIONS.some((ext) => cleanUrl.endsWith(`.${ext}`))
+}
+
 export async function updateProjectBimModel(projectId: string, modelUrl: string) {
   try {
+    if (!is3DModelRecord(modelUrl)) {
+      return {
+        success: false,
+        error: "Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.",
+      }
+    }
+
     await prisma.project.update({
       where: { id: projectId },
       data: {
         bimModelUrl: modelUrl,
         ifcModelUrl: modelUrl,
-      }
+      },
     })
-    
+
     revalidatePath(`/admin/projects/${projectId}`)
     return { success: true, url: modelUrl }
   } catch (error) {
@@ -29,25 +53,52 @@ export async function updateProjectBimModel(projectId: string, modelUrl: string)
 
 export async function addBimFile(projectId: string, url: string, name: string) {
   try {
-    // Önce aynı projedeki diğer modelleri pasif yap
+    const ext = name.split(".").pop()?.toLowerCase() || "ifc"
+    const is3D = SUPPORTED_3D_EXTENSIONS.includes(ext) || is3DModelRecord(url, name, ext)
+
+    if (!is3D) {
+      // 3D olmayan dosyaları (örn. PDF) ProjectDocument olarak kaydet, 3D BIM modelini bozma
+      const doc = await prisma.projectDocument.create({
+        data: {
+          projectId,
+          title: name,
+          type: "BLUEPRINT",
+          fileUrl: url,
+          revision: 0,
+          status: "ACTIVE",
+        },
+      })
+      revalidatePath(`/admin/projects/${projectId}`)
+      return {
+        id: doc.id,
+        projectId,
+        fileUrl: url,
+        fileName: name,
+        fileType: ext,
+        isActive: false,
+        uploadedAt: doc.createdAt,
+      }
+    }
+
+    // Önce aynı projedeki diğer 3D modelleri pasif yap
     await prisma.bimFile.updateMany({ where: { projectId }, data: { isActive: false } })
 
-    const ext = name.split(".").pop()?.toLowerCase() || "ifc"
-
-    // Yeni modeli aktif olarak kaydet
+    // Yeni 3D modeli aktif olarak kaydet
     const newFile = await prisma.bimFile.create({
       data: { projectId, fileUrl: url, fileName: name, fileType: ext, isActive: true },
     })
 
-    await prisma.project.update({
-      where: { id: projectId },
-      data: {
-        bimModelUrl: url,
-        ifcModelUrl: url,
-      },
-    }).catch(() => null)
+    await prisma.project
+      .update({
+        where: { id: projectId },
+        data: {
+          bimModelUrl: url,
+          ifcModelUrl: url,
+        },
+      })
+      .catch(() => null)
 
-    revalidatePath(`/admin/projects/${projectId}`) // Cache'i anında temizle!
+    revalidatePath(`/admin/projects/${projectId}`)
     return newFile
   } catch (error) {
     console.error("addBimFile hatası:", error)
@@ -60,14 +111,22 @@ export async function addBimFileToProject(
   fileData: { fileName: string; fileUrl: string; fileType?: string | null }
 ) {
   try {
+    const extension = (fileData.fileName.split(".").pop()?.toLowerCase() || fileData.fileType || "ifc")
+      .toLowerCase()
+      .replace(/^\./, "")
+
+    if (!SUPPORTED_3D_EXTENSIONS.includes(extension) && !is3DModelRecord(fileData.fileUrl, fileData.fileName, extension)) {
+      return {
+        success: false,
+        error: "Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.",
+      }
+    }
+
     // 1. Deactivate all existing models for this project
     await prisma.bimFile.updateMany({
       where: { projectId },
       data: { isActive: false },
     })
-
-    // Determine file type from extension if not provided
-    const extension = fileData.fileName.split('.').pop()?.toLowerCase() || fileData.fileType || "ifc"
 
     // 2. Create the new BimFile record with isActive: true
     const newBimFile = await prisma.bimFile.create({
@@ -99,7 +158,6 @@ export async function addBimFileToProject(
 
 export async function setActiveBimFile(projectId: string, bimFileId: string) {
   try {
-    // Find target file
     const targetFile = await prisma.bimFile.findUnique({
       where: { id: bimFileId },
     })
@@ -108,19 +166,23 @@ export async function setActiveBimFile(projectId: string, bimFileId: string) {
       return { success: false, error: "Model bulunamadı." }
     }
 
-    // Set all to inactive
+    if (!is3DModelRecord(targetFile.fileUrl, targetFile.fileName, targetFile.fileType)) {
+      return {
+        success: false,
+        error: "Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.",
+      }
+    }
+
     await prisma.bimFile.updateMany({
       where: { projectId },
       data: { isActive: false },
     })
 
-    // Set target to active
     await prisma.bimFile.update({
       where: { id: bimFileId },
       data: { isActive: true },
     })
 
-    // Update project model URLs
     await prisma.project.update({
       where: { id: projectId },
       data: {
@@ -151,23 +213,26 @@ export async function deleteBimFile(projectId: string, bimFileId: string) {
       where: { id: bimFileId },
     })
 
-    // If the deleted file was active, switch to another model or clear
     if (targetFile.isActive) {
-      const remainingFile = await prisma.bimFile.findFirst({
+      const remainingFiles = await prisma.bimFile.findMany({
         where: { projectId },
         orderBy: { uploadedAt: "desc" },
       })
 
-      if (remainingFile) {
+      const remaining3DFile = remainingFiles.find((f) =>
+        is3DModelRecord(f.fileUrl, f.fileName, f.fileType)
+      )
+
+      if (remaining3DFile) {
         await prisma.bimFile.update({
-          where: { id: remainingFile.id },
+          where: { id: remaining3DFile.id },
           data: { isActive: true },
         })
         await prisma.project.update({
           where: { id: projectId },
           data: {
-            bimModelUrl: remainingFile.fileUrl,
-            ifcModelUrl: remainingFile.fileUrl,
+            bimModelUrl: remaining3DFile.fileUrl,
+            ifcModelUrl: remaining3DFile.fileUrl,
           },
         })
       } else {
@@ -191,14 +256,55 @@ export async function deleteBimFile(projectId: string, bimFileId: string) {
 
 export async function getProjectBimFiles(projectId: string) {
   try {
-    const files = await prisma.bimFile.findMany({
-      where: { projectId },
-      orderBy: { uploadedAt: "desc" },
+    const [allBimFiles, projectDocs] = await Promise.all([
+      prisma.bimFile.findMany({
+        where: { projectId },
+        orderBy: { uploadedAt: "desc" },
+      }),
+      prisma.projectDocument.findMany({
+        where: { projectId, status: "ACTIVE" },
+        orderBy: { createdAt: "desc" },
+      }),
+    ])
+
+    // ADIM 2: Sadece 3D model dosyaları (.ifc, .gltf, .glb) "Kayıtlı BIM Modelleri Arşivi"ne düşer
+    const files = allBimFiles.filter((f) =>
+      is3DModelRecord(f.fileUrl, f.fileName, f.fileType)
+    )
+
+    // PDF ve diğer 2D dokümanlar ayrı "Proje Evrakları / Paftalar" listesine aktarılır
+    const non3DBimFiles = allBimFiles
+      .filter((f) => !is3DModelRecord(f.fileUrl, f.fileName, f.fileType))
+      .map((f) => ({
+        id: f.id,
+        projectId: f.projectId,
+        fileName: f.fileName,
+        fileUrl: f.fileUrl,
+        fileType: (f.fileType || f.fileName.split(".").pop() || "pdf").toLowerCase(),
+        uploadedAt: f.uploadedAt,
+      }))
+
+    const docItems = projectDocs
+      .filter((d) => !is3DModelRecord(d.fileUrl, d.title, d.type))
+      .map((d) => ({
+        id: d.id,
+        projectId: d.projectId,
+        fileName: d.title,
+        fileUrl: d.fileUrl,
+        fileType: (d.fileUrl.split(".").pop() || d.type || "pdf").toLowerCase(),
+        uploadedAt: d.createdAt,
+      }))
+
+    const seenUrls = new Set<string>()
+    const documents = [...non3DBimFiles, ...docItems].filter((doc) => {
+      if (!doc.fileUrl || seenUrls.has(doc.fileUrl)) return false
+      seenUrls.add(doc.fileUrl)
+      return true
     })
-    return { success: true, files }
+
+    return { success: true, files, documents }
   } catch (error) {
     console.error("Failed to fetch project BIM files:", error)
-    return { success: false, files: [] }
+    return { success: false, files: [], documents: [] }
   }
 }
-
