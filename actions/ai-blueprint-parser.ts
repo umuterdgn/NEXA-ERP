@@ -13,6 +13,29 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import {
+  architecturalAgent as runArchitecturalAgent,
+  structuralAgent as runStructuralAgent,
+  surveyorAgent as runSurveyorAgent,
+  masterOrchestrator as runMasterOrchestrator,
+  matchOfficialPricePoz,
+} from "./ai-agents";
+
+export async function architecturalAgent(pdfUrl: string, projectId?: string) {
+  return runArchitecturalAgent(pdfUrl, projectId, MOCK_45_ROOMS);
+}
+
+export async function structuralAgent(pdfUrl: string, projectId?: string) {
+  return runStructuralAgent(pdfUrl, projectId);
+}
+
+export async function surveyorAgent(pdfUrl: string, projectId?: string) {
+  return runSurveyorAgent(pdfUrl, projectId);
+}
+
+export async function masterOrchestrator(pdfUrl: string, projectId: string) {
+  return runMasterOrchestrator(pdfUrl, projectId, MOCK_45_ROOMS);
+}
 
 export interface ParsedRoom {
   id: string;
@@ -392,10 +415,13 @@ export async function analyzeBlueprintPdf(
       },
     ];
 
-    let parsedRooms: ParsedRoom[] = MOCK_45_ROOMS;
-    let parsedBoqItems: ParsedBoQItem[] = MOCK_12_BOQ_ITEMS;
+    // ADIM 1: Multi-Agent (masterOrchestrator) ile 3 uzman ajanı (architecturalAgent, structuralAgent, surveyorAgent) Promise.all ile paralel çalıştır
+    const orchestrated = await runMasterOrchestrator(pdfUrl, projectId, MOCK_45_ROOMS);
 
-    // Eğer OpenAI API anahtarı tanımlıysa gerçek LLM Vision / JSON Structured Output isteği dene
+    let parsedRooms: ParsedRoom[] = orchestrated.rooms;
+    let parsedBoqItems: ParsedBoQItem[] = orchestrated.boqItems;
+
+    // Eğer OpenAI API anahtarı tanımlıysa gerçek LLM Vision / JSON Structured Output isteği dene ve OfficialPricePoz ile eşleştir
     if (process.env.OPENAI_API_KEY) {
       try {
         const OpenAI = (await import("openai")).default;
@@ -424,26 +450,34 @@ export async function analyzeBlueprintPdf(
             }));
           }
           if (Array.isArray(parsed.metraj_kalemleri) && parsed.metraj_kalemleri.length > 0) {
-            parsedBoqItems = parsed.metraj_kalemleri.map((k, idx) => {
-              const qty = Number(k.miktar) || 1;
-              const uPrice = Number(k.birim_fiyat) || 500;
-              return {
-                id: `BOQ-${String(idx + 1).padStart(2, "0")}`,
-                pozNo: k.poz_no || `15.${100 + idx}.100${idx + 1}`,
-                description: k.aciklama || "İmalat Kalemi",
-                discipline: k.disiplin || k.kategori || "Mimari",
-                category: k.kategori || "MIMARI",
-                unit: k.birim || "Adet",
-                quantity: qty,
-                unitPrice: uPrice,
-                totalPrice: Number(k.toplam_tutar) || qty * uPrice,
-                detectedInRooms: k.bulundugu_mahaller || ["Tüm Mahaller"],
-              };
-            });
+            parsedBoqItems = await Promise.all(
+              parsed.metraj_kalemleri.map(async (k, idx) => {
+                const qty = Number(k.miktar) || 1;
+                const matchedPoz = await matchOfficialPricePoz(
+                  k.aciklama,
+                  k.poz_no,
+                  k.birim,
+                  k.birim_fiyat
+                );
+                const uPrice = Number(k.birim_fiyat) || matchedPoz.price || 500;
+                return {
+                  id: `BOQ-${String(idx + 1).padStart(2, "0")}`,
+                  pozNo: matchedPoz.pozNo || k.poz_no || `15.${100 + idx}.100${idx + 1}`,
+                  description: k.aciklama || matchedPoz.description || "İmalat Kalemi",
+                  discipline: k.disiplin || k.kategori || "Mimari",
+                  category: k.kategori || "MIMARI",
+                  unit: k.birim || matchedPoz.unit || "Adet",
+                  quantity: qty,
+                  unitPrice: uPrice,
+                  totalPrice: Number(k.toplam_tutar) || Math.round(qty * uPrice * 100) / 100,
+                  detectedInRooms: k.bulundugu_mahaller || ["Tüm Mahaller"],
+                };
+              })
+            );
           }
         }
       } catch (aiErr) {
-        console.warn("[AI Blueprint Parser] LLM fallback to standard engineering schema:", aiErr);
+        console.warn("[AI Blueprint Parser] LLM fallback to Multi-Agent orchestrated output:", aiErr);
       }
     }
 

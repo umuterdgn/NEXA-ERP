@@ -5202,4 +5202,18 @@ model WebTraffic {
   @@index([createdAt])
 }
 
+// ============================================================================
+// ÇEVRE, ŞEHİRCİLİK VE İKLİM DEĞİŞİKLİĞİ BAKANLIĞI RESMİ BİRİM FİYAT (POZ NO)
+// ============================================================================
+
+model OfficialPricePoz {
+  id          String @id @default(cuid())
+  pozNo       String @unique // Örn: 15.100.1001
+  description String
+  unit        String
+  price       Float
+  year        Int
+}
+
+
 
