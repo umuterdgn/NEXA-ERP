@@ -250,6 +250,7 @@ interface BimViewerProps {
   fileName?: string
   models?: FederatedModelItem[]
   boqData?: Blueprint2DCoordinateItem[]
+  aiData?: Blueprint2DCoordinateItem[]
 }
 
 // React Three Fiber Loading Overlay
@@ -566,11 +567,13 @@ function IfcCanvasModel({
 export interface Blueprint2DCoordinateItem {
   id?: string
   eleman?: string
+  elemanTipi?: string
   is_kalemi?: string
   startX?: number
   startY?: number
   endX?: number
   endY?: number
+  yukseklik_z?: number
   height?: number
   thickness?: number
   baslangic?: { x: number; y: number }
@@ -634,7 +637,7 @@ export function generate3DFrom2DData(
     const startY = Number(el.startY ?? el.baslangic?.y ?? 0)
     const endX = Number(el.endX ?? el.bitis?.x ?? 5)
     const endY = Number(el.endY ?? el.bitis?.y ?? 0)
-    const height = Math.max(0.15, Number(el.height ?? el.yukseklik ?? 3.0))
+    const height = Math.max(0.15, Number(el.yukseklik_z ?? el.height ?? el.yukseklik ?? 3.0))
     const depth = Math.max(0.15, Number(el.thickness ?? el.kalinlik ?? 0.25))
     const baseY = Number(el.taban_kotu ?? 0)
 
@@ -680,7 +683,7 @@ export function generate3DFrom2DData(
       color = "#06b6d4"
     }
 
-    const elemName = el.eleman || el.is_kalemi || "Yapı Elemanı"
+    const elemName = el.eleman || el.elemanTipi || el.is_kalemi || "Yapı Elemanı"
 
     const item: Extruded3DBoxItem = {
       id: el.id || `EXT-3D-${idx + 1}`,
@@ -884,7 +887,8 @@ class BimViewerErrorBoundary extends Component<
   }
 }
 
-export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models, boqData }: BimViewerProps) {
+export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models, boqData, aiData }: BimViewerProps) {
+  const incomingAiData = aiData && aiData.length > 0 ? aiData : boqData
   const effectiveUrl = (bimUrl || url || ifcUrl || (models && models.length > 0 ? models[0].url : "") || "").trim()
 
   // Federated BIM Disiplin Modelleri (Veritabanından Gelen Gerçek Modeller - Sadece .ifc, .gltf, .glb)
@@ -1022,14 +1026,14 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
 
   // ADIM 2: Gemini API veya Prisma BoqItem/AIAnalysis Verisinden 3D Extrusion Elemanları
   const [extrusionElements2D, setExtrusionElements2D] = useState<Blueprint2DCoordinateItem[]>(
-    boqData && boqData.length > 0 ? boqData : []
+    incomingAiData && incomingAiData.length > 0 ? incomingAiData : []
   )
   const [extrusionSource, setExtrusionSource] = useState<string>("PRISMA_AI_ANALYSIS")
 
   useEffect(() => {
-    if (boqData && boqData.length > 0) {
-      setExtrusionElements2D(boqData)
-      setExtrusionSource("PROP_BOQ_DATA")
+    if (incomingAiData && incomingAiData.length > 0) {
+      setExtrusionElements2D(incomingAiData)
+      setExtrusionSource("PROP_AI_DATA")
       return
     }
     import("@/actions/ai-blueprint-parser")
@@ -1044,7 +1048,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
           .catch((err) => console.warn("2D->3D Extrusion verisi çekilemedi:", err))
       })
       .catch(() => {})
-  }, [projectId, boqData])
+  }, [projectId, incomingAiData])
 
   // Open layer panel automatically on desktop displays (>= 1024px), keep collapsed on mobile
   useEffect(() => {
@@ -2496,7 +2500,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                     ) : (
                       /* ADIM 2 & ADIM 3: Yüklenen dosya IFC/GLB değilse (PDF/DWG ise), Gemini API veya Prisma'dan dönen koordinat verileriyle 2D->3D Extrusion Motorunu çalıştır */
                       <GeometryEngine2Dto3D
-                        data={boqData && boqData.length > 0 ? boqData : extrusionElements2D}
+                        data={incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                         completedElements={completedElements}

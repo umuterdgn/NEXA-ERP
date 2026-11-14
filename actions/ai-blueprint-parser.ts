@@ -68,10 +68,12 @@ export type ConstructionDiscipline =
 export interface Blueprint2DCoordinateElement {
   id?: string;
   eleman: string;
+  elemanTipi?: string;
   startX: number;
   startY: number;
   endX: number;
   endY: number;
+  yukseklik_z: number;
   height: number;
   thickness?: number;
   baseElevation?: number;
@@ -90,6 +92,7 @@ export interface ParsedBoQItem {
   id: string;
   pozNo: string;
   description: string;
+  elemanTipi?: string;
   discipline?: ConstructionDiscipline;
   category: "STATIK" | "MIMARI" | "ELEKTRIK" | "MEKANIK" | "YALITIM" | "ISKELE_KALIP";
   unit: string;
@@ -101,6 +104,7 @@ export interface ParsedBoQItem {
   startY?: number;
   endX?: number;
   endY?: number;
+  yukseklik_z?: number;
   height?: number;
   thickness?: number;
   baslangic?: { x: number; y: number };
@@ -144,6 +148,7 @@ export interface StructuredBlueprintOutput {
   metraj_kalemleri: Array<{
     poz_no?: string;
     eleman?: string;
+    elemanTipi: string;
     disiplin: ConstructionDiscipline;
     aciklama: string;
     kategori?: "STATIK" | "MIMARI" | "ELEKTRIK" | "MEKANIK" | "YALITIM" | "ISKELE_KALIP";
@@ -156,7 +161,8 @@ export interface StructuredBlueprintOutput {
     startY: number;
     endX: number;
     endY: number;
-    height: number;
+    yukseklik_z: number;
+    height?: number;
     thickness?: number;
     baslangic?: { x: number; y: number };
     bitis?: { x: number; y: number };
@@ -187,7 +193,7 @@ Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, E-LITE, M-HVAC, M-PLUM gi
 - İSKELE - KALIP: Cephe iskelesi metrajlarını (m2 veya ton) ve güvenlik filesi ihtiyaçlarını belirle.
 
 5. 2D'den 3D'ye Geometri (Extrusion) Koordinat Çıkarımı:
-Sadece metraj (miktar) değil, tespit edilen her yapısal elemanın (Duvar, Kolon, Kiriş, Kablo Tavası, Tesisat Borusu) 2D düzlemdeki başlangıç/bitiş koordinatlarını (startX, startY, endX, endY) ve yüksekliğini (height) de döndür.
+Sadece metraj (miktar) değil, tespit edilen her yapısal elemanın (elemanTipi: Duvar, Kolon, Kiriş, Döşeme, Kablo Tavası, Tesisat Borusu) 2D düzlemdeki başlangıç/bitiş koordinatlarını (startX, startY, endX, endY), yüksekliğini (yukseklik_z) ve disiplinini (disiplin: Mimari, Statik, Elektrik, Mekanik) de döndür.
 
 6. Few-Shot Prompting (Örneklere Dayalı Öğrenme):
 ÖRNEK 1: Eğer planda 'Yatak Odası - 15m2' yazıyorsa ve duvar kalınlığı 20cm ise, çıktı JSON'un şu şekilde olmalıdır:
@@ -208,6 +214,7 @@ Sadece metraj (miktar) değil, tespit edilen her yapısal elemanın (Duvar, Kolo
     {
       "poz_no": "15.220.1004",
       "eleman": "Tuğla Duvar",
+      "elemanTipi": "Duvar",
       "disiplin": "Mimari",
       "aciklama": "20cm Gazbeton Duvar Örülmesi",
       "kategori": "MIMARI",
@@ -220,6 +227,7 @@ Sadece metraj (miktar) değil, tespit edilen her yapısal elemanın (Duvar, Kolo
       "startY": 0,
       "endX": 5,
       "endY": 0,
+      "yukseklik_z": 3,
       "height": 3,
       "thickness": 0.2
     }
@@ -232,7 +240,8 @@ Sadece metraj (miktar) değil, tespit edilen her yapısal elemanın (Duvar, Kolo
     {
       "poz_no": "18.320.1008",
       "eleman": "Yangın Algılama Hattı",
-      "disiplin": "Zayıf Akım",
+      "elemanTipi": "Kablo Tavası",
+      "disiplin": "Elektrik",
       "aciklama": "Yangın Algılama Hattı Kırmızı Çizgi ve Duman Dedektörü",
       "kategori": "ELEKTRIK",
       "miktar": 45,
@@ -244,6 +253,7 @@ Sadece metraj (miktar) değil, tespit edilen her yapısal elemanın (Duvar, Kolo
       "startY": 2,
       "endX": 12,
       "endY": 2,
+      "yukseklik_z": 2.8,
       "height": 2.8,
       "thickness": 0.25
     }
@@ -256,7 +266,8 @@ export async function getBlueprintParserSystemPrompt(): Promise<string> {
 }
 
 /**
- * Gemini Structured Output (responseSchema) Tanımı
+ * Gemini Structured Output (responseSchema) Tanımı (Google AI Studio)
+ * Mahal listesi, BOQ metraj kalemleri ve 3D çizim koordinatları (elemanTipi, startX, startY, endX, endY, yukseklik_z, disiplin)
  */
 const blueprintResponseSchema: ResponseSchema = {
   type: SchemaType.OBJECT,
@@ -282,13 +293,20 @@ const blueprintResponseSchema: ResponseSchema = {
     metraj_kalemleri: {
       type: SchemaType.ARRAY,
       description:
-        "Tespit edilen imalat/metraj (BoQ) kalemleri ve R3F 3D Extrusion için startX, startY, endX, endY, height koordinatları",
+        "Tespit edilen BOQ metraj kalemleri ve 3D R3F Extrusion için elemanTipi, startX, startY, endX, endY, yukseklik_z, disiplin koordinatları",
       items: {
         type: SchemaType.OBJECT,
         properties: {
           poz_no: { type: SchemaType.STRING },
           eleman: { type: SchemaType.STRING },
-          disiplin: { type: SchemaType.STRING },
+          elemanTipi: {
+            type: SchemaType.STRING,
+            description: "Eleman tipi (Duvar, Kolon, Kiriş, Döşeme, Kablo Tavası, Boru vb.)",
+          },
+          disiplin: {
+            type: SchemaType.STRING,
+            description: "Disiplin bilgisi (Mimari, Statik, Elektrik, Mekanik)",
+          },
           aciklama: { type: SchemaType.STRING },
           kategori: { type: SchemaType.STRING },
           miktar: { type: SchemaType.NUMBER },
@@ -315,9 +333,13 @@ const blueprintResponseSchema: ResponseSchema = {
             type: SchemaType.NUMBER,
             description: "2D plandaki Y bitiş koordinatı (metre)",
           },
+          yukseklik_z: {
+            type: SchemaType.NUMBER,
+            description: "Elemanın 3D Z yüksekliği (metre, örn: 3.0)",
+          },
           height: {
             type: SchemaType.NUMBER,
-            description: "Elemanın 3D yüksekliği Z (metre, örn: 3.0)",
+            description: "Elemanın 3D yüksekliği (metre, örn: 3.0)",
           },
           thickness: {
             type: SchemaType.NUMBER,
@@ -325,7 +347,7 @@ const blueprintResponseSchema: ResponseSchema = {
           },
         },
         required: [
-          "eleman",
+          "elemanTipi",
           "disiplin",
           "aciklama",
           "miktar",
@@ -334,7 +356,7 @@ const blueprintResponseSchema: ResponseSchema = {
           "startY",
           "endX",
           "endY",
-          "height",
+          "yukseklik_z",
         ],
       },
     },
@@ -464,7 +486,7 @@ export async function analyzeBlueprintPdf(
         },
       },
       {
-        text: `Bu proje paftasını (${docName}) analiz et. Tüm mahalleri (mahaller) ve imalat metrajlarını (metraj_kalemleri) çıkar. Her yapısal elemanın 3D R3F sahnesinde çizilmesi için 2D düzlemdeki startX, startY, endX, endY koordinatlarını ve height (yükseklik) değerlerini metre cinsinden hesaplayarak zorunlu responseSchema JSON formatında döndür.`,
+        text: `Bu proje paftasını (${docName}) analiz et. Tüm mahalleri (mahaller) ve BOQ imalat metrajlarını (metraj_kalemleri) çıkar. Her yapısal elemanın 3D R3F sahnesinde çizilmesi için elemanTipi, startX, startY, endX, endY, yukseklik_z ve disiplin koordinatlarını metre cinsinden hesaplayarak zorunlu responseSchema JSON formatında döndür.`,
       },
     ]);
 
@@ -489,7 +511,7 @@ export async function analyzeBlueprintPdf(
       (parsed.metraj_kalemleri || []).map(async (k, idx) => {
         const qty = Number(k.miktar) || 1;
         const matchedPoz = await matchOfficialPricePoz(
-          k.aciklama || k.eleman || "",
+          k.aciklama || k.eleman || k.elemanTipi || "",
           k.poz_no,
           k.birim,
           k.birim_fiyat
@@ -499,13 +521,15 @@ export async function analyzeBlueprintPdf(
         const startY = Number(k.startY ?? k.baslangic?.y ?? 0);
         const endX = Number(k.endX ?? k.bitis?.x ?? startX + 4);
         const endY = Number(k.endY ?? k.bitis?.y ?? startY);
-        const height = Number(k.height ?? k.yukseklik ?? 3.0);
+        const yukseklik_z = Number(k.yukseklik_z ?? k.height ?? k.yukseklik ?? 3.0);
         const thickness = Number(k.thickness ?? 0.25);
+        const elemanTipi = k.elemanTipi || k.eleman || "Duvar";
 
         return {
           id: `BOQ-${String(idx + 1).padStart(2, "0")}`,
           pozNo: matchedPoz.pozNo || k.poz_no || `15.${100 + idx}.100${idx + 1}`,
           description: k.aciklama || k.eleman || matchedPoz.description || "İmalat Kalemi",
+          elemanTipi,
           discipline: k.disiplin || "Mimari",
           category: normalizeCategory(k.kategori, k.disiplin),
           unit: k.birim || matchedPoz.unit || "m2",
@@ -517,11 +541,12 @@ export async function analyzeBlueprintPdf(
           startY,
           endX,
           endY,
-          height,
+          yukseklik_z,
+          height: yukseklik_z,
           thickness,
           baslangic: { x: startX, y: startY },
           bitis: { x: endX, y: endY },
-          yukseklik: height,
+          yukseklik: yukseklik_z,
           kalinlik: thickness,
         };
       })
@@ -531,15 +556,17 @@ export async function analyzeBlueprintPdf(
       (item, idx) => ({
         id: `EXT-${String(idx + 1).padStart(2, "0")}`,
         eleman: item.description,
+        elemanTipi: item.elemanTipi || "Duvar",
         startX: item.startX ?? 0,
         startY: item.startY ?? 0,
         endX: item.endX ?? 5,
         endY: item.endY ?? 0,
-        height: item.height ?? 3,
+        yukseklik_z: item.yukseklik_z ?? item.height ?? 3,
+        height: item.yukseklik_z ?? item.height ?? 3,
         thickness: item.thickness ?? 0.25,
         baslangic: { x: item.startX ?? 0, y: item.startY ?? 0 },
         bitis: { x: item.endX ?? 5, y: item.endY ?? 0 },
-        yukseklik: item.height ?? 3,
+        yukseklik: item.yukseklik_z ?? item.height ?? 3,
         kalinlik: item.thickness ?? 0.25,
         taban_kotu: 0,
         disiplin: item.discipline || "Mimari",
@@ -554,6 +581,7 @@ export async function analyzeBlueprintPdf(
       metraj_kalemleri: parsedBoqItems.map((b) => ({
         poz_no: b.pozNo,
         eleman: b.description,
+        elemanTipi: b.elemanTipi || "Duvar",
         disiplin: b.discipline || b.category,
         aciklama: b.description,
         kategori: b.category,
@@ -566,11 +594,12 @@ export async function analyzeBlueprintPdf(
         startY: b.startY ?? 0,
         endX: b.endX ?? 5,
         endY: b.endY ?? 0,
-        height: b.height ?? 3,
+        yukseklik_z: b.yukseklik_z ?? b.height ?? 3,
+        height: b.yukseklik_z ?? b.height ?? 3,
         thickness: b.thickness ?? 0.25,
         baslangic: { x: b.startX ?? 0, y: b.startY ?? 0 },
         bitis: { x: b.endX ?? 5, y: b.endY ?? 0 },
-        yukseklik: b.height ?? 3,
+        yukseklik: b.yukseklik_z ?? b.height ?? 3,
       })),
       yapisal_elemanlar: parsedElements2D,
     };
@@ -822,21 +851,23 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
               const startY = Number(k.startY ?? k.baslangic?.y ?? 0);
               const endX = Number(k.endX ?? k.bitis?.x ?? startX + 4);
               const endY = Number(k.endY ?? k.bitis?.y ?? startY);
-              const height = Number(k.height ?? k.yukseklik ?? 3.0);
+              const yukseklik_z = Number(k.yukseklik_z ?? k.height ?? k.yukseklik ?? 3.0);
               const thickness = Number(k.thickness ?? 0.25);
 
               return {
                 id: `GEMINI-EXT-${idx + 1}`,
                 eleman: k.eleman || k.aciklama || "Yapı Elemanı",
+                elemanTipi: k.elemanTipi || k.eleman || "Duvar",
                 startX,
                 startY,
                 endX,
                 endY,
-                height,
+                yukseklik_z,
+                height: yukseklik_z,
                 thickness,
                 baslangic: { x: startX, y: startY },
                 bitis: { x: endX, y: endY },
-                yukseklik: height,
+                yukseklik: yukseklik_z,
                 kalinlik: thickness,
                 taban_kotu: 0,
                 disiplin: k.disiplin || "Mimari",
@@ -861,14 +892,19 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
           return {
             success: true,
             source: "GEMINI_AI_ANALYSIS",
-            elements: structOut.yapisal_elemanlar.map((el, idx) => ({
-              ...el,
-              startX: Number(el.startX ?? el.baslangic?.x ?? idx * 2),
-              startY: Number(el.startY ?? el.baslangic?.y ?? 0),
-              endX: Number(el.endX ?? el.bitis?.x ?? 5),
-              endY: Number(el.endY ?? el.bitis?.y ?? 0),
-              height: Number(el.height ?? el.yukseklik ?? 3.0),
-            })),
+            elements: structOut.yapisal_elemanlar.map((el, idx) => {
+              const yz = Number(el.yukseklik_z ?? el.height ?? el.yukseklik ?? 3.0);
+              return {
+                ...el,
+                elemanTipi: el.elemanTipi || el.eleman || "Duvar",
+                startX: Number(el.startX ?? el.baslangic?.x ?? idx * 2),
+                startY: Number(el.startY ?? el.baslangic?.y ?? 0),
+                endX: Number(el.endX ?? el.bitis?.x ?? 5),
+                endY: Number(el.endY ?? el.bitis?.y ?? 0),
+                yukseklik_z: yz,
+                height: yz,
+              };
+            }),
           };
         }
       } catch {
@@ -887,6 +923,7 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
         (item, index) => {
           const desc = (item.description || "").toLowerCase();
           let disiplin: "Mimari" | "Statik" | "Elektrik" | "Mekanik" = "Mimari";
+          let elemanTipi = "Duvar";
           if (
             desc.includes("beton") ||
             desc.includes("demir") ||
@@ -898,6 +935,7 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
             item.pozNo.startsWith("15.160")
           ) {
             disiplin = "Statik";
+            elemanTipi = desc.includes("kolon") ? "Kolon" : desc.includes("kiriş") ? "Kiriş" : "Betonarme";
           } else if (
             desc.includes("kablo") ||
             desc.includes("elektrik") ||
@@ -907,6 +945,7 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
             item.pozNo.startsWith("18.")
           ) {
             disiplin = "Elektrik";
+            elemanTipi = "Kablo Tavası";
           } else if (
             desc.includes("boru") ||
             desc.includes("tesisat") ||
@@ -916,6 +955,7 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
             item.pozNo.startsWith("19.")
           ) {
             disiplin = "Mekanik";
+            elemanTipi = "Tesisat Borusu";
           }
 
           // Her BoQ kaleminin miktarına göre gerçekçi 2D->3D yerleşim koordinatı üret
@@ -929,7 +969,7 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
           const startY = -6 + row * 3.5;
           const endX = startX + spanLength;
           const endY = startY;
-          const height =
+          const yukseklik_z =
             disiplin === "Statik"
               ? 3.4
               : disiplin === "Mimari"
@@ -939,15 +979,17 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
           return {
             id: item.id,
             eleman: `${item.description} [${item.pozNo}]`,
+            elemanTipi,
             startX,
             startY,
             endX,
             endY,
-            height,
+            yukseklik_z,
+            height: yukseklik_z,
             thickness: disiplin === "Statik" ? 0.4 : 0.25,
             baslangic: { x: startX, y: startY },
             bitis: { x: endX, y: endY },
-            yukseklik: height,
+            yukseklik: yukseklik_z,
             kalinlik: disiplin === "Statik" ? 0.4 : 0.25,
             taban_kotu:
               disiplin === "Elektrik" || disiplin === "Mekanik" ? 2.7 : 0,

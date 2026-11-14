@@ -88,7 +88,7 @@ export function generate3DFrom2DData(
     const startY = Number(el.startY ?? el.baslangic?.y ?? 0)
     const endX = Number(el.endX ?? el.bitis?.x ?? 5)
     const endY = Number(el.endY ?? el.bitis?.y ?? 0)
-    const height = Math.max(0.15, Number(el.height ?? el.yukseklik ?? 3.0))
+    const height = Math.max(0.15, Number(el.yukseklik_z ?? el.height ?? el.yukseklik ?? 3.0))
     const depth = Math.max(0.15, Number(el.thickness ?? el.kalinlik ?? 0.25))
     const baseY = Number(el.baseElevation ?? el.taban_kotu ?? 0)
 
@@ -134,10 +134,12 @@ export function generate3DFrom2DData(
       color = "#06b6d4" // Mekanik
     }
 
+    const elemLabel = el.eleman || el.elemanTipi || `Eleman_${idx + 1}`
+
     const meshData: Extruded3DBoxMeshData = {
       id: el.id || `EXT-3D-${idx + 1}`,
-      meshName: `${disciplineGroup}_${el.eleman || `Eleman_${idx + 1}`}`,
-      eleman: el.eleman || "Yapı Elemanı",
+      meshName: `${disciplineGroup}_${elemLabel}`,
+      eleman: elemLabel,
       pozNo: el.poz_no || "15.220.1004",
       disciplineGroup,
       categoryKey,
@@ -290,6 +292,7 @@ export interface BIMViewerProps {
   fileName?: string
   models?: FederatedModelItem[]
   boqData?: Blueprint2DCoordinateElement[]
+  aiData?: Blueprint2DCoordinateElement[]
 }
 
 export default function BIMViewer(props: BIMViewerProps) {
@@ -301,6 +304,7 @@ export default function BIMViewer(props: BIMViewerProps) {
   return (
     <InternalBimViewer
       {...props}
+      boqData={props.aiData || props.boqData}
       models={validModels}
     />
   )
