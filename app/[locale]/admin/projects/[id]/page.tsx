@@ -25,7 +25,7 @@ export default async function ProjectDetailPage({
   const resolvedParams = await params
 
   const session = await auth()
-  const userRole = session?.user?.role
+  const userRole = (session?.user as any)?.role
   const isSuperAdmin = userRole === "SUPER_ADMIN"
   const tenantId = (session?.user as any)?.tenantId as string | undefined
 
@@ -89,6 +89,11 @@ export default async function ProjectDetailPage({
         bimFiles: {
           orderBy: {
             uploadedAt: 'desc',
+          },
+        },
+        projectFiles: {
+          orderBy: {
+            createdAt: 'desc',
           },
         },
         inspections: {
@@ -195,6 +200,70 @@ export default async function ProjectDetailPage({
       console.error("Direct bimFiles fetch error:", err)
     }
   }
+
+  // ADIM 1: Yüklenen dosyaları uzantılarına göre bimFiles (.ifc, .gltf, .glb) ve documentFiles (.pdf, .docx, .xlsx vb.) olarak iki ayrı diziye ayır
+  const is3DExtension = (nameOrUrl?: string | null, fileType?: string | null) => {
+    const extType = (fileType || "").toLowerCase().replace(/^\./, "").trim()
+    if (["ifc", "gltf", "glb"].includes(extType)) return true
+    if (["pdf", "doc", "docx", "xls", "xlsx", "jpg", "jpeg", "png", "dwg", "dxf"].includes(extType)) return false
+    const clean = (nameOrUrl || "").split("?")[0].split("#")[0].toLowerCase().trim()
+    return clean.endsWith(".ifc") || clean.endsWith(".gltf") || clean.endsWith(".glb")
+  }
+
+  const rawBimRecords = ((project.bimFiles as any[]) || [])
+  const rawDocRecords = ((project.documents as any[]) || [])
+  const rawProjFiles = ((project.projectFiles as any[]) || [])
+
+  const filteredBimFiles = [
+    ...rawBimRecords.filter((f) => is3DExtension(f.fileName || f.fileUrl, f.fileType)),
+    ...rawProjFiles
+      .filter((f) => is3DExtension(f.name || f.url))
+      .map((f) => ({
+        id: f.id,
+        projectId: f.projectId,
+        fileName: f.name,
+        fileUrl: f.url,
+        fileType: (f.name?.split(".").pop() || f.url?.split(".").pop() || "ifc").toLowerCase(),
+        uploadedAt: f.createdAt,
+        isActive: false,
+      })),
+  ]
+
+  const filteredDocumentFiles = [
+    ...rawBimRecords
+      .filter((f) => !is3DExtension(f.fileName || f.fileUrl, f.fileType))
+      .map((f) => ({
+        id: f.id,
+        projectId: f.projectId,
+        fileName: f.fileName,
+        fileUrl: f.fileUrl,
+        fileType: (f.fileType || f.fileName?.split(".").pop() || "pdf").toLowerCase(),
+        uploadedAt: f.uploadedAt,
+      })),
+    ...rawDocRecords
+      .filter((d) => !is3DExtension(d.title || d.fileUrl, d.type))
+      .map((d) => ({
+        id: d.id,
+        projectId: d.projectId || resolvedParams.id,
+        fileName: d.title,
+        fileUrl: d.fileUrl,
+        fileType: (d.fileUrl?.split(".").pop() || d.type || "pdf").toLowerCase(),
+        uploadedAt: d.createdAt,
+      })),
+    ...rawProjFiles
+      .filter((f) => !is3DExtension(f.name || f.url))
+      .map((f) => ({
+        id: f.id,
+        projectId: f.projectId,
+        fileName: f.name,
+        fileUrl: f.url,
+        fileType: (f.name?.split(".").pop() || f.url?.split(".").pop() || "pdf").toLowerCase(),
+        uploadedAt: f.createdAt,
+      })),
+  ]
+
+  project.bimFiles = filteredBimFiles
+  ;(project as any).documentFiles = filteredDocumentFiles
 
   // Calculate project financial stats
   const totalIncome = (project.transactions ?? [])

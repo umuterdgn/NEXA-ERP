@@ -256,7 +256,7 @@ export async function deleteBimFile(projectId: string, bimFileId: string) {
 
 export async function getProjectBimFiles(projectId: string) {
   try {
-    const [allBimFiles, projectDocs] = await Promise.all([
+    const [allBimFiles, projectDocs, projectFiles] = await Promise.all([
       prisma.bimFile.findMany({
         where: { projectId },
         orderBy: { uploadedAt: "desc" },
@@ -265,14 +265,36 @@ export async function getProjectBimFiles(projectId: string) {
         where: { projectId, status: "ACTIVE" },
         orderBy: { createdAt: "desc" },
       }),
+      prisma.projectFile.findMany({
+        where: { projectId },
+        orderBy: { createdAt: "desc" },
+      }),
     ])
 
-    // ADIM 2: Sadece 3D model dosyaları (.ifc, .gltf, .glb) "Kayıtlı BIM Modelleri Arşivi"ne düşer
-    const files = allBimFiles.filter((f) =>
+    // ADIM 1 & 2: Sadece 3D model dosyaları (.ifc, .gltf, .glb) "bimFiles" (Kayıtlı BIM Modelleri Arşivi) listesine düşer
+    const bimFromBimTable = allBimFiles.filter((f) =>
       is3DModelRecord(f.fileUrl, f.fileName, f.fileType)
     )
+    const bimFromProjFiles = projectFiles
+      .filter((f) => is3DModelRecord(f.url, f.name))
+      .map((f) => ({
+        id: f.id,
+        projectId: f.projectId,
+        fileName: f.name,
+        fileUrl: f.url,
+        fileType: (f.name?.split(".").pop() || f.url?.split(".").pop() || "ifc").toLowerCase(),
+        uploadedAt: f.createdAt,
+        isActive: false,
+      }))
 
-    // PDF ve diğer 2D dokümanlar ayrı "Proje Evrakları / Paftalar" listesine aktarılır
+    const seen3DUrls = new Set<string>()
+    const files = [...bimFromBimTable, ...bimFromProjFiles].filter((f) => {
+      if (!f.fileUrl || seen3DUrls.has(f.fileUrl)) return false
+      seen3DUrls.add(f.fileUrl)
+      return true
+    })
+
+    // PDF, DOCX, XLSX ve diğer 2D dokümanlar ayrı "documentFiles" (Proje Evrakları ve Paftalar) listesine aktarılır
     const non3DBimFiles = allBimFiles
       .filter((f) => !is3DModelRecord(f.fileUrl, f.fileName, f.fileType))
       .map((f) => ({
@@ -295,10 +317,21 @@ export async function getProjectBimFiles(projectId: string) {
         uploadedAt: d.createdAt,
       }))
 
-    const seenUrls = new Set<string>()
-    const documents = [...non3DBimFiles, ...docItems].filter((doc) => {
-      if (!doc.fileUrl || seenUrls.has(doc.fileUrl)) return false
-      seenUrls.add(doc.fileUrl)
+    const projFileDocs = projectFiles
+      .filter((f) => !is3DModelRecord(f.url, f.name))
+      .map((f) => ({
+        id: f.id,
+        projectId: f.projectId,
+        fileName: f.name,
+        fileUrl: f.url,
+        fileType: (f.name?.split(".").pop() || f.url?.split(".").pop() || "pdf").toLowerCase(),
+        uploadedAt: f.createdAt,
+      }))
+
+    const seenDocUrls = new Set<string>()
+    const documents = [...non3DBimFiles, ...docItems, ...projFileDocs].filter((doc) => {
+      if (!doc.fileUrl || seenDocUrls.has(doc.fileUrl)) return false
+      seenDocUrls.add(doc.fileUrl)
       return true
     })
 

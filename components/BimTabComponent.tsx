@@ -17,7 +17,9 @@ import {
   deleteBimFile,
   getProjectBimFiles,
 } from "@/app/actions/project"
+import { Sparkles } from "lucide-react"
 import BIMViewer, { type FederatedModelItem, isValid3DModelFile } from "@/components/bim/BIMViewer"
+import AiBlueprintAnalysisModal from "@/components/bim/AiBlueprintAnalysisModal"
 
 export interface BimFileItem {
   id: string
@@ -59,6 +61,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   )
 
   const initialDocFiles: ProjectDocItem[] = [
+    ...((project as any).documentFiles || []),
     ...(project.bimFiles || [])
       .filter((f) => !isValid3DModelFile(f.fileUrl, f.fileName, f.fileType))
       .map((f) => ({
@@ -79,7 +82,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
         fileType: (d.fileUrl?.split(".").pop() || d.type || "pdf").toLowerCase(),
         uploadedAt: d.createdAt || new Date(),
       })),
-  ]
+  ].filter((doc, index, self) => doc.fileUrl && self.findIndex((t) => t.fileUrl === doc.fileUrl) === index)
 
   // Determine initial active model URL (prefer valid 3D model)
   const initialActiveUrl =
@@ -91,7 +94,9 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
   const [bimUrl, setBimUrl] = useState<string | null>(initialActiveUrl)
   const [bimFiles, setBimFiles] = useState<BimFileItem[]>(initial3DFiles)
-  const [projectDocs, setProjectDocs] = useState<ProjectDocItem[]>(initialDocFiles)
+  const [documentFiles, setDocumentFiles] = useState<ProjectDocItem[]>(initialDocFiles)
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false)
+  const [selectedAiDoc, setSelectedAiDoc] = useState<{ title: string; url: string } | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [showARModal, setShowARModal] = useState(false)
@@ -136,7 +141,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
         )
         setBimFiles(valid3D)
         if ((res as any).documents) {
-          setProjectDocs((res as any).documents as ProjectDocItem[])
+          setDocumentFiles((res as any).documents as ProjectDocItem[])
         }
         const active = valid3D.find((f: any) => f.isActive) || valid3D[0]
         if (active) {
@@ -379,7 +384,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                       fileType: originalName.split(".").pop()?.toLowerCase() || "pdf",
                       uploadedAt: new Date(),
                     };
-                    setProjectDocs((prev) => [newDoc, ...prev]);
+                    setDocumentFiles((prev) => [newDoc, ...prev]);
                     addBimFile(project.id, resolvedUrl, originalName)
                       .then(() => router.refresh())
                       .catch((err) => console.error("Doküman Kayıt Hatası:", err));
@@ -762,38 +767,44 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
         )}
       </div>
 
-      {/* ADIM 2: Ayrı "Proje Evrakları / Paftalar" Bölümü (PDF ve 2D Dokümanlar) */}
-      {projectDocs.length > 0 && (
-        <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-6 shadow-xl backdrop-blur-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-5 border-b border-slate-800/80 pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="text-white font-bold text-sm tracking-wide">
-                  Proje Evrakları / Paftalar
-                </h4>
-                <p className="text-slate-400 text-xs">
-                  PDF paftalar, 2B çizimler ve teknik dokümanlar (3D Model Arşivinden ayrı listelenir)
-                </p>
-              </div>
+      {/* ADIM 2: Ayrı "Proje Evrakları ve Paftalar" Bölümü (PDF, DOCX, XLSX ve AI Analiz Listesi) */}
+      <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-6 shadow-xl backdrop-blur-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5 border-b border-slate-800/80 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
-
-            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-              {projectDocs.length} Evrak / Pafta
-            </span>
+            <div>
+              <h4 className="text-white font-bold text-sm tracking-wide">
+                Proje Evrakları ve Paftalar
+              </h4>
+              <p className="text-slate-400 text-xs">
+                PDF paftalar, 2B çizimler ve teknik dokümanlar (.pdf, .docx, .xlsx) — AI Blueprint OCR ile analiz edilebilir
+              </p>
+            </div>
           </div>
 
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+            {documentFiles.length} Evrak / Pafta
+          </span>
+        </div>
+
+        {documentFiles.length === 0 ? (
+          <div className="text-center py-8 px-4 border border-dashed border-slate-800 rounded-xl bg-slate-950/40">
+            <p className="text-slate-400 text-xs">
+              Henüz yüklenmiş PDF pafta veya proje evrakı bulunmuyor.
+            </p>
+          </div>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {projectDocs.map((doc) => {
+            {documentFiles.map((doc) => {
               const ext = (doc.fileType || doc.fileName.split(".").pop() || "PDF").toUpperCase()
               return (
                 <div
                   key={doc.id}
-                  className="rounded-xl p-4 bg-slate-800/50 border border-slate-700/60 hover:bg-slate-800 hover:border-amber-500/40 transition-all flex items-center justify-between gap-3"
+                  className="rounded-xl p-4 bg-slate-800/50 border border-slate-700/60 hover:bg-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between gap-3"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-xs shrink-0">
@@ -813,20 +824,47 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                     </div>
                   </div>
 
-                  <a
-                    href={doc.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors shrink-0 flex items-center gap-1.5"
-                    title="Paftayı Görüntüle / İndir"
-                  >
-                    <span>📄 Aç</span>
-                  </a>
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-700/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAiDoc({ title: doc.fileName, url: doc.fileUrl })
+                        setIsAiModalOpen(true)
+                      }}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                      title="Yapay Zeka ile Paftayı / PDF'i Analiz Et"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>✨ AI ile Projeyi Analiz Et</span>
+                    </button>
+
+                    <a
+                      href={doc.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors shrink-0 flex items-center gap-1.5"
+                      title="Paftayı Görüntüle / İndir"
+                    >
+                      <span>📄 Aç</span>
+                    </a>
+                  </div>
                 </div>
               )
             })}
           </div>
-        </div>
+        )}
+      </div>
+
+      {/* AI Blueprint Vision Modal */}
+      {selectedAiDoc && (
+        <AiBlueprintAnalysisModal
+          isOpen={isAiModalOpen}
+          onClose={() => setIsAiModalOpen(false)}
+          documentTitle={selectedAiDoc.title}
+          documentUrl={selectedAiDoc.url}
+          projectId={project.id}
+          onSuccessTransfer={() => router.refresh()}
+        />
       )}
 
       {/* AR QR Code Modal for Desktop */}

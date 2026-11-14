@@ -212,6 +212,15 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
     }
   };
 
+  // ADIM 1: Yüklenen dosyaları uzantılarına göre bimFiles (.ifc, .gltf, .glb) ve documentFiles (.pdf, .docx, .xlsx vb.) olarak ayır
+  const is3DModelExtension = (urlOrTitle?: string) => {
+    const clean = (urlOrTitle || "").split("?")[0].split("#")[0].toLowerCase().trim();
+    return clean.endsWith(".ifc") || clean.endsWith(".gltf") || clean.endsWith(".glb");
+  };
+
+  const bimFiles = documents.filter((doc) => is3DModelExtension(doc.fileUrl) || is3DModelExtension(doc.title));
+  const documentFiles = documents.filter((doc) => !is3DModelExtension(doc.fileUrl) && !is3DModelExtension(doc.title));
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -221,16 +230,19 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span>Aktif</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <div className="w-3 h-3 rounded-full bg-slate-500"></div>
-            <span>Eski Revizyon</span>
+        <div>
+          <h3 className="text-base font-bold text-white">Proje Evrakları ve Paftalar</h3>
+          <div className="flex items-center gap-4 mt-1">
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+              <span>Aktif</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="w-2.5 h-2.5 rounded-full bg-slate-500"></div>
+              <span>Eski Revizyon</span>
+            </div>
           </div>
         </div>
         <button
@@ -242,7 +254,7 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
         </button>
       </div>
 
-      {documents.length === 0 ? (
+      {documentFiles.length === 0 ? (
         <div className="text-center py-12 text-slate-400">
           <Folder className="w-12 h-12 mx-auto mb-4 text-slate-600" />
           <p>Henüz doküman eklenmemiş.</p>
@@ -250,7 +262,7 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
         </div>
       ) : (
         <div className="grid gap-4">
-          {documents.map((doc) => (
+          {documentFiles.map((doc) => (
             <div
               key={doc.id}
               className={`bg-slate-900 rounded-lg border p-4 ${
@@ -342,6 +354,46 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {bimFiles.length > 0 && (
+        <div className="space-y-3 pt-4 border-t border-slate-800">
+          <h4 className="text-sm font-bold text-cyan-400">Kayıtlı BIM Modelleri Arşivi (.ifc, .gltf, .glb)</h4>
+          <div className="grid gap-3">
+            {bimFiles.map((bimDoc) => (
+              <div
+                key={bimDoc.id}
+                className="bg-slate-900/80 rounded-lg border border-cyan-500/30 p-4 flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3">
+                  {getTypeIcon(bimDoc.type)}
+                  <div>
+                    <h5 className="text-white font-medium text-sm">{bimDoc.title}</h5>
+                    <span className="text-xs text-slate-400">
+                      {new Date(bimDoc.createdAt).toLocaleDateString("tr-TR")} • 3D BIM Modeli
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/admin/projects/${projectId}/bim`}
+                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors"
+                  >
+                    3D Motorda Aç
+                  </a>
+                  <a
+                    href={bimDoc.fileUrl}
+                    download
+                    className="p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-800 rounded transition-colors"
+                    title="İndir"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
