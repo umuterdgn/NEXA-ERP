@@ -3,8 +3,8 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Multi-Agent 1: Architect Agent (architectAgent.ts)
- * Görev: Yerel Açık Kaynak Vision LLM (Ollama / vLLM / FastAPI) üzerinden
- * sadece mahaller (Room List), mimari metrajlar, duvar tipleri, doğramalar ve ince işleri analiz eder.
+ * Görev: Lokal Ollama (http://localhost:11434/api/generate - model: 'llama3.2-vision' veya 'llava')
+ * üzerinden Few-Shot Prompting (Örneklere Dayalı Öğrenme) ile mahaller, mimari metrajlar ve ince işleri çıkarır.
  */
 
 import type { ParsedRoom, ParsedBoQItem } from "@/actions/ai-blueprint-parser"
@@ -13,11 +13,63 @@ import { queryLocalVisionLLM } from "./local-llm-client"
 
 const systemPrompt = `
 Rol: Sen Nexa ERP'nin Kıdemli Mimar Ajanısın (architectAgent).
-Uzmanlık Alanın: Sadece mahaller (oda listeleri), mimari metrajlar, duvar tipleri (A-WALL), kapı/pencere doğramaları (A-DOOR, A-GLAZ), akustik/İZODER yalıtım ve ince yapı kaplama işleri (seramik, laminat parke, alçıpan, boya).
+Uzmanlık Alanın: Sadece mahaller (oda listeleri), mimari metrajlar, duvar tipleri (A-WALL), kapı/pencere doğramaları (A-DOOR, A-GLAZ), akustik/İZODER yalıtım, elektrik/zayıf akım sembolleri ve ince yapı kaplama işleri (seramik, laminat parke, alçıpan, boya).
 Kurallar:
 1. Plan üzerindeki OCR mahal etiketlerini ('Salon 38.5m2', 'Zemin Kat' vb.) okuyarak tam mahal listesini çıkar.
 2. Her mahalin zemin, duvar ve tavan kaplama cinslerini belirle.
 3. İnce yapı imalat kalemlerini Çevre ve Şehircilik Bakanlığı birim fiyat pozlarına uygun olarak katı JSON formatında ("mahaller" ve "metraj_kalemleri" dizileriyle) döndür.
+
+FEW-SHOT PROMPTING (ÖRNEKLERE DAYALI ÖĞRENME VERİ SETLERİ):
+ÖRNEK 1: Eğer planda 'Yatak Odası - 15m2' yazıyorsa ve duvar kalınlığı 20cm ise, çıktı JSON'un şu şekilde olmalıdır:
+{
+  "mahaller": [
+    {
+      "oda_no": "Z-04",
+      "ad": "Yatak Odası",
+      "kat": "Zemin Kat",
+      "alan": 15,
+      "cevre": 16.0,
+      "zemin_kaplama": "32. Sınıf Derzli Laminat Parke",
+      "duvar_kaplama": "20cm Gazbeton Üzeri Su Bazlı İpek Mat Boya",
+      "tavan_kaplama": "Alçıpan Tavan"
+    }
+  ],
+  "metraj_kalemleri": [
+    {
+      "poz_no": "15.220.1004",
+      "disiplin": "Mimari",
+      "aciklama": "20cm Kalınlığında Gazbeton Duvar Örülmesi (Yatak Odası Bölme Duvarı)",
+      "kategori": "MIMARI",
+      "miktar": 44.8,
+      "birim": "m2",
+      "bulundugu_mahaller": ["Z-04"]
+    },
+    {
+      "poz_no": "15.380.1005",
+      "disiplin": "Mimari",
+      "aciklama": "32. Sınıf Derzli 10mm Lüks Laminat Parke Döşemesi",
+      "kategori": "MIMARI",
+      "miktar": 15.0,
+      "birim": "m2",
+      "bulundugu_mahaller": ["Z-04"]
+    }
+  ]
+}
+
+ÖRNEK 2: Eğer lejantta 'Kırmızı Çizgi = Yangın Algılama Hattı' yazıyorsa, çizimdeki kırmızı çizgileri sayıp 'Zayıf Akım' disiplininde şu şekilde çıktı ver:
+{
+  "metraj_kalemleri": [
+    {
+      "poz_no": "18.320.1008",
+      "disiplin": "Zayıf Akım",
+      "aciklama": "Yangın Algılama Hattı Halojensiz (JH(St)H 2x2x0.8mm) Kırmızı Kablo ve Adresli Optik Duman Dedektörü",
+      "kategori": "ELEKTRIK",
+      "miktar": 145,
+      "birim": "Adet",
+      "bulundugu_mahaller": ["Tüm Kat Holleri, Z-02 BMS ve 1-11 IT Odası"]
+    }
+  ]
+}
 `.trim()
 
 export interface ArchitectAgentResult {
@@ -33,7 +85,7 @@ export async function architectAgent(
   _projectId?: string,
   seedRooms: ParsedRoom[] = []
 ): Promise<ArchitectAgentResult> {
-  // 1. Yerel Açık Kaynak Vision LLM (Ollama / vLLM / FastAPI) İsteği
+  // ADIM 1: Lokal Ollama Servisine ('llama3.2-vision' veya 'llava') İstek
   const localResponse = await queryLocalVisionLLM<{
     mahaller?: Array<{
       oda_no?: string
@@ -56,8 +108,9 @@ export async function architectAgent(
     }>
   }>({
     systemPrompt,
-    userPrompt: `Mimari Pafta (${pdfUrl}) üzerindeki mahal listesini ve mimari/ince yapı metrajlarını çıkar.`,
+    userPrompt: `Mimari Pafta (${pdfUrl}) üzerindeki mahal listesini ve mimari/ince yapı metrajlarını Few-Shot örneklerine uygun JSON olarak çıkar.`,
     documentUrl: pdfUrl,
+    model: "llama3.2-vision", // veya 'llava'
   })
 
   let rooms: ParsedRoom[] = seedRooms
@@ -71,10 +124,10 @@ export async function architectAgent(
       roomNo: m.oda_no || `M-${String(idx + 1).padStart(2, "0")}`,
       name: m.ad || "Mimari Mahal",
       floor: m.kat || "Zemin Kat",
-      areaM2: Number(m.alan) || 16,
+      areaM2: Number(m.alan) || 15,
       perimeterM:
         Number(m.cevre) ||
-        Math.round(Math.sqrt(Number(m.alan) || 16) * 4 * 10) / 10,
+        Math.round(Math.sqrt(Number(m.alan) || 15) * 4 * 10) / 10,
       floorFinish: m.zemin_kaplama || "Porselen Seramik",
       wallFinish: m.duvar_kaplama || "Su Bazlı Boya",
       ceilingFinish: m.tavan_kaplama || "Alçıpan Tavan",
@@ -94,7 +147,7 @@ export async function architectAgent(
     {
       id: "ARCH-01",
       pozNo: "15.220.1004",
-      description: "15cm Gazbeton Duvar Örülmesi ve İç/Dış Doğrama Boşlukları",
+      description: "15cm-20cm Gazbeton Duvar Örülmesi ve İç/Dış Doğrama Boşlukları",
       discipline: "Mimari",
       category: "MIMARI",
       unit: "m2",
@@ -164,7 +217,7 @@ export async function architectAgent(
     {
       id: "ARCH-08",
       pozNo: "18.320.1008",
-      description: "Akıllı Adresli Optik Duman Dedektörü, IP CCTV Kamera ve Cat6A Data Prizi",
+      description: "Yangın Algılama Hattı (Kırmızı Çizgi Lejantı) Akıllı Adresli Optik Duman Dedektörü ve Cat6A Data Prizi",
       discipline: "Zayıf Akım",
       category: "ELEKTRIK",
       unit: "Adet",

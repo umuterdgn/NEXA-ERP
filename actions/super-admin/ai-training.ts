@@ -56,7 +56,9 @@ export async function exportTrainingData(options?: {
   filterCategory?: "ALL" | "ONAYLI_BOQ_METRAJ" | "MIMARI_STATIK_CAKISMA"
 }): Promise<ExportTrainingDataResult> {
   const localAiEndpoint =
-    process.env.LOCAL_AI_ENDPOINT || "http://localhost:11434/api/chat"
+    process.env.LOCAL_AI_URL ||
+    process.env.LOCAL_AI_ENDPOINT ||
+    "http://localhost:11434/api/generate"
 
   try {
     const samples: TrainingDatasetSampleSummary[] = []

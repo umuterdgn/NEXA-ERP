@@ -3,8 +3,8 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * Multi-Agent 2: Structural Agent (structuralAgent.ts)
- * Görev: Yerel Açık Kaynak Vision LLM (Ollama / vLLM / FastAPI) üzerinden
- * sadece donatı (demir), beton, kalıp ve TS-500 / TBDY-2018 Deprem Yönetmeliği kontrollerini analiz eder.
+ * Görev: Lokal Ollama (http://localhost:11434/api/generate - model: 'llama3.2-vision' veya 'llava')
+ * üzerinden Few-Shot Prompting (Örneklere Dayalı Öğrenme) ile donatı, beton, kalıp ve TS-500 / TBDY-2018 kontrollerini analiz eder.
  */
 
 import type { ParsedBoQItem } from "@/actions/ai-blueprint-parser"
@@ -18,6 +18,54 @@ Kurallar:
 1. Kolon, perde, kiriş, radye temel ve döşeme elemanlarının beton hacimlerini (m3) ve kalıp yüzey alanlarını (m2) hesapla.
 2. TS-500 minimum donatı oranları ve TBDY-2018 sarılma bölgesi etriye sıklaştırma kurallarına göre B420C nervürlü donatı çeliği tonajını çıkar.
 3. Her kalemi Çevre ve Şehircilik Bakanlığı resmi birim fiyat pozlarıyla eşleştirerek katı JSON formatında ("metraj_kalemleri" dizisiyle) döndür.
+
+FEW-SHOT PROMPTING (ÖRNEKLERE DAYALI ÖĞRENME VERİ SETLERİ):
+ÖRNEK 1: Eğer planda 'Yatak Odası - 15m2' yazıyorsa ve duvar kalınlığı 20cm ise, çıktı JSON'un şu şekilde olmalıdır:
+{
+  "mahaller": [
+    {
+      "oda_no": "Z-04",
+      "ad": "Yatak Odası",
+      "alan": 15,
+      "duvar_kalinligi_cm": 20
+    }
+  ],
+  "metraj_kalemleri": [
+    {
+      "poz_no": "15.150.1005",
+      "disiplin": "Statik",
+      "aciklama": "C30/37 - C35/45 Betonarme Döşeme ve Kiriş Beton Dökümü (15m2 Mahal Tabliyesi)",
+      "kategori": "STATIK",
+      "miktar": 3.75,
+      "birim": "m3",
+      "bulundugu_mahaller": ["Z-04"]
+    },
+    {
+      "poz_no": "15.160.1002",
+      "disiplin": "Statik Rapor",
+      "aciklama": "B420C Nervürlü Donatı Çeliği (Ø8-Ø32mm) TBDY-2018 Etriye Sıklaştırmalı Demir Metrajı",
+      "kategori": "STATIK",
+      "miktar": 0.48,
+      "birim": "Ton",
+      "bulundugu_mahaller": ["Z-04"]
+    }
+  ]
+}
+
+ÖRNEK 2: Eğer lejantta 'Kırmızı Çizgi = Yangın Algılama Hattı' yazıyorsa, çizimdeki kırmızı çizgileri sayıp 'Zayıf Akım' disiplininde şu şekilde çıktı ver:
+{
+  "metraj_kalemleri": [
+    {
+      "poz_no": "18.320.1008",
+      "disiplin": "Zayıf Akım",
+      "aciklama": "Yangın Algılama Hattı Kırmızı Çizgi Güzergahı Betonarme Perde/Kiriş Yangın Durdurucu Manşon Geçişi ve Dedektör Hattı",
+      "kategori": "STATIK",
+      "miktar": 45,
+      "birim": "Adet",
+      "bulundugu_mahaller": ["B-05 Radye Temel ve Bodrum Kat Perdeleri"]
+    }
+  ]
+}
 `.trim()
 
 export interface StructuralAgentResult {
@@ -37,7 +85,7 @@ export async function structuralAgent(
   pdfUrl: string,
   _projectId?: string
 ): Promise<StructuralAgentResult> {
-  // 1. Yerel Açık Kaynak Vision LLM (Ollama / vLLM / FastAPI) İsteği
+  // ADIM 1: Lokal Ollama Servisine ('llama3.2-vision' veya 'llava') İstek
   const localResponse = await queryLocalVisionLLM<{
     metraj_kalemleri?: Array<{
       poz_no?: string
@@ -50,8 +98,9 @@ export async function structuralAgent(
     }>
   }>({
     systemPrompt,
-    userPrompt: `Statik Pafta (${pdfUrl}) üzerindeki beton, B420C nervürlü donatı demiri ve endüstriyel kalıp/iskele metrajlarını TS-500 ve TBDY-2018 esaslarına göre çıkar.`,
+    userPrompt: `Statik Pafta (${pdfUrl}) üzerindeki beton, B420C nervürlü donatı demiri ve endüstriyel kalıp/iskele metrajlarını TS-500, TBDY-2018 ve Few-Shot örneklerine göre çıkar.`,
     documentUrl: pdfUrl,
+    model: "llava", // veya 'llama3.2-vision'
   })
 
   const defaultStructuralItems: Array<{

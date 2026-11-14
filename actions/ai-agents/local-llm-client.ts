@@ -2,10 +2,10 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Local Open-Source Vision & LLM Client (Ollama / vLLM / FastAPI)
- * Görev: Ticari API'lerden (OpenAI/Gemini) tamamen bağımsız, sıfır maliyetli
- * yerel açık kaynak modele (Örn: http://localhost:11434/api/chat veya process.env.LOCAL_AI_ENDPOINT)
- * istek atan özel fetch istemcisi.
+ * Local Open-Source Ollama Vision & LLM Client (localhost:11434)
+ * Görev: Hiçbir bulut veya API maliyeti yaratmayacak şekilde kullanıcının kendi
+ * bilgisayarında çalışan lokal Ollama servisine (http://localhost:11434/api/generate veya /api/chat)
+ * bağlanır ve 'llama3.2-vision' / 'llava' açık kaynak vizyon modellerini tetikler.
  */
 
 export interface LocalLLMMessage {
@@ -25,22 +25,28 @@ export interface LocalLLMResponse<T = any> {
 }
 
 /**
- * Yerel Açık Kaynak Yapay Zeka Modeline (Ollama / vLLM / Python FastAPI) HTTP fetch isteği atar.
+ * Lokal Ollama Servisine (http://localhost:11434/api/generate veya /api/chat) HTTP fetch isteği atar.
  */
 export async function queryLocalVisionLLM<T = any>(params: {
   systemPrompt: string
   userPrompt: string
   documentUrl?: string
-  model?: string
+  model?: "llama3.2-vision" | "llava" | string
   temperature?: number
 }): Promise<LocalLLMResponse<T>> {
   const startTime = Date.now()
-  const endpoint =
-    process.env.LOCAL_AI_ENDPOINT || "http://localhost:11434/api/chat"
+
+  // ADIM 1: Çevresel değişkenlere (ENV) fallback mekanizması ile lokal Ollama portuna ayarla
+  const aiEndpoint =
+    process.env.LOCAL_AI_URL ||
+    process.env.LOCAL_AI_ENDPOINT ||
+    "http://localhost:11434/api/generate"
+
+  // Lokaldeki açık kaynak vizyon modelini tetikle ('llama3.2-vision' veya 'llava')
   const model =
     params.model ||
     process.env.LOCAL_AI_MODEL ||
-    "llama3.2-vision:11b"
+    "llama3.2-vision"
 
   const messages: LocalLLMMessage[] = [
     {
@@ -53,11 +59,14 @@ export async function queryLocalVisionLLM<T = any>(params: {
     },
   ]
 
+  // Hem /api/generate (prompt + system) hem de /api/chat (messages) formatıyla tam uyumlu payload
+  const combinedPrompt = `${params.systemPrompt}\n\nKullanıcı İsteği:\n${params.userPrompt}`
+
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 8000)
 
-    const response = await fetch(endpoint, {
+    const response = await fetch(aiEndpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -65,11 +74,14 @@ export async function queryLocalVisionLLM<T = any>(params: {
       },
       body: JSON.stringify({
         model,
+        system: params.systemPrompt,
+        prompt: combinedPrompt,
         messages,
         stream: false,
         format: "json",
         options: {
           temperature: params.temperature ?? 0.1,
+          fallbackModel: "llava",
         },
         documentUrl: params.documentUrl,
       }),
@@ -81,34 +93,34 @@ export async function queryLocalVisionLLM<T = any>(params: {
     if (!response.ok) {
       return {
         success: false,
-        endpoint,
+        endpoint: aiEndpoint,
         model,
         rawContent: null,
         parsedJson: null,
         latencyMs: Date.now() - startTime,
-        error: `Local LLM HTTP ${response.status}: ${response.statusText}`,
+        error: `Local Ollama HTTP ${response.status}: ${response.statusText}`,
       }
     }
 
     const data = await response.json()
 
-    // Ollama (/api/chat -> data.message.content), vLLM (/v1/chat/completions -> data.choices[0].message.content) veya FastAPI (data.output / data.response) desteği
+    // Ollama /api/generate (data.response) ve /api/chat (data.message.content) yanıt desteği
     const rawContent: string | null =
+      data?.response ??
       data?.message?.content ??
       data?.choices?.[0]?.message?.content ??
-      data?.response ??
       data?.output ??
       (typeof data === "string" ? data : null)
 
     if (!rawContent) {
       return {
         success: false,
-        endpoint,
+        endpoint: aiEndpoint,
         model,
         rawContent: null,
         parsedJson: null,
         latencyMs: Date.now() - startTime,
-        error: "Yerel modelden boş yanıt döndü.",
+        error: "Lokal Ollama modelinden boş yanıt döndü.",
       }
     }
 
@@ -121,7 +133,7 @@ export async function queryLocalVisionLLM<T = any>(params: {
 
     return {
       success: true,
-      endpoint,
+      endpoint: aiEndpoint,
       model,
       rawContent,
       parsedJson,
@@ -130,12 +142,14 @@ export async function queryLocalVisionLLM<T = any>(params: {
   } catch (err: any) {
     return {
       success: false,
-      endpoint,
+      endpoint: aiEndpoint,
       model,
       rawContent: null,
       parsedJson: null,
       latencyMs: Date.now() - startTime,
-      error: err?.message || "Yerel LLM sunucusuna ulaşılamadı (Fallback aktif).",
+      error:
+        err?.message ||
+        "Lokal Ollama (localhost:11434) servisine ulaşılamadı (Few-Shot Fallback aktif).",
     }
   }
 }

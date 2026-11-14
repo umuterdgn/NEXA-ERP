@@ -143,7 +143,54 @@ Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, E-LITE, M-HVAC, M-PLUM gi
 - AKUSTİK & İZODER (Yalıtım): Isı, ses ve su yalıtım levhalarının, taş yünü veya XPS/EPS malzemelerinin alan (m2) metrajlarını hesapla.
 - İSKELE - KALIP: Cephe iskelesi metrajlarını (m2 veya ton) ve güvenlik filesi ihtiyaçlarını belirle.
 
-5. Zorunlu JSON Çıktı Şeması (Structured Output Kuralı):
+5. Few-Shot Prompting (Örneklere Dayalı Öğrenme):
+ÖRNEK 1: Eğer planda 'Yatak Odası - 15m2' yazıyorsa ve duvar kalınlığı 20cm ise, çıktı JSON'un şu şekilde olmalıdır:
+{
+  "mahaller": [
+    {
+      "oda_no": "Z-04",
+      "ad": "Yatak Odası",
+      "kat": "Zemin Kat",
+      "alan": 15,
+      "cevre": 16.0,
+      "zemin_kaplama": "Laminat Parke",
+      "duvar_kaplama": "20cm Gazbeton Üzeri Su Bazlı İpek Mat Boya",
+      "tavan_kaplama": "Alçıpan Tavan"
+    }
+  ],
+  "metraj_kalemleri": [
+    {
+      "poz_no": "15.220.1004",
+      "disiplin": "Mimari",
+      "aciklama": "20cm Gazbeton Duvar Örülmesi",
+      "kategori": "MIMARI",
+      "miktar": 44.8,
+      "birim": "m2",
+      "birim_fiyat": 420,
+      "toplam_tutar": 18816,
+      "bulundugu_mahaller": ["Z-04"]
+    }
+  ]
+}
+
+ÖRNEK 2: Eğer lejantta 'Kırmızı Çizgi = Yangın Algılama Hattı' yazıyorsa, çizimdeki kırmızı çizgileri sayıp 'Zayıf Akım' disiplininde şu şekilde çıktı ver:
+{
+  "metraj_kalemleri": [
+    {
+      "poz_no": "18.320.1008",
+      "disiplin": "Zayıf Akım",
+      "aciklama": "Yangın Algılama Hattı Kırmızı Çizgi ve Duman Dedektörü",
+      "kategori": "ELEKTRIK",
+      "miktar": 45,
+      "birim": "Adet",
+      "birim_fiyat": 1250,
+      "toplam_tutar": 56250,
+      "bulundugu_mahaller": ["Z-01"]
+    }
+  ]
+}
+
+6. Zorunlu JSON Çıktı Şeması (Structured Output Kuralı):
 Yanıt olarak KESİNLİKLE Markdown açıklaması veya ek metin ekleme; doğrudan Prisma veritabanımıza (BoqItem ve Room modellerine) hatasız yazılabilecek, her metraj kaleminde "disiplin" bilgisini barındıran katı bir JSON objesi döndür.
 Örnek Zorunlu Çıktı Şeması (Output Schema):
 {

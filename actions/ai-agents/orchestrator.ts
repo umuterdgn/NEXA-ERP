@@ -2,10 +2,11 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Multi-Agent Orchestrator & Local Open-Source LLM Router (orchestrator.ts)
- * Görev: architectAgent, structuralAgent ve surveyorAgent ajanlarını yerel açık kaynak
- * model (Ollama / vLLM / FastAPI - process.env.LOCAL_AI_ENDPOINT || http://localhost:11434/api/chat)
- * üzerinden eş zamanlı (Promise.all) çalıştırır ve sonuçları tek bir BoQ (Keşif/Metraj) dizisinde birleştirir.
+ * Multi-Agent Orchestrator & Localhost Ollama Router (orchestrator.ts)
+ * Görev: Hiçbir bulut veya API maliyeti yaratmadan kullanıcının kendi bilgisayarında çalışan
+ * lokal Ollama servisine (http://localhost:11434/api/generate veya /api/chat) bağlanır,
+ * 'llama3.2-vision' veya 'llava' açık kaynak vizyon modellerini kullanarak
+ * architectAgent, structuralAgent ve surveyorAgent ajanlarını eş zamanlı (Promise.all) çalıştırır.
  */
 
 import type { ParsedRoom, ParsedBoQItem } from "@/actions/ai-blueprint-parser"
@@ -17,6 +18,7 @@ import { queryLocalVisionLLM, type LocalLLMResponse } from "./local-llm-client"
 
 export interface OrchestratorResult {
   localAiEndpoint: string
+  visionModel: string
   rooms: ParsedRoom[]
   boqItems: ParsedBoQItem[]
   totalEstimatedCost: number
@@ -31,9 +33,47 @@ export async function fetchLocalOpenSourceModel<T = any>(params: {
   systemPrompt: string
   userPrompt: string
   documentUrl?: string
-  model?: string
+  model?: "llama3.2-vision" | "llava" | string
 }): Promise<LocalLLMResponse<T>> {
-  return queryLocalVisionLLM<T>(params)
+  const aiEndpoint =
+    process.env.LOCAL_AI_URL || "http://localhost:11434/api/generate"
+  const visionModel = params.model || "llama3.2-vision"
+
+  try {
+    const response = await fetch(aiEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: visionModel, // 'llama3.2-vision' veya 'llava'
+        system: params.systemPrompt,
+        prompt: params.userPrompt,
+        stream: false,
+        format: "json",
+      }),
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      const rawContent = data?.response ?? data?.message?.content ?? null
+      if (rawContent) {
+        return {
+          success: true,
+          endpoint: aiEndpoint,
+          model: visionModel,
+          rawContent,
+          parsedJson: JSON.parse(rawContent) as T,
+          latencyMs: 0,
+        }
+      }
+    }
+  } catch {
+    // Fallback to queryLocalVisionLLM helper
+  }
+
+  return queryLocalVisionLLM<T>({
+    ...params,
+    model: visionModel,
+  })
 }
 
 export async function orchestrator(
@@ -41,8 +81,10 @@ export async function orchestrator(
   projectId: string,
   defaultRooms: ParsedRoom[] = []
 ): Promise<OrchestratorResult> {
-  const localAiEndpoint =
-    process.env.LOCAL_AI_ENDPOINT || "http://localhost:11434/api/chat"
+  // ADIM 1: Lokal Ollama Endpoint (ENV fallback mekanizması)
+  const aiEndpoint =
+    process.env.LOCAL_AI_URL || "http://localhost:11434/api/generate"
+  const visionModel = process.env.LOCAL_AI_MODEL || "llama3.2-vision" // veya 'llava'
 
   // Resmi birim fiyat tablosunun (OfficialPricePoz) veritabanında hazır olduğundan emin ol
   await ensureOfficialPricePozCatalogSeeded()
@@ -67,7 +109,8 @@ export async function orchestrator(
   )
 
   return {
-    localAiEndpoint,
+    localAiEndpoint: aiEndpoint,
+    visionModel,
     rooms: archResult.rooms,
     boqItems: combinedBoqItems,
     totalEstimatedCost,
