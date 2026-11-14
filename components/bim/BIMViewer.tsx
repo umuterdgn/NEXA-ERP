@@ -2,8 +2,8 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Federated Multi-Discipline BIM, IFC & 2D-to-3D R3F Extrusion Viewer Component
- * SSR Disabled with Web-IFC WebAssembly (/wasm/) Support & 2D Blueprint Extrusion Engine
+ * Federated Multi-Discipline BIM, IFC & R3F 2D-to-3D Extrusion Viewer Component
+ * Features: <GeometryEngine2Dto3D data={boqData} /> & Web-IFC WASM (/wasm/)
  */
 
 import dynamic from "next/dynamic"
@@ -45,15 +45,14 @@ export interface Extruded3DBoxMeshData {
   categoryKey: "mimari" | "statik" | "elektrik" | "mekanik"
   position: [number, number, number]
   rotation: [number, number, number]
-  boxArgs: [number, number, number]
+  boxArgs: [number, number, number] // [width, height, depth]
   color: string
 }
 
 /**
- * ADIM 2: 2D'den 3D'ye Otomatik Geometri Üretimi (Geometry Engine)
- * AI Blueprint Parser veya Prisma BoqItem üzerinden gelen 2D koordinat (X, Y) ve yükseklik (Z)
- * verilerini React Three Fiber (<mesh>, <boxGeometry>) kutu/duvar geometrilerine dönüştürür
- * ve disiplin gruplarına ("Mimari", "Statik", "Elektrik", "Mekanik") ayırır.
+ * ADIM 2: Plandaki startX, startY ve endX, endY değerlerini kullanarak duvar uzunluğunu (width)
+ * ve açısını hesaplar; height ve depth ile <boxGeometry args={[width, height, depth]}> için
+ * 3D blok verisi üretir.
  */
 export function generate3DFrom2DData(
   elements: Blueprint2DCoordinateElement[] = []
@@ -85,27 +84,27 @@ export function generate3DFrom2DData(
   const allMeshes: Extruded3DBoxMeshData[] = []
 
   elements.forEach((el, idx) => {
-    const startX = Number(el.baslangic?.x ?? 0)
-    const startZ = Number(el.baslangic?.y ?? 0)
-    const endX = Number(el.bitis?.x ?? 5)
-    const endZ = Number(el.bitis?.y ?? 0)
-    const height = Math.max(0.15, Number(el.yukseklik ?? 3.0))
-    const thickness = Math.max(0.15, Number(el.kalinlik ?? 0.25))
-    const baseY = Number(el.taban_kotu ?? 0)
+    const startX = Number(el.startX ?? el.baslangic?.x ?? 0)
+    const startY = Number(el.startY ?? el.baslangic?.y ?? 0)
+    const endX = Number(el.endX ?? el.bitis?.x ?? 5)
+    const endY = Number(el.endY ?? el.bitis?.y ?? 0)
+    const height = Math.max(0.15, Number(el.height ?? el.yukseklik ?? 3.0))
+    const depth = Math.max(0.15, Number(el.thickness ?? el.kalinlik ?? 0.25))
+    const baseY = Number(el.baseElevation ?? el.taban_kotu ?? 0)
 
     const dx = endX - startX
-    const dz = endZ - startZ
-    const length = Math.max(0.4, Math.hypot(dx, dz))
-    const angleY = -Math.atan2(dz, dx)
+    const dy = endY - startY
+    const width = Math.max(0.4, Math.hypot(dx, dy))
+    const angleY = -Math.atan2(dy, dx)
 
     const centerX = (startX + endX) / 2
     const centerY = baseY + height / 2
-    const centerZ = (startZ + endZ) / 2
+    const centerZ = (startY + endY) / 2
 
     const rawDisc = (el.disiplin || "Mimari").toLowerCase()
     let disciplineGroup: "Mimari" | "Statik" | "Elektrik" | "Mekanik" = "Mimari"
     let categoryKey: "mimari" | "statik" | "elektrik" | "mekanik" = "mimari"
-    let color = "#f97316" // Mimari Turuncu
+    let color = "#f97316" // Mimari
 
     if (
       rawDisc.includes("statik") ||
@@ -115,7 +114,7 @@ export function generate3DFrom2DData(
     ) {
       disciplineGroup = "Statik"
       categoryKey = "statik"
-      color = "#3b82f6" // Statik Mavi
+      color = "#3b82f6" // Statik
     } else if (
       rawDisc.includes("elektrik") ||
       rawDisc.includes("zayıf akım") ||
@@ -123,7 +122,7 @@ export function generate3DFrom2DData(
     ) {
       disciplineGroup = "Elektrik"
       categoryKey = "elektrik"
-      color = "#eab308" // Elektrik Sarı
+      color = "#eab308" // Elektrik
     } else if (
       rawDisc.includes("mekanik") ||
       rawDisc.includes("tesisat") ||
@@ -132,7 +131,7 @@ export function generate3DFrom2DData(
     ) {
       disciplineGroup = "Mekanik"
       categoryKey = "mekanik"
-      color = "#06b6d4" // Mekanik Cyan
+      color = "#06b6d4" // Mekanik
     }
 
     const meshData: Extruded3DBoxMeshData = {
@@ -144,7 +143,7 @@ export function generate3DFrom2DData(
       categoryKey,
       position: [centerX, centerY, centerZ],
       rotation: [0, angleY, 0],
-      boxArgs: [length, height, thickness],
+      boxArgs: [width, height, depth],
       color,
     }
 
@@ -154,6 +153,81 @@ export function generate3DFrom2DData(
   })
 
   return { groupedByDiscipline, counts, allMeshes }
+}
+
+/**
+ * ADIM 2: R3F ile 2D'den 3D'ye Geometri Motoru (<GeometryEngine2Dto3D data={boqData} />)
+ * Gelen verilerde map işlemi yaparak her bir duvar veya yapısal eleman için startX, startY, endX, endY
+ * değerlerinden duvar uzunluğunu (width) ve açısını hesaplar, height ve depth ile
+ * <boxGeometry args={[width, height, depth]}> kullanarak 2D çizgiyi 3D bloğa dönüştürür.
+ */
+export function GeometryEngine2Dto3D({
+  data,
+  layerVisibility = { mimari: true, statik: true, elektrik: true, mekanik: true },
+  xRayOpacity = 100,
+  onClick,
+  onPointerDown,
+}: {
+  data: Blueprint2DCoordinateElement[]
+  layerVisibility?: Record<"mimari" | "statik" | "elektrik" | "mekanik", boolean>
+  xRayOpacity?: number
+  onClick?: (e: any) => void
+  onPointerDown?: (e: any) => void
+}) {
+  const { groupedByDiscipline } = React.useMemo(
+    () => generate3DFrom2DData(data),
+    [data]
+  )
+
+  const alpha = xRayOpacity / 100
+  const isTransparent = alpha < 0.99
+  const clampedOpacity = Math.max(0.08, alpha)
+
+  const renderMeshes = (
+    items: Extruded3DBoxMeshData[],
+    isStructuralOrArch: boolean
+  ) =>
+    items.map((item) => {
+      const [width, height, depth] = item.boxArgs
+      return (
+        <mesh
+          key={item.id}
+          name={item.meshName}
+          position={item.position}
+          rotation={item.rotation}
+          castShadow
+          receiveShadow
+          onClick={onClick}
+          onPointerDown={onPointerDown}
+        >
+          <boxGeometry args={[width, height, depth]} />
+          <meshStandardMaterial
+            color={item.color}
+            transparent={isStructuralOrArch ? isTransparent : false}
+            opacity={isStructuralOrArch ? clampedOpacity : 1.0}
+            roughness={isStructuralOrArch ? 0.65 : 0.25}
+            metalness={isStructuralOrArch ? 0.15 : 0.6}
+          />
+        </mesh>
+      )
+    })
+
+  return (
+    <group name="GeometryEngine2Dto3DRoot">
+      <group name="Mimari" visible={layerVisibility.mimari}>
+        {renderMeshes(groupedByDiscipline.Mimari, true)}
+      </group>
+      <group name="Statik" visible={layerVisibility.statik}>
+        {renderMeshes(groupedByDiscipline.Statik, true)}
+      </group>
+      <group name="Elektrik" visible={layerVisibility.elektrik}>
+        {renderMeshes(groupedByDiscipline.Elektrik, false)}
+      </group>
+      <group name="Mekanik" visible={layerVisibility.mekanik}>
+        {renderMeshes(groupedByDiscipline.Mekanik, false)}
+      </group>
+    </group>
+  )
 }
 
 export function isValid3DModelFile(
@@ -198,10 +272,10 @@ const InternalBimViewer = dynamic(
       <div className="w-full h-full min-h-[600px] bg-slate-950 flex flex-col items-center justify-center gap-3 text-cyan-400">
         <Loader2 className="w-9 h-9 animate-spin text-cyan-400" />
         <span className="text-sm font-semibold text-slate-300">
-          Federated BIM & R3F 2D→3D Extrusion Motoru Başlatılıyor...
+          Federated BIM & R3F GeometryEngine2Dto3D Başlatılıyor...
         </span>
         <span className="text-xs text-slate-500 font-mono">
-          /wasm/web-ifc.wasm • generate3DFrom2DData()
+          /wasm/web-ifc.wasm • GeometryEngine2Dto3D
         </span>
       </div>
     ),
@@ -215,12 +289,10 @@ export interface BIMViewerProps {
   projectId?: string
   fileName?: string
   models?: FederatedModelItem[]
+  boqData?: Blueprint2DCoordinateElement[]
 }
 
 export default function BIMViewer(props: BIMViewerProps) {
-  // Sadece desteklenen 3D modelleri (.ifc, .gltf, .glb) filtrele;
-  // Eğer hazır 3D model yoksa veya 2D PDF/DWG yüklendiyse InternalBimViewer otomatik olarak
-  // generate3DFrom2DData() ile R3F 3D Extrusion modelini oluşturur.
   const validModels = React.useMemo(() => {
     if (!props.models || props.models.length === 0) return undefined
     return props.models.filter((m) => isValid3DModelFile(m.url, m.name))

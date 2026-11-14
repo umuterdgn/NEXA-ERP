@@ -249,6 +249,7 @@ interface BimViewerProps {
   projectId?: string
   fileName?: string
   models?: FederatedModelItem[]
+  boqData?: Blueprint2DCoordinateItem[]
 }
 
 // React Three Fiber Loading Overlay
@@ -564,10 +565,17 @@ function IfcCanvasModel({
 
 export interface Blueprint2DCoordinateItem {
   id?: string
-  eleman: string
-  baslangic: { x: number; y: number }
-  bitis: { x: number; y: number }
-  yukseklik: number
+  eleman?: string
+  is_kalemi?: string
+  startX?: number
+  startY?: number
+  endX?: number
+  endY?: number
+  height?: number
+  thickness?: number
+  baslangic?: { x: number; y: number }
+  bitis?: { x: number; y: number }
+  yukseklik?: number
   kalinlik?: number
   taban_kotu?: number
   disiplin: "Mimari" | "Statik" | "Elektrik" | "Mekanik" | string
@@ -587,52 +595,14 @@ export interface Extruded3DBoxItem {
   color: string
 }
 
-const FALLBACK_2D_COORDINATE_DATA: Blueprint2DCoordinateItem[] = [
-  // MİMARİ DUVARLAR
-  { id: "EXT-M-01", eleman: "Tuğla Duvar (Kuzey Cephe)", baslangic: { x: -8, y: -6 }, bitis: { x: 8, y: -6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-02", eleman: "Tuğla Duvar (Güney Cephe)", baslangic: { x: -8, y: 6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-03", eleman: "Tuğla Duvar (Batı Cephe)", baslangic: { x: -8, y: -6 }, bitis: { x: -8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-04", eleman: "Tuğla Duvar (Doğu Cephe)", baslangic: { x: 8, y: -6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-05", eleman: "Gazbeton İç Bölme Duvarı (Salon)", baslangic: { x: -2, y: -6 }, bitis: { x: -2, y: 2 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-06", eleman: "Gazbeton İç Bölme Duvarı (Yatak Odası - 15m2)", baslangic: { x: -2, y: 2 }, bitis: { x: 8, y: 2 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 0, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-07", eleman: "1. Kat Dış Cephe Duvarı (Kuzey)", baslangic: { x: -8, y: -6 }, bitis: { x: 8, y: -6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-08", eleman: "1. Kat Dış Cephe Duvarı (Güney)", baslangic: { x: -8, y: 6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-09", eleman: "1. Kat Dış Cephe Duvarı (Batı)", baslangic: { x: -8, y: -6 }, bitis: { x: -8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-10", eleman: "1. Kat Dış Cephe Duvarı (Doğu)", baslangic: { x: 8, y: -6 }, bitis: { x: 8, y: 6 }, yukseklik: 3.2, kalinlik: 0.25, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
-  { id: "EXT-M-11", eleman: "1. Kat İç Bölme Duvarı", baslangic: { x: 2, y: -6 }, bitis: { x: 2, y: 6 }, yukseklik: 3.2, kalinlik: 0.2, taban_kotu: 3.4, disiplin: "Mimari", poz_no: "15.220.1004" },
-
-  // STATİK TAŞIYICI SİSTEM
-  { id: "EXT-S-01", eleman: "C35/45 Radye Temel & Subasman Döşemesi", baslangic: { x: -8.5, y: 0 }, bitis: { x: 8.5, y: 0 }, yukseklik: 0.4, kalinlik: 13.0, taban_kotu: -0.4, disiplin: "Statik", poz_no: "15.150.1005" },
-  { id: "EXT-S-02", eleman: "C35/45 1. Kat Betonarme Döşeme Tabliyesi", baslangic: { x: -8.2, y: 0 }, bitis: { x: 8.2, y: 0 }, yukseklik: 0.25, kalinlik: 12.4, taban_kotu: 3.2, disiplin: "Statik", poz_no: "15.150.1005" },
-  { id: "EXT-S-03", eleman: "C35/45 Çatı Katı Betonarme Döşeme Tabliyesi", baslangic: { x: -8.2, y: 0 }, bitis: { x: 8.2, y: 0 }, yukseklik: 0.25, kalinlik: 12.4, taban_kotu: 6.6, disiplin: "Statik", poz_no: "15.150.1005" },
-  { id: "EXT-S-04", eleman: "S01 Betonarme Kolon (50x50cm)", baslangic: { x: -7.8, y: -5.8 }, bitis: { x: -7.3, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
-  { id: "EXT-S-05", eleman: "S02 Betonarme Kolon (50x50cm)", baslangic: { x: 0, y: -5.8 }, bitis: { x: 0.5, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
-  { id: "EXT-S-06", eleman: "S03 Betonarme Kolon (50x50cm)", baslangic: { x: 7.3, y: -5.8 }, bitis: { x: 7.8, y: -5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
-  { id: "EXT-S-07", eleman: "S04 Betonarme Kolon (50x50cm)", baslangic: { x: -7.8, y: 5.8 }, bitis: { x: -7.3, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
-  { id: "EXT-S-08", eleman: "S05 Betonarme Kolon (50x50cm)", baslangic: { x: 0, y: 5.8 }, bitis: { x: 0.5, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
-  { id: "EXT-S-09", eleman: "S06 Betonarme Kolon (50x50cm)", baslangic: { x: 7.3, y: 5.8 }, bitis: { x: 7.8, y: 5.8 }, yukseklik: 6.8, kalinlik: 0.5, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
-  { id: "EXT-S-10", eleman: "P01 TBDY-2018 Deprem Perdesi (30x240cm)", baslangic: { x: -1.2, y: 0 }, bitis: { x: 1.2, y: 0 }, yukseklik: 6.8, kalinlik: 0.35, taban_kotu: 0, disiplin: "Statik", poz_no: "15.160.1002" },
-  { id: "EXT-S-11", eleman: "K101 Ana Taşıyıcı Kiriş (30/60cm)", baslangic: { x: -7.8, y: 0 }, bitis: { x: 7.8, y: 0 }, yukseklik: 0.5, kalinlik: 0.35, taban_kotu: 2.75, disiplin: "Statik", poz_no: "15.150.1005" },
-  { id: "EXT-S-12", eleman: "K201 1. Kat Ana Taşıyıcı Kiriş (30/60cm)", baslangic: { x: -7.8, y: 0 }, bitis: { x: 7.8, y: 0 }, yukseklik: 0.5, kalinlik: 0.35, taban_kotu: 6.15, disiplin: "Statik", poz_no: "15.150.1005" },
-
-  // ELEKTRİK & ZAYIF AKIM
-  { id: "EXT-E-01", eleman: "E-POWR Kuvvetli Akım Ana Kablo Tavası (Zemin Kat)", baslangic: { x: -7, y: -2.5 }, bitis: { x: 7, y: -2.5 }, yukseklik: 0.18, kalinlik: 0.35, taban_kotu: 2.85, disiplin: "Elektrik", poz_no: "18.150.1003" },
-  { id: "EXT-E-02", eleman: "Yangın Algılama Hattı & Zayıf Akım Tavası (1. Kat)", baslangic: { x: -7, y: 2.5 }, bitis: { x: 7, y: 2.5 }, yukseklik: 0.18, kalinlik: 0.35, taban_kotu: 6.2, disiplin: "Elektrik", poz_no: "18.320.1008" },
-  { id: "EXT-E-03", eleman: "Düşey Elektrik Şaftı & Busbar Kanalı", baslangic: { x: -6.5, y: -4.5 }, bitis: { x: -6.1, y: -4.5 }, yukseklik: 6.5, kalinlik: 0.4, taban_kotu: 0, disiplin: "Elektrik", poz_no: "18.150.1003" },
-
-  // MEKANİK / TESİSAT
-  { id: "EXT-T-01", eleman: "M-HVAC Galvaniz Havalandırma Kanalı (Zemin Kat)", baslangic: { x: -7, y: 3.5 }, bitis: { x: 7, y: 3.5 }, yukseklik: 0.35, kalinlik: 0.45, taban_kotu: 2.65, disiplin: "Mekanik", poz_no: "19.200.1004" },
-  { id: "EXT-T-02", eleman: "M-PLUM Yangın Sprinkler & Temiz Su Boru Hattı (1. Kat)", baslangic: { x: -7, y: -3.5 }, bitis: { x: 7, y: -3.5 }, yukseklik: 0.25, kalinlik: 0.3, taban_kotu: 6.05, disiplin: "Mekanik", poz_no: "19.450.1002" },
-  { id: "EXT-T-03", eleman: "Mekanik Tesisat Düşey Kolon Şaftı", baslangic: { x: 6.1, y: -4.5 }, bitis: { x: 6.5, y: -4.5 }, yukseklik: 6.5, kalinlik: 0.4, taban_kotu: 0, disiplin: "Mekanik", poz_no: "19.450.1002" },
-]
-
 /**
- * ADIM 2: 2D'den 3D'ye Otomatik Geometri Üretimi (generate3DFrom2DData)
- * 2D PDF / DWG koordinatlarını ve yüksekliklerini React Three Fiber (<mesh>, <boxGeometry>)
- * kutu/duvar verilerine çevirir ve disiplinlere ("Mimari", "Statik", "Elektrik", "Mekanik") göre gruplar.
+ * ADIM 2: R3F ile 2D'den 3D'ye Geometri Motoru (Extrusion)
+ * Gemini API veya Prisma'dan dönen startX, startY, endX, endY ve height koordinatlarını
+ * React Three Fiber (<mesh>, <boxGeometry args={[width, height, depth]} />) kutu/duvar verilerine çevirir
+ * ve disiplinlere ("Mimari", "Statik", "Elektrik", "Mekanik") göre gruplar.
  */
 export function generate3DFrom2DData(
-  elements: Blueprint2DCoordinateItem[] = FALLBACK_2D_COORDINATE_DATA
+  elements: Blueprint2DCoordinateItem[] = []
 ): {
   groupedByDiscipline: Record<
     "Mimari" | "Statik" | "Elektrik" | "Mekanik",
@@ -640,8 +610,7 @@ export function generate3DFrom2DData(
   >
   counts: Record<BimCategoryKey, number>
 } {
-  const source =
-    elements && elements.length > 0 ? elements : FALLBACK_2D_COORDINATE_DATA
+  const source = Array.isArray(elements) ? elements : []
 
   const groupedByDiscipline: Record<
     "Mimari" | "Statik" | "Elektrik" | "Mekanik",
@@ -661,22 +630,22 @@ export function generate3DFrom2DData(
   }
 
   source.forEach((el, idx) => {
-    const startX = Number(el.baslangic?.x ?? 0)
-    const startZ = Number(el.baslangic?.y ?? 0)
-    const endX = Number(el.bitis?.x ?? 5)
-    const endZ = Number(el.bitis?.y ?? 0)
-    const height = Math.max(0.15, Number(el.yukseklik ?? 3.0))
-    const thickness = Math.max(0.15, Number(el.kalinlik ?? 0.25))
+    const startX = Number(el.startX ?? el.baslangic?.x ?? 0)
+    const startY = Number(el.startY ?? el.baslangic?.y ?? 0)
+    const endX = Number(el.endX ?? el.bitis?.x ?? 5)
+    const endY = Number(el.endY ?? el.bitis?.y ?? 0)
+    const height = Math.max(0.15, Number(el.height ?? el.yukseklik ?? 3.0))
+    const depth = Math.max(0.15, Number(el.thickness ?? el.kalinlik ?? 0.25))
     const baseY = Number(el.taban_kotu ?? 0)
 
     const dx = endX - startX
-    const dz = endZ - startZ
-    const length = Math.max(0.4, Math.hypot(dx, dz))
-    const angleY = -Math.atan2(dz, dx)
+    const dy = endY - startY
+    const width = Math.max(0.4, Math.hypot(dx, dy))
+    const angleY = -Math.atan2(dy, dx)
 
     const centerX = (startX + endX) / 2
     const centerY = baseY + height / 2
-    const centerZ = (startZ + endZ) / 2
+    const centerZ = (startY + endY) / 2
 
     const rawDisc = (el.disiplin || "Mimari").toLowerCase()
     let disciplineGroup: "Mimari" | "Statik" | "Elektrik" | "Mekanik" = "Mimari"
@@ -711,16 +680,18 @@ export function generate3DFrom2DData(
       color = "#06b6d4"
     }
 
+    const elemName = el.eleman || el.is_kalemi || "Yapı Elemanı"
+
     const item: Extruded3DBoxItem = {
       id: el.id || `EXT-3D-${idx + 1}`,
-      meshName: `${disciplineGroup}_${el.eleman || `Eleman_${idx + 1}`}`,
-      eleman: el.eleman || "Yapı Elemanı",
+      meshName: `${disciplineGroup}_${elemName}`,
+      eleman: elemName,
       pozNo: el.poz_no || "15.220.1004",
       disciplineGroup,
       categoryKey,
       position: [centerX, centerY, centerZ],
       rotation: [0, angleY, 0],
-      boxArgs: [length, height, thickness],
+      boxArgs: [width, height, depth],
       color,
     }
 
@@ -732,29 +703,31 @@ export function generate3DFrom2DData(
 }
 
 /**
- * ADIM 2 & ADIM 3: React Three Fiber 2D->3D Otomatik Geometri (Extrusion) & Disiplin Katman Grupları
- * <group name="Mimari">, <group name="Statik">, <group name="Elektrik">, <group name="Mekanik">
+ * ADIM 2 & ADIM 3: React Three Fiber 2D->3D Geometri Motoru (GeometryEngine2Dto3D)
+ * <GeometryEngine2Dto3D data={boqData} />
+ * Her bir duvar/eleman için startX, startY, endX, endY, height koordinatlarından
+ * genişlik (width) ve açı hesaplar, <boxGeometry args={[width, height, depth]} /> ile 3D bloğa kaldırır (Extrude).
  */
-function Extruded2DTo3DModel({
-  elements,
-  layerVisibility,
-  xRayOpacity,
+export function GeometryEngine2Dto3D({
+  data,
+  layerVisibility = { statik: true, mimari: true, elektrik: true, mekanik: true },
+  xRayOpacity = 100,
   completedElements,
   onElementCounts,
   onClick,
   onPointerDown,
 }: {
-  elements: Blueprint2DCoordinateItem[]
-  layerVisibility: Record<BimCategoryKey, boolean>
-  xRayOpacity: number
+  data: Blueprint2DCoordinateItem[]
+  layerVisibility?: Record<BimCategoryKey, boolean>
+  xRayOpacity?: number
   completedElements?: Record<string, boolean>
   onElementCounts?: (counts: Record<BimCategoryKey, number>) => void
   onClick?: (e: any) => void
   onPointerDown?: (e: any) => void
 }) {
   const { groupedByDiscipline, counts } = React.useMemo(
-    () => generate3DFrom2DData(elements),
-    [elements]
+    () => generate3DFrom2DData(data),
+    [data]
   )
 
   useEffect(() => {
@@ -773,6 +746,7 @@ function Extruded2DTo3DModel({
     isStructuralOrArch: boolean
   ) =>
     items.map((item) => {
+      const [width, height, depth] = item.boxArgs
       const isCompleted =
         completedElements &&
         (completedElements[item.meshName] || completedElements[item.id])
@@ -799,7 +773,7 @@ function Extruded2DTo3DModel({
           onClick={onClick}
           onPointerDown={onPointerDown}
         >
-          <boxGeometry args={item.boxArgs} />
+          <boxGeometry args={[width, height, depth]} />
           <meshStandardMaterial
             color={meshColor}
             transparent={isStructuralOrArch ? isTransparent : false}
@@ -910,7 +884,7 @@ class BimViewerErrorBoundary extends Component<
   }
 }
 
-export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models }: BimViewerProps) {
+export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models, boqData }: BimViewerProps) {
   const effectiveUrl = (bimUrl || url || ifcUrl || (models && models.length > 0 ? models[0].url : "") || "").trim()
 
   // Federated BIM Disiplin Modelleri (Veritabanından Gelen Gerçek Modeller - Sadece .ifc, .gltf, .glb)
@@ -1046,13 +1020,18 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
   })
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false)
 
-  // ADIM 2: 2D PDF/DWG veya Prisma BoqItem Verisinden 3D Extrusion Elemanları
+  // ADIM 2: Gemini API veya Prisma BoqItem/AIAnalysis Verisinden 3D Extrusion Elemanları
   const [extrusionElements2D, setExtrusionElements2D] = useState<Blueprint2DCoordinateItem[]>(
-    FALLBACK_2D_COORDINATE_DATA
+    boqData && boqData.length > 0 ? boqData : []
   )
-  const [extrusionSource, setExtrusionSource] = useState<string>("DEFAULT_2D_BLUEPRINT")
+  const [extrusionSource, setExtrusionSource] = useState<string>("PRISMA_AI_ANALYSIS")
 
   useEffect(() => {
+    if (boqData && boqData.length > 0) {
+      setExtrusionElements2D(boqData)
+      setExtrusionSource("PROP_BOQ_DATA")
+      return
+    }
     import("@/actions/ai-blueprint-parser")
       .then(({ getProject2DExtrusionData }) => {
         getProject2DExtrusionData(projectId)
@@ -1065,7 +1044,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
           .catch((err) => console.warn("2D->3D Extrusion verisi çekilemedi:", err))
       })
       .catch(() => {})
-  }, [projectId])
+  }, [projectId, boqData])
 
   // Open layer panel automatically on desktop displays (>= 1024px), keep collapsed on mobile
   useEffect(() => {
@@ -2515,9 +2494,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                         />
                       )
                     ) : (
-                      /* ADIM 2 & ADIM 3: Hazır 3D model yoksa veya PDF/DWG yüklendiyse 2D Koordinatlardan Otomatik 3D Extrusion Modeli */
-                      <Extruded2DTo3DModel
-                        elements={extrusionElements2D}
+                      /* ADIM 2 & ADIM 3: Yüklenen dosya IFC/GLB değilse (PDF/DWG ise), Gemini API veya Prisma'dan dönen koordinat verileriyle 2D->3D Extrusion Motorunu çalıştır */
+                      <GeometryEngine2Dto3D
+                        data={boqData && boqData.length > 0 ? boqData : extrusionElements2D}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                         completedElements={completedElements}

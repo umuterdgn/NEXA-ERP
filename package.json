@@ -19,6 +19,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1124.0",
     "@ducanh2912/next-pwa": "^10.2.9",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^6.0.0",
     "@mlightcad/cad-simple-viewer": "^1.6.0",
     "@mlightcad/data-model": "^1.13.0",
