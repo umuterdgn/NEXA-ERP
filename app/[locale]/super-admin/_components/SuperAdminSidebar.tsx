@@ -26,6 +26,7 @@ import {
   Users,
   TrendingUp,
   Sparkles,
+  BrainCircuit,
 } from "lucide-react"
 
 export default function SuperAdminSidebar({
@@ -48,6 +49,11 @@ export default function SuperAdminSidebar({
       href: "/superadmin/leads",
       label: "Demo Talepleri (Leads)",
       icon: Sparkles,
+    },
+    {
+      href: "/super-admin/ai-training",
+      label: "AI Model Eğitimi (Dataset)",
+      icon: BrainCircuit,
     },
     {
       href: "/superadmin/tenants",

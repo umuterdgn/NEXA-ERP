@@ -2,11 +2,11 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * AI Blueprint Vision & Architectural PDF Parser Engine
+ * AI Blueprint Vision & Architectural PDF Parser Engine (Local Open-Source LLM Architecture)
  * 
- * Future Gemini Vision API Architecture:
+ * Zero-Cost Local Open-Source Vision LLM Architecture (Ollama / vLLM / FastAPI):
  * - Direct ingestion of high-resolution architectural PDF blueprint vector & raster layers
- * - Gemini Multimodal Vision Prompting for OCR room schedule (Mahal Listesi) extraction
+ * - Multi-Agent Vision Prompting (architectAgent, structuralAgent, surveyorAgent) via LOCAL_AI_ENDPOINT
  * - Automated Bill of Quantities (BoQ) take-off and transactional database write
  */
 
@@ -17,8 +17,9 @@ import {
   architecturalAgent as runArchitecturalAgent,
   structuralAgent as runStructuralAgent,
   surveyorAgent as runSurveyorAgent,
-  masterOrchestrator as runMasterOrchestrator,
+  orchestrator as runOrchestrator,
   matchOfficialPricePoz,
+  queryLocalVisionLLM,
 } from "./ai-agents";
 
 export async function architecturalAgent(pdfUrl: string, projectId?: string) {
@@ -34,7 +35,7 @@ export async function surveyorAgent(pdfUrl: string, projectId?: string) {
 }
 
 export async function masterOrchestrator(pdfUrl: string, projectId: string) {
-  return runMasterOrchestrator(pdfUrl, projectId, MOCK_45_ROOMS);
+  return runOrchestrator(pdfUrl, projectId, MOCK_45_ROOMS);
 }
 
 export interface ParsedRoom {
@@ -415,69 +416,60 @@ export async function analyzeBlueprintPdf(
       },
     ];
 
-    // ADIM 1: Multi-Agent (masterOrchestrator) ile 3 uzman ajanı (architecturalAgent, structuralAgent, surveyorAgent) Promise.all ile paralel çalıştır
-    const orchestrated = await runMasterOrchestrator(pdfUrl, projectId, MOCK_45_ROOMS);
+    // ADIM 1 & ADIM 2: Multi-Agent (orchestrator.ts) ile 3 uzman ajanı (architectAgent, structuralAgent, surveyorAgent) Promise.all ile paralel çalıştır
+    const orchestrated = await runOrchestrator(pdfUrl, projectId, MOCK_45_ROOMS);
 
     let parsedRooms: ParsedRoom[] = orchestrated.rooms;
     let parsedBoqItems: ParsedBoQItem[] = orchestrated.boqItems;
 
-    // Eğer OpenAI API anahtarı tanımlıysa gerçek LLM Vision / JSON Structured Output isteği dene ve OfficialPricePoz ile eşleştir
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        const OpenAI = (await import("openai")).default;
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          response_format: { type: "json_object" },
-          messages: aiMessagesPayload,
-          temperature: 0.1,
-        });
+    // ADIM 1: Ticari API'ler (OpenAI/Gemini) tamamen kaldırıldı.
+    // Yerel Açık Kaynak Vision LLM (Ollama / vLLM / Python FastAPI: process.env.LOCAL_AI_ENDPOINT || http://localhost:11434/api/chat) çağrısı:
+    const localAiResponse = await queryLocalVisionLLM<StructuredBlueprintOutput>({
+      systemPrompt,
+      userPrompt: aiMessagesPayload[1].content,
+      documentUrl: pdfUrl,
+    });
 
-        const rawJson = completion.choices[0]?.message?.content;
-        if (rawJson) {
-          const parsed = JSON.parse(rawJson) as StructuredBlueprintOutput;
-          if (Array.isArray(parsed.mahaller) && parsed.mahaller.length > 0) {
-            parsedRooms = parsed.mahaller.map((m, idx) => ({
-              id: `R-${String(idx + 1).padStart(2, "0")}`,
-              roomNo: m.oda_no || `M-${String(idx + 1).padStart(2, "0")}`,
-              name: m.ad || "Mahal",
-              floor: m.kat || "Zemin Kat",
-              areaM2: Number(m.alan) || 12,
-              perimeterM: Number(m.cevre) || Math.round(Math.sqrt(Number(m.alan) || 12) * 4 * 10) / 10,
-              floorFinish: m.zemin_kaplama || "Porselen Seramik",
-              wallFinish: m.duvar_kaplama || "Su Bazlı Boya",
-              ceilingFinish: m.tavan_kaplama || "Alçıpan Tavan",
-            }));
-          }
-          if (Array.isArray(parsed.metraj_kalemleri) && parsed.metraj_kalemleri.length > 0) {
-            parsedBoqItems = await Promise.all(
-              parsed.metraj_kalemleri.map(async (k, idx) => {
-                const qty = Number(k.miktar) || 1;
-                const matchedPoz = await matchOfficialPricePoz(
-                  k.aciklama,
-                  k.poz_no,
-                  k.birim,
-                  k.birim_fiyat
-                );
-                const uPrice = Number(k.birim_fiyat) || matchedPoz.price || 500;
-                return {
-                  id: `BOQ-${String(idx + 1).padStart(2, "0")}`,
-                  pozNo: matchedPoz.pozNo || k.poz_no || `15.${100 + idx}.100${idx + 1}`,
-                  description: k.aciklama || matchedPoz.description || "İmalat Kalemi",
-                  discipline: k.disiplin || k.kategori || "Mimari",
-                  category: k.kategori || "MIMARI",
-                  unit: k.birim || matchedPoz.unit || "Adet",
-                  quantity: qty,
-                  unitPrice: uPrice,
-                  totalPrice: Number(k.toplam_tutar) || Math.round(qty * uPrice * 100) / 100,
-                  detectedInRooms: k.bulundugu_mahaller || ["Tüm Mahaller"],
-                };
-              })
+    if (localAiResponse.success && localAiResponse.parsedJson) {
+      const parsed = localAiResponse.parsedJson;
+      if (Array.isArray(parsed.mahaller) && parsed.mahaller.length > 0) {
+        parsedRooms = parsed.mahaller.map((m, idx) => ({
+          id: `R-${String(idx + 1).padStart(2, "0")}`,
+          roomNo: m.oda_no || `M-${String(idx + 1).padStart(2, "0")}`,
+          name: m.ad || "Mahal",
+          floor: m.kat || "Zemin Kat",
+          areaM2: Number(m.alan) || 12,
+          perimeterM: Number(m.cevre) || Math.round(Math.sqrt(Number(m.alan) || 12) * 4 * 10) / 10,
+          floorFinish: m.zemin_kaplama || "Porselen Seramik",
+          wallFinish: m.duvar_kaplama || "Su Bazlı Boya",
+          ceilingFinish: m.tavan_kaplama || "Alçıpan Tavan",
+        }));
+      }
+      if (Array.isArray(parsed.metraj_kalemleri) && parsed.metraj_kalemleri.length > 0) {
+        parsedBoqItems = await Promise.all(
+          parsed.metraj_kalemleri.map(async (k, idx) => {
+            const qty = Number(k.miktar) || 1;
+            const matchedPoz = await matchOfficialPricePoz(
+              k.aciklama,
+              k.poz_no,
+              k.birim,
+              k.birim_fiyat
             );
-          }
-        }
-      } catch (aiErr) {
-        console.warn("[AI Blueprint Parser] LLM fallback to Multi-Agent orchestrated output:", aiErr);
+            const uPrice = Number(k.birim_fiyat) || matchedPoz.price || 500;
+            return {
+              id: `BOQ-${String(idx + 1).padStart(2, "0")}`,
+              pozNo: matchedPoz.pozNo || k.poz_no || `15.${100 + idx}.100${idx + 1}`,
+              description: k.aciklama || matchedPoz.description || "İmalat Kalemi",
+              discipline: k.disiplin || k.kategori || "Mimari",
+              category: k.kategori || "MIMARI",
+              unit: k.birim || matchedPoz.unit || "Adet",
+              quantity: qty,
+              unitPrice: uPrice,
+              totalPrice: Number(k.toplam_tutar) || Math.round(qty * uPrice * 100) / 100,
+              detectedInRooms: k.bulundugu_mahaller || ["Tüm Mahaller"],
+            };
+          })
+        );
       }
     }
 
@@ -695,4 +687,13 @@ export async function transferBlueprintToBoQ(projectId: string, items?: ParsedBo
       error: error?.message || "Metraj kalemleri BoQ tablosuna aktarılamadı.",
     };
   }
+}
+
+export async function exportTrainingData(options?: {
+  filterCategory?: "ALL" | "ONAYLI_BOQ_METRAJ" | "MIMARI_STATIK_CAKISMA";
+}) {
+  const { exportTrainingData: runExportTrainingData } = await import(
+    "@/actions/super-admin/ai-training"
+  );
+  return runExportTrainingData(options);
 }
