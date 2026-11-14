@@ -26,11 +26,24 @@ export interface ParsedRoom {
   ceilingFinish: string;
 }
 
+export type ConstructionDiscipline =
+  | "Mimari"
+  | "Statik"
+  | "Statik Rapor"
+  | "Elektrik"
+  | "Zayıf Akım"
+  | "Tesisat"
+  | "Akustik"
+  | "İzoder"
+  | "İskele - Kalıp"
+  | string;
+
 export interface ParsedBoQItem {
   id: string;
   pozNo: string;
   description: string;
-  category: "STATIK" | "MIMARI" | "ELEKTRIK" | "MEKANIK" | "YALITIM";
+  discipline?: ConstructionDiscipline;
+  category: "STATIK" | "MIMARI" | "ELEKTRIK" | "MEKANIK" | "YALITIM" | "ISKELE_KALIP";
   unit: string;
   quantity: number;
   unitPrice: number;
@@ -71,8 +84,9 @@ export interface StructuredBlueprintOutput {
   }>;
   metraj_kalemleri: Array<{
     poz_no?: string;
+    disiplin: ConstructionDiscipline;
     aciklama: string;
-    kategori?: "STATIK" | "MIMARI" | "ELEKTRIK" | "MEKANIK" | "YALITIM";
+    kategori?: "STATIK" | "MIMARI" | "ELEKTRIK" | "MEKANIK" | "YALITIM" | "ISKELE_KALIP";
     miktar: number;
     birim: string;
     birim_fiyat?: number;
@@ -82,11 +96,11 @@ export interface StructuredBlueprintOutput {
 }
 
 /**
- * ADIM 1 & ADIM 2: AI Blueprint Parser Sistem Yönergesi (System Prompt) ve Zorunlu JSON Çıktı Şeması (Structured Output)
+ * ADIM 1 & ADIM 2: AI Blueprint Parser Sistem Yönergesi (9 Temel İnşaat Disiplini + Zorunlu JSON Çıktı Şeması)
  */
 const systemPrompt = `
 Rol:
-Sen uzman bir İnşaat Mühendisi ve Metraj (BoQ) uzmanısın. Sana verilen mimari, statik veya MEP proje dosyalarını (PDF/Görsel) analiz etmelisin.
+Sen uzman bir İnşaat Mühendisi ve Metraj (BoQ) uzmanısın. Sana verilen mimari, statik veya MEP proje dosyalarını (PDF/Görsel/DWG) Türk inşaat sektörü standartlarındaki 9 temel disipline göre analiz etmelisin.
 
 1. Lejant Okuma:
 Öncelikle projenin köşelerindeki Lejant (Legend) tablosunu bul. Çizgi tiplerinin, renklerin ve sembollerin hangi malzemeye (Örn: Priz, Kolon, Havalandırma Kanalı) denk geldiğini buradan öğren.
@@ -95,10 +109,18 @@ Sen uzman bir İnşaat Mühendisi ve Metraj (BoQ) uzmanısın. Sana verilen mima
 Plan üzerindeki metinleri (OCR) oku. 'Mutfak 12m2', 'Zemin Kat' gibi etiketleri bularak projenin mahal listesini (Room List) çıkar. Her mahalin adını, bulunduğu katı, net alanını (m2), çevre uzunluğunu (m) ve ince yapı kaplama detaylarını (zemin, duvar, tavan) belirle.
 
 3. DWG/Katman Mantığı:
-Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, M-HVAC gibi standart CAD katman isimlendirmeleri veya renk kodları varsa, bu objeleri ilgili yapı elemanı olarak sınıflandır (Örn: A-WALL -> Mimari Duvar, S-COLS -> Statik Kolon, E-POWR -> Elektrik Kuvvetli Akım/Priz, M-HVAC -> Mekanik İklimlendirme).
+Eğer çizimde A-WALL, S-COLS, A-DOOR, A-GLAZ, E-POWR, E-LITE, M-HVAC, M-PLUM gibi standart CAD katman isimlendirmeleri veya renk kodları varsa, bu objeleri ilgili yapı elemanı olarak sınıflandır.
 
-4. Zorunlu JSON Çıktı Şeması (Structured Output Kuralı):
-Yanıt olarak KESİNLİKLE Markdown açıklaması veya ek metin ekleme; doğrudan Prisma veritabanımıza (BoqItem ve Room modellerine) hatasız yazılabilecek katı bir JSON objesi döndür.
+4. 9 Temel İnşaat Disiplini Bazlı Metraj ve Çıkarım Kuralları:
+- MİMARİ: Duvar tiplerini, kapı/pencere doğramalarını, mahal alanlarını (m2) ve zemin/duvar kaplama metrajlarını (seramik, boya, parke) çıkar.
+- STATİK & STATİK RAPOR: Kolon, perde, kiriş ve döşeme donatı (demir) metrajlarını (ton/kg), kalıp metrajlarını (m2) ve beton sınıflarını/hacimlerini (C25/C30/C35 - m3) hesapla.
+- ELEKTRİK & ZAYIF AKIM: Kablo metrajlarını (m), priz/anahtar/armatür sayılarını (adet), yangın dedektörlerini ve zayıf akım (CCTV, data, telefon) ekipman sayılarını say.
+- TESİSAT (Mekanik): Temiz su, pis su boru metrajlarını (çaplarına göre), vitrifiye sayılarını (klozet, lavabo), ısıtma/soğutma (radyatör, klima) adetlerini çıkar.
+- AKUSTİK & İZODER (Yalıtım): Isı, ses ve su yalıtım levhalarının, taş yünü veya XPS/EPS malzemelerinin alan (m2) metrajlarını hesapla.
+- İSKELE - KALIP: Cephe iskelesi metrajlarını (m2 veya ton) ve güvenlik filesi ihtiyaçlarını belirle.
+
+5. Zorunlu JSON Çıktı Şeması (Structured Output Kuralı):
+Yanıt olarak KESİNLİKLE Markdown açıklaması veya ek metin ekleme; doğrudan Prisma veritabanımıza (BoqItem ve Room modellerine) hatasız yazılabilecek, her metraj kaleminde "disiplin" bilgisini barındıran katı bir JSON objesi döndür.
 Örnek Zorunlu Çıktı Şeması (Output Schema):
 {
   "mahaller": [
@@ -116,12 +138,13 @@ Yanıt olarak KESİNLİKLE Markdown açıklaması veya ek metin ekleme; doğruda
   "metraj_kalemleri": [
     {
       "poz_no": "18.320.1008",
-      "aciklama": "Priz",
+      "disiplin": "Zayıf Akım",
+      "aciklama": "Duman Dedektörü",
       "kategori": "ELEKTRIK",
-      "miktar": 15,
+      "miktar": 45,
       "birim": "Adet",
-      "birim_fiyat": 450,
-      "toplam_tutar": 6750,
+      "birim_fiyat": 1250,
+      "toplam_tutar": 56250,
       "bulundugu_mahaller": ["Z-01"]
     }
   ]
@@ -190,12 +213,13 @@ const MOCK_45_ROOMS: ParsedRoom[] = [
   { id: "R-45", roomNo: "C-05", name: "Güneş Enerjisi & PV Kontrol", floor: "Çatı Katı", areaM2: 15.0, perimeterM: 16.0, floorFinish: "Epoksi Zemin", wallFinish: "Yangına Dayanıklı Boya", ceilingFinish: "Akustik Alçıpan" },
 ];
 
-// 12 Gerçekçi İmalat ve Metraj Kalemi (BoQ)
+// 9 Temel İnşaat Disiplinini Kapsayan 12 Gerçekçi İmalat ve Metraj Kalemi (BoQ)
 const MOCK_12_BOQ_ITEMS: ParsedBoQItem[] = [
   {
     id: "BOQ-01",
     pozNo: "15.120.1001",
-    description: "C35/45 Basınç Dayanımlı Hazır Beton Dökümü (Temel ve Döşemeler)",
+    description: "C30/37 - C35/45 Basınç Dayanımlı Hazır Beton Dökümü (Temel, Kolon, Perde ve Döşemeler)",
+    discipline: "Statik",
     category: "STATIK",
     unit: "m3",
     quantity: 1450.0,
@@ -206,7 +230,8 @@ const MOCK_12_BOQ_ITEMS: ParsedBoQItem[] = [
   {
     id: "BOQ-02",
     pozNo: "15.160.1002",
-    description: "B420C Nervürlü Donatı Çeliği (Ø8-Ø32mm) Temini ve Montajı",
+    description: "B420C Nervürlü Donatı Çeliği (Ø8-Ø32mm) Kolon, Kiriş ve Perde Demir Metrajı",
+    discipline: "Statik Rapor",
     category: "STATIK",
     unit: "Ton",
     quantity: 185.0,
@@ -216,8 +241,21 @@ const MOCK_12_BOQ_ITEMS: ParsedBoQItem[] = [
   },
   {
     id: "BOQ-03",
+    pozNo: "15.180.1005",
+    description: "Endüstriyel Plywood Perde/Kolon Kalıbı ve Güvenlik Fileli Dış Cephe İskelesi",
+    discipline: "İskele - Kalıp",
+    category: "ISKELE_KALIP",
+    unit: "m2",
+    quantity: 3420.0,
+    unitPrice: 340.0,
+    totalPrice: 1162800.0,
+    detectedInRooms: ["Tüm Kat Kalıpları ve Dış Cephe İskelesi"],
+  },
+  {
+    id: "BOQ-04",
     pozNo: "15.220.1004",
-    description: "15cm Kalınlığında Gazbeton Duvar Örülmesi (G2/0.4 Sınıfı)",
+    description: "15cm Gazbeton Duvar Örülmesi ve İç/Dış Doğrama Boşlukları",
+    discipline: "Mimari",
     category: "MIMARI",
     unit: "m2",
     quantity: 2650.0,
@@ -226,20 +264,10 @@ const MOCK_12_BOQ_ITEMS: ParsedBoQItem[] = [
     detectedInRooms: ["Tüm Oda ve Kat Bölme Duvarları"],
   },
   {
-    id: "BOQ-04",
-    pozNo: "15.280.1003",
-    description: "Çift İskeletli Yangın ve Neme Dayanıklı Alçıpan Bölme Duvar",
-    category: "MIMARI",
-    unit: "m2",
-    quantity: 840.0,
-    unitPrice: 580.0,
-    totalPrice: 487200.0,
-    detectedInRooms: ["1-04", "1-05", "1-11", "2-03", "2-06", "B-07"],
-  },
-  {
     id: "BOQ-05",
     pozNo: "15.350.1001",
-    description: "60x120cm Porselen Granit Seramik Zemin Kaplaması (R10 Kaymaz)",
+    description: "60x120cm Porselen Seramik, Lüks Laminat Parke ve Su Bazlı Saten Boya Kaplaması",
+    discipline: "Mimari",
     category: "MIMARI",
     unit: "m2",
     quantity: 1120.0,
@@ -249,30 +277,33 @@ const MOCK_12_BOQ_ITEMS: ParsedBoQItem[] = [
   },
   {
     id: "BOQ-06",
-    pozNo: "15.380.1005",
-    description: "32. Sınıf Derzli 10mm Lüks Laminat Parke Döşemesi",
-    category: "MIMARI",
+    pozNo: "15.280.1003",
+    description: "Çift İskeletli Akustik Taşyünü Dolgulu Ses Yalıtımlı Duvar ve Baffle Tavan",
+    discipline: "Akustik",
+    category: "YALITIM",
     unit: "m2",
-    quantity: 980.0,
-    unitPrice: 460.0,
-    totalPrice: 450800.0,
-    detectedInRooms: ["1-02", "2-01", "2-02", "2-04", "2-09", "2-10"],
+    quantity: 840.0,
+    unitPrice: 580.0,
+    totalPrice: 487200.0,
+    detectedInRooms: ["1-03", "1-04", "1-05", "1-11", "B-02"],
   },
   {
     id: "BOQ-07",
-    pozNo: "15.420.1002",
-    description: "İç Cephe Su Bazlı Antibakteriyel İpek Mat Saten Boya Uygulaması",
-    category: "MIMARI",
+    pozNo: "15.050.1006",
+    description: "İZODER Standartlarında Taşyünü / XPS Isı Yalıtım Levhası ve Çift Kat Su Yalıtımı",
+    discipline: "İzoder",
+    category: "YALITIM",
     unit: "m2",
-    quantity: 5800.0,
-    unitPrice: 165.0,
-    totalPrice: 957000.0,
-    detectedInRooms: ["Tüm İç Mahaller (45 Oda)"],
+    quantity: 1890.0,
+    unitPrice: 490.0,
+    totalPrice: 926100.0,
+    detectedInRooms: ["B-03", "B-05 Temel", "Dış Cephe Mantolama", "C-04 Çatı"],
   },
   {
     id: "BOQ-08",
     pozNo: "18.150.1003",
-    description: "Halojensiz (HFFR) Yangına Dayanıklı Bakır İletken Güç Kablosu (3x2.5)",
+    description: "Halojensiz (HFFR) NHXMH 3x2.5mm² Kuvvetli Akım Kablo, Priz, Anahtar ve LED Armatür",
+    discipline: "Elektrik",
     category: "ELEKTRIK",
     unit: "Metre",
     quantity: 3400.0,
@@ -283,20 +314,22 @@ const MOCK_12_BOQ_ITEMS: ParsedBoQItem[] = [
   {
     id: "BOQ-09",
     pozNo: "18.320.1008",
-    description: "Akıllı Adresli Yangın Algılama & Duman Dedektörleri",
+    description: "Akıllı Adresli Optik Duman Dedektörü, IP CCTV Kamera ve Cat6A Data Prizi",
+    discipline: "Zayıf Akım",
     category: "ELEKTRIK",
     unit: "Adet",
-    quantity: 78.0,
+    quantity: 145.0,
     unitPrice: 1250.0,
-    totalPrice: 97500.0,
-    detectedInRooms: ["Tüm Kat Holleri ve Odalar"],
+    totalPrice: 181250.0,
+    detectedInRooms: ["Tüm Kat Holleri, Z-02 BMS ve 1-11 IT Odası"],
   },
   {
     id: "BOQ-10",
     pozNo: "19.200.1004",
-    description: "VRF / VRV Değişken Debili İklimlendirme Borulama ve İç Üniteleri",
+    description: "VRF / VRV İklimlendirme Klima İç Üniteleri ve Panel Radyatör Isıtma Seti",
+    discipline: "Tesisat",
     category: "MEKANIK",
-    unit: "Set",
+    unit: "Adet",
     quantity: 34.0,
     unitPrice: 18500.0,
     totalPrice: 629000.0,
@@ -305,7 +338,8 @@ const MOCK_12_BOQ_ITEMS: ParsedBoQItem[] = [
   {
     id: "BOQ-11",
     pozNo: "19.450.1002",
-    description: "PPRC & Sessiz PVC Sıhhi Tesisat Borulaması ve Rezervuarlar",
+    description: "Ø25-Ø110mm PPRC Temiz Su ve Sessiz PVC Pis Su Borulama Metrajı",
+    discipline: "Tesisat",
     category: "MEKANIK",
     unit: "Metre",
     quantity: 1150.0,
@@ -315,14 +349,15 @@ const MOCK_12_BOQ_ITEMS: ParsedBoQItem[] = [
   },
   {
     id: "BOQ-12",
-    pozNo: "15.050.1006",
-    description: "Bitümlü Membran ve Likit Poliüretan Çift Kat Su Yalıtımı",
-    category: "YALITIM",
-    unit: "m2",
-    quantity: 920.0,
-    unitPrice: 380.0,
-    totalPrice: 349600.0,
-    detectedInRooms: ["B-03", "B-05 Temel", "2-08 Teras", "C-04 Çatı"],
+    pozNo: "19.510.1009",
+    description: "Gömme Rezervuarlı Asma Klozet, Etajerli Lavabo ve Ankastre Batarya Vitrifiye Grubu",
+    discipline: "Tesisat",
+    category: "MEKANIK",
+    unit: "Takım",
+    quantity: 42.0,
+    unitPrice: 8400.0,
+    totalPrice: 352800.0,
+    detectedInRooms: ["B-08", "Z-05", "1-09", "1-10", "2-03", "2-06", "2-12"],
   },
 ];
 
@@ -396,6 +431,7 @@ export async function analyzeBlueprintPdf(
                 id: `BOQ-${String(idx + 1).padStart(2, "0")}`,
                 pozNo: k.poz_no || `15.${100 + idx}.100${idx + 1}`,
                 description: k.aciklama || "İmalat Kalemi",
+                discipline: k.disiplin || k.kategori || "Mimari",
                 category: k.kategori || "MIMARI",
                 unit: k.birim || "Adet",
                 quantity: qty,
@@ -424,6 +460,7 @@ export async function analyzeBlueprintPdf(
       })),
       metraj_kalemleri: parsedBoqItems.map((b) => ({
         poz_no: b.pozNo,
+        disiplin: b.discipline || b.category,
         aciklama: b.description,
         kategori: b.category,
         miktar: b.quantity,

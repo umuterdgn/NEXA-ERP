@@ -426,8 +426,8 @@ export default function AiBlueprintAnalysisModal({
                           <td className="p-3 font-mono text-purple-400 font-bold">{item.pozNo}</td>
                           <td className="p-3 font-medium text-white max-w-xs">{item.description}</td>
                           <td className="p-3">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                              {item.category}
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-cyan-300 border border-slate-700">
+                              {item.discipline || item.category}
                             </span>
                           </td>
                           <td className="p-3 font-mono font-bold text-cyan-300">
