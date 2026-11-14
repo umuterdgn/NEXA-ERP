@@ -247,6 +247,7 @@ export default function PersonnelSidebar({
                         <Link
                           key={item.href}
                           href={item.href}
+                          locale="tr"
                           className={`flex h-10 w-10 mx-auto items-center justify-center rounded-lg transition-colors ${
                             isActive
                               ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
@@ -280,6 +281,7 @@ export default function PersonnelSidebar({
                         <li key={item.href}>
                           <Link
                             href={item.href}
+                            locale="tr"
                             onClick={() => setIsOpen(false)}
                             className={`flex min-h-[40px] items-center gap-3 rounded-lg px-3 text-xs font-medium transition-colors ${
                               isActive

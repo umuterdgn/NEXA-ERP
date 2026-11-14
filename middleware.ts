@@ -52,7 +52,8 @@ function isPublicRoute(pathname: string): boolean {
 const intlMiddleware = createIntlMiddleware({
   locales,
   defaultLocale: 'tr',
-  localePrefix: 'as-needed' // Sadece TR dışındakilerde prefix kullan veya 'always' yap
+  localePrefix: 'as-needed', // Sadece TR dışındakilerde prefix kullan
+  localeDetection: false
 });
 
 // NextAuth v5 Edge runtime uyumlu auth middleware örneği

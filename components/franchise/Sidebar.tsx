@@ -273,6 +273,7 @@ export default function FranchiseSidebar({
                         <Link
                           key={`${item.href}-${idx}`}
                           href={item.href}
+                          locale="tr"
                           onClick={() => setMobileOpen(false)}
                           className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
                             isActive

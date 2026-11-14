@@ -12,5 +12,5 @@ export default async function AdminProjectARRedirect({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  redirect(`/ar/${id}`)
+  redirect(`/tr/ar/${id}`)
 }

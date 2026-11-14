@@ -371,6 +371,7 @@ export default function InspectionSidebar({
                         <Link
                           key={item.href}
                           href={item.href}
+                          locale="tr"
                           onClick={() => setIsOpen(false)}
                           className={`flex min-h-[40px] items-center rounded-lg transition-colors ${
                             isActive

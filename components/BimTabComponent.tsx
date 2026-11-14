@@ -169,9 +169,9 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
     }
     const query = rawUrl ? `?url=${encodeURIComponent(rawUrl)}` : ""
     if (typeof window !== "undefined") {
-      return `${window.location.origin}/ar/${project.id}${query}`
+      return `${window.location.origin}/tr/ar/${project.id}${query}`
     }
-    return `/ar/${project.id}${query}`
+    return `/tr/ar/${project.id}${query}`
   }
 
   const handleOpenAR = () => {
