@@ -18,8 +18,14 @@ import {
   getProjectBimFiles,
 } from "@/app/actions/project"
 import { Sparkles } from "lucide-react"
-import BIMViewer, { type FederatedModelItem, isValid3DModelFile } from "@/components/bim/BIMViewer"
+import BIMViewer, {
+  type FederatedModelItem,
+  isValid3DModelFile,
+  isPdfOr2DBlueprintFile,
+  isAllowedViewerFile,
+} from "@/components/bim/BIMViewer"
 import AiBlueprintAnalysisModal from "@/components/bim/AiBlueprintAnalysisModal"
+import { analyzeBlueprintPdf } from "@/actions/ai-blueprint-parser"
 
 export interface BimFileItem {
   id: string
@@ -84,15 +90,18 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
       })),
   ].filter((doc, index, self) => doc.fileUrl && self.findIndex((t) => t.fileUrl === doc.fileUrl) === index)
 
-  // Determine initial active model URL (prefer valid 3D model)
+  // Determine initial active model URL (prefer valid 3D model, fallback to PDF/2D extrusion blueprint)
   const initialActiveUrl =
     initial3DFiles.find((f) => f.isActive)?.fileUrl ||
     initial3DFiles[0]?.fileUrl ||
-    (isValid3DModelFile(project.bimModelUrl) ? project.bimModelUrl : null) ||
-    (isValid3DModelFile(project.ifcModelUrl) ? project.ifcModelUrl : null) ||
+    (project.bimFiles || []).find((f) => f.isActive && isAllowedViewerFile(f.fileUrl, f.fileName, f.fileType))?.fileUrl ||
+    (isAllowedViewerFile(project.bimModelUrl) ? project.bimModelUrl : null) ||
+    (isAllowedViewerFile(project.ifcModelUrl) ? project.ifcModelUrl : null) ||
+    initialDocFiles.find((d) => isPdfOr2DBlueprintFile(d.fileUrl, d.fileName, d.fileType))?.fileUrl ||
     null
 
   const [bimUrl, setBimUrl] = useState<string | null>(initialActiveUrl)
+  const [activeFileName, setActiveFileName] = useState<string | undefined>(undefined)
   const [bimFiles, setBimFiles] = useState<BimFileItem[]>(initial3DFiles)
   const [documentFiles, setDocumentFiles] = useState<ProjectDocItem[]>(initialDocFiles)
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
@@ -112,17 +121,21 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
       )
       setBimFiles(valid3D)
       const active = valid3D.find((f) => f.isActive) || valid3D[0]
+      const activeAny = project.bimFiles.find((f) => f.isActive && isAllowedViewerFile(f.fileUrl, f.fileName, f.fileType))
       if (active) {
-        setBimUrl(active.fileUrl)
-      } else if (isValid3DModelFile(project.bimModelUrl)) {
-        setBimUrl(project.bimModelUrl || null)
-      } else if (isValid3DModelFile(project.ifcModelUrl)) {
-        setBimUrl(project.ifcModelUrl || null)
+        setBimUrl((prev) => prev || active.fileUrl)
+      } else if (activeAny) {
+        setBimUrl((prev) => prev || activeAny.fileUrl)
+        setActiveFileName(activeAny.fileName)
+      } else if (isAllowedViewerFile(project.bimModelUrl)) {
+        setBimUrl((prev) => prev || project.bimModelUrl || null)
+      } else if (isAllowedViewerFile(project.ifcModelUrl)) {
+        setBimUrl((prev) => prev || project.ifcModelUrl || null)
       }
-    } else if (isValid3DModelFile(project.bimModelUrl)) {
-      setBimUrl(project.bimModelUrl || null)
-    } else if (isValid3DModelFile(project.ifcModelUrl)) {
-      setBimUrl(project.ifcModelUrl || null)
+    } else if (isAllowedViewerFile(project.bimModelUrl)) {
+      setBimUrl((prev) => prev || project.bimModelUrl || null)
+    } else if (isAllowedViewerFile(project.ifcModelUrl)) {
+      setBimUrl((prev) => prev || project.ifcModelUrl || null)
     }
   }, [project.bimFiles, project.bimModelUrl, project.ifcModelUrl])
 
@@ -140,12 +153,19 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           isValid3DModelFile(f.fileUrl, f.fileName, f.fileType)
         )
         setBimFiles(valid3D)
+        const docs = ((res as any).documents || []) as ProjectDocItem[]
         if ((res as any).documents) {
-          setDocumentFiles((res as any).documents as ProjectDocItem[])
+          setDocumentFiles(docs)
         }
         const active = valid3D.find((f: any) => f.isActive) || valid3D[0]
         if (active) {
-          setBimUrl(active.fileUrl)
+          setBimUrl((prev) => prev || active.fileUrl)
+        } else {
+          const pdfDoc = docs.find((d) => isPdfOr2DBlueprintFile(d.fileUrl, d.fileName, d.fileType))
+          if (pdfDoc) {
+            setBimUrl((prev) => prev || pdfDoc.fileUrl)
+            setActiveFileName((prev) => prev || pdfDoc.fileName)
+          }
         }
       }
     } catch (err) {
@@ -240,7 +260,17 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   }
 
   // Active file info
-  const activeBimFile = bimFiles.find((f) => f.fileUrl === bimUrl || f.isActive)
+  const activeBimFile = bimFiles.find((f) => f.fileUrl === bimUrl) || bimFiles.find((f) => f.isActive)
+  const activeDocFile = documentFiles.find((d) => d.fileUrl === bimUrl)
+  const resolvedActiveFileName =
+    (activeBimFile?.fileUrl === bimUrl ? activeBimFile?.fileName : undefined) ||
+    activeDocFile?.fileName ||
+    activeFileName ||
+    activeBimFile?.fileName
+  const resolvedActiveFileType =
+    (activeBimFile?.fileUrl === bimUrl ? activeBimFile?.fileType : undefined) ||
+    activeDocFile?.fileType ||
+    activeBimFile?.fileType
 
   return (
     <div className="w-full space-y-6">
@@ -372,16 +402,42 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                 if (resolvedUrl) {
                   console.log("FRONTEND: URL başarıyla alındı:", resolvedUrl);
 
-                  // ADIM 1: Dosya uzantısı kontrolü (.ifc, .gltf, .glb değilse 3D Viewer'a gönderme)
-                  if (!isValid3DModelFile(resolvedUrl, originalName)) {
+                  // ADIM 1: Dosya uzantısı kontrolü (.pdf, .dwg, .dxf ise hata fırlatma, AI 2D-to-3D Extrusion motorunu devreye sok)
+                  if (isPdfOr2DBlueprintFile(resolvedUrl, originalName)) {
+                    setBimUrl(resolvedUrl);
+                    setActiveFileName(originalName);
                     setShowUploader(false);
-                    toast.error("Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.");
+
                     const newDoc: ProjectDocItem = {
                       id: Math.random().toString(36).substring(2, 11),
                       projectId: project.id,
                       fileName: originalName,
                       fileUrl: resolvedUrl,
                       fileType: originalName.split(".").pop()?.toLowerCase() || "pdf",
+                      uploadedAt: new Date(),
+                    };
+                    setDocumentFiles((prev) => [newDoc, ...prev]);
+                    toast.success("PDF pafta seçildi! AI verileriyle R3F 2D→3D Extrusion modeli çiziliyor...");
+
+                    addBimFile(project.id, resolvedUrl, originalName)
+                      .then(() => router.refresh())
+                      .catch((err) => console.error("Doküman Kayıt Hatası:", err));
+
+                    analyzeBlueprintPdf(resolvedUrl, project.id)
+                      .then(() => router.refresh())
+                      .catch((err) => console.warn("AI 2D→3D Analiz uyarısı:", err));
+                    return;
+                  }
+
+                  if (!isAllowedViewerFile(resolvedUrl, originalName)) {
+                    setShowUploader(false);
+                    toast.error("Desteklenmeyen dosya formatı. Lütfen .ifc, .gltf, .glb veya .pdf uzantılı bir dosya seçin.");
+                    const newDoc: ProjectDocItem = {
+                      id: Math.random().toString(36).substring(2, 11),
+                      projectId: project.id,
+                      fileName: originalName,
+                      fileUrl: resolvedUrl,
+                      fileType: originalName.split(".").pop()?.toLowerCase() || "docx",
                       uploadedAt: new Date(),
                     };
                     setDocumentFiles((prev) => [newDoc, ...prev]);
@@ -393,6 +449,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                   
                   // 2. OPTIMISTIC UI: Beklemeden KUTUYU KAPAT ve MODELİ AÇ!
                   setBimUrl(resolvedUrl);
+                  setActiveFileName(originalName);
                   setShowUploader(false);
                   
                   const tempFile = {
@@ -442,7 +499,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-slate-400 font-medium">Açık Model:</span>
               <span className="text-white font-bold truncate max-w-[200px] sm:max-w-md">
-                {activeBimFile?.fileName || bimUrl.split("/").pop() || "3D Model"}
+                {resolvedActiveFileName || bimUrl.split("/").pop() || "3D Model"}
               </span>
             </div>
 
@@ -456,7 +513,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           </div>
 
           <div className="relative w-full h-[620px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
-          {!isValid3DModelFile(bimUrl, activeBimFile?.fileName, activeBimFile?.fileType) ? (
+          {!isAllowedViewerFile(bimUrl, resolvedActiveFileName, resolvedActiveFileType) ? (
             <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-950">
               <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-lg shadow-amber-500/10">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -465,14 +522,14 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
               </div>
               <h4 className="text-white font-bold text-lg mb-2">Desteklenmeyen Dosya Formatı</h4>
               <p className="text-amber-200 text-sm font-semibold max-w-md mb-4 leading-relaxed">
-                Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.
+                Lütfen .ifc, .gltf, .glb veya 2D pafta (.pdf / .dwg) uzantılı bir dosya seçin.
               </p>
               <button
                 type="button"
                 onClick={() => setShowUploader(true)}
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg transition-all"
               >
-                + 3D Model (.ifc / .gltf / .glb) Seç
+                + Model veya PDF Pafta Seç
               </button>
             </div>
           ) : (
@@ -491,7 +548,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
               url={bimUrl}
               ifcUrl={bimUrl}
               projectId={project.id}
-              fileName={activeBimFile?.fileName}
+              fileName={resolvedActiveFileName}
               models={bimFiles.map((f, i) => {
                 const lower = (f.fileName || "").toLowerCase()
                 const cat = lower.includes("statik")
@@ -825,9 +882,28 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                   </div>
 
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-700/60">
+                    {isPdfOr2DBlueprintFile(doc.fileUrl, doc.fileName, doc.fileType) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBimUrl(doc.fileUrl)
+                          setActiveFileName(doc.fileName)
+                          setShowUploader(false)
+                          toast.success(`"${doc.fileName}" için AI 2D→3D Extrusion modeli açıldı!`)
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer"
+                        title="PDF Verileriyle 3D Extrusion Modelini Sahneye Çizdir"
+                      >
+                        <span>🧊 3D Göster</span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => {
+                        setBimUrl(doc.fileUrl)
+                        setActiveFileName(doc.fileName)
+                        setShowUploader(false)
                         setSelectedAiDoc({ title: doc.fileName, url: doc.fileUrl })
                         setIsAiModalOpen(true)
                       }}
@@ -863,7 +939,12 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           documentTitle={selectedAiDoc.title}
           documentUrl={selectedAiDoc.url}
           projectId={project.id}
-          onSuccessTransfer={() => router.refresh()}
+          onSuccessTransfer={() => {
+            setBimUrl(selectedAiDoc.url)
+            setActiveFileName(selectedAiDoc.title)
+            setShowUploader(false)
+            router.refresh()
+          }}
         />
       )}
 

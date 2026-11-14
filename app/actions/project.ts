@@ -10,6 +10,8 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
 const SUPPORTED_3D_EXTENSIONS = ["ifc", "gltf", "glb"]
+const SUPPORTED_2D_EXTRUSION_EXTENSIONS = ["pdf", "dwg", "dxf"]
+const ALLOWED_VIEWER_EXTENSIONS = [...SUPPORTED_3D_EXTENSIONS, ...SUPPORTED_2D_EXTRUSION_EXTENSIONS]
 
 function is3DModelRecord(fileUrl?: string | null, fileName?: string | null, fileType?: string | null): boolean {
   const extFromType = (fileType || "").toLowerCase().replace(/^\./, "").trim()
@@ -26,9 +28,28 @@ function is3DModelRecord(fileUrl?: string | null, fileName?: string | null, file
   return SUPPORTED_3D_EXTENSIONS.some((ext) => cleanUrl.endsWith(`.${ext}`))
 }
 
+function isAllowedViewerFileRecord(fileUrl?: string | null, fileName?: string | null, fileType?: string | null): boolean {
+  const extFromType = (fileType || "").toLowerCase().replace(/^\./, "").trim()
+  if (extFromType) {
+    return ALLOWED_VIEWER_EXTENSIONS.includes(extFromType)
+  }
+
+  const extFromName = (fileName || "").split("?")[0].split("#")[0].split(".").pop()?.toLowerCase().trim() || ""
+  if (extFromName && (fileName || "").includes(".")) {
+    return ALLOWED_VIEWER_EXTENSIONS.includes(extFromName)
+  }
+
+  const cleanUrl = (fileUrl || "").split("?")[0].split("#")[0].toLowerCase().trim()
+  if (ALLOWED_VIEWER_EXTENSIONS.some((ext) => cleanUrl.endsWith(`.${ext}`))) {
+    return true
+  }
+  // UploadThing URLs without file extension in path
+  return Boolean(cleanUrl)
+}
+
 export async function updateProjectBimModel(projectId: string, modelUrl: string) {
   try {
-    if (!is3DModelRecord(modelUrl)) {
+    if (!isAllowedViewerFileRecord(modelUrl)) {
       return {
         success: false,
         error: "Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.",
@@ -115,7 +136,7 @@ export async function addBimFileToProject(
       .toLowerCase()
       .replace(/^\./, "")
 
-    if (!SUPPORTED_3D_EXTENSIONS.includes(extension) && !is3DModelRecord(fileData.fileUrl, fileData.fileName, extension)) {
+    if (!ALLOWED_VIEWER_EXTENSIONS.includes(extension) && !isAllowedViewerFileRecord(fileData.fileUrl, fileData.fileName, extension)) {
       return {
         success: false,
         error: "Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.",
@@ -166,7 +187,7 @@ export async function setActiveBimFile(projectId: string, bimFileId: string) {
       return { success: false, error: "Model bulunamadı." }
     }
 
-    if (!is3DModelRecord(targetFile.fileUrl, targetFile.fileName, targetFile.fileType)) {
+    if (!isAllowedViewerFileRecord(targetFile.fileUrl, targetFile.fileName, targetFile.fileType)) {
       return {
         success: false,
         error: "Bu dosya bir 3D model değildir. Lütfen .ifc, .gltf veya .glb uzantılı bir dosya seçin.",

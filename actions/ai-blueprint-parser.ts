@@ -814,10 +814,13 @@ export async function exportTrainingData(options?: {
 }
 
 /**
- * ADIM 2: Projeye ait Prisma veritabanındaki AIAnalysis (Gemini JSON koordinatları)
+ * ADIM 2: Projeye veya seçilen PDF'e ait Prisma veritabanındaki AIAnalysis (Gemini JSON koordinatları)
  * veya BoqItem kayıtlarından 2D->3D Extrusion koordinat verilerini çeker.
  */
-export async function getProject2DExtrusionData(projectId?: string): Promise<{
+export async function getProject2DExtrusionData(
+  projectId?: string,
+  pdfUrl?: string
+): Promise<{
   success: boolean;
   source: "GEMINI_AI_ANALYSIS" | "PRISMA_BOQ_ITEMS" | "EMPTY";
   elements: Blueprint2DCoordinateElement[];
@@ -827,11 +830,20 @@ export async function getProject2DExtrusionData(projectId?: string): Promise<{
       return { success: true, source: "EMPTY", elements: [] };
     }
 
-    // 1. Önce bu projeye ait Gemini AIAnalysis (BLUEPRINT_OCR) JSON kaydını çek
-    const latestAiAnalysis = await prisma.aIAnalysis.findFirst({
-      where: { projectId, type: "BLUEPRINT_OCR" },
-      orderBy: { createdAt: "desc" },
-    });
+    // 1. Önce seçilen PDF'e (veya projeye) ait Gemini AIAnalysis (BLUEPRINT_OCR) JSON kaydını çek
+    let latestAiAnalysis = pdfUrl
+      ? await prisma.aIAnalysis.findFirst({
+          where: { projectId, type: "BLUEPRINT_OCR", imageUrl: pdfUrl },
+          orderBy: { createdAt: "desc" },
+        })
+      : null;
+
+    if (!latestAiAnalysis) {
+      latestAiAnalysis = await prisma.aIAnalysis.findFirst({
+        where: { projectId, type: "BLUEPRINT_OCR" },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
     if (latestAiAnalysis?.metadata) {
       try {
