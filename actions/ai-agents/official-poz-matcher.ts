@@ -258,3 +258,4 @@ export async function ensureOfficialPricePozCatalogSeeded(): Promise<number> {
     return 0
   }
 }
+
