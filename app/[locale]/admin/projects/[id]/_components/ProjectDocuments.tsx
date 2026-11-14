@@ -9,8 +9,9 @@
 import React, { useState, useEffect } from "react";
 import { UploadDropzone } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
-import { FileText, Upload, History, Download, Eye, Plus, Folder, FileCode, FileCheck, FileText as FileDoc } from "lucide-react";
+import { FileText, Upload, History, Download, Eye, Plus, Folder, FileCode, FileCheck, FileText as FileDoc, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import AiBlueprintAnalysisModal from "@/components/bim/AiBlueprintAnalysisModal";
 
 interface ProjectDocument {
   id: string;
@@ -38,6 +39,9 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
   const [selectedDocument, setSelectedDocument] = useState<ProjectDocument | null>(null);
   const [showHistory, setShowHistory] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [localFile, setLocalFile] = useState<File | null>(null);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [selectedAiDoc, setSelectedAiDoc] = useState<{ title: string; url: string } | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     type: "BLUEPRINT",
@@ -83,6 +87,7 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
           toast.success("Doküman başarıyla yüklendi");
           await fetchDocuments();
           setIsUploadModalOpen(false);
+          setLocalFile(null);
           setFormData({ title: "", type: "BLUEPRINT" });
         } else {
           toast.error("Doküman kaydedilirken hata oluştu");
@@ -93,6 +98,43 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
       } finally {
         setUploading(false);
       }
+    }
+  };
+
+  const handleDirectUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim()) {
+      toast.error("Doküman adı zorunludur.");
+      return;
+    }
+    if (!localFile) {
+      toast.error("Lütfen bir dosya seçin.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", localFile);
+      uploadFormData.append("projectId", projectId);
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Dosya yüklenemedi.");
+      }
+
+      const uploadData = await uploadRes.json();
+      const fileUrl = uploadData.url;
+
+      await handleUploadComplete([{ url: fileUrl }]);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Dosya yüklenemedi.");
+      setUploading(false);
     }
   };
 
@@ -235,6 +277,20 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* ADIM 3: AI ile Projeyi Analiz Et Butonu */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAiDoc({ title: doc.title, url: doc.fileUrl });
+                      setIsAiModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all shadow-sm cursor-pointer"
+                    title="Yapay Zeka ile Paftayı / PDF'i Analiz Et"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>AI ile Projeyi Analiz Et</span>
+                  </button>
+
                   {doc.status === "ACTIVE" && (
                     <>
                       <button
@@ -330,16 +386,50 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Dosya Yükle *</label>
-                <UploadDropzone<OurFileRouter, "projectDocumentUploader">
-                  endpoint="projectDocumentUploader"
-                  config={{ mode: "auto" }}
-                  onClientUploadComplete={handleUploadComplete}
-                  onUploadError={(error: Error) => {
-                    toast.error(`Yükleme hatası: ${error.message}`);
-                  }}
-                />
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Doğrudan Dosya Seç (PDF / DWG / IFC)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.dwg,.dxf,.ifc,image/*"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      setLocalFile(f);
+                      if (f && !formData.title) {
+                        setFormData((prev) => ({ ...prev, title: f.name.replace(/\.[^/.]+$/, "") }));
+                      }
+                    }}
+                    className="w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
+                  />
+                  {localFile && (
+                    <button
+                      type="button"
+                      onClick={handleDirectUploadSubmit}
+                      disabled={uploading}
+                      className="w-full mt-2 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                      <span>Seçilen Dosyayı Yükle ve Kaydet</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-slate-800"></div>
+                  <span className="flex-shrink mx-2 text-[10px] text-slate-500 uppercase">veya UploadDropzone</span>
+                  <div className="flex-grow border-t border-slate-800"></div>
+                </div>
+
+                <div>
+                  <UploadDropzone<OurFileRouter, "projectDocumentUploader">
+                    endpoint="projectDocumentUploader"
+                    config={{ mode: "auto" }}
+                    onClientUploadComplete={handleUploadComplete}
+                    onUploadError={(error: Error) => {
+                      toast.error(`Yükleme hatası: ${error.message}`);
+                    }}
+                  />
+                </div>
               </div>
 
               {uploading && (
@@ -390,6 +480,23 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
             )}
           </div>
         </div>
+      )}
+
+      {/* AI Blueprint Vision Analiz Modalı */}
+      {isAiModalOpen && selectedAiDoc && (
+        <AiBlueprintAnalysisModal
+          isOpen={isAiModalOpen}
+          onClose={() => {
+            setIsAiModalOpen(false);
+            setSelectedAiDoc(null);
+          }}
+          documentTitle={selectedAiDoc.title}
+          documentUrl={selectedAiDoc.url}
+          projectId={projectId}
+          onSuccessTransfer={() => {
+            fetchDocuments();
+          }}
+        />
       )}
     </div>
   );

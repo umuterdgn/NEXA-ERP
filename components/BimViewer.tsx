@@ -5,4 +5,5 @@
  * Re-export the interactive 3D BIM Viewer
  */
 
-export { default } from "@/app/admin/projects/[id]/_components/BimViewer"
+export { default } from "@/app/[locale]/admin/projects/[id]/_components/BimViewer"
+export * from "@/app/[locale]/admin/projects/[id]/_components/BimViewer"

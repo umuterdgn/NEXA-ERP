@@ -233,12 +233,22 @@ function identifyCategory(mesh: any): BimCategoryKey {
   return "mimari"
 }
 
+export interface FederatedModelItem {
+  id?: string
+  name: string
+  url: string
+  category?: "mimari" | "statik" | "elektrik" | "mekanik" | "akustik" | string
+  color?: string
+  visible?: boolean
+}
+
 interface BimViewerProps {
   url?: string | null
   ifcUrl?: string | null
   bimUrl?: string | null
   projectId?: string
   fileName?: string
+  models?: FederatedModelItem[]
 }
 
 // React Three Fiber Loading Overlay
@@ -430,7 +440,7 @@ function IfcCanvasModel({
 
   // BU SATIR KRİTİKTİR, WASM OLMADAN TARAYICI IFC OKUYAMAZ VE SESSİZCE ÇÖKER:
   const ifcModel = useLoader(IFCLoader, url, (loader: any) => {
-    const wasmPath = "https://cdn.jsdelivr.net/npm/web-ifc@0.0.36/" // STABİL JSDELIVR CDN
+    const wasmPath = "/wasm/" // public/wasm klasörünü işaret eder (Yerel & Hızlı WASM)
     loader.setWasmPath(wasmPath)
     if (loader.ifcManager?.setWasmPath) {
       loader.ifcManager.setWasmPath(wasmPath)
@@ -581,8 +591,40 @@ class BimViewerErrorBoundary extends Component<
   }
 }
 
-export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: BimViewerProps) {
-  const effectiveUrl = (bimUrl || url || ifcUrl || "").trim()
+export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models }: BimViewerProps) {
+  const effectiveUrl = (bimUrl || url || ifcUrl || (models && models.length > 0 ? models[0].url : "") || "").trim()
+
+  // Federated BIM Disiplin Modelleri
+  const defaultFederated: FederatedModelItem[] = [
+    { id: "fed-mimari", name: "Mimari Model (Mimari.ifc)", url: effectiveUrl || "/sample.ifc", category: "mimari", color: "#f97316", visible: true },
+    { id: "fed-statik", name: "Statik Taşıyıcı Sistem (Statik.ifc)", url: "/model.ifc", category: "statik", color: "#3b82f6", visible: true },
+    { id: "fed-elektrik", name: "Elektrik & Zayıf Akım", url: "/models/elektrik.ifc", category: "elektrik", color: "#eab308", visible: true },
+    { id: "fed-mekanik", name: "Mekanik & Havalandırma (MEP)", url: "/models/mekanik.ifc", category: "mekanik", color: "#06b6d4", visible: true },
+    { id: "fed-akustik", name: "Akustik & Yalıtım", url: "/models/akustik.ifc", category: "akustik", color: "#a855f7", visible: false },
+  ]
+
+  const [federatedModels, setFederatedModels] = useState<FederatedModelItem[]>(() => {
+    if (models && models.length > 0) {
+      return models.map((m, i) => ({ ...m, id: m.id || `fed-${i}`, visible: m.visible !== false }))
+    }
+    return defaultFederated
+  })
+
+  useEffect(() => {
+    if (models && models.length > 0) {
+      setFederatedModels(models.map((m, i) => ({ ...m, id: m.id || `fed-${i}`, visible: m.visible !== false })))
+    }
+  }, [models])
+
+  const toggleFederatedModel = (id: string) => {
+    setFederatedModels((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, visible: !item.visible } : item))
+    )
+  }
+
+  const toggleAllFederated = (visible: boolean) => {
+    setFederatedModels((prev) => prev.map((item) => ({ ...item, visible })))
+  }
 
   // Determine if file is an IFC file
   const isIfcFile = isIfcUrlOrFile(effectiveUrl, fileName)
@@ -1348,9 +1390,9 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
         viewer.axes.setAxes()
         viewer.grid.setGrid()
 
-        // BU SATIR HAYATİDİR: Browser WebAssembly (WASM) dosyasını doğrudan ve hatasız indirir
+        // BU SATIR HAYATİDİR: Browser WebAssembly (WASM) dosyasını doğrudan public/wasm klasöründen yükler
         try {
-          await viewer.IFC.setWasmPath("https://cdn.jsdelivr.net/npm/web-ifc@0.0.36/")
+          await viewer.IFC.setWasmPath('/wasm/')
         } catch (wasmErr) {
           console.warn("WASM path error:", wasmErr)
         }
@@ -1776,6 +1818,77 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
                 </div>
               </div>
 
+              {/* --- ADIM 1: FEDERATED BIM (ÇOKLU KATMAN) DİSİPLİNLER / MODELLER --- */}
+              <div className="space-y-2 pb-3 mb-3 border-b border-slate-800">
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">🌐</span>
+                    <span className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">
+                      Federated BIM (Çoklu Model)
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {federatedModels.filter((m) => m.visible).length}/{federatedModels.length} Açık
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                  {federatedModels.map((item) => (
+                    <label
+                      key={item.id}
+                      className={`flex items-center justify-between p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                        item.visible
+                          ? "bg-slate-850/90 border-cyan-500/40 text-white shadow-sm"
+                          : "bg-slate-900/40 border-slate-800 text-slate-400 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={!!item.visible}
+                          onChange={() => toggleFederatedModel(item.id || item.url)}
+                          className="w-4 h-4 rounded border-slate-700 text-cyan-500 focus:ring-cyan-400 bg-slate-800 cursor-pointer accent-cyan-500"
+                        />
+                        <span
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: item.color || "#06b6d4" }}
+                        />
+                        <div className="min-w-0">
+                          <p className="font-semibold text-[11px] truncate">{item.name}</p>
+                          <p className="text-[9.5px] text-slate-400 truncate">{item.category?.toUpperCase() || "IFC"}</p>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-mono border ${
+                          item.visible
+                            ? "bg-cyan-950/80 text-cyan-300 border-cyan-800/50"
+                            : "bg-slate-850 text-slate-500 border-slate-700"
+                        }`}
+                      >
+                        {item.visible ? "Açık" : "Gizli"}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleAllFederated(true)}
+                    className="flex-1 py-1.5 px-2 bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-300 rounded-lg text-[10px] font-semibold border border-cyan-800/50 transition-colors"
+                  >
+                    ✓ Tüm Modelleri Aç
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleAllFederated(false)}
+                    className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-slate-400 rounded-lg text-[10px] font-semibold border border-slate-700 transition-colors"
+                  >
+                    ✕ Tümünü Gizle
+                  </button>
+                </div>
+              </div>
+
               {/* --- ADIM 1: KATMAN (LAYER) FİLTRELEME CHECKBOX / TOGGLE BUTONLARI --- */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">
@@ -1956,7 +2069,41 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName }: 
               <Suspense fallback={<CanvasLoader />}>
                 <Bounds clip fit margin={1.2} observe>
                   <Center>
-                    {!safeUrl || safeUrl.trim() === "" ? null : isIfcUrlOrFile(activeModelUrl, fileName) ? (
+                    {models && models.length > 0 ? (
+                      federatedModels
+                        .filter((m) => m.visible && m.url)
+                        .map((item) => (
+                          <group key={item.id || item.url}>
+                            {isIfcUrlOrFile(item.url, item.name) ? (
+                              <IfcCanvasModel
+                                url={item.url}
+                                layerVisibility={layerVisibility}
+                                xRayOpacity={xRayOpacity}
+                                onClick={handleModelClick}
+                                onPointerDown={(e: any) => {
+                                  const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                                  const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                                  pointerDownPosRef.current = { x, y }
+                                }}
+                              />
+                            ) : (
+                              <GltfModel
+                                url={item.url}
+                                layerVisibility={layerVisibility}
+                                xRayOpacity={xRayOpacity}
+                                completedElements={completedElements}
+                                onElementCounts={(counts) => setCategoryCounts(counts)}
+                                onClick={handleModelClick}
+                                onPointerDown={(e: any) => {
+                                  const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                                  const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                                  pointerDownPosRef.current = { x, y }
+                                }}
+                              />
+                            )}
+                          </group>
+                        ))
+                    ) : !safeUrl || safeUrl.trim() === "" ? null : isIfcUrlOrFile(activeModelUrl, fileName) ? (
                       <IfcCanvasModel
                         url={safeUrl}
                         layerVisibility={layerVisibility}
