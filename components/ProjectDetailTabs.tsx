@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import dynamic from 'next/dynamic'
 import ProjectFiles from "@/components/ProjectFiles"
 import ProjectReminders from "@/components/ProjectReminders"
@@ -99,7 +99,16 @@ interface ProjectDetailTabsProps {
 
 export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState("kunya")
+  const searchParams = useSearchParams()
+  const initialTabParam = searchParams?.get("tab")
+  const [activeTab, setActiveTab] = useState(initialTabParam || "kunya")
+
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab")
+    if (tabParam) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
   const [isEditing, setIsEditing] = useState(false)
   const [isTkgmModalOpen, setIsTkgmModalOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<InspectionReport | null>(null)

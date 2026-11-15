@@ -38,7 +38,8 @@ interface AiBlueprintAnalysisModalProps {
   documentTitle: string;
   documentUrl: string;
   projectId: string;
-  onSuccessTransfer?: () => void;
+  selectedDiscipline?: string;
+  onSuccessTransfer?: (result?: BlueprintAnalysisResult) => void;
 }
 
 const ANALYSIS_STEPS = [
@@ -53,6 +54,7 @@ export default function AiBlueprintAnalysisModal({
   documentTitle,
   documentUrl,
   projectId,
+  selectedDiscipline = "Mimari",
   onSuccessTransfer,
 }: AiBlueprintAnalysisModalProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -98,12 +100,15 @@ export default function AiBlueprintAnalysisModal({
       setProgress(100);
 
       // Fetch actual parsed data from Server Action (Prisma Transaction writes to DB)
-      const result = await analyzeBlueprintPdf(documentUrl, projectId);
+      const result = await analyzeBlueprintPdf(documentUrl, projectId, selectedDiscipline);
       if (isMounted) {
         setAnalysisResult(result);
         setIsAnalyzing(false);
         setHasTransferred(true);
-        toast.success("AI Blueprint Analizi Tamamlandı ve Prisma BoQ Veritabanına Yazıldı! ✨", { icon: "🧠" });
+        if (onSuccessTransfer && result.success) {
+          onSuccessTransfer(result);
+        }
+        toast.success(`AI Blueprint Analizi (${selectedDiscipline}) Tamamlandı ve Prisma BoQ Veritabanına Yazıldı! ✨`, { icon: "🧠" });
       }
     };
 
@@ -112,7 +117,7 @@ export default function AiBlueprintAnalysisModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, documentUrl, projectId]);
+  }, [isOpen, documentUrl, projectId, selectedDiscipline]);
 
   const handleTransferToBoQ = async () => {
     if (!analysisResult) return;
@@ -120,10 +125,10 @@ export default function AiBlueprintAnalysisModal({
     try {
       const res = await transferBlueprintToBoQ(projectId, analysisResult.boqItems);
       if (res.success) {
-        toast.success(res.message || "12 Kalem Metraj BoQ tablosuna aktarıldı!");
+        toast.success(res.message || "Metraj kalemleri BoQ tablosuna aktarıldı!");
         setHasTransferred(true);
         if (onSuccessTransfer) {
-          onSuccessTransfer();
+          onSuccessTransfer(analysisResult);
         }
       } else {
         toast.error(res.error || "Aktarım sırasında bir hata oluştu.");
@@ -147,12 +152,15 @@ export default function AiBlueprintAnalysisModal({
               <Sparkles className="h-6 w-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
                   AI Blueprint Vision & Pafta Analizi
                 </h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
                   Gemini Vision Ready
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  Disiplin: {selectedDiscipline}
                 </span>
               </div>
               <p className="text-xs text-slate-400 truncate max-w-md sm:max-w-xl">
@@ -266,12 +274,12 @@ export default function AiBlueprintAnalysisModal({
                   type="button"
                   onClick={() => {
                     onClose();
-                    if (onSuccessTransfer) onSuccessTransfer();
+                    if (onSuccessTransfer) onSuccessTransfer(analysisResult || undefined);
                     else window.location.reload();
                   }}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 px-3.5 py-2.5 text-xs font-bold text-slate-300 hover:text-white border border-slate-700 transition cursor-pointer whitespace-nowrap"
                 >
-                  <span>Kapat & Yenile</span>
+                  <span>Kapat & 3D Sahneye Dön</span>
                 </button>
               </div>
             </div>

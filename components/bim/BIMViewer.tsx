@@ -95,7 +95,8 @@ export interface Extruded3DBoxMeshData {
  * 3D blok verisi üretir.
  */
 export function generate3DFrom2DData(
-  elements: Blueprint2DCoordinateElement[] = DEFAULT_AI_EXTRUSION_COORDINATES
+  elements: Blueprint2DCoordinateElement[] = DEFAULT_AI_EXTRUSION_COORDINATES,
+  defaultDiscipline?: string
 ): {
   groupedByDiscipline: Record<
     "Mimari" | "Statik" | "Elektrik" | "Mekanik",
@@ -146,7 +147,7 @@ export function generate3DFrom2DData(
     const centerY = baseY + height / 2
     const centerZ = (startY + endY) / 2
 
-    const rawDisc = (el.disiplin || "Mimari").toLowerCase()
+    const rawDisc = (el.disiplin || defaultDiscipline || "Mimari").toLowerCase()
     let disciplineGroup: "Mimari" | "Statik" | "Elektrik" | "Mekanik" = "Mimari"
     let categoryKey: "mimari" | "statik" | "elektrik" | "mekanik" = "mimari"
     let color = "#f97316" // Mimari
@@ -203,27 +204,26 @@ export function generate3DFrom2DData(
 }
 
 /**
- * ADIM 2: R3F ile 2D'den 3D'ye Geometri Motoru (<GeometryEngine2Dto3D data={boqData} />)
- * Gelen verilerde map işlemi yaparak her bir duvar veya yapısal eleman için startX, startY, endX, endY
- * değerlerinden duvar uzunluğunu (width) ve açısını hesaplar, height ve depth ile
- * <boxGeometry args={[width, height, depth]}> kullanarak 2D çizgiyi 3D bloğa dönüştürür.
+ * ADIM 2 & ADIM 3: R3F ile 2D'den 3D'ye Geometri Motoru (<GeometryEngine2Dto3D data={aiData} discipline={selectedDiscipline} />)
  */
 export function GeometryEngine2Dto3D({
   data,
+  discipline,
   layerVisibility = { mimari: true, statik: true, elektrik: true, mekanik: true },
   xRayOpacity = 100,
   onClick,
   onPointerDown,
 }: {
   data: Blueprint2DCoordinateElement[]
+  discipline?: string
   layerVisibility?: Record<"mimari" | "statik" | "elektrik" | "mekanik", boolean>
   xRayOpacity?: number
   onClick?: (e: any) => void
   onPointerDown?: (e: any) => void
 }) {
   const { groupedByDiscipline } = React.useMemo(
-    () => generate3DFrom2DData(data),
-    [data]
+    () => generate3DFrom2DData(data, discipline),
+    [data, discipline]
   )
 
   const alpha = xRayOpacity / 100
@@ -372,6 +372,8 @@ export interface BIMViewerProps {
   models?: FederatedModelItem[]
   boqData?: Blueprint2DCoordinateElement[]
   aiData?: Blueprint2DCoordinateElement[]
+  discipline?: string
+  hasAiAnalysis?: boolean
 }
 
 export default function BIMViewer(props: BIMViewerProps) {
@@ -383,7 +385,10 @@ export default function BIMViewer(props: BIMViewerProps) {
   return (
     <InternalBimViewer
       {...props}
+      aiData={props.aiData}
       boqData={props.aiData || props.boqData}
+      discipline={props.discipline}
+      hasAiAnalysis={props.hasAiAnalysis}
       models={validModels}
     />
   )

@@ -372,12 +372,16 @@ export default function AdminSidebar({
     return item.label
   }
 
+  const urlProjectId = useMemo(() => {
+    const match = pathname?.match(/\/admin\/projects\/([^\/\?]+)/)
+    return match && match[1] && match[1] !== "new" ? match[1] : null
+  }, [pathname])
+
   useEffect(() => {
-    const match = pathname?.match(/\/admin\/projects\/([^\/]+)/)
-    if (match && match[1] && match[1] !== "new") {
-      setActiveProjectId(match[1])
+    if (urlProjectId) {
+      setActiveProjectId(urlProjectId)
       try {
-        localStorage.setItem("nexa_active_project_id", match[1])
+        localStorage.setItem("nexa_active_project_id", urlProjectId)
       } catch {}
     } else {
       try {
@@ -397,9 +401,12 @@ export default function AdminSidebar({
         })
         .catch(() => {})
     }
-  }, [pathname])
+  }, [pathname, urlProjectId])
 
-  const stageGateHref = activeProjectId ? `/franchise/stage-gates/${activeProjectId}` : "/franchise/stage-gates"
+  const effectiveProjectId = urlProjectId || activeProjectId
+  const stageGateHref = effectiveProjectId ? `/franchise/stage-gates/${effectiveProjectId}` : "/franchise/stage-gates"
+  const bimHref = effectiveProjectId ? `/admin/projects/${effectiveProjectId}?tab=bim` : "/admin/projects"
+  const boqHref = effectiveProjectId ? `/admin/projects/${effectiveProjectId}/boq` : "/admin/boq"
 
   const userRole = (session?.user as any)?.role as string
   const userCompanyType = propCompanyType || (session?.user as any)?.companyType as string | undefined
@@ -508,8 +515,18 @@ export default function AdminSidebar({
   )
 
   const effectiveMenuItems = moduleFilteredItems.map((item) => {
-    if (item.label === "İdari İzinler" && activeProjectId) {
+    if (item.label === "İdari İzinler" && effectiveProjectId) {
       return { ...item, href: stageGateHref }
+    }
+    if (
+      item.href === "/admin/bim" ||
+      item.label === "BIM & 3D Modeller" ||
+      item.label === "3D Modeller (Kusurlar)"
+    ) {
+      return { ...item, href: bimHref }
+    }
+    if (item.href === "/admin/boq" || item.label === "Keşif & Metraj (BoQ)") {
+      return { ...item, href: boqHref }
     }
     return item
   })
@@ -800,12 +817,15 @@ export default function AdminSidebar({
                   {(isOpenCategory || isCollapsed) && (
                     <div className={`space-y-0.5 mt-1 ${!isCollapsed ? "pl-2 border-l border-slate-200 dark:border-slate-800/80 ml-2.5 mb-2" : ""}`}>
                       {items.map((item) => {
-                        const isActive = pathname === item.href || (item.label === "Keşif & Metraj (BoQ)" && pathname?.includes("/boq"))
+                        const isActive =
+                          pathname === item.href ||
+                          (item.label === "Keşif & Metraj (BoQ)" && pathname?.includes("/boq")) ||
+                          (item.label === "BIM & 3D Modeller" && pathname?.includes("/bim"))
                         const Icon = item.icon
                         const displayLabel = getLocalizedLabel(item)
                         return (
                           <Link
-                            key={item.href}
+                            key={`${item.category}-${item.label}`}
                             href={item.href}
                             locale="tr"
                             onClick={() => setIsOpen(false)}

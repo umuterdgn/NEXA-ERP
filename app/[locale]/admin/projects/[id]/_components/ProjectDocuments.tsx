@@ -41,7 +41,8 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
   const [uploading, setUploading] = useState(false);
   const [localFile, setLocalFile] = useState<File | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [selectedAiDoc, setSelectedAiDoc] = useState<{ title: string; url: string } | null>(null);
+  const [selectedAiDoc, setSelectedAiDoc] = useState<{ title: string; url: string; discipline: string } | null>(null);
+  const [docDisciplines, setDocDisciplines] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     title: "",
     type: "BLUEPRINT",
@@ -288,16 +289,40 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* ADIM 3: AI ile Projeyi Analiz Et Butonu */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* ADIM 2: Kullanıcı Kontrollü Manuel Disiplin Seçici (Tagging) */}
+                  <select
+                    value={docDisciplines[doc.fileUrl] || "Mimari"}
+                    onChange={(e) =>
+                      setDocDisciplines((prev) => ({
+                        ...prev,
+                        [doc.fileUrl]: e.target.value,
+                      }))
+                    }
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-amber-500/40 text-amber-300 text-xs font-bold focus:outline-none focus:border-cyan-400 cursor-pointer"
+                    title="Pafta Disiplinini Seçin (Mimari, Statik, Elektrik, Mekanik, Harita)"
+                  >
+                    {["Mimari", "Statik", "Elektrik", "Mekanik", "Harita"].map((disc) => (
+                      <option key={disc} value={disc} className="bg-slate-900 text-white">
+                        {disc}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* ADIM 2 & ADIM 3: AI ile Projeyi Analiz Et Butonu */}
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedAiDoc({ title: doc.title, url: doc.fileUrl });
+                      const chosenDiscipline = docDisciplines[doc.fileUrl] || "Mimari";
+                      setSelectedAiDoc({
+                        title: doc.title,
+                        url: doc.fileUrl,
+                        discipline: chosenDiscipline,
+                      });
                       setIsAiModalOpen(true);
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all shadow-sm cursor-pointer"
-                    title="Yapay Zeka ile Paftayı / PDF'i Analiz Et"
+                    title="Seçilen Disiplin Bağlamıyla Yapay Zeka Analizini Başlat"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                     <span>AI ile Projeyi Analiz Et</span>
@@ -545,6 +570,7 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
           documentTitle={selectedAiDoc.title}
           documentUrl={selectedAiDoc.url}
           projectId={projectId}
+          selectedDiscipline={selectedAiDoc.discipline}
           onSuccessTransfer={() => {
             fetchDocuments();
           }}

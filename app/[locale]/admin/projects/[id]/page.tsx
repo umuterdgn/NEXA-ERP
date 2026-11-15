@@ -229,6 +229,23 @@ export default async function ProjectDetailPage({
       })),
   ]
 
+  const extractSafeExt = (name?: string | null, url?: string | null, type?: string | null) => {
+    if (type && !type.includes("/") && type.length <= 6 && !["blueprint", "other", "specification", "contract"].includes(type.toLowerCase())) {
+      return type.toLowerCase().replace(/^\./, "")
+    }
+    const cleanName = (name || "").split("?")[0].trim()
+    if (cleanName.includes(".")) {
+      const ext = cleanName.split(".").pop()?.toLowerCase()
+      if (ext && ext.length <= 6) return ext
+    }
+    const lastSeg = ((url || "").split("?")[0].split("/").pop() || "").trim()
+    if (lastSeg.includes(".")) {
+      const ext = lastSeg.split(".").pop()?.toLowerCase()
+      if (ext && ext.length <= 6) return ext
+    }
+    return "pdf"
+  }
+
   const filteredDocumentFiles = [
     ...rawBimRecords
       .filter((f) => !is3DExtension(f.fileName || f.fileUrl, f.fileType))
@@ -237,7 +254,7 @@ export default async function ProjectDetailPage({
         projectId: f.projectId,
         fileName: f.fileName,
         fileUrl: f.fileUrl,
-        fileType: (f.fileType || f.fileName?.split(".").pop() || "pdf").toLowerCase(),
+        fileType: extractSafeExt(f.fileName, f.fileUrl, f.fileType),
         uploadedAt: f.uploadedAt,
       })),
     ...rawDocRecords
@@ -247,7 +264,7 @@ export default async function ProjectDetailPage({
         projectId: d.projectId || resolvedParams.id,
         fileName: d.title,
         fileUrl: d.fileUrl,
-        fileType: (d.fileUrl?.split(".").pop() || d.type || "pdf").toLowerCase(),
+        fileType: extractSafeExt(d.title, d.fileUrl, d.type),
         uploadedAt: d.createdAt,
       })),
     ...rawProjFiles
@@ -257,7 +274,7 @@ export default async function ProjectDetailPage({
         projectId: f.projectId,
         fileName: f.name,
         fileUrl: f.url,
-        fileType: (f.name?.split(".").pop() || f.url?.split(".").pop() || "pdf").toLowerCase(),
+        fileType: extractSafeExt(f.name, f.url),
         uploadedAt: f.createdAt,
       })),
   ]

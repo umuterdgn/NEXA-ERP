@@ -251,6 +251,8 @@ interface BimViewerProps {
   models?: FederatedModelItem[]
   boqData?: Blueprint2DCoordinateItem[]
   aiData?: Blueprint2DCoordinateItem[]
+  discipline?: string
+  hasAiAnalysis?: boolean
 }
 
 // React Three Fiber Loading Overlay
@@ -660,7 +662,8 @@ const DEFAULT_AI_EXTRUSION_ITEMS: Blueprint2DCoordinateItem[] = [
  * ve disiplinlere ("Mimari", "Statik", "Elektrik", "Mekanik") göre gruplar.
  */
 export function generate3DFrom2DData(
-  elements: Blueprint2DCoordinateItem[] = DEFAULT_AI_EXTRUSION_ITEMS
+  elements: Blueprint2DCoordinateItem[] = DEFAULT_AI_EXTRUSION_ITEMS,
+  defaultDiscipline?: string
 ): {
   groupedByDiscipline: Record<
     "Mimari" | "Statik" | "Elektrik" | "Mekanik",
@@ -708,7 +711,7 @@ export function generate3DFrom2DData(
     const centerY = baseY + height / 2
     const centerZ = (startY + endY) / 2
 
-    const rawDisc = (el.disiplin || "Mimari").toLowerCase()
+    const rawDisc = (el.disiplin || defaultDiscipline || "Mimari").toLowerCase()
     let disciplineGroup: "Mimari" | "Statik" | "Elektrik" | "Mekanik" = "Mimari"
     let categoryKey: BimCategoryKey = "mimari"
     let color = "#f97316"
@@ -765,12 +768,13 @@ export function generate3DFrom2DData(
 
 /**
  * ADIM 2 & ADIM 3: React Three Fiber 2D->3D Geometri Motoru (GeometryEngine2Dto3D)
- * <GeometryEngine2Dto3D data={boqData} />
+ * <GeometryEngine2Dto3D data={aiData} discipline={selectedDiscipline} />
  * Her bir duvar/eleman için startX, startY, endX, endY, height koordinatlarından
  * genişlik (width) ve açı hesaplar, <boxGeometry args={[width, height, depth]} /> ile 3D bloğa kaldırır (Extrude).
  */
 export function GeometryEngine2Dto3D({
   data,
+  discipline,
   layerVisibility = { statik: true, mimari: true, elektrik: true, mekanik: true },
   xRayOpacity = 100,
   completedElements,
@@ -779,6 +783,7 @@ export function GeometryEngine2Dto3D({
   onPointerDown,
 }: {
   data: Blueprint2DCoordinateItem[]
+  discipline?: string
   layerVisibility?: Record<BimCategoryKey, boolean>
   xRayOpacity?: number
   completedElements?: Record<string, boolean>
@@ -787,8 +792,8 @@ export function GeometryEngine2Dto3D({
   onPointerDown?: (e: any) => void
 }) {
   const { groupedByDiscipline, counts } = React.useMemo(
-    () => generate3DFrom2DData(data),
-    [data]
+    () => generate3DFrom2DData(data, discipline),
+    [data, discipline]
   )
 
   useEffect(() => {
@@ -945,9 +950,16 @@ class BimViewerErrorBoundary extends Component<
   }
 }
 
-export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models, boqData, aiData }: BimViewerProps) {
+export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models, boqData, aiData, discipline, hasAiAnalysis }: BimViewerProps) {
   const incomingAiData = aiData && aiData.length > 0 ? aiData : boqData
   const effectiveUrl = (bimUrl || url || ifcUrl || (models && models.length > 0 ? models[0].url : "") || "").trim()
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string>(discipline || "Mimari")
+
+  useEffect(() => {
+    if (discipline) {
+      setSelectedDiscipline(discipline)
+    }
+  }, [discipline])
 
   // Federated BIM Disiplin Modelleri (Veritabanından Gelen Gerçek Modeller - Sadece .ifc, .gltf, .glb)
   const [federatedModels, setFederatedModels] = useState<FederatedModelItem[]>(() => {
@@ -1099,26 +1111,56 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
     incomingAiData && incomingAiData.length > 0 ? incomingAiData : DEFAULT_AI_EXTRUSION_ITEMS
   )
   const [extrusionSource, setExtrusionSource] = useState<string>("PRISMA_AI_ANALYSIS")
+  const [hasPdfAiAnalysis, setHasPdfAiAnalysis] = useState<boolean>(
+    Boolean((incomingAiData && incomingAiData.length > 0) || hasAiAnalysis)
+  )
+  const [isCheckingAiAnalysis, setIsCheckingAiAnalysis] = useState<boolean>(false)
 
   useEffect(() => {
     if (incomingAiData && incomingAiData.length > 0) {
       setExtrusionElements2D(incomingAiData)
       setExtrusionSource("PROP_AI_DATA")
+      setHasPdfAiAnalysis(true)
+      setIsCheckingAiAnalysis(false)
       return
     }
+    if (hasAiAnalysis) {
+      setHasPdfAiAnalysis(true)
+    }
+
+    let isMounted = true
+    setIsCheckingAiAnalysis(true)
     import("@/actions/ai-blueprint-parser")
       .then(({ getProject2DExtrusionData }) => {
         getProject2DExtrusionData(projectId, isNon3DActiveFile ? activeModelUrl : undefined)
           .then((res) => {
-            if (res?.success && res.elements && res.elements.length > 0) {
+            if (!isMounted) return
+            if (res?.success && res.hasAiAnalysis && res.elements && res.elements.length > 0) {
               setExtrusionElements2D(res.elements)
               setExtrusionSource(res.source)
+              setHasPdfAiAnalysis(true)
+              if (res.discipline && !discipline) {
+                setSelectedDiscipline(res.discipline)
+              }
+            } else {
+              setHasPdfAiAnalysis(Boolean(hasAiAnalysis))
             }
           })
-          .catch((err) => console.warn("2D->3D Extrusion verisi çekilemedi:", err))
+          .catch((err) => {
+            console.warn("2D->3D Extrusion verisi çekilemedi:", err)
+          })
+          .finally(() => {
+            if (isMounted) setIsCheckingAiAnalysis(false)
+          })
       })
-      .catch(() => {})
-  }, [projectId, incomingAiData, activeModelUrl, isNon3DActiveFile])
+      .catch(() => {
+        if (isMounted) setIsCheckingAiAnalysis(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [projectId, incomingAiData, activeModelUrl, isNon3DActiveFile, hasAiAnalysis, discipline])
 
   // Open layer panel automatically on desktop displays (>= 1024px), keep collapsed on mobile
   useEffect(() => {
@@ -2413,14 +2455,26 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
         )}
 
       {/* Main 3D Viewport - ADIM 2 & ADIM 3: R3F 2D->3D Otomatik Extrusion & Federated BIM */}
-      {engineMode === "canvas" || isNon3DActiveFile ? (
+      {isNon3DActiveFile && activeModelUrl && !hasPdfAiAnalysis && !isCheckingAiAnalysis ? (
+        <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} flex flex-col items-center justify-center p-8 text-center bg-slate-950`}>
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4 shadow-lg shadow-cyan-500/10">
+            <Layers className="w-8 h-8" />
+          </div>
+          <h4 className="text-white font-bold text-lg mb-2">
+            Lütfen önce dosyayı AI ile analiz edin
+          </h4>
+          <p className="text-slate-400 text-xs max-w-md leading-relaxed">
+            Seçilen PDF paftasının 3D sahnede duvar, kolon ve tesisat olarak çizilebilmesi için aşağıdaki &ldquo;Proje Evrakları ve Paftalar&rdquo; listesinden disiplini seçip &ldquo;AI ile Projeyi Analiz Et&rdquo; butonuna tıklayın.
+          </p>
+        </div>
+      ) : engineMode === "canvas" || isNon3DActiveFile ? (
         <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} ${isSnaggingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} bg-slate-950`}>
           {/* 2D->3D Otomatik Geometri (Extrusion) Bilgi Rozeti */}
           {(isNon3DActiveFile || (!federatedModels.length && (!safeUrl || safeUrl.trim() === ""))) && (
             <div className="absolute top-16 left-4 z-30 bg-slate-900/90 backdrop-blur-md border border-cyan-500/40 rounded-xl px-3.5 py-2 shadow-xl flex items-center gap-2 text-xs text-cyan-300 pointer-events-none">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               <span>
-                <strong>2D→3D R3F Extrusion Motoru Aktif:</strong> PDF/DWG &amp; Prisma BoQ koordinatlarından otomatik 3D model oluşturuldu ({extrusionElements2D.length} yapısal eleman • Kaynak: {extrusionSource}).
+                <strong>2D→3D R3F Extrusion Motoru Aktif ({selectedDiscipline}):</strong> PDF/DWG &amp; Prisma BoQ koordinatlarından otomatik 3D model oluşturuldu ({(incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D).length} yapısal eleman).
               </span>
             </div>
           )}
@@ -2433,34 +2487,14 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
           <ModelErrorBoundary
             fallback={(err, reset) => (
               <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} flex flex-col items-center justify-center p-6 text-center bg-slate-900/90 backdrop-blur-md`}>
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
+                <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4">
+                  <Layers className="w-8 h-8" />
                 </div>
-                <h4 className="text-white font-semibold text-base mb-2">Model Formatı Uyarısı</h4>
+                <h4 className="text-white font-semibold text-base mb-2">2D→3D Geometri Motoru</h4>
                 <p className="text-slate-400 text-xs max-w-md mb-5 leading-relaxed">
-                  Seçili dosya GLTF/GLB olarak çözümlenemedi ({err.message.slice(0, 100)}). IFC dosyanızı IFC motorunda
-                  açabilir veya 2D→3D Extrusion yapısını inceleyebilirsiniz.
+                  2D→3D Extrusion yapısını doğrudan inceleyebilirsiniz.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  {effectiveUrl && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEngineMode("ifc")
-                        setActiveModelUrl(effectiveUrl)
-                      }}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5"
-                    >
-                      🏛️ IFC Motorunda Aç
-                    </button>
-                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -2506,9 +2540,10 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                 <Bounds clip fit margin={1.2} observe>
                   <Center>
                     {isNon3DActiveFile ? (
-                      /* ADIM 2 & ADIM 3: Seçilen dosya .pdf veya .dwg ise standart 3D Loader'ları KESİNLİKLE ÇALIŞTIRMA! Doğrudan <GeometryEngine2Dto3D data={aiData} /> çizdir */
+                      /* ADIM 2 & ADIM 3: Seçilen dosya .pdf veya .dwg ise standart 3D Loader'ları KESİNLİKLE ÇALIŞTIRMA! Doğrudan <GeometryEngine2Dto3D data={aiData} discipline={selectedDiscipline} /> çizdir */
                       <GeometryEngine2Dto3D
                         data={incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D}
+                        discipline={selectedDiscipline}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                         completedElements={completedElements}
@@ -2550,6 +2585,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                       ) : (
                         <GeometryEngine2Dto3D
                           data={incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D}
+                          discipline={selectedDiscipline}
                           layerVisibility={layerVisibility}
                           xRayOpacity={xRayOpacity}
                           completedElements={completedElements}
@@ -2599,6 +2635,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
                     ) : (
                       <GeometryEngine2Dto3D
                         data={incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D}
+                        discipline={selectedDiscipline}
                         layerVisibility={layerVisibility}
                         xRayOpacity={xRayOpacity}
                         completedElements={completedElements}
