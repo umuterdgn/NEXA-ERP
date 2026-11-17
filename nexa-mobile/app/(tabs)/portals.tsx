@@ -685,6 +685,8 @@ function SubcontractorPortal() {
 /*                    3. SÜRÜCÜ & ROTA PORTALI                                */
 /* ========================================================================== */
 function DriverRoutePortal({ currentUser }: { currentUser?: any }) {
+  const { theme } = useMobileTheme();
+  const isDark = theme === "dark" || theme === "monochrome";
   const [gatePass, setGatePass] = useState<any>(null);
   const [isDriving, setIsDriving] = useState(false);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);

@@ -28,7 +28,7 @@ import {
   SITE_CENTER_REGION,
 } from "../../data/mockBleData";
 import { useMobileTheme } from "../../context/ThemeContext";
-import { geofencesApi } from "../../apiClient";
+import { geofencesApi } from "../../../apiClient";
 import {
   normalizeCoordinates,
   MobileGeofence,

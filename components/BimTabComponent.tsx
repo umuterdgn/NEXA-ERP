@@ -17,7 +17,8 @@ import {
   deleteBimFile,
   getProjectBimFiles,
 } from "@/app/actions/project"
-import { Sparkles } from "lucide-react"
+import { Sparkles, Eye, Layers } from "lucide-react"
+import Blueprint2DViewerModal from "@/components/bim/Blueprint2DViewerModal"
 import BIMViewer, {
   type FederatedModelItem,
   isValid3DModelFile,
@@ -151,6 +152,8 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   const [analyzedPdfsMap, setAnalyzedPdfsMap] = useState<
     Record<string, { discipline: string; elements: Blueprint2DCoordinateElement[] }>
   >({})
+  const [selected2DModalDoc, setSelected2DModalDoc] = useState<ProjectDocItem | null>(null)
+  const [isFederatedMode, setIsFederatedMode] = useState<boolean>(true)
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [selectedAiDoc, setSelectedAiDoc] = useState<{ title: string; url: string; discipline: string } | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -159,6 +162,34 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   const [showUploader, setShowUploader] = useState(false)
   const [isSwitchingModel, setIsSwitchingModel] = useState<string | null>(null)
   const [isDeletingModel, setIsDeletingModel] = useState<string | null>(null)
+
+  // Bütünleşik Model (Tüm Katmanlar Birlikte): Tüm analiz edilmiş paftalardaki koordinatları birleştir
+  const federatedElements = React.useMemo(() => {
+    const list: Blueprint2DCoordinateElement[] = []
+    Object.entries(analyzedPdfsMap).forEach(([docUrl, item]) => {
+      if (item?.elements && Array.isArray(item.elements)) {
+        item.elements.forEach((el) => {
+          list.push({
+            ...el,
+            disiplin: el.disiplin || item.discipline || inferDefaultDiscipline(docUrl),
+          })
+        })
+      }
+    })
+    return list
+  }, [analyzedPdfsMap])
+
+  const federatedCounts = React.useMemo(() => {
+    const counts = { mimari: 0, statik: 0, elektrik: 0, mekanik: 0 }
+    federatedElements.forEach((el) => {
+      const d = (el.disiplin || "").toLowerCase()
+      if (d.includes("statik")) counts.statik++
+      else if (d.includes("elektrik")) counts.elektrik++
+      else if (d.includes("mekanik") || d.includes("tesisat") || d.includes("hvac")) counts.mekanik++
+      else counts.mimari++
+    })
+    return counts
+  }, [federatedElements])
 
   // Sync state if project prop updates
   useEffect(() => {
@@ -571,15 +602,57 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           {/* Active Model Indicator Header Bar (Normal Flow above 3D Canvas) */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2.5 bg-slate-900/90 rounded-xl border border-slate-800 backdrop-blur-md shadow-lg">
             <div className="flex items-center gap-2 text-xs flex-wrap">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-slate-400 font-medium">Açık Model:</span>
-              <span className="text-white font-bold truncate max-w-[200px] sm:max-w-md">
-                {resolvedActiveFileName || bimUrl.split("/").pop() || "3D Model"}
-              </span>
-              {analyzedPdfsMap[bimUrl] && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  ✓ 2D→3D Extrusion ({analyzedPdfsMap[bimUrl].discipline})
+              {/* Bütünleşik Model vs Tekil Model Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !isFederatedMode
+                  setIsFederatedMode(next)
+                  if (next) {
+                    toast.success("🌐 Bütünleşik 3D Model: Tüm analiz edilmiş katmanlar (Mimari, Statik, MEP) birleştirildi!")
+                  } else {
+                    toast("📄 Tekil Pafta/Model görünümüne geçildi.")
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                  isFederatedMode
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+                    : "bg-slate-800/80 hover:bg-slate-800 text-slate-300 border-slate-700"
+                }`}
+                title="Tüm pafta ve modelleri tek bir 3D sahnede birleşik göster"
+              >
+                <span>🌐</span>
+                <span>{isFederatedMode ? "Bütünleşik Model (Tüm Katmanlar)" : "Tekil Model Modu"}</span>
+              </button>
+
+              <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-slate-400 font-medium">Açık:</span>
+                <span className="text-white font-bold truncate max-w-[160px] sm:max-w-xs">
+                  {isFederatedMode
+                    ? `Bütünleşik Model (${federatedElements.length > 0 ? federatedElements.length : (analyzedPdfsMap[bimUrl]?.elements?.length || 0)} Yapısal Eleman)`
+                    : (resolvedActiveFileName || bimUrl.split("/").pop() || "3D Model")}
                 </span>
+              </div>
+
+              {/* Katman İstatistik Rozetleri */}
+              {isFederatedMode && federatedElements.length > 0 && (
+                <div className="hidden xl:flex items-center gap-1 text-[10px]">
+                  <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 font-mono">
+                    Statik: {federatedCounts.statik}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono">
+                    Mimari: {federatedCounts.mimari}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
+                    Mekanik: {federatedCounts.mekanik}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 border border-yellow-500/30 font-mono">
+                    Elektrik: {federatedCounts.elektrik}
+                  </span>
+                </div>
               )}
             </div>
 
@@ -588,12 +661,12 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
               onClick={() => setShowUploader(true)}
               className="px-3 py-1.5 bg-blue-600/90 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold border border-blue-400/40 transition-colors flex items-center gap-1 shadow-md active:scale-95"
             >
-              <span>+ Model Değiştir</span>
+              <span>+ Model Yükle</span>
             </button>
           </div>
 
           <div className="relative w-full h-[620px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
-            {/* ADIM 3: Eski sarı uyarı kutusu kaldırıldı — doğrudan 3D BIMViewer / GeometryEngine2Dto3D render ediliyor */}
+            {/* 3D BIMViewer / GeometryEngine2Dto3D render ediliyor */}
             <Suspense
               fallback={
                 <div className="w-full h-full min-h-[620px] bg-slate-950 rounded-2xl border border-slate-800 flex flex-col items-center justify-center shadow-2xl">
@@ -609,13 +682,22 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                 ifcUrl={bimUrl}
                 projectId={project.id}
                 fileName={resolvedActiveFileName}
-                aiData={analyzedPdfsMap[bimUrl]?.elements}
-                discipline={
-                  analyzedPdfsMap[bimUrl]?.discipline ||
-                  docDisciplines[bimUrl] ||
-                  selectedDiscipline
+                aiData={
+                  isFederatedMode && federatedElements.length > 0
+                    ? federatedElements
+                    : analyzedPdfsMap[bimUrl]?.elements
                 }
-                hasAiAnalysis={Boolean(analyzedPdfsMap[bimUrl])}
+                discipline={
+                  isFederatedMode && federatedElements.length > 0
+                    ? "Bütünleşik"
+                    : analyzedPdfsMap[bimUrl]?.discipline ||
+                      docDisciplines[bimUrl] ||
+                      selectedDiscipline
+                }
+                hasAiAnalysis={
+                  (isFederatedMode && federatedElements.length > 0) ||
+                  Boolean(analyzedPdfsMap[bimUrl])
+                }
                 models={bimFiles.map((f, i) => {
                   const lower = (f.fileName || "").toLowerCase()
                   const cat = lower.includes("statik")
@@ -961,7 +1043,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                     )}
                   </div>
 
-                  {/* ADIM 2: Kullanıcı Kontrollü Manuel Disiplin Seçici (Tagging) + AI Analiz + 3D Aç Butonları */}
+                  {/* ADIM 2: Kullanıcı Kontrollü Manuel Disiplin Seçici (Tagging) + 2D Görüntüle + AI Analiz + 3D Aç Butonları */}
                   <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-700/60">
                     <select
                       value={currentDiscipline}
@@ -982,6 +1064,17 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                       ))}
                     </select>
 
+                    {/* 2D Pafta Görüntüle Modal Butonu */}
+                    <button
+                      type="button"
+                      onClick={() => setSelected2DModalDoc(doc)}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-amber-400/50 text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
+                      title="2D Paftayı Yüksek Çözünürlükte İncele (Zoom, Döndür, Yazdır)"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-amber-400" />
+                      <span>2D Gör</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -1000,7 +1093,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                       title="Seçilen Disiplin Bağlamıyla Yapay Zeka Analizini Başlat"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span>✨ AI ile Projeyi Analiz Et</span>
+                      <span>✨ AI ile 3D Analiz Et</span>
                     </button>
 
                     <button
@@ -1018,7 +1111,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                       className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
                       title="3D Canvas'ta Aç (Analiz Edildiyse 2D→3D Extrusion Çizer)"
                     >
-                      <span>📄 Aç</span>
+                      <span>3D Aç</span>
                     </button>
                   </div>
                 </div>
@@ -1053,6 +1146,59 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             setShowUploader(false)
             viewportContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
             router.refresh()
+          }}
+        />
+      )}
+
+      {/* 2D Pafta & Blueprint Detaylı Önizleme Modal'ı */}
+      {selected2DModalDoc && (
+        <Blueprint2DViewerModal
+          isOpen={Boolean(selected2DModalDoc)}
+          onClose={() => setSelected2DModalDoc(null)}
+          fileName={selected2DModalDoc.fileName}
+          fileUrl={selected2DModalDoc.fileUrl}
+          fileType={selected2DModalDoc.fileType || "pdf"}
+          discipline={
+            docDisciplines[selected2DModalDoc.fileUrl] ||
+            analyzedPdfsMap[selected2DModalDoc.fileUrl]?.discipline ||
+            inferDefaultDiscipline(selected2DModalDoc.fileName)
+          }
+          onDisciplineChange={(newDisc) => {
+            setDocDisciplines((prev) => ({
+              ...prev,
+              [selected2DModalDoc.fileUrl]: newDisc,
+            }))
+          }}
+          isAnalyzed={Boolean(analyzedPdfsMap[selected2DModalDoc.fileUrl])}
+          elementCount={
+            analyzedPdfsMap[selected2DModalDoc.fileUrl]?.elements?.length || 0
+          }
+          onTriggerAiAnalysis={() => {
+            const currentDisc =
+              docDisciplines[selected2DModalDoc.fileUrl] ||
+              inferDefaultDiscipline(selected2DModalDoc.fileName)
+            setSelectedAiDoc({
+              title: selected2DModalDoc.fileName,
+              url: selected2DModalDoc.fileUrl,
+              discipline: currentDisc,
+            })
+            setIsAiModalOpen(true)
+          }}
+          onOpenIn3D={() => {
+            const currentDisc =
+              docDisciplines[selected2DModalDoc.fileUrl] ||
+              inferDefaultDiscipline(selected2DModalDoc.fileName)
+            setBimUrl(selected2DModalDoc.fileUrl)
+            setActiveFileName(selected2DModalDoc.fileName)
+            setSelectedDiscipline(currentDisc)
+            setShowUploader(false)
+            viewportContainerRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            })
+            toast.success(
+              `"${selected2DModalDoc.fileName}" 3D ortama yüklendi!`
+            )
           }}
         />
       )}

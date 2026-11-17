@@ -3,15 +3,21 @@
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * AR (Augmented Reality) Field BIM Viewer
- * Real-world camera feed + 3D BIM model overlay with WebGL R3F, Bounds, Center and Alpha transparency
+ * Features:
+ * - "Duvarın Arkasını Gör" (X-Ray See-Through-Walls Mode) for physical site inspections
+ * - Semi-transparent architectural walls with vivid MEP pipes, electrical conduits & structural columns
+ * - Dual-support for GLTF models and 2D-to-3D AI blueprint extrusion coordinates
+ * - Real-world camera feed with WebGL R3F, bounds fitting, snapshot capture & wall alignment reticle
  */
 
-import React, { useEffect, useRef, useState, useCallback, Suspense } from "react"
+import React, { useEffect, useRef, useState, useCallback, Suspense, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Canvas } from "@react-three/fiber"
 import { OrbitControls, useGLTF, Center, Bounds } from "@react-three/drei"
 import * as THREE from "three"
 import { toast } from "react-hot-toast"
+import type { Blueprint2DCoordinateElement } from "@/actions/ai-blueprint-parser"
+import { generate3DFrom2DData } from "@/components/bim/BIMViewer"
 
 interface ARViewerProps {
   project: {
@@ -22,20 +28,24 @@ interface ARViewerProps {
     ifcModelUrl?: string | null
   }
   modelUrl: string
+  aiData?: Blueprint2DCoordinateElement[]
+  initialXRay?: boolean
 }
 
-// 3D Model Renderer with dynamic opacity, scale and elevation
+// 3D GLTF Model Renderer with X-Ray ("Duvarın Arkasını Gör") logic
 function AR3DModel({
   url,
   scale,
   opacity,
   elevation,
+  isXRayMode,
   onLoaded,
 }: {
   url: string
   scale: number
   opacity: number
   elevation: number
+  isXRayMode: boolean
   onLoaded?: () => void
 }) {
   const { scene } = useGLTF(url, true)
@@ -50,15 +60,86 @@ function AR3DModel({
           if (!child.userData.isCloned) {
             child.material = child.material.clone()
             child.userData.isCloned = true
+            child.userData.origEmissive = child.material.emissive?.getHex() || 0
+            child.userData.origColor = child.material.color?.getHex() || 0xffffff
           }
-          child.material.transparent = opacity < 0.99
-          child.material.opacity = opacity
-          child.material.depthWrite = true
+
+          const name = (child.name || "").toLowerCase()
+          const isWallOrSlab =
+            name.includes("wall") ||
+            name.includes("duvar") ||
+            name.includes("slab") ||
+            name.includes("doseme") ||
+            name.includes("tabliye") ||
+            name.includes("alcipan") ||
+            name.includes("brick") ||
+            name.includes("tugla") ||
+            name.includes("facade") ||
+            name.includes("cephe")
+
+          const isMepOrStructure =
+            name.includes("pipe") ||
+            name.includes("boru") ||
+            name.includes("duct") ||
+            name.includes("kanal") ||
+            name.includes("hvac") ||
+            name.includes("sprinkler") ||
+            name.includes("kablo") ||
+            name.includes("cable") ||
+            name.includes("tava") ||
+            name.includes("column") ||
+            name.includes("kolon") ||
+            name.includes("beam") ||
+            name.includes("kiris") ||
+            name.includes("rebar") ||
+            name.includes("donati") ||
+            name.includes("tesisat") ||
+            name.includes("structure")
+
+          if (isXRayMode) {
+            if (isWallOrSlab) {
+              // Duvarın arkasını görmek için duvarlar %15 yarı saydam hayalet moduna geçer
+              child.material.transparent = true
+              child.material.opacity = 0.15
+              child.material.depthWrite = false
+              if (child.material.wireframe !== undefined) {
+                child.material.wireframe = false
+              }
+            } else if (isMepOrStructure) {
+              // Duvarın içindeki tesisat ve taşıyıcı elemanlar %100 opak ve parlak
+              child.material.transparent = false
+              child.material.opacity = 1.0
+              child.material.depthWrite = true
+              if (child.material.emissive) {
+                if (name.includes("pipe") || name.includes("boru") || name.includes("hvac")) {
+                  child.material.emissive.setHex(0x06b6d4) // Cyan neon
+                } else if (name.includes("sprinkler") || name.includes("fire") || name.includes("yangin")) {
+                  child.material.emissive.setHex(0xef4444) // Kırmızı neon
+                } else if (name.includes("kablo") || name.includes("cable") || name.includes("electric")) {
+                  child.material.emissive.setHex(0xeab308) // Sarı neon
+                } else {
+                  child.material.emissive.setHex(0x3b82f6) // Mavi neon kolon/kiriş
+                }
+              }
+            } else {
+              child.material.transparent = true
+              child.material.opacity = 0.25
+              child.material.depthWrite = false
+            }
+          } else {
+            // Normal AR Modu: Kullanıcının belirlediği genel opaklık
+            child.material.transparent = opacity < 0.99
+            child.material.opacity = opacity
+            child.material.depthWrite = true
+            if (child.material.emissive && child.userData.origEmissive !== undefined) {
+              child.material.emissive.setHex(child.userData.origEmissive)
+            }
+          }
         }
       }
     })
     onLoaded?.()
-  }, [scene, opacity, onLoaded])
+  }, [scene, opacity, isXRayMode, onLoaded])
 
   return (
     <group position={[0, elevation, 0]} scale={[scale, scale, scale]}>
@@ -67,7 +148,76 @@ function AR3DModel({
   )
 }
 
-export default function ARViewer({ project, modelUrl }: ARViewerProps) {
+// 2D->3D Extrusion Elements in AR (R3F Meshes from AI Blueprint Analysis)
+function ARExtrusionModel({
+  elements,
+  scale,
+  elevation,
+  isXRayMode,
+  opacity,
+}: {
+  elements: Blueprint2DCoordinateElement[]
+  scale: number
+  elevation: number
+  isXRayMode: boolean
+  opacity: number
+}) {
+  const meshData = useMemo(() => {
+    return generate3DFrom2DData(elements)
+  }, [elements])
+
+  return (
+    <group position={[0, elevation, 0]} scale={[scale, scale, scale]}>
+      {meshData.allMeshes.map((mesh) => {
+        const isWallOrSlab = mesh.categoryKey === "mimari" || mesh.eleman.toLowerCase().includes("duvar") || mesh.eleman.toLowerCase().includes("döşeme")
+        const isMep = mesh.categoryKey === "mekanik" || mesh.categoryKey === "elektrik"
+        const isStructural = mesh.categoryKey === "statik"
+
+        let meshOpacity = opacity
+        let isTransparent = opacity < 0.99
+        let emissiveColor = "#000000"
+
+        if (isXRayMode) {
+          if (isWallOrSlab) {
+            meshOpacity = 0.18
+            isTransparent = true
+          } else if (isMep) {
+            meshOpacity = 1.0
+            isTransparent = false
+            emissiveColor = mesh.categoryKey === "mekanik" ? "#06b6d4" : "#eab308"
+          } else if (isStructural) {
+            meshOpacity = 0.95
+            isTransparent = false
+            emissiveColor = "#3b82f6"
+          }
+        }
+
+        return (
+          <mesh
+            key={mesh.id}
+            position={mesh.position}
+            rotation={mesh.rotation}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={mesh.boxArgs} />
+            <meshStandardMaterial
+              color={mesh.color}
+              transparent={isTransparent}
+              opacity={meshOpacity}
+              roughness={0.4}
+              metalness={0.2}
+              emissive={emissiveColor}
+              emissiveIntensity={isXRayMode && (isMep || isStructural) ? 0.6 : 0}
+            />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+export default function ARViewer({ project, modelUrl, aiData, initialXRay = false }: ARViewerProps) {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -84,9 +234,11 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
   const [opacity, setOpacity] = useState(0.85)
   const [elevation, setElevation] = useState(0)
   const [showControls, setShowControls] = useState(true)
+  const [isXRayMode, setIsXRayMode] = useState(initialXRay)
+  const [showReticle, setShowReticle] = useState(true)
 
-  // Determine effective model URL (falls back to /models/bina.glb if blob or ifc)
-  const effectiveModelUrl = React.useMemo(() => {
+  // Effective model URL: fallback to GLB if blob or IFC
+  const effectiveModelUrl = useMemo(() => {
     if (
       !modelUrl ||
       modelUrl.startsWith("blob:") ||
@@ -97,6 +249,8 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
     }
     return modelUrl
   }, [modelUrl])
+
+  const hasExtrusionData = Array.isArray(aiData) && aiData.length > 0
 
   // 1. Initialize Real-world Camera Stream
   const startCamera = useCallback(async (mode: "environment" | "user") => {
@@ -150,6 +304,26 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
     startCamera(nextMode)
   }
 
+  // Toggle X-Ray "Duvarın Arkasını Gör"
+  const toggleXRay = () => {
+    const next = !isXRayMode
+    setIsXRayMode(next)
+    if (next) {
+      toast.success("🩻 Duvarın Arkasını Gör (X-Ray Modu) Aktif!\nMekanik & Statik elemanlar parlarken duvarlar şeffaflaştırıldı.", {
+        icon: "🩻",
+        duration: 4000,
+        style: {
+          background: "#0f172a",
+          color: "#22d3ee",
+          border: "1px solid rgba(6, 182, 212, 0.5)",
+          borderRadius: "14px",
+        },
+      })
+    } else {
+      toast("Normal AR Görünümüne dönüldü.", { icon: "🏢" })
+    }
+  }
+
   // Snap photo (combines camera video + 3D WebGL canvas)
   const takeSnapshot = () => {
     if (!videoRef.current || !containerRef.current) return
@@ -172,20 +346,20 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
     }
 
     // 3. Add timestamp & project watermark
-    ctx.fillStyle = "rgba(15, 23, 42, 0.75)"
-    ctx.fillRect(20, canvas.height - 70, 360, 50)
-    ctx.fillStyle = "#38bdf8"
+    ctx.fillStyle = "rgba(15, 23, 42, 0.85)"
+    ctx.fillRect(20, canvas.height - 85, 420, 65)
+    ctx.fillStyle = isXRayMode ? "#22d3ee" : "#38bdf8"
     ctx.font = "bold 16px sans-serif"
-    ctx.fillText(`NEXA ERP - AR Saha Denetimi`, 30, canvas.height - 45)
+    ctx.fillText(`NEXA ERP • AR ${isXRayMode ? "X-RAY (DUVARIN ARKASI)" : "SAHA DENETİMİ"}`, 30, canvas.height - 58)
     ctx.fillStyle = "#e2e8f0"
     ctx.font = "12px sans-serif"
-    ctx.fillText(`${project.name || project.title || "Proje"} | ${new Date().toLocaleString("tr-TR")}`, 30, canvas.height - 25)
+    ctx.fillText(`${project.name || project.title || "Proje"} | ${new Date().toLocaleString("tr-TR")}`, 30, canvas.height - 35)
 
     // Download
     const dataUrl = canvas.toDataURL("image/png")
     const a = document.createElement("a")
     a.href = dataUrl
-    a.download = `ar-sahada-${project.id}-${Date.now()}.png`
+    a.download = `ar-xray-${project.id}-${Date.now()}.png`
     a.click()
 
     toast.success("📸 AR Saha fotoğrafı kaydedildi!", {
@@ -199,7 +373,6 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
     })
   }
 
-  // Reset Model to center
   const resetModelPlacement = () => {
     setScale(1.0)
     setElevation(0)
@@ -238,7 +411,21 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
         </div>
       )}
 
-      {/* 2. Transparent 3D WebGL Canvas Layer (React Three Fiber) */}
+      {/* 2. Reticle Guide (Wall Laser Reticle) */}
+      {showReticle && (
+        <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
+          <div className="relative w-48 h-48 border border-cyan-500/30 rounded-2xl flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee] animate-pulse" />
+            <div className="absolute -top-3 px-2 py-0.5 bg-slate-950/80 border border-cyan-500/40 rounded text-[9px] font-mono text-cyan-300">
+              DUVAR HİZALAMA AKSI
+            </div>
+            <div className="absolute top-1/2 left-2 right-2 h-px bg-cyan-500/20" />
+            <div className="absolute left-1/2 top-2 bottom-2 w-px bg-cyan-500/20" />
+          </div>
+        </div>
+      )}
+
+      {/* 3. Transparent 3D WebGL Canvas Layer (React Three Fiber) */}
       <div
         ref={containerRef}
         className="absolute inset-0 w-full h-full z-10 pointer-events-auto"
@@ -254,20 +441,31 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
             powerPreference: "high-performance",
           }}
         >
-          <ambientLight intensity={1.6} />
+          <ambientLight intensity={isXRayMode ? 2.0 : 1.6} />
           <directionalLight position={[15, 30, 20]} intensity={2.2} castShadow />
-          <pointLight position={[-15, 15, -15]} intensity={1.2} />
+          <pointLight position={[-15, 15, -15]} intensity={1.5} color={isXRayMode ? "#22d3ee" : "#ffffff"} />
 
           <Suspense fallback={null}>
             <Bounds fit observe margin={1.2}>
               <Center>
-                <AR3DModel
-                  url={effectiveModelUrl}
-                  scale={scale}
-                  opacity={opacity}
-                  elevation={elevation}
-                  onLoaded={() => setLoadingModel(false)}
-                />
+                {hasExtrusionData ? (
+                  <ARExtrusionModel
+                    elements={aiData!}
+                    scale={scale}
+                    elevation={elevation}
+                    isXRayMode={isXRayMode}
+                    opacity={opacity}
+                  />
+                ) : (
+                  <AR3DModel
+                    url={effectiveModelUrl}
+                    scale={scale}
+                    opacity={opacity}
+                    elevation={elevation}
+                    isXRayMode={isXRayMode}
+                    onLoaded={() => setLoadingModel(false)}
+                  />
+                )}
               </Center>
             </Bounds>
           </Suspense>
@@ -282,11 +480,11 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
         </Canvas>
       </div>
 
-      {/* 3. Top Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-transparent flex items-center justify-between pointer-events-auto">
-        <div className="flex items-center gap-3">
+      {/* 4. Top Header Overlay */}
+      <div className="absolute top-0 left-0 right-0 z-30 p-3 sm:p-4 bg-gradient-to-b from-slate-950/95 via-slate-950/70 to-transparent flex items-center justify-between pointer-events-auto">
+        <div className="flex items-center gap-2.5">
           <button
-            onClick={() => router.push(`/admin/projects/${project.id}`)}
+            onClick={() => router.push(`/admin/projects/${project.id}?tab=bim`)}
             className="p-2.5 bg-slate-900/80 backdrop-blur-md hover:bg-slate-800 text-white rounded-xl border border-slate-700/80 shadow-lg transition-all"
             title="Projeye Dön"
           >
@@ -296,29 +494,49 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
           </button>
 
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
               </span>
-              <span className="text-[10px] font-bold tracking-widest uppercase bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+              <span className="text-[10px] font-bold tracking-wider uppercase text-cyan-400">
                 CANLI AR SAHA MODU
               </span>
+              {isXRayMode && (
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-[0_0_10px_rgba(6,182,212,0.4)] animate-pulse">
+                  🩻 DUVARIN ARKASI AÇIK
+                </span>
+              )}
             </div>
-            <h2 className="text-white font-semibold text-sm truncate max-w-[200px] sm:max-w-xs">
+            <h2 className="text-white font-semibold text-xs sm:text-sm truncate max-w-[160px] sm:max-w-xs">
               {project.name || project.title || "Proje Sahası"}
             </h2>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Duvarın Arkasını Gör (X-Ray) Header Button */}
+          <button
+            type="button"
+            onClick={toggleXRay}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border backdrop-blur-md shadow-lg ${
+              isXRayMode
+                ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.7)]"
+                : "bg-slate-900/80 text-cyan-300 border-cyan-500/40 hover:bg-slate-800"
+            }`}
+            title="Duvarın arkasındaki boru, kablo ve kolonları görün"
+          >
+            <span className="text-sm">🩻</span>
+            <span className="hidden sm:inline">{isXRayMode ? "X-Ray Açık" : "Duvarın Arkasını Gör"}</span>
+          </button>
+
           {/* Flip camera */}
           <button
             onClick={toggleCamera}
             className="p-2.5 bg-slate-900/80 backdrop-blur-md hover:bg-slate-800 text-slate-200 hover:text-white rounded-xl border border-slate-700/80 shadow-lg transition-all"
             title="Kamerayı Çevir"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
@@ -333,15 +551,25 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
             }`}
             title="Kontrolleri Gizle / Göster"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
             </svg>
           </button>
         </div>
       </div>
 
+      {/* 5. X-Ray Live Banner */}
+      {isXRayMode && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 bg-cyan-950/90 border border-cyan-400/60 rounded-full px-4 py-1 shadow-2xl backdrop-blur-md flex items-center gap-2 pointer-events-none">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          <span className="text-[11px] font-bold text-cyan-200">
+            Duvarın Arkası Görüntüleniyor: Tesisat &amp; Taşıyıcılar Opak, Duvarlar Şeffaf
+          </span>
+        </div>
+      )}
+
       {/* Model Loading State */}
-      {loadingModel && (
+      {loadingModel && !hasExtrusionData && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
           <div className="w-14 h-14 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mb-4 shadow-[0_0_20px_rgba(6,182,212,0.5)]" />
           <h4 className="text-white font-semibold text-base mb-1">3D BIM Modeli Sahaya Yerleştiriliyor</h4>
@@ -349,27 +577,56 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
         </div>
       )}
 
-      {/* 4. Bottom Floating AR Controls Dock */}
+      {/* 6. Bottom Floating AR Controls Dock */}
       {showControls && (
-        <div className="absolute bottom-6 left-3 right-3 z-30 max-w-xl mx-auto flex flex-col gap-3 pointer-events-auto">
-          {/* Gesture guide toast */}
-          <div className="bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[11px] text-slate-300 px-3.5 py-1.5 rounded-full flex items-center justify-between mx-auto shadow-xl">
-            <span className="flex items-center gap-1.5">
-              <span>👆 <b>Döndür</b></span>
-              <span className="text-slate-600">•</span>
-              <span>✌️ <b>Yakınlaş</b></span>
-            </span>
-            <span className="ml-3 font-mono text-cyan-400 font-bold">Ölçek: {(scale * 100).toFixed(0)}%</span>
-          </div>
+        <div className="absolute bottom-4 left-3 right-3 z-30 max-w-xl mx-auto flex flex-col gap-2.5 pointer-events-auto">
+          {/* Quick HUD Bar */}
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-2xl shadow-2xl space-y-2.5">
+            {/* Action Bar (X-Ray Switch + Reticle + Re-center) */}
+            <div className="flex items-center justify-between gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={toggleXRay}
+                className={`flex-1 min-w-[130px] py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border shadow-md ${
+                  isXRayMode
+                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.6)]"
+                    : "bg-slate-800 text-cyan-300 border-slate-700 hover:bg-slate-700"
+                }`}
+              >
+                <span>🩻</span>
+                <span>{isXRayMode ? "X-Ray: Aktif" : "Duvarın Arkasını Gör"}</span>
+              </button>
 
-          {/* Quick Scale Presets */}
-          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-2xl shadow-2xl space-y-3">
-            <div className="flex items-center justify-between gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowReticle(!showReticle)}
+                className={`py-2 px-3 rounded-xl text-xs font-medium transition-all border ${
+                  showReticle
+                    ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                    : "bg-slate-800 text-slate-400 border-slate-700"
+                }`}
+                title="Lazer Duvar Hizalama Kılavuzu"
+              >
+                🎯 Hizalama {showReticle ? "Açık" : "Kapalı"}
+              </button>
+
+              <button
+                type="button"
+                onClick={resetModelPlacement}
+                className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs border border-slate-700 transition-all"
+                title="Konumu Ortala"
+              >
+                🔄 Ortala
+              </button>
+            </div>
+
+            {/* Scale Presets */}
+            <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-slate-800">
               <button
                 onClick={() => setScale(0.3)}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all ${
+                className={`py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
                   scale < 0.5
-                    ? "bg-cyan-500 text-slate-950 font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]"
+                    ? "bg-cyan-500 text-slate-950 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)]"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
@@ -378,9 +635,9 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
 
               <button
                 onClick={() => setScale(0.7)}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all ${
+                className={`py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
                   scale >= 0.5 && scale < 0.9
-                    ? "bg-cyan-500 text-slate-950 font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]"
+                    ? "bg-cyan-500 text-slate-950 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)]"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
@@ -389,27 +646,18 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
 
               <button
                 onClick={() => setScale(1.0)}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all ${
+                className={`py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
                   scale >= 0.9
-                    ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.7)]"
+                    ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-bold shadow-[0_0_12px_rgba(16,185,129,0.6)]"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
                 1:1 Şantiye (Gerçek)
               </button>
-
-              <button
-                onClick={resetModelPlacement}
-                className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] transition-all"
-                title="Konumu Ortala"
-              >
-                🔄 Ortala
-              </button>
             </div>
 
             {/* Sliders: Elevation & Opacity */}
             <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-800">
-              {/* Elevation */}
               <div>
                 <div className="flex justify-between text-[10px] text-slate-400 mb-1">
                   <span>Yükseklik:</span>
@@ -426,7 +674,6 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
                 />
               </div>
 
-              {/* Opacity */}
               <div>
                 <div className="flex justify-between text-[10px] text-slate-400 mb-1">
                   <span>Şeffaflık:</span>
@@ -434,7 +681,7 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
                 </div>
                 <input
                   type="range"
-                  min="0.2"
+                  min="0.1"
                   max="1.0"
                   step="0.05"
                   value={opacity}
@@ -444,19 +691,17 @@ export default function ARViewer({ project, modelUrl }: ARViewerProps) {
               </div>
             </div>
 
-            {/* Main Action Bar */}
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                onClick={takeSnapshot}
-                className="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-semibold text-xs transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>AR Saha Fotoğrafı Çek</span>
-              </button>
-            </div>
+            {/* Photo Snapshot Action Bar */}
+            <button
+              onClick={takeSnapshot}
+              className="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-xl font-bold text-xs transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>AR Saha Fotoğrafı Çek</span>
+            </button>
           </div>
         </div>
       )}

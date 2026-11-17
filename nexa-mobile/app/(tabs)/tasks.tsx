@@ -13,6 +13,7 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   Vibration,
   Platform,

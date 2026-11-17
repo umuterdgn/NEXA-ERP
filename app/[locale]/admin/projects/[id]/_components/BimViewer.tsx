@@ -2148,7 +2148,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
         </div>
       ) : (
         // Expanded Glassmorphism Control Panel (Compact & Responsive)
-        <div className="absolute right-4 top-16 w-[320px] max-h-[calc(100%-100px)] overflow-y-auto z-40 bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col border border-gray-700/60 pointer-events-auto animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute right-2 sm:right-4 top-16 w-[calc(100%-1rem)] max-w-[320px] max-h-[calc(100%-100px)] overflow-y-auto z-40 bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col border border-gray-700/60 pointer-events-auto animate-in fade-in zoom-in-95 duration-200">
           {/* Panel Header */}
           <div className="p-3 px-3.5 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-700/80 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
@@ -2471,7 +2471,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
         <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} ${isSnaggingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} bg-slate-950`}>
           {/* 2D->3D Otomatik Geometri (Extrusion) Bilgi Rozeti */}
           {(isNon3DActiveFile || (!federatedModels.length && (!safeUrl || safeUrl.trim() === ""))) && (
-            <div className="absolute top-16 left-4 z-30 bg-slate-900/90 backdrop-blur-md border border-cyan-500/40 rounded-xl px-3.5 py-2 shadow-xl flex items-center gap-2 text-xs text-cyan-300 pointer-events-none">
+            <div className="absolute top-16 left-2 sm:left-4 max-w-[calc(100%-1rem)] sm:max-w-xl z-30 bg-slate-900/90 backdrop-blur-md border border-cyan-500/40 rounded-xl px-3.5 py-2 shadow-xl flex items-center gap-2 text-xs text-cyan-300 pointer-events-none">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               <span>
                 <strong>2D→3D R3F Extrusion Motoru Aktif ({selectedDiscipline}):</strong> PDF/DWG &amp; Prisma BoQ koordinatlarından otomatik 3D model oluşturuldu ({(incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D).length} yapısal eleman).
@@ -2797,7 +2797,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
       )}
 
       {/* Floating Bottom Toolbar (BoQ 5D, Snagging, Measurement & AR Buttons - ADIM 3) */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-2 z-50 bg-gray-900/80 p-3 rounded-xl backdrop-blur-md border border-gray-700/50 w-[90%] max-w-2xl shadow-2xl pointer-events-auto">
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-2 z-50 bg-gray-900/90 p-2.5 sm:p-3 rounded-xl backdrop-blur-md border border-gray-700/50 w-[calc(100%-1rem)] max-w-2xl shadow-2xl pointer-events-auto">
         {/* 5D BoQ Toggle */}
         <button
           type="button"
@@ -2886,7 +2886,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
 
       {/* 2D Measurement & Element Quantity Metric Card (Left Panel - ADIM 1) */}
       {isMeasureMode && (
-        <div className="absolute left-4 top-16 w-[350px] max-h-[calc(100%-100px)] overflow-y-auto z-40 bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col p-4 border border-gray-700/60 pointer-events-auto space-y-2.5 animate-in fade-in slide-in-from-left duration-200">
+        <div className="absolute left-2 sm:left-4 top-16 w-[calc(100%-1rem)] max-w-[340px] max-h-[calc(100%-100px)] overflow-y-auto z-40 bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col p-4 border border-gray-700/60 pointer-events-auto space-y-2.5 animate-in fade-in slide-in-from-left duration-200">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold border border-cyan-500/30">
@@ -3306,7 +3306,7 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
       )}
       {/* Sol Bilgi Paneli: Yapı Elemanı Özellikleri (IFC Properties Panel - ADIM 1) */}
       {selectedIfcElement && (
-        <div className="absolute left-4 top-16 w-[350px] max-h-[calc(100%-100px)] overflow-y-auto z-40 bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col justify-between p-4 border border-gray-700/60 pointer-events-auto animate-in fade-in slide-in-from-left duration-200">
+        <div className="absolute left-2 sm:left-4 top-16 w-[calc(100%-1rem)] max-w-[340px] max-h-[calc(100%-100px)] overflow-y-auto z-40 bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col justify-between p-4 border border-gray-700/60 pointer-events-auto animate-in fade-in slide-in-from-left duration-200">
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">

@@ -1,13 +1,13 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * AR (Augmented Reality) Field View Page
+ * AR (Augmented Reality) Field View Page - With "See Through Walls" (Duvarın Arkasını Gör) X-Ray Engine
  */
 
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
-import Link from "next/link"
 import ARViewerClient from "@/components/ARViewerClient"
+import { getProject2DExtrusionData } from "@/actions/ai-blueprint-parser"
 
 export const dynamic = "force-dynamic"
 
@@ -16,7 +16,7 @@ export default async function ProjectARPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams?: Promise<{ url?: string }>
+  searchParams?: Promise<{ url?: string; mode?: string }>
 }) {
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : {}
@@ -36,10 +36,10 @@ export default async function ProjectARPage({
     notFound()
   }
 
-  let rawModelUrl = resolvedSearchParams?.url || project.bimModelUrl || project.ifcModelUrl
+  const rawModelUrl = resolvedSearchParams?.url || project.bimModelUrl || project.ifcModelUrl
   let modelUrl = rawModelUrl
 
-  // Eğer model URL'si blob: ise veya .ifc formatındaysa, kamerada görünmeme sorununu aşmak için otomatik hafifletilmiş GLB kullan
+  // If URL is blob or IFC, fallback to default GLB model
   if (
     !modelUrl ||
     modelUrl.startsWith("blob:") ||
@@ -49,5 +49,25 @@ export default async function ProjectARPage({
     modelUrl = "/models/bina.glb"
   }
 
-  return <ARViewerClient project={project} modelUrl={modelUrl} />
+  // Fetch project 2D-to-3D coordinates from Prisma / AI analysis
+  let aiData: any[] = []
+  try {
+    const extrusionRes = await getProject2DExtrusionData(id)
+    if (extrusionRes?.elements && extrusionRes.elements.length > 0) {
+      aiData = extrusionRes.elements
+    }
+  } catch (err) {
+    console.warn("Could not fetch project extrusion coordinates for AR:", err)
+  }
+
+  const initialXRay = resolvedSearchParams?.mode === "xray"
+
+  return (
+    <ARViewerClient
+      project={project}
+      modelUrl={modelUrl}
+      aiData={aiData}
+      initialXRay={initialXRay}
+    />
+  )
 }

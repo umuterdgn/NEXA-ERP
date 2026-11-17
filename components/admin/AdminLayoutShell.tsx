@@ -6,6 +6,7 @@ import AdminSidebar from "@/components/admin/Sidebar"
 export default function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(260)
+  const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     try {
@@ -17,10 +18,20 @@ export default function AdminLayoutShell({ children }: { children: React.ReactNo
         }
       }
     } catch {}
+
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 768)
+    }
+    checkDesktop()
+    window.addEventListener("resize", checkDesktop)
+    return () => window.removeEventListener("resize", checkDesktop)
   }, [])
 
+  const currentMarginLeft = isDesktop ? (isCollapsed ? 80 : sidebarWidth) : 0
+  const currentContentWidth = isDesktop ? `calc(100% - ${currentMarginLeft}px)` : "100%"
+
   return (
-    <div className="flex h-screen w-full overflow-hidden relative">
+    <div className="flex h-screen w-full overflow-hidden relative bg-slate-50 dark:bg-[#0A0F1C]">
       <AdminSidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
@@ -28,11 +39,14 @@ export default function AdminLayoutShell({ children }: { children: React.ReactNo
         setSidebarWidth={setSidebarWidth}
       />
       <main
-        className={`relative z-0 flex-1 h-full overflow-y-auto bg-slate-50 dark:bg-[#0A0F1C] ml-0 w-full transition-all duration-300 ${
-          isCollapsed ? "md:ml-20" : "md:ml-64"
-        }`}
+        style={{
+          marginLeft: `${currentMarginLeft}px`,
+          width: currentContentWidth,
+          transition: "margin-left 0.2s ease, width 0.2s ease",
+        }}
+        className="relative z-0 flex-1 h-full overflow-y-auto bg-slate-50 dark:bg-[#0A0F1C]"
       >
-        <div className="p-4 sm:p-6 lg:p-8 pt-16 md:pt-8 min-h-full w-full max-w-full">
+        <div className="p-3 sm:p-5 lg:p-6 pt-16 md:pt-6 min-h-full w-full max-w-full">
           {children}
         </div>
       </main>

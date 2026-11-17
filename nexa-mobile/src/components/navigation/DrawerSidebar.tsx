@@ -272,7 +272,23 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
                   <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
                 </TouchableOpacity>
 
-                {/* 3. Ayarlar */}
+                {/* 3. 3D BIM & AR Navigasyon (Duvarın Arkasını Gör) */}
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    closeDrawer();
+                    router.push("/(tabs)/bim" as any);
+                  }}
+                >
+                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(0, 255, 255, 0.15)" }]}>
+                    <Ionicons name="cube" size={18} color="#00FFFF" />
+                  </View>
+                  <Text style={styles.menuItemText}>3D BIM & AR (Duvarın Arkası)</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                </TouchableOpacity>
+
+                {/* 4. Ayarlar */}
                 <TouchableOpacity
                   style={styles.menuItem}
                   activeOpacity={0.7}
