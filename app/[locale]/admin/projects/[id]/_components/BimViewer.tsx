@@ -253,6 +253,8 @@ interface BimViewerProps {
   aiData?: Blueprint2DCoordinateItem[]
   discipline?: string
   hasAiAnalysis?: boolean
+  onTriggerAiAnalysis?: () => void
+  onOpen2DViewer?: () => void
 }
 
 // React Three Fiber Loading Overlay
@@ -950,7 +952,20 @@ class BimViewerErrorBoundary extends Component<
   }
 }
 
-export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, models, boqData, aiData, discipline, hasAiAnalysis }: BimViewerProps) {
+export default function BimViewer({
+  url,
+  ifcUrl,
+  bimUrl,
+  projectId,
+  fileName,
+  models,
+  boqData,
+  aiData,
+  discipline,
+  hasAiAnalysis,
+  onTriggerAiAnalysis,
+  onOpen2DViewer,
+}: BimViewerProps) {
   const incomingAiData = aiData && aiData.length > 0 ? aiData : boqData
   const effectiveUrl = (bimUrl || url || ifcUrl || (models && models.length > 0 ? models[0].url : "") || "").trim()
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>(discipline || "Mimari")
@@ -2461,11 +2476,43 @@ export default function BimViewer({ url, ifcUrl, bimUrl, projectId, fileName, mo
             <Layers className="w-8 h-8" />
           </div>
           <h4 className="text-white font-bold text-lg mb-2">
-            Lütfen önce dosyayı AI ile analiz edin
+            2D Çizim Henüz 3D Geometriye Aktarılmadı
           </h4>
-          <p className="text-slate-400 text-xs max-w-md leading-relaxed">
-            Seçilen PDF paftasının 3D sahnede duvar, kolon ve tesisat olarak çizilebilmesi için aşağıdaki &ldquo;Proje Evrakları ve Paftalar&rdquo; listesinden disiplini seçip &ldquo;AI ile Projeyi Analiz Et&rdquo; butonuna tıklayın.
+          <p className="text-slate-400 text-xs max-w-md leading-relaxed mb-6">
+            Seçilen paftanın ({fileName || activeModelUrl.split("/").pop()}) 3D sahnede duvar, kolon ve tesisat olarak çizilebilmesi için doğrudan 3D&apos;ye aktarabilir veya 2D olarak inceleyebilirsiniz.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {onTriggerAiAnalysis && (
+              <button
+                type="button"
+                onClick={onTriggerAiAnalysis}
+                className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-600/30 flex items-center gap-2 cursor-pointer active:scale-95"
+              >
+                <span>✨</span>
+                <span>Hemen 3D&apos;ye Aktar ve Sahneye Çiz</span>
+              </button>
+            )}
+            {onOpen2DViewer && (
+              <button
+                type="button"
+                onClick={onOpen2DViewer}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <span>👁️</span>
+                <span>2D Olarak İncele</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setHasPdfAiAnalysis(true)
+                setExtrusionElements2D(DEFAULT_AI_EXTRUSION_ITEMS)
+              }}
+              className="px-3 py-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 rounded-xl text-xs transition-colors cursor-pointer"
+            >
+              Varsayılan Extrusion ile Önizle
+            </button>
+          </div>
         </div>
       ) : engineMode === "canvas" || isNon3DActiveFile ? (
         <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} ${isSnaggingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} bg-slate-950`}>

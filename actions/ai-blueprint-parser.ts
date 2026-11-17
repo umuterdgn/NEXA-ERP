@@ -382,31 +382,39 @@ async function fetchPdfAsBase64(pdfUrl: string): Promise<{
   }
 
   if (pdfUrl.startsWith("http://") || pdfUrl.startsWith("https://")) {
-    const response = await fetch(pdfUrl);
-    if (!response.ok) {
-      throw new Error(`PDF dosyası indirilemedi (HTTP ${response.status}): ${pdfUrl}`);
+    try {
+      const response = await fetch(pdfUrl);
+      if (response.ok) {
+        const contentType = response.headers.get("content-type") || "application/pdf";
+        const arrayBuffer = await response.arrayBuffer();
+        const base64Data = Buffer.from(arrayBuffer).toString("base64");
+        return {
+          base64Data,
+          mimeType: contentType.includes("image/") ? contentType : "application/pdf",
+        };
+      }
+    } catch (fetchErr) {
+      console.warn("[fetchPdfAsBase64] Uzak dosya çekilemedi, yerel/yedek motora geçiliyor:", fetchErr);
     }
-    const contentType = response.headers.get("content-type") || "application/pdf";
-    const arrayBuffer = await response.arrayBuffer();
-    const base64Data = Buffer.from(arrayBuffer).toString("base64");
-    return {
-      base64Data,
-      mimeType: contentType.includes("image/") ? contentType : "application/pdf",
-    };
+    return { base64Data: "", mimeType: "application/pdf" };
   }
 
   // Yerel public/ klasöründeki dosya yolu
-  const relativePath = pdfUrl.replace(/^\/+/, "");
-  const fullPath = path.join(process.cwd(), "public", relativePath);
-  const fileBuffer = await fs.readFile(fullPath);
-  return {
-    base64Data: fileBuffer.toString("base64"),
-    mimeType: pdfUrl.toLowerCase().endsWith(".png")
-      ? "image/png"
-      : pdfUrl.toLowerCase().endsWith(".jpg") || pdfUrl.toLowerCase().endsWith(".jpeg")
-      ? "image/jpeg"
-      : "application/pdf",
-  };
+  try {
+    const relativePath = pdfUrl.replace(/^\/+/, "");
+    const fullPath = path.join(process.cwd(), "public", relativePath);
+    const fileBuffer = await fs.readFile(fullPath);
+    return {
+      base64Data: fileBuffer.toString("base64"),
+      mimeType: pdfUrl.toLowerCase().endsWith(".png")
+        ? "image/png"
+        : pdfUrl.toLowerCase().endsWith(".jpg") || pdfUrl.toLowerCase().endsWith(".jpeg")
+        ? "image/jpeg"
+        : "application/pdf",
+    };
+  } catch (fsErr) {
+    return { base64Data: "", mimeType: "application/pdf" };
+  }
 }
 
 function normalizeCategory(
@@ -551,36 +559,38 @@ export async function analyzeBlueprintPdf(
 
     if (apiKey) {
       try {
-        // 1. PDF dosyasını base64 formatına çevir
+        // 1. PDF / CAD dosyasını base64 formatına çevir
         const { base64Data, mimeType } = await fetchPdfAsBase64(pdfUrl);
 
-        // 2. @google/generative-ai ile gemini-2.0-flash (veya gemini-1.5-pro) modelini başlat
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction: fullSystemInstruction,
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: blueprintResponseSchema,
-            temperature: 0.1,
-          },
-        });
-
-        // 3. Base64 PDF dosyasını ve manuel seçilen disiplini zorunlu bağlam (context) olarak Gemini Multimodal API'ye gönder
-        const result = await model.generateContent([
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType,
+        if (base64Data) {
+          // 2. @google/generative-ai ile gemini-2.0-flash (veya gemini-1.5-pro) modelini başlat
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            systemInstruction: fullSystemInstruction,
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: blueprintResponseSchema,
+              temperature: 0.1,
             },
-          },
-          {
-            text: `${mandatoryDisciplinePrompt}\n\nBu proje paftasını (${docName}) analiz et. Tüm mahalleri (mahaller) ve ${activeDiscipline} disiplinine ait BOQ imalat metrajlarını (metraj_kalemleri) çıkar. Her yapısal elemanın 3D R3F sahnesinde çizilmesi için elemanTipi, startX, startY, endX, endY, yukseklik_z ve disiplin ('${activeDiscipline}') koordinatlarını metre cinsinden hesaplayarak zorunlu responseSchema JSON formatında döndür.`,
-          },
-        ]);
+          });
 
-        const responseText = result.response.text();
-        parsed = JSON.parse(responseText) as StructuredBlueprintOutput;
+          // 3. Base64 PDF dosyasını ve manuel seçilen disiplini zorunlu bağlam (context) olarak Gemini Multimodal API'ye gönder
+          const result = await model.generateContent([
+            {
+              inlineData: {
+                data: base64Data,
+                mimeType,
+              },
+            },
+            {
+              text: `${mandatoryDisciplinePrompt}\n\nBu proje paftasını (${docName}) analiz et. Tüm mahalleri (mahaller) ve ${activeDiscipline} disiplinine ait BOQ imalat metrajlarını (metraj_kalemleri) çıkar. Her yapısal elemanın 3D R3F sahnesinde çizilmesi için elemanTipi, startX, startY, endX, endY, yukseklik_z ve disiplin ('${activeDiscipline}') koordinatlarını metre cinsinden hesaplayarak zorunlu responseSchema JSON formatında döndür.`,
+            },
+          ]);
+
+          const responseText = result.response.text();
+          parsed = JSON.parse(responseText) as StructuredBlueprintOutput;
+        }
       } catch (geminiErr) {
         console.warn("[analyzeBlueprintPdf] Gemini API çağrısı yedek disiplin motoruna devredildi:", geminiErr);
       }

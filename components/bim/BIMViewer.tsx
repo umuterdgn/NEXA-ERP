@@ -374,6 +374,8 @@ export interface BIMViewerProps {
   aiData?: Blueprint2DCoordinateElement[]
   discipline?: string
   hasAiAnalysis?: boolean
+  onTriggerAiAnalysis?: () => void
+  onOpen2DViewer?: () => void
 }
 
 export default function BIMViewer(props: BIMViewerProps) {

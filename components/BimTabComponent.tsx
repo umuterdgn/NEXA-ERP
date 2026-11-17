@@ -162,6 +162,65 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   const [showUploader, setShowUploader] = useState(false)
   const [isSwitchingModel, setIsSwitchingModel] = useState<string | null>(null)
   const [isDeletingModel, setIsDeletingModel] = useState<string | null>(null)
+  const [isConvertingTo3DDocUrl, setIsConvertingTo3DDocUrl] = useState<string | null>(null)
+
+  // Doğrudan "3D'ye Aktar" Motoru: Bekletme veya demo olmadan anında AI analizi yapıp 3D BIM sahnesine ekler
+  const handleDirect3DConversion = async (doc: ProjectDocItem, overrideDiscipline?: string) => {
+    const targetDiscipline =
+      overrideDiscipline ||
+      docDisciplines[doc.fileUrl] ||
+      analyzedPdfsMap[doc.fileUrl]?.discipline ||
+      inferDefaultDiscipline(doc.fileName)
+
+    setIsConvertingTo3DDocUrl(doc.fileUrl)
+    const toastId = toast.loading(
+      `"${doc.fileName}" (${targetDiscipline}) 3D BIM geometrisine aktarılıyor...`
+    )
+
+    try {
+      const res = await analyzeBlueprintPdf(doc.fileUrl, project.id, targetDiscipline)
+      if (res.success && res.elements2D && res.elements2D.length > 0) {
+        setAnalyzedPdfsMap((prev) => ({
+          ...prev,
+          [doc.fileUrl]: {
+            discipline: res.selectedDiscipline || targetDiscipline,
+            elements: res.elements2D!,
+          },
+        }))
+        setDocDisciplines((prev) => ({
+          ...prev,
+          [doc.fileUrl]: res.selectedDiscipline || targetDiscipline,
+        }))
+        setBimUrl(doc.fileUrl)
+        setActiveFileName(doc.fileName)
+        setSelectedDiscipline(res.selectedDiscipline || targetDiscipline)
+        setIsFederatedMode(true)
+        setShowUploader(false)
+        setSelected2DModalDoc(null)
+
+        toast.success(
+          `✨ "${doc.fileName}" (${res.elements2D.length} Yapısal Eleman) başarıyla 3D BIM sahnesine eklendi!`,
+          { id: toastId }
+        )
+
+        setTimeout(() => {
+          viewportContainerRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          })
+        }, 150)
+      } else {
+        toast.error(res.error || "3D geometri çıkarılamadı.", { id: toastId })
+      }
+    } catch (err: any) {
+      console.error("3D Dönüştürme Hatası:", err)
+      toast.error(err?.message || "3D geometriye aktarılırken hata oluştu.", {
+        id: toastId,
+      })
+    } finally {
+      setIsConvertingTo3DDocUrl(null)
+    }
+  }
 
   // Bütünleşik Model (Tüm Katmanlar Birlikte): Tüm analiz edilmiş paftalardaki koordinatları birleştir
   const federatedElements = React.useMemo(() => {
@@ -698,6 +757,28 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                   (isFederatedMode && federatedElements.length > 0) ||
                   Boolean(analyzedPdfsMap[bimUrl])
                 }
+                onTriggerAiAnalysis={() => {
+                  const targetDoc = documentFiles.find((d) => d.fileUrl === bimUrl) || {
+                    id: "active-doc",
+                    projectId: project.id,
+                    fileName: resolvedActiveFileName || "Proje-Paftasi.pdf",
+                    fileUrl: bimUrl,
+                    fileType: resolvedActiveFileType || "pdf",
+                    uploadedAt: new Date(),
+                  }
+                  handleDirect3DConversion(targetDoc, selectedDiscipline)
+                }}
+                onOpen2DViewer={() => {
+                  const targetDoc = documentFiles.find((d) => d.fileUrl === bimUrl) || {
+                    id: "active-doc",
+                    projectId: project.id,
+                    fileName: resolvedActiveFileName || "Proje-Paftasi.pdf",
+                    fileUrl: bimUrl,
+                    fileType: resolvedActiveFileType || "pdf",
+                    uploadedAt: new Date(),
+                  }
+                  setSelected2DModalDoc(targetDoc)
+                }}
                 models={bimFiles.map((f, i) => {
                   const lower = (f.fileName || "").toLowerCase()
                   const cat = lower.includes("statik")
@@ -1064,38 +1145,45 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                       ))}
                     </select>
 
-                    {/* 2D Pafta Görüntüle Modal Butonu */}
+                    {/* 2D Pafta & CAD Görüntüle Modal Butonu */}
                     <button
                       type="button"
                       onClick={() => setSelected2DModalDoc(doc)}
-                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-amber-400/50 text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
-                      title="2D Paftayı Yüksek Çözünürlükte İncele (Zoom, Döndür, Yazdır)"
+                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-amber-400/50 text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
+                      title="2D Paftayı ve CAD Çizimini Yüksek Çözünürlükte İncele (DWG, DXF, PDF, Görsel)"
                     >
                       <Eye className="w-3.5 h-3.5 text-amber-400" />
-                      <span>2D Gör</span>
+                      <span>2D Görüntüle</span>
                     </button>
 
+                    {/* Doğrudan 3D'ye Aktar Butonu (Demo Yok, Anında Geometri Oluşturur) */}
                     <button
                       type="button"
-                      onClick={() => {
-                        setBimUrl(doc.fileUrl)
-                        setActiveFileName(doc.fileName)
-                        setSelectedDiscipline(currentDiscipline)
-                        setShowUploader(false)
-                        setSelectedAiDoc({
-                          title: doc.fileName,
-                          url: doc.fileUrl,
-                          discipline: currentDiscipline,
-                        })
-                        setIsAiModalOpen(true)
-                      }}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                      title="Seçilen Disiplin Bağlamıyla Yapay Zeka Analizini Başlat"
+                      onClick={() => handleDirect3DConversion(doc, currentDiscipline)}
+                      disabled={isConvertingTo3DDocUrl === doc.fileUrl}
+                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer active:scale-95 ${
+                        isConvertingTo3DDocUrl === doc.fileUrl
+                          ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 cursor-wait"
+                          : isAnalyzed
+                          ? "bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300"
+                          : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-600/20"
+                      }`}
+                      title="2D Çizimi Doğrudan 3D Geometriye Çevir ve Mevcut 3D BIM Modeline Ekle"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span>✨ AI ile 3D Analiz Et</span>
+                      {isConvertingTo3DDocUrl === doc.fileUrl ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-cyan-300 border-t-transparent rounded-full animate-spin" />
+                          <span>3D'ye Aktarılıyor...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 text-cyan-300 shrink-0" />
+                          <span>{isAnalyzed ? "✨ Yeniden 3D'ye Aktar" : "✨ 3D'ye Aktar"}</span>
+                        </>
+                      )}
                     </button>
 
+                    {/* 3D Canvas'ta Aç / Odaklan */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1106,10 +1194,12 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                         viewportContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
                         if (isAnalyzed) {
                           toast.success(`"${doc.fileName}" (${currentDiscipline}) 3D Extrusion modeli sahneye çizildi!`)
+                        } else {
+                          toast(`"${doc.fileName}" seçildi. 3D geometriyi sahneye eklemek için "3D'ye Aktar" butonuna tıklayabilirsiniz.`)
                         }
                       }}
                       className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
-                      title="3D Canvas'ta Aç (Analiz Edildiyse 2D→3D Extrusion Çizer)"
+                      title="3D Canvas'ta Aç"
                     >
                       <span>3D Aç</span>
                     </button>
@@ -1173,17 +1263,9 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           elementCount={
             analyzedPdfsMap[selected2DModalDoc.fileUrl]?.elements?.length || 0
           }
-          onTriggerAiAnalysis={() => {
-            const currentDisc =
-              docDisciplines[selected2DModalDoc.fileUrl] ||
-              inferDefaultDiscipline(selected2DModalDoc.fileName)
-            setSelectedAiDoc({
-              title: selected2DModalDoc.fileName,
-              url: selected2DModalDoc.fileUrl,
-              discipline: currentDisc,
-            })
-            setIsAiModalOpen(true)
-          }}
+          isConvertingTo3D={isConvertingTo3DDocUrl === selected2DModalDoc.fileUrl}
+          onDirect3DConvert={() => handleDirect3DConversion(selected2DModalDoc)}
+          onTriggerAiAnalysis={() => handleDirect3DConversion(selected2DModalDoc)}
           onOpenIn3D={() => {
             const currentDisc =
               docDisciplines[selected2DModalDoc.fileUrl] ||

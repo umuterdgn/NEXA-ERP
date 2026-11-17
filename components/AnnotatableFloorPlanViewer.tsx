@@ -27,9 +27,16 @@ if (typeof window !== 'undefined') {
 interface AnnotatableViewerProps {
   fileUrl: string;
   onSaveAnnotation?: (dataUrl: string, dxfData?: string) => void;
+  height?: string | number;
+  className?: string;
 }
 
-export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }: AnnotatableViewerProps) {
+export default function AnnotatableFloorPlanViewer({
+  fileUrl,
+  onSaveAnnotation,
+  height,
+  className,
+}: AnnotatableViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewerInstanceRef = useRef<any>(null);
@@ -129,7 +136,7 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
       try {
         setLoading(true);
         containerRef.current!.style.width = '100%';
-        containerRef.current!.style.height = '600px';
+        containerRef.current!.style.height = typeof height === 'number' ? `${height}px` : (height || '100%');
 
         let existingInstance: any = null;
         try { existingInstance = AcApDocManager.instance; } catch (e) { }
@@ -436,7 +443,10 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
   };
 
   return (
-    <div className={`relative w-full h-[600px] rounded-xl overflow-hidden border border-slate-800 ${isWhiteBg ? "bg-white" : "bg-slate-950"}`}>
+    <div
+      className={`relative w-full rounded-xl overflow-hidden border border-slate-800 ${isWhiteBg ? "bg-white" : "bg-slate-950"} ${className || ""}`}
+      style={{ height: typeof height === 'number' ? `${height}px` : (height || '600px') }}
+    >
 
       {/* Üst Toolbar */}
       <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 bg-slate-900/90 backdrop-blur p-2 rounded-lg border border-slate-700">
