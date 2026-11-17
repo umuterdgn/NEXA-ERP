@@ -222,7 +222,7 @@ mahir-bakay-muhendislik/
 ```bash
 npm run build
 vercel
-```
+``
 
 ### Docker
 Dockerfile oluşturulabilir ve containerize edilebilir.
