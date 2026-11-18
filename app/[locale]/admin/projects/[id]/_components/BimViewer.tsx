@@ -7,6 +7,7 @@
  */
 
 import React, { useEffect, useRef, useState, Suspense, Component, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import { Canvas, useLoader } from "@react-three/fiber"
 import { OrbitControls, useGLTF, Environment, Center, Bounds, Html, useProgress, Grid, Line } from "@react-three/drei"
 import { IfcViewerAPI } from "web-ifc-viewer"
@@ -664,7 +665,7 @@ const DEFAULT_AI_EXTRUSION_ITEMS: Blueprint2DCoordinateItem[] = [
  * ve disiplinlere ("Mimari", "Statik", "Elektrik", "Mekanik") göre gruplar.
  */
 export function generate3DFrom2DData(
-  elements: Blueprint2DCoordinateItem[] = DEFAULT_AI_EXTRUSION_ITEMS,
+  elements: Blueprint2DCoordinateItem[] = [],
   defaultDiscipline?: string
 ): {
   groupedByDiscipline: Record<
@@ -673,10 +674,7 @@ export function generate3DFrom2DData(
   >
   counts: Record<BimCategoryKey, number>
 } {
-  const source =
-    Array.isArray(elements) && elements.length > 0
-      ? elements
-      : DEFAULT_AI_EXTRUSION_ITEMS
+  const source = Array.isArray(elements) && elements.length > 0 ? elements : []
 
   const groupedByDiscipline: Record<
     "Mimari" | "Statik" | "Elektrik" | "Mekanik",
@@ -700,13 +698,13 @@ export function generate3DFrom2DData(
     const startY = Number(el.startY ?? el.baslangic?.y ?? 0)
     const endX = Number(el.endX ?? el.bitis?.x ?? 5)
     const endY = Number(el.endY ?? el.bitis?.y ?? 0)
-    const height = Math.max(0.15, Number(el.yukseklik_z ?? el.height ?? el.yukseklik ?? 3.0))
-    const depth = Math.max(0.15, Number(el.thickness ?? el.kalinlik ?? 0.25))
-    const baseY = Number(el.taban_kotu ?? 0)
+    const height = Math.max(0.12, Number(el.yukseklik_z ?? el.height ?? el.yukseklik ?? 3.0))
+    const depth = Math.max(0.12, Number(el.thickness ?? el.kalinlik ?? 0.22))
+    const baseY = Number((el as any).baseElevation ?? el.taban_kotu ?? 0)
 
     const dx = endX - startX
     const dy = endY - startY
-    const width = Math.max(0.4, Math.hypot(dx, dy))
+    const width = Math.max(0.25, Math.hypot(dx, dy))
     const angleY = -Math.atan2(dy, dx)
 
     const centerX = (startX + endX) / 2
@@ -1080,18 +1078,23 @@ export default function BimViewer({
 
     let currentBlobUrl: string | null = null
 
-    // Sadece 3D (.ifc, .glb, .gltf) dış bağlantılarda CORS aşımı için Blob kullan
+    // Sadece 3D (.ifc, .glb, .gltf) dış bağlantılarda CORS aşımı için /api/file-proxy -> Blob kullan
     if (activeModelUrl.startsWith("http")) {
-      fetch(activeModelUrl)
-        .then((res) => res.blob())
+      const proxyFetchUrl = `/api/file-proxy?url=${encodeURIComponent(activeModelUrl)}`
+      fetch(proxyFetchUrl)
+        .then((res) => {
+          if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`)
+          return res.blob()
+        })
+        .catch(() => fetch(activeModelUrl).then((res) => res.blob()))
         .then((blob) => {
           const blobUrl = URL.createObjectURL(blob)
           currentBlobUrl = blobUrl
           setSafeUrl(blobUrl)
         })
         .catch((err) => {
-          console.error("CORS Blob Fetch Error:", err)
-          setSafeUrl(activeModelUrl) // Fallback
+          console.error("3D Model Fetch Error:", err)
+          setSafeUrl(activeModelUrl)
         })
     } else {
       setSafeUrl(activeModelUrl)
@@ -1121,9 +1124,9 @@ export default function BimViewer({
   })
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false)
 
-  // ADIM 2 & ADIM 3: Gemini API veya Prisma BoqItem/AIAnalysis Verisinden 3D Extrusion Elemanları
+  // Gerçek Dosya / Prisma BoqItem & AIAnalysis Verisinden 3D Extrusion Elemanları (Demo/Statik Kutu YOK)
   const [extrusionElements2D, setExtrusionElements2D] = useState<Blueprint2DCoordinateItem[]>(
-    incomingAiData && incomingAiData.length > 0 ? incomingAiData : DEFAULT_AI_EXTRUSION_ITEMS
+    incomingAiData && incomingAiData.length > 0 ? incomingAiData : []
   )
   const [extrusionSource, setExtrusionSource] = useState<string>("PRISMA_AI_ANALYSIS")
   const [hasPdfAiAnalysis, setHasPdfAiAnalysis] = useState<boolean>(
@@ -1158,6 +1161,7 @@ export default function BimViewer({
                 setSelectedDiscipline(res.discipline)
               }
             } else {
+              setExtrusionElements2D([])
               setHasPdfAiAnalysis(Boolean(hasAiAnalysis))
             }
           })
@@ -1177,12 +1181,7 @@ export default function BimViewer({
     }
   }, [projectId, incomingAiData, activeModelUrl, isNon3DActiveFile, hasAiAnalysis, discipline])
 
-  // Open layer panel automatically on desktop displays (>= 1024px), keep collapsed on mobile
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-      setIsLayerPanelOpen(true)
-    }
-  }, [])
+  // Keep layer panel cleanly closed by default so 3D viewport is 100% unobstructed on load
 
   // IFC Viewer refs & states
   const ifcContainerRef = useRef<HTMLDivElement>(null)
@@ -1885,8 +1884,11 @@ export default function BimViewer({
             })
 
             const loadPromise = (async () => {
-              // 1. ZORUNLU İNDİRME (CORS Aşımı)
-              const res = await fetch(activeModelUrl)
+              // 1. ZORUNLU İNDİRME (CORS Aşımı - /api/file-proxy üzerinden)
+              const targetFetchUrl = activeModelUrl.startsWith("http")
+                ? `/api/file-proxy?url=${encodeURIComponent(activeModelUrl)}`
+                : activeModelUrl
+              const res = await fetch(targetFetchUrl)
               if (!res.ok) throw new Error("Dosya indirilemedi (HTTP " + res.status + ")")
 
               const blob = await res.blob()
@@ -2079,93 +2081,93 @@ export default function BimViewer({
     setXRayOpacity(100)
   }
 
-  return (
+  const activeExtrusionData =
+    incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D
+
+  const viewerShell = (
     <BimViewerErrorBoundary>
     <div className={
-      isFullscreen 
-        ? "fixed inset-0 z-[100] bg-slate-950 w-screen h-screen flex flex-col overflow-hidden select-none" 
-        : "relative flex flex-col w-full h-[calc(100vh-120px)] bg-slate-950 rounded-2xl overflow-hidden select-none border border-slate-800 shadow-2xl"
+      isFullscreen
+        ? "fixed inset-0 z-[1100] bg-slate-950 w-screen h-screen flex flex-col overflow-hidden select-none"
+        : "relative flex flex-col w-full h-full min-h-[580px] bg-slate-950 rounded-2xl overflow-hidden select-none border border-slate-800 shadow-2xl"
     }>
-      {/* Top Left: Engine Switcher & Auto Rotate Toolbar */}
-      <div className="absolute top-3 left-3 right-3 sm:right-auto z-30 flex flex-wrap items-center justify-between sm:justify-start gap-1.5 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/80 shadow-2xl">
-        <button
-          type="button"
-          onClick={() => {
-            setEngineMode("canvas")
-          }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-            engineMode === "canvas"
-              ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-blue-500/20"
-              : "text-slate-400 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <span>⚡ 3D Canvas (R3F)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setEngineMode("ifc")
-          }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-            engineMode === "ifc"
-              ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20"
-              : "text-slate-400 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <span>🏛️ IFC Motoru</span>
-        </button>
-
-        <div className="h-4 w-[1px] bg-slate-700 mx-1" />
-        <button
-          type="button"
-          onClick={() => setIsFullscreen(!isFullscreen)}
-          className="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors bg-slate-800 text-white hover:bg-slate-700 border border-slate-600"
-        >
-          {isFullscreen ? "↙️ Küçült" : "🔲 Tam Ekran"}
-        </button>
-
-        <div className="h-4 w-[1px] bg-slate-700 mx-1" />
-
-        <button
-          type="button"
-          onClick={() => setAutoRotate(!autoRotate)}
-          className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            autoRotate ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-white"
-          }`}
-          title="Otomatik Dönüş"
-        >
-          🔄 {autoRotate ? "Dönüş Açık" : "Döndür"}
-        </button>
-      </div>
-
-      {/* --- GLASSMORPHISM KATMANLAR & X-RAY KONTROL PANELİ (TOP RIGHT - ADIM 2) --- */}
-      {!isLayerPanelOpen ? (
-        <div className="absolute right-4 top-4 z-40 flex flex-col items-end pointer-events-auto">
-          {/* Collapsed Floating Button */}
+      {/* Non-Overlapping Top Workspace Header Bar (Normal Flex Flow) */}
+      <div className="shrink-0 px-3 py-2 bg-slate-900/95 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-20">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
-            onClick={() => setIsLayerPanelOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-900/90 hover:bg-slate-850 backdrop-blur-xl border border-cyan-500/40 rounded-xl shadow-[0_8px_30px_rgba(6,182,212,0.25)] text-white text-xs font-semibold transition-all transform hover:scale-105 pointer-events-auto"
+            onClick={() => setEngineMode("canvas")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+              engineMode === "canvas"
+                ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-blue-500/20"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
           >
-            <span className="text-base animate-pulse">🩻</span>
-            <span>Katmanlar & X-Ray</span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-              %{uiOpacity}
-            </span>
-            <div className="flex items-center gap-1 ml-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-            </div>
+            <span>⚡ 3D Sahne (R3F)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setEngineMode("ifc")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+              engineMode === "ifc"
+                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <span>🏛️ IFC Motoru</span>
+          </button>
+
+          <div className="h-4 w-px bg-slate-700 mx-0.5 hidden sm:block" />
+
+          <button
+            type="button"
+            onClick={() => setAutoRotate(!autoRotate)}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              autoRotate
+                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                : "bg-slate-800/70 text-slate-300 hover:text-white border border-slate-700/60"
+            }`}
+            title="Otomatik Dönüş"
+          >
+            🔄 {autoRotate ? "Dönüş Açık" : "Döndür"}
           </button>
         </div>
-      ) : (
-        // Expanded Glassmorphism Control Panel (Compact & Responsive)
-        <div className="absolute right-2 sm:right-4 top-16 w-[calc(100%-1rem)] max-w-[320px] max-h-[calc(100%-100px)] overflow-y-auto z-40 bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col border border-gray-700/60 pointer-events-auto animate-in fade-in zoom-in-95 duration-200">
+
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsLayerPanelOpen((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border whitespace-nowrap shrink-0 cursor-pointer ${
+              isLayerPanelOpen
+                ? "bg-cyan-600/25 text-cyan-200 border-cyan-400/60"
+                : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
+            }`}
+          >
+            <span>🩻</span>
+            <span>Katmanlar &amp; X-Ray</span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-950/70 text-cyan-300 border border-cyan-500/30">
+              %{uiOpacity}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors bg-slate-800 text-white hover:bg-slate-700 border border-slate-700 whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            {isFullscreen ? "↙️ Küçült" : "🔲 Tam Ekran"}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Split Workspace Row (Canvas Left + Optional Docked Layer Drawer Right - ZERO OVERLAP) */}
+      <div className="flex-1 min-h-0 flex relative overflow-hidden">
+      {/* Docked Right Layers & X-Ray Drawer (Renders beside canvas on desktop, slide-over on mobile) */}
+      {isLayerPanelOpen && (
+        <div className="order-2 absolute md:relative right-0 top-0 bottom-0 w-72 sm:w-80 shrink-0 z-30 bg-slate-900/95 backdrop-blur-md border-l border-slate-800 flex flex-col overflow-hidden shadow-2xl">
           {/* Panel Header */}
-          <div className="p-3 px-3.5 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-700/80 flex items-center justify-between shrink-0">
+          <div className="p-3 px-3.5 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-sm shadow-inner">
                 🩻
@@ -2469,9 +2471,10 @@ export default function BimViewer({
           </div>
         )}
 
-      {/* Main 3D Viewport - ADIM 2 & ADIM 3: R3F 2D->3D Otomatik Extrusion & Federated BIM */}
-      {isNon3DActiveFile && activeModelUrl && !hasPdfAiAnalysis && !isCheckingAiAnalysis ? (
-        <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} flex flex-col items-center justify-center p-8 text-center bg-slate-950`}>
+      {/* Main 3D Viewport - Order 1 Flex-1 (Cleanly beside docked right panel, ZERO overlap!) */}
+      <div className="order-1 flex-1 min-w-0 h-full relative overflow-hidden bg-slate-950">
+      {isNon3DActiveFile && activeModelUrl && activeExtrusionData.length === 0 && !isCheckingAiAnalysis ? (
+        <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-950">
           <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4 shadow-lg shadow-cyan-500/10">
             <Layers className="w-8 h-8" />
           </div>
@@ -2479,86 +2482,72 @@ export default function BimViewer({
             2D Çizim Henüz 3D Geometriye Aktarılmadı
           </h4>
           <p className="text-slate-400 text-xs max-w-md leading-relaxed mb-6">
-            Seçilen paftanın ({fileName || activeModelUrl.split("/").pop()}) 3D sahnede duvar, kolon ve tesisat olarak çizilebilmesi için doğrudan 3D&apos;ye aktarabilir veya 2D olarak inceleyebilirsiniz.
+            Seçilen paftanın ({fileName || activeModelUrl.split("/").pop()}) gerçek metrik ölçüleriyle 3D sahneye duvar, kolon ve tesisat olarak aktarılması için aşağıdaki butona tıklayın veya 2D olarak inceleyin.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {onTriggerAiAnalysis && (
               <button
                 type="button"
                 onClick={onTriggerAiAnalysis}
-                className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-600/30 flex items-center gap-2 cursor-pointer active:scale-95"
+                className="px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-600/30 flex items-center gap-2 cursor-pointer active:scale-95 whitespace-nowrap"
               >
                 <span>✨</span>
-                <span>Hemen 3D&apos;ye Aktar ve Sahneye Çiz</span>
+                <span>Gerçek Metrik Veriyle 3D&apos;ye Aktar</span>
               </button>
             )}
             {onOpen2DViewer && (
               <button
                 type="button"
                 onClick={onOpen2DViewer}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
               >
                 <span>👁️</span>
-                <span>2D Olarak İncele</span>
+                <span>2D Olarak Görüntüle</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                setHasPdfAiAnalysis(true)
-                setExtrusionElements2D(DEFAULT_AI_EXTRUSION_ITEMS)
-              }}
-              className="px-3 py-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 rounded-xl text-xs transition-colors cursor-pointer"
-            >
-              Varsayılan Extrusion ile Önizle
-            </button>
           </div>
         </div>
       ) : engineMode === "canvas" || isNon3DActiveFile ? (
-        <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} ${isSnaggingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} bg-slate-950`}>
-          {/* 2D->3D Otomatik Geometri (Extrusion) Bilgi Rozeti */}
-          {(isNon3DActiveFile || (!federatedModels.length && (!safeUrl || safeUrl.trim() === ""))) && (
-            <div className="absolute top-16 left-2 sm:left-4 max-w-[calc(100%-1rem)] sm:max-w-xl z-30 bg-slate-900/90 backdrop-blur-md border border-cyan-500/40 rounded-xl px-3.5 py-2 shadow-xl flex items-center gap-2 text-xs text-cyan-300 pointer-events-none">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>
-                <strong>2D→3D R3F Extrusion Motoru Aktif ({selectedDiscipline}):</strong> PDF/DWG &amp; Prisma BoQ koordinatlarından otomatik 3D model oluşturuldu ({(incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D).length} yapısal eleman).
+        <div className={`w-full h-full ${isSnaggingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} bg-slate-950 relative`}>
+          {/* Compact Non-Colliding Status Badge */}
+          {activeExtrusionData.length > 0 && (
+            <div className="absolute top-3 left-3 z-20 bg-slate-900/90 backdrop-blur-md border border-cyan-500/35 rounded-lg px-3 py-1.5 shadow-lg flex items-center gap-2 text-[11px] text-cyan-200 pointer-events-none max-w-[calc(100%-1.5rem)]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <span className="truncate">
+                <strong>Gerçek 3D BIM ({selectedDiscipline}):</strong> {activeExtrusionData.length} metrik yapısal eleman
               </span>
             </div>
           )}
           {/* Snagging Active Banner Hint */}
           {isSnaggingMode && (
-            <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 bg-red-600/90 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-2xl backdrop-blur-md border border-red-400 flex items-center gap-2 animate-bounce pointer-events-none">
-              <span>📍</span> Model üzerinde kusur noktasını seçmek için tıklayın!
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-red-600/95 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-2xl border border-red-400 flex items-center gap-2 pointer-events-none whitespace-nowrap">
+              <span>📍</span> Model üzerinde kusur noktasını seçmek için tıklayın
             </div>
           )}
           <ModelErrorBoundary
             fallback={(err, reset) => (
-              <div className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} flex flex-col items-center justify-center p-6 text-center bg-slate-900/90 backdrop-blur-md`}>
-                <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4">
-                  <Layers className="w-8 h-8" />
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-950">
+                <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4">
+                  <AlertTriangle className="w-7 h-7" />
                 </div>
-                <h4 className="text-white font-semibold text-base mb-2">2D→3D Geometri Motoru</h4>
+                <h4 className="text-white font-semibold text-base mb-2">3D Sahne Yükleme Hatası</h4>
                 <p className="text-slate-400 text-xs max-w-md mb-5 leading-relaxed">
-                  2D→3D Extrusion yapısını doğrudan inceleyebilirsiniz.
+                  {err?.message || "Seçili 3D model dosyası çözümlenirken hata oluştu."}
                 </p>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3 justify-center">
                   <button
                     type="button"
-                    onClick={() => {
-                      setSafeUrl(null)
-                      setActiveModelUrl("")
-                      reset()
-                    }}
-                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5"
+                    onClick={() => reset()}
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-colors cursor-pointer"
                   >
-                    ✨ 2D→3D Otomatik Modeli Aç
+                    Sahneyi Yenile
                   </button>
                 </div>
               </div>
             )}
           >
             <Canvas
-              key={safeUrl || activeModelUrl || "r3f-extrusion-canvas"}
+              key={`${safeUrl || activeModelUrl || "extrusion"}-${activeExtrusionData.length}`}
               dpr={[1, 2]}
               performance={{ min: 0.5 }}
               camera={{ far: 20000, near: 0.1, fov: 45, position: [35, 30, 35] }}
@@ -2567,42 +2556,30 @@ export default function BimViewer({
                 pointerDownPosRef.current = { x: e.clientX, y: e.clientY }
               }}
             >
-              <ambientLight intensity={1.5} />
-              <directionalLight position={[25, 35, 20]} intensity={2.5} castShadow />
-              <pointLight position={[-25, 25, -20]} intensity={1.2} />
-              <Environment preset="city" />
+              {/* Pure Studio Three.js Lighting - Zero external CDN HDR dependencies (never crashes/freezes!) */}
+              <color attach="background" args={["#070b14"]} />
+              <ambientLight intensity={1.15} />
+              <hemisphereLight args={["#dbeafe", "#0f172a", 0.95]} />
+              <directionalLight position={[35, 50, 30]} intensity={1.85} castShadow />
+              <directionalLight position={[-30, 28, -25]} intensity={0.85} color="#bae6fd" />
+              <pointLight position={[0, 20, 0]} intensity={0.5} />
 
               <Grid
                 renderOrder={-1}
-                position={[0, -0.01, 0]}
+                position={[0, -0.02, 0]}
                 infiniteGrid
                 cellSize={1}
                 sectionSize={5}
                 sectionColor="#3b82f6"
                 cellColor="#1e293b"
-                fadeDistance={100}
+                fadeDistance={180}
               />
 
               <Suspense fallback={<CanvasLoader />}>
-                <Bounds clip fit margin={1.2} observe>
+                <Bounds clip fit margin={1.25} observe>
                   <Center>
-                    {isNon3DActiveFile ? (
-                      /* ADIM 2 & ADIM 3: Seçilen dosya .pdf veya .dwg ise standart 3D Loader'ları KESİNLİKLE ÇALIŞTIRMA! Doğrudan <GeometryEngine2Dto3D data={aiData} discipline={selectedDiscipline} /> çizdir */
-                      <GeometryEngine2Dto3D
-                        data={incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D}
-                        discipline={selectedDiscipline}
-                        layerVisibility={layerVisibility}
-                        xRayOpacity={xRayOpacity}
-                        completedElements={completedElements}
-                        onElementCounts={(counts) => setCategoryCounts(counts)}
-                        onClick={handleModelClick}
-                        onPointerDown={(e: any) => {
-                          const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
-                          const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
-                          pointerDownPosRef.current = { x, y }
-                        }}
-                      />
-                    ) : safeUrl && safeUrl.trim() !== "" ? (
+                    {/* 1. Gerçek Yüklenmiş 3D Model (.ifc / .glb / .gltf) */}
+                    {!isNon3DActiveFile && safeUrl && safeUrl.trim() !== "" && (
                       isIfcUrlOrFile(activeModelUrl, fileName) ? (
                         <IfcCanvasModel
                           url={safeUrl}
@@ -2629,30 +2606,36 @@ export default function BimViewer({
                             pointerDownPosRef.current = { x, y }
                           }}
                         />
-                      ) : (
-                        <GeometryEngine2Dto3D
-                          data={incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D}
-                          discipline={selectedDiscipline}
-                          layerVisibility={layerVisibility}
-                          xRayOpacity={xRayOpacity}
-                          completedElements={completedElements}
-                          onElementCounts={(counts) => setCategoryCounts(counts)}
-                          onClick={handleModelClick}
-                          onPointerDown={(e: any) => {
-                            const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
-                            const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
-                            pointerDownPosRef.current = { x, y }
-                          }}
-                        />
-                      )
-                    ) : federatedModels && federatedModels.length > 0 ? (
+                      ) : null
+                    )}
+
+                    {/* 2. Gerçek Metrik 2D->3D Çıkarılmış CAD / PDF Yapısal Elemanları (Bütünleşik Sahnede Birlikte!) */}
+                    {activeExtrusionData.length > 0 && (
+                      <GeometryEngine2Dto3D
+                        data={activeExtrusionData}
+                        discipline={selectedDiscipline}
+                        layerVisibility={layerVisibility}
+                        xRayOpacity={xRayOpacity}
+                        completedElements={completedElements}
+                        onElementCounts={(counts) => setCategoryCounts(counts)}
+                        onClick={handleModelClick}
+                        onPointerDown={(e: any) => {
+                          const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                          const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                          pointerDownPosRef.current = { x, y }
+                        }}
+                      />
+                    )}
+
+                    {/* 3. Federated 3D Models fallback when no primary safeUrl & no extrusion yet */}
+                    {!safeUrl && activeExtrusionData.length === 0 && federatedModels && federatedModels.length > 0 && (
                       federatedModels
                         .filter((m) => m.visible && m.url && isValid3DModelUrl(m.url, m.name))
                         .map((item) => (
                           <group key={item.id || item.url}>
                             {isIfcUrlOrFile(item.url, item.name) ? (
                               <IfcCanvasModel
-                                url={item.url}
+                                url={item.url.startsWith("http") ? `/api/file-proxy?url=${encodeURIComponent(item.url)}` : item.url}
                                 layerVisibility={layerVisibility}
                                 xRayOpacity={xRayOpacity}
                                 onClick={handleModelClick}
@@ -2664,7 +2647,7 @@ export default function BimViewer({
                               />
                             ) : (
                               <GltfModel
-                                url={item.url}
+                                url={item.url.startsWith("http") ? `/api/file-proxy?url=${encodeURIComponent(item.url)}` : item.url}
                                 layerVisibility={layerVisibility}
                                 xRayOpacity={xRayOpacity}
                                 completedElements={completedElements}
@@ -2679,21 +2662,6 @@ export default function BimViewer({
                             )}
                           </group>
                         ))
-                    ) : (
-                      <GeometryEngine2Dto3D
-                        data={incomingAiData && incomingAiData.length > 0 ? incomingAiData : extrusionElements2D}
-                        discipline={selectedDiscipline}
-                        layerVisibility={layerVisibility}
-                        xRayOpacity={xRayOpacity}
-                        completedElements={completedElements}
-                        onElementCounts={(counts) => setCategoryCounts(counts)}
-                        onClick={handleModelClick}
-                        onPointerDown={(e: any) => {
-                          const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
-                          const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
-                          pointerDownPosRef.current = { x, y }
-                        }}
-                      />
                     )}
                   </Center>
 
@@ -2802,9 +2770,9 @@ export default function BimViewer({
           </ModelErrorBoundary>
         </div>
       ) : (
-        <div className={`relative w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"}`}>
+        <div className="relative w-full h-full">
           {/* Web-IFC Viewer Container */}
-          <div ref={ifcContainerRef} className={`w-full ${isFullscreen ? "h-screen" : "h-full min-h-[650px]"} bg-slate-950`} />
+          <div ref={ifcContainerRef} className="w-full h-full bg-slate-950" />
 
           {ifcLoading && (
             <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-30">
@@ -2834,7 +2802,7 @@ export default function BimViewer({
                   setEngineMode("canvas")
                   if (effectiveUrl) setActiveModelUrl(effectiveUrl)
                 }}
-                className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-all"
+                className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-all cursor-pointer"
               >
                 ⚡ 3D Canvas Motoruna Geç
               </button>
@@ -2842,72 +2810,76 @@ export default function BimViewer({
           )}
         </div>
       )}
+      </div>
+      </div>
 
-      {/* Floating Bottom Toolbar (BoQ 5D, Snagging, Measurement & AR Buttons - ADIM 3) */}
-      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-2 z-50 bg-gray-900/90 p-2.5 sm:p-3 rounded-xl backdrop-blur-md border border-gray-700/50 w-[calc(100%-1rem)] max-w-2xl shadow-2xl pointer-events-auto">
-        {/* 5D BoQ Toggle */}
-        <button
-          type="button"
-          onClick={() => {
-            const nextMode = !isBoqMode
-            setIsBoqMode(nextMode)
-            setIsMeasureMode(false)
-            setIsSnaggingMode(false)
-            if (!nextMode) {
+      {/* Non-Overlapping Docked Bottom Action Bar (Normal Flex Flow - NEVER Clipped or Overlapping!) */}
+      <div className="shrink-0 px-3 py-2 bg-slate-900/95 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 z-20">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/* 5D BoQ Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              const nextMode = !isBoqMode
+              setIsBoqMode(nextMode)
+              setIsMeasureMode(false)
+              setIsSnaggingMode(false)
+              if (!nextMode) {
+                setSelectedBoqElement(null)
+                restorePreviousHighlight()
+              }
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+              isBoqMode
+                ? "bg-emerald-600 text-white border-emerald-400 shadow-md"
+                : "bg-slate-800 text-slate-300 hover:text-white border-slate-700 hover:bg-slate-700"
+            }`}
+          >
+            <span>📦 {isBoqMode ? "5D Poz Modu Açık" : "Poz & Metraj (5D)"}</span>
+          </button>
+
+          {/* Snagging Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsSnaggingMode(!isSnaggingMode)
+              setIsMeasureMode(false)
+              setIsBoqMode(false)
               setSelectedBoqElement(null)
-              restorePreviousHighlight()
-            }
-          }}
-          className={`px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 backdrop-blur-md ${
-            isBoqMode
-              ? "bg-emerald-600/90 text-white border-emerald-400/60 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
-              : "bg-slate-900/90 text-slate-300 hover:text-white border-slate-700/80 hover:bg-slate-800"
-          }`}
-        >
-          <span>📦 {isBoqMode ? "5D Poz Modu Açık" : "Poz & Metraj (5D)"}</span>
-        </button>
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+              isSnaggingMode
+                ? "bg-red-600 text-white border-red-400 shadow-md"
+                : "bg-slate-800 text-slate-300 hover:text-white border-slate-700 hover:bg-slate-700"
+            }`}
+          >
+            <span>📍 {isSnaggingMode ? "Kusur Modu Açık" : "Kusur İşaretle"}</span>
+          </button>
 
-        {/* Snagging Toggle */}
-        <button
-          type="button"
-          onClick={() => {
-            setIsSnaggingMode(!isSnaggingMode)
-            setIsMeasureMode(false)
-            setIsBoqMode(false)
-            setSelectedBoqElement(null)
-          }}
-          className={`px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 backdrop-blur-md ${
-            isSnaggingMode
-              ? "bg-red-600/90 text-white border-red-500/50 shadow-red-500/20"
-              : "bg-slate-900/90 text-slate-300 hover:text-white border-slate-700/80 hover:bg-slate-800"
-          }`}
-        >
-          <span>📍 {isSnaggingMode ? "Kusur Modu Açık" : "Kusur İşaretle"}</span>
-        </button>
+          {/* Measurement Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              const nextMode = !isMeasureMode
+              setIsMeasureMode(nextMode)
+              setIsSnaggingMode(false)
+              if (nextMode) {
+                setMeasurePoints([])
+                setMeasuredDistance(null)
+                setSelectedElementMetrics(null)
+              }
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+              isMeasureMode
+                ? "bg-cyan-600 text-white border-cyan-400 shadow-md"
+                : "bg-slate-800 text-slate-300 hover:text-white border-slate-700 hover:bg-slate-700"
+            }`}
+          >
+            <span>📏 {isMeasureMode ? "Ölçüm Modu Açık" : "3D Lazer Metre"}</span>
+          </button>
+        </div>
 
-        {/* Measurement Toggle */}
-        <button
-          type="button"
-          onClick={() => {
-            const nextMode = !isMeasureMode
-            setIsMeasureMode(nextMode)
-            setIsSnaggingMode(false)
-            if (nextMode) {
-              setMeasurePoints([])
-              setMeasuredDistance(null)
-              setSelectedElementMetrics(null)
-            }
-          }}
-          className={`px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border transition-all flex items-center gap-1.5 backdrop-blur-md ${
-            isMeasureMode
-              ? "bg-cyan-600/90 text-white border-cyan-400/60 shadow-[0_0_15px_rgba(6,182,212,0.5)]"
-              : "bg-slate-900/90 text-slate-300 hover:text-white border-slate-700/80 hover:bg-slate-800"
-          }`}
-        >
-          <span>📏 {isMeasureMode ? "Ölçüm Modu Açık" : "Ölçüm Yap"}</span>
-        </button>
-
-        {/* AR Button */}
+        {/* Right Side: AR Button */}
         {projectId && (
           <button
             type="button"
@@ -2923,7 +2895,7 @@ export default function BimViewer({
                 : `/ar/${projectId}`
               window.location.href = targetUrl
             }}
-            className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-[0_0_20px_rgba(6,182,212,0.6)] border border-cyan-300/40 transition-all flex items-center gap-1.5 transform hover:scale-105 active:scale-95"
+            className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold shadow-md border border-cyan-400/40 transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
           >
             <span className="w-2 h-2 rounded-full bg-cyan-300 animate-ping" />
             <span>📱 AR Sahada Gör</span>
@@ -3645,4 +3617,10 @@ export default function BimViewer({
     </div>
     </BimViewerErrorBoundary>
   )
+
+  if (isFullscreen && typeof document !== "undefined") {
+    return createPortal(viewerShell, document.body)
+  }
+
+  return viewerShell
 }

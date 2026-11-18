@@ -145,9 +145,29 @@ export default function AnnotatableFloorPlanViewer({
           try { existingInstance.dispose(); } catch (e) { }
         }
 
+        // Register LibreDWG Converter for binary AutoCAD .dwg (AC1012-AC1032) support
         try {
-          AcApDocManager.createInstance({ 
-            container: containerRef.current!
+          const { AcDbDatabaseConverterManager, AcDbFileType } = await import("@mlightcad/data-model");
+          const { AcDbLibreDwgConverter } = await import("@mlightcad/libredwg-converter");
+          AcDbDatabaseConverterManager.instance.register(
+            AcDbFileType.DWG,
+            new AcDbLibreDwgConverter({
+              convertByEntityType: false,
+              useWorker: true,
+              parserWorkerUrl: "/workers/libredwg-parser-worker.js",
+            })
+          );
+        } catch (regErr) {
+          console.warn("LibreDWG converter registration warning:", regErr);
+        }
+
+        try {
+          AcApDocManager.createInstance({
+            container: containerRef.current!,
+            webworkerFileUrls: {
+              dwgParser: "/workers/libredwg-parser-worker.js",
+              mtextRender: "/workers/mtext-renderer-worker.js",
+            },
           } as any);
           docInstance = AcApDocManager.instance;
           viewerInstanceRef.current = docInstance;
@@ -157,7 +177,10 @@ export default function AnnotatableFloorPlanViewer({
 
         if (!docInstance) return;
 
-        const response = await fetch(fileUrl);
+        const targetFetchUrl = fileUrl.startsWith("http")
+          ? `/api/file-proxy?url=${encodeURIComponent(fileUrl)}`
+          : fileUrl;
+        const response = await fetch(targetFetchUrl);
         const arrayBuffer = await response.arrayBuffer();
         const fileContent = new Uint8Array(arrayBuffer);
         

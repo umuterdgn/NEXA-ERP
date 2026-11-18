@@ -6,7 +6,6 @@ import AdminSidebar from "@/components/admin/Sidebar"
 export default function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(260)
-  const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     try {
@@ -18,17 +17,9 @@ export default function AdminLayoutShell({ children }: { children: React.ReactNo
         }
       }
     } catch {}
-
-    const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 768)
-    }
-    checkDesktop()
-    window.addEventListener("resize", checkDesktop)
-    return () => window.removeEventListener("resize", checkDesktop)
   }, [])
 
-  const currentMarginLeft = isDesktop ? (isCollapsed ? 80 : sidebarWidth) : 0
-  const currentContentWidth = isDesktop ? `calc(100% - ${currentMarginLeft}px)` : "100%"
+  const desktopSpacerWidth = isCollapsed ? 80 : sidebarWidth
 
   return (
     <div className="flex h-screen w-full overflow-hidden relative bg-slate-50 dark:bg-[#0A0F1C]">
@@ -38,15 +29,14 @@ export default function AdminLayoutShell({ children }: { children: React.ReactNo
         sidebarWidth={sidebarWidth}
         setSidebarWidth={setSidebarWidth}
       />
-      <main
-        style={{
-          marginLeft: `${currentMarginLeft}px`,
-          width: currentContentWidth,
-          transition: "margin-left 0.2s ease, width 0.2s ease",
-        }}
-        className="relative z-0 flex-1 h-full overflow-y-auto bg-slate-50 dark:bg-[#0A0F1C]"
-      >
-        <div className="p-3 sm:p-5 lg:p-6 pt-16 md:pt-6 min-h-full w-full max-w-full">
+      {/* Desktop spacer matching fixed sidebar width exactly - prevents sidebar overlap & hydration jump */}
+      <div
+        aria-hidden="true"
+        className="hidden md:block shrink-0 transition-[width] duration-200"
+        style={{ width: `${desktopSpacerWidth}px` }}
+      />
+      <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-[#0A0F1C]">
+        <div className="p-3 sm:p-5 lg:p-6 pt-16 md:pt-6 min-h-full w-full max-w-full overflow-x-hidden">
           {children}
         </div>
       </main>

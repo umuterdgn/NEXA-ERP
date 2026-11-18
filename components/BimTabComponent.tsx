@@ -425,63 +425,35 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
   return (
     <div className="w-full space-y-6">
-      {/* Tab Header with Title & Action Buttons */}
-      <div className="flex flex-wrap justify-between items-center gap-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800 backdrop-blur-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold text-white tracking-wide">3D BIM Modeli & Dijital İkiz</h3>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              WebGL 3D
+      {/* Tab Header with Title & Action Buttons - Clean, Zero Wrapping Collision */}
+      <div className="flex flex-wrap justify-between items-center gap-3 bg-slate-900/80 p-4 rounded-xl border border-slate-800 backdrop-blur-sm">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-wide truncate">
+              3D BIM Modeli &amp; Dijital İkiz
+            </h3>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 whitespace-nowrap shrink-0">
+              Gerçek Metrik CAD + BIM
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Projenin 3D Yapı Bilgi Modellemesi, kalıcı model arşivi ve saha AR denetimi
+            Projenize yüklenen DWG, DXF, PDF, IFC ve GLB çizimlerinden gerçek metrik 2D/3D inceleme ve saha AR denetimi
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Quick Test / Bypass Actions */}
-          <button
-            type="button"
-            onClick={() => {
-              setBimUrl("https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb")
-              setShowUploader(false)
-              toast.success("🏢 3D Test Modeli (GLB) yüklendi!")
-            }}
-            className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-lg text-xs font-semibold border border-cyan-500/30 transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(6,182,212,0.15)] active:scale-95"
-            title="Public GLB Yapı Modeli ile test edin"
-          >
-            <span>🏢 3D Bina (GLB)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setBimUrl("/sample.ifc")
-              setShowUploader(false)
-              toast.success("🏛️ Örnek IFC Modeli yüklendi!")
-            }}
-            className="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 rounded-lg text-xs font-semibold border border-amber-500/40 transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(245,158,11,0.15)] active:scale-95"
-            title="Örnek IFC formatı ile test edin"
-          >
-            <span>🏛️ Örnek IFC</span>
-          </button>
-
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {/* AR Button */}
           {(bimUrl || project.bimFiles?.length || project.bimModelUrl || project.ifcModelUrl) && (
             <button
               type="button"
               onClick={handleOpenAR}
-              className="relative group overflow-hidden px-4 py-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-lg font-bold text-xs shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:shadow-[0_0_30px_rgba(6,182,212,0.8)] border border-cyan-300/40 transition-all flex items-center gap-2 transform hover:scale-[1.02] active:scale-[0.98]"
+              className="px-3.5 py-2 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-lg font-bold text-xs shadow-md border border-cyan-400/40 transition-all flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
             >
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-2 w-2 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
               </span>
-              <svg className="w-4 h-4 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span>AR ile Sahada Gör</span>
+              <span>📱 AR ile Sahada Gör</span>
             </button>
           )}
 
@@ -489,13 +461,13 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           <button
             type="button"
             onClick={() => setShowUploader(true)}
-            className="px-3 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-lg text-xs font-semibold shadow-md transition-all flex items-center gap-1.5 active:scale-95"
-            title="Yeni bir IFC / GLTF model yükleyin"
+            className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-lg text-xs font-semibold shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
+            title="Yeni DWG, DXF, PDF, IFC veya GLB dosya yükleyin"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            <span>+ Yeni Model Yükle</span>
+            <span>+ Dosya / Model Yükle</span>
           </button>
         </div>
       </div>
@@ -724,7 +696,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             </button>
           </div>
 
-          <div className="relative w-full h-[620px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
+          <div className="relative w-full h-[680px] lg:h-[740px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
             {/* 3D BIMViewer / GeometryEngine2Dto3D render ediliyor */}
             <Suspense
               fallback={
@@ -825,37 +797,15 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           </div>
           <h4 className="text-white text-lg font-bold mb-1">Henüz Aktif Model Seçilmedi</h4>
           <p className="text-slate-400 text-xs mb-6 max-w-md mx-auto leading-relaxed">
-            Aşağıdaki arşivden kayıtlı bir model açabilir, test modellerini inceleyebilir veya yeni bir IFC / GLTF model yükleyebilirsiniz.
+            Aşağıdaki arşivden yüklediğiniz bir DWG, DXF, PDF, IFC veya GLB dosyasını seçip 2D görüntüleyebilir, 3D&apos;ye aktarabilir veya yeni bir proje dosyası yükleyebilirsiniz.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
               onClick={() => setShowUploader(true)}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2"
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer whitespace-nowrap"
             >
-              <span>+ İlk Modeli Yükle</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setBimUrl("/models/bina.glb")
-                setShowUploader(false)
-                toast.success("🏢 3D Dijital İkiz Modeli yüklendi!")
-              }}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5"
-            >
-              <span>🏢 3D Bina (GLB) Test Et</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setBimUrl("/sample.ifc")
-                setShowUploader(false)
-                toast.success("🏛️ Örnek IFC Modeli yüklendi!")
-              }}
-              className="px-4 py-2.5 bg-purple-900/40 hover:bg-purple-800/50 text-purple-200 rounded-xl text-xs font-semibold border border-purple-500/40 transition-colors flex items-center gap-1.5"
-            >
-              <span>🏛️ Örnek IFC Test Et</span>
+              <span>+ İlk Proje Dosyasını / Modeli Yükle</span>
             </button>
           </div>
         </div>
@@ -1124,85 +1074,88 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                     )}
                   </div>
 
-                  {/* ADIM 2: Kullanıcı Kontrollü Manuel Disiplin Seçici (Tagging) + 2D Görüntüle + AI Analiz + 3D Aç Butonları */}
-                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-700/60">
-                    <select
-                      value={currentDiscipline}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        setDocDisciplines((prev) => ({ ...prev, [doc.fileUrl]: val }))
-                        if (bimUrl === doc.fileUrl) {
-                          setSelectedDiscipline(val)
-                        }
-                      }}
-                      className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-bold focus:outline-none focus:border-cyan-400 cursor-pointer shrink-0"
-                      title="Pafta Disiplinini Seçin (Mimari, Statik, Elektrik, Mekanik, Harita)"
-                    >
-                      {DISCIPLINE_OPTIONS.map((disc) => (
-                        <option key={disc} value={disc} className="bg-slate-900 text-white">
-                          {disc}
-                        </option>
-                      ))}
-                    </select>
+                  {/* Temiz 2 Satırlı Aksiyon Gridi (Kayma / Üst Üste Binme Yok) */}
+                  <div className="space-y-2 pt-3 border-t border-slate-700/60">
+                    {/* Satır 1: Disiplin Seçici + 2D Görüntüle */}
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={currentDiscipline}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setDocDisciplines((prev) => ({ ...prev, [doc.fileUrl]: val }))
+                          if (bimUrl === doc.fileUrl) {
+                            setSelectedDiscipline(val)
+                          }
+                        }}
+                        className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-bold focus:outline-none focus:border-cyan-400 cursor-pointer"
+                        title="Pafta Disiplinini Seçin (Mimari, Statik, Elektrik, Mekanik, Harita)"
+                      >
+                        {DISCIPLINE_OPTIONS.map((disc) => (
+                          <option key={disc} value={disc} className="bg-slate-900 text-white">
+                            {disc}
+                          </option>
+                        ))}
+                      </select>
 
-                    {/* 2D Pafta & CAD Görüntüle Modal Butonu */}
-                    <button
-                      type="button"
-                      onClick={() => setSelected2DModalDoc(doc)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-amber-400/50 text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
-                      title="2D Paftayı ve CAD Çizimini Yüksek Çözünürlükte İncele (DWG, DXF, PDF, Görsel)"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-amber-400" />
-                      <span>2D Görüntüle</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelected2DModalDoc(doc)}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-amber-400/50 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap active:scale-95 cursor-pointer"
+                        title="2D Paftayı ve CAD Çizimini Yüksek Çözünürlükte İncele (DWG, DXF, PDF, Görsel)"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span>2D Görüntüle</span>
+                      </button>
+                    </div>
 
-                    {/* Doğrudan 3D'ye Aktar Butonu (Demo Yok, Anında Geometri Oluşturur) */}
-                    <button
-                      type="button"
-                      onClick={() => handleDirect3DConversion(doc, currentDiscipline)}
-                      disabled={isConvertingTo3DDocUrl === doc.fileUrl}
-                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer active:scale-95 ${
-                        isConvertingTo3DDocUrl === doc.fileUrl
-                          ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 cursor-wait"
-                          : isAnalyzed
-                          ? "bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300"
-                          : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-600/20"
-                      }`}
-                      title="2D Çizimi Doğrudan 3D Geometriye Çevir ve Mevcut 3D BIM Modeline Ekle"
-                    >
-                      {isConvertingTo3DDocUrl === doc.fileUrl ? (
-                        <>
-                          <div className="w-3.5 h-3.5 border-2 border-cyan-300 border-t-transparent rounded-full animate-spin" />
-                          <span>3D'ye Aktarılıyor...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-3.5 h-3.5 text-cyan-300 shrink-0" />
-                          <span>{isAnalyzed ? "✨ Yeniden 3D'ye Aktar" : "✨ 3D'ye Aktar"}</span>
-                        </>
-                      )}
-                    </button>
+                    {/* Satır 2: Doğrudan 3D'ye Aktar + 3D Aç */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDirect3DConversion(doc, currentDiscipline)}
+                        disabled={isConvertingTo3DDocUrl === doc.fileUrl}
+                        className={`flex-1 min-w-0 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer active:scale-95 ${
+                          isConvertingTo3DDocUrl === doc.fileUrl
+                            ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 cursor-wait"
+                            : isAnalyzed
+                            ? "bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300"
+                            : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-600/20"
+                        }`}
+                        title="2D Çizimdeki Gerçek Metrik Verileri 3D Geometriye Çevir ve Mevcut 3D BIM Modeline Ekle"
+                      >
+                        {isConvertingTo3DDocUrl === doc.fileUrl ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-cyan-300 border-t-transparent rounded-full animate-spin shrink-0" />
+                            <span className="truncate">Aktarılıyor...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 text-cyan-300 shrink-0" />
+                            <span className="truncate">{isAnalyzed ? "Yeniden 3D'ye Aktar" : "3D'ye Aktar"}</span>
+                          </>
+                        )}
+                      </button>
 
-                    {/* 3D Canvas'ta Aç / Odaklan */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBimUrl(doc.fileUrl)
-                        setActiveFileName(doc.fileName)
-                        setSelectedDiscipline(currentDiscipline)
-                        setShowUploader(false)
-                        viewportContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                        if (isAnalyzed) {
-                          toast.success(`"${doc.fileName}" (${currentDiscipline}) 3D Extrusion modeli sahneye çizildi!`)
-                        } else {
-                          toast(`"${doc.fileName}" seçildi. 3D geometriyi sahneye eklemek için "3D'ye Aktar" butonuna tıklayabilirsiniz.`)
-                        }
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
-                      title="3D Canvas'ta Aç"
-                    >
-                      <span>3D Aç</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBimUrl(doc.fileUrl)
+                          setActiveFileName(doc.fileName)
+                          setSelectedDiscipline(currentDiscipline)
+                          setShowUploader(false)
+                          viewportContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                          if (isAnalyzed) {
+                            toast.success(`"${doc.fileName}" (${currentDiscipline}) 3D sahnede odaklandı!`)
+                          } else {
+                            toast(`"${doc.fileName}" seçildi. Gerçek metrik 3D oluşturmak için "3D'ye Aktar" butonuna tıklayın.`)
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors shrink-0 whitespace-nowrap flex items-center justify-center gap-1 cursor-pointer"
+                        title="3D Canvas'ta Aç"
+                      >
+                        <span>3D Aç</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
@@ -1287,7 +1240,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
       {/* AR QR Code Modal for Desktop */}
       {showARModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="relative bg-slate-900 border border-cyan-500/30 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-[0_0_50px_rgba(6,182,212,0.25)] text-center animate-in fade-in zoom-in-95 duration-200">
             <button
               type="button"

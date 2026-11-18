@@ -95,7 +95,7 @@ export interface Extruded3DBoxMeshData {
  * 3D blok verisi üretir.
  */
 export function generate3DFrom2DData(
-  elements: Blueprint2DCoordinateElement[] = DEFAULT_AI_EXTRUSION_COORDINATES,
+  elements: Blueprint2DCoordinateElement[] = [],
   defaultDiscipline?: string
 ): {
   groupedByDiscipline: Record<
@@ -105,10 +105,7 @@ export function generate3DFrom2DData(
   counts: Record<"mimari" | "statik" | "elektrik" | "mekanik", number>
   allMeshes: Extruded3DBoxMeshData[]
 } {
-  const source =
-    Array.isArray(elements) && elements.length > 0
-      ? elements
-      : DEFAULT_AI_EXTRUSION_COORDINATES
+  const source = Array.isArray(elements) && elements.length > 0 ? elements : []
 
   const groupedByDiscipline: Record<
     "Mimari" | "Statik" | "Elektrik" | "Mekanik",
