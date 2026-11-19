@@ -43,4 +43,7 @@ next-env.d.ts
 # scratch scripts
 scratch/
 
+# presentation captures
+presentation/screenshots/
+
 /app/generated/prisma

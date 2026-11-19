@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Nexa ERP — Ürün Tanıtım & Sistem Mimarisi Sunumu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    @page {
+      size: 1920px 1080px;
+      margin: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #050811;
+      color: #F1F5F9;
+      -webkit-font-smoothing: antialiased;
+      width: 1920px;
+      margin: 0 auto;
+    }
+
+    h1, h2, h3, h4, .brand-font {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .slide {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      padding: 56px 80px 48px 80px;
+      background: radial-gradient(circle at 85% 15%, rgba(37, 99, 235, 0.18) 0%, transparent 45%),
+                  radial-gradient(circle at 15% 85%, rgba(124, 58, 237, 0.14) 0%, transparent 40%),
+                  linear-gradient(180deg, #070B16 0%, #04060D 100%);
+    }
+
+    /* Top Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 20px;
+    }
+
+    .slide-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-logo-pill {
+      background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+      color: white;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 1.5px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .slide-category {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #38BDF8;
+    }
+
+    .slide-title-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-title {
+      font-size: 34px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .slide-subtitle {
+      font-size: 16px;
+      color: #94A3B8;
+      margin-top: 4px;
+      font-weight: 400;
+    }
+
+    .slide-header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .slide-counter {
+      font-size: 14px;
+      font-weight: 600;
+      color: #64748B;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+    }
+
+    /* Main Content Area */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      gap: 40px;
+      align-items: stretch;
+      min-height: 0;
+    }
+
+    /* Cards & Glassmorphism */
+    .glass-card {
+      background: rgba(13, 21, 39, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .glass-card-glow {
+      box-shadow: 0 0 40px -10px rgba(56, 189, 248, 0.25), 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
+    /* Screenshot Container */
+    .screenshot-frame {
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      overflow: hidden;
+      background: #02040A;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(56, 189, 248, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .screenshot-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .screenshot-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38BDF8;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    /* Badges & Chips */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .chip-blue {
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #60A5FA;
+    }
+
+    .chip-cyan {
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      color: #22D3EE;
+    }
+
+    .chip-purple {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #C084FC;
+    }
+
+    .chip-emerald {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34D399;
+    }
+
+    /* Feature List */
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .feature-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .feature-icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #38BDF8;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .feature-text h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 4px;
+    }
+
+    .feature-text p {
+      font-size: 13.5px;
+      color: #94A3B8;
+      line-height: 1.5;
+    }
+
+    /* Metrics Grid */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .metric-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #38BDF8;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: #94A3B8;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Bottom Footer */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+      color: #64748B;
+    }
+
+    .slide-footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .confidential-tag {
+      color: #EF4444;
+      font-weight: 600;
+      background: rgba(239, 68, 68, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 1: COVER                             -->
+  <!-- ========================================== -->
+  <section class="slide" style="justify-content: space-between; padding: 70px 100px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; color: white; box-shadow: 0 0 35px rgba(59, 130, 246, 0.6); border: 1px solid rgba(255,255,255,0.2);">
+          NX
+        </div>
+        <div>
+          <span style="font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: #FFFFFF;">NEXA <span style="color: #38BDF8;">ERP</span></span>
+          <span style="margin-left: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38BDF8; padding: 4px 10px; border-radius: 6px;">Enterprise v4.2</span>
+        </div>
+      </div>
+      <div class="chip chip-cyan" style="font-size: 13px;">
+        ● CANLI SİSTEM MİMARİSİ & ÜRÜN SUNUMU
+      </div>
+    </div>
+
+    <div style="max-width: 1200px; margin: 40px 0;">
+      <div class="chip chip-purple" style="margin-bottom: 24px; font-size: 14px;">
+        ✦ ConTech & Yapay Zeka Destekli Dijital İkiz Ekosistemi
+      </div>
+      <h1 style="font-size: 64px; font-weight: 900; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 24px; color: #FFFFFF;">
+        Şantiyeden Hakedişe, <br>
+        <span style="background: linear-gradient(90deg, #38BDF8 0%, #3B82F6 50%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          2D Paftadan 3D Yapay Zeka Motoruna
+        </span>
+      </h1>
+      <p style="font-size: 22px; color: #94A3B8; line-height: 1.6; max-width: 950px; font-weight: 400;">
+        Nexa ERP; mimari paftaları AI Vision ile analiz edip otomatik metraj çıkaran, 3D Federated BIM ile duvar arkası tesisatı gösteren, şantiye IoT takibini ve yasal YİBF yapı denetim süreçlerini tek platformda birleştiren yeni nesil inşaat yönetim sistemidir.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 36px;">
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 13px; color: #64748B; font-weight: 600; text-transform: uppercase;">Hedef Kitle</span>
+        <span style="font-size: 18px; color: #FFFFFF; font-weight: 700; margin-top: 6px;">Müteahhit, Yapı Denetim, Taşeron</span>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 13px; color: #64748B; font-weight: 600; text-transform: uppercase;">Yapay Zeka Motoru</span>
+        <span style="font-size: 18px; color: #38BDF8; font-weight: 700; margin-top: 6px;">Gemini 2.0 Vision & LibreDWG</span>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 13px; color: #64748B; font-weight: 600; text-transform: uppercase;">3D & Görselleştirme</span>
+        <span style="font-size: 18px; color: #A855F7; font-weight: 700; margin-top: 6px;">Web-IFC, R3F & WebGL X-Ray</span>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 13px; color: #64748B; font-weight: 600; text-transform: uppercase;">Yasal Uyumluluk</span>
+        <span style="font-size: 18px; color: #10B981; font-weight: 700; margin-top: 6px;">T.C. ÇŞB e-YİBF & Karot Testleri</span>
+      </div>
+    </div>
+
+    <div class="slide-footer" style="margin-top: 0; padding-top: 20px;">
+      <span>© 2026 NXA Software • nxerp.com.tr</span>
+      <span class="confidential-tag">GİZLİ & KURUMSAL SUNUM</span>
+      <span>Tüm Hakları Saklıdır</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 2: THE PROBLEM                       -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Sektörel Zorluklar & Analiz</span>
+          <h2 class="slide-title">İnşaat Sektöründeki Kritik Parçalı Yapı ve Veri Kayıpları</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">02 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- 4 Problem Box Grid -->
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; width: 100%;">
+        <div class="glass-card" style="border-left: 4px solid #EF4444;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <span class="chip" style="background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3);">01. 2D Pafta & Manuel Metraj Sapmaları</span>
+            <span style="font-size: 28px; font-weight: 900; color: #EF4444;">%15-%25</span>
+          </div>
+          <h3 style="font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 10px;">Cetvelle Çıkarılan Hatalı Keşifler</h3>
+          <p style="font-size: 15px; color: #94A3B8; line-height: 1.6;">
+            Mimari ve statik projeler PDF/DWG formatında şantiye masalarında güncelliğini yitirir. Elle yapılan metraj hesapları %20'lere varan demir ve beton israfına veya malzeme açığına yol açarak projelerin bütçesini tüketir.
+          </p>
+          <div class="metrics-row" style="margin-top: auto;">
+            <div class="metric-box">
+              <span class="metric-value" style="color: #EF4444;">3-4 Hafta</span>
+              <span class="metric-label">Manuel Metraj Süresi</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-value" style="color: #EF4444;">%18</span>
+              <span class="metric-label">Maliyet Taşması Riski</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-value" style="color: #EF4444;">0 Senkron</span>
+              <span class="metric-label">2D - 3D Veri Bağı</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card" style="border-left: 4px solid #F59E0B;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <span class="chip" style="background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3);">02. Saha & Taşeron Uyuşmazlıkları</span>
+            <span style="font-size: 28px; font-weight: 900; color: #F59E0B;">45+ Gün</span>
+          </div>
+          <h3 style="font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 10px;">Geciken Hakedişler ve İmalat Hataları</h3>
+          <p style="font-size: 15px; color: #94A3B8; line-height: 1.6;">
+            Taşeronun sahada ne kadar imalat yaptığı WhatsApp fotoğrafları ve kağıt tutanaklarla takip edilmeye çalışılır. İmalat kanıtı eksikliği ve onay gecikmeleri nakit akışını kilitler, yargıya taşınan ihtilaflar doğurur.
+          </p>
+          <div class="metrics-row" style="margin-top: auto;">
+            <div class="metric-box">
+              <span class="metric-value" style="color: #F59E0B;">%35</span>
+              <span class="metric-label">Hakediş İtiraz Oranı</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-value" style="color: #F59E0B;">12+ Kanal</span>
+              <span class="metric-label">Kopuk İletişim Aracı</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-value" style="color: #F59E0B;">Yüksek</span>
+              <span class="metric-label">Çift Ödeme Riski</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card" style="border-left: 4px solid #38BDF8;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <span class="chip chip-cyan">03. Görünmeyen Tesisat Çakışmaları</span>
+            <span style="font-size: 28px; font-weight: 900; color: #38BDF8;">3x Kırım</span>
+          </div>
+          <h3 style="font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 10px;">Duvar Kırıp Boru Arama Maliyeti</h3>
+          <p style="font-size: 15px; color: #94A3B8; line-height: 1.6;">
+            Statik kolonlar ile havalandırma veya elektrik borularının çakışması sahada sıva ve duvar bittikten sonra fark edilir. Bitmiş duvarların kırılması, şantiyede hem haftalarca zaman hem de yüz binlerce liralık tadilat maliyeti yaratır.
+          </p>
+          <div class="metrics-row" style="margin-top: auto;">
+            <div class="metric-box">
+              <span class="metric-value">₺180K+</span>
+              <span class="metric-label">Ortalama Çakışma Hasarı</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-value">0 Görüş</span>
+              <span class="metric-label">Sıva Arkası Tesisat</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-value">Geç</span>
+              <span class="metric-label">Hata Keşif Zamanı</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card" style="border-left: 4px solid #10B981;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <span class="chip chip-emerald">04. YİBF ve Yasal Ceza Baskısı</span>
+            <span style="font-size: 28px; font-weight: 900; color: #10B981;">Ağır Ceza</span>
+          </div>
+          <h3 style="font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 10px;">Kayıp Karot Numuneleri & Ruhsat İptali</h3>
+          <p style="font-size: 15px; color: #94A3B8; line-height: 1.6;">
+            Yapı Denetim mevzuatında beton kırım raporları ve demir donatı vizeleri gününde sisteme girilmediğinde şantiye mühürlenir. Çipli beton ve karot testlerinin YİBF ile manuel eşleştirilmesi büyük risk oluşturur.
+          </p>
+          <div class="metrics-row" style="margin-top: auto;">
+            <div class="metric-box">
+              <span class="metric-value" style="color: #10B981;">Mühürleme</span>
+              <span class="metric-label">Yasal Durdurma Riski</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-value" style="color: #10B981;">Manuel</span>
+              <span class="metric-label">Lab Rapor Girişi</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-value" style="color: #10B981;">Riskli</span>
+              <span class="metric-label">Bakanlık Denetimleri</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Sektörel Analiz</span>
+      <span>Parçalı Yapıdan Entegre Dijital İkize Geçiş</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 3: ALL-IN-ONE SOLUTION & PIPELINE    -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Sistem Mimarisi & Çözüm Ekosistemi</span>
+          <h2 class="slide-title">Nexa ERP "All-in-One" Uçtan Uca Süreç Olay Örgüsü</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">03 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body" style="flex-direction: column;">
+      <!-- Big SVG Workflow Diagram -->
+      <div class="glass-card glass-card-glow" style="flex: 1; padding: 28px; justify-content: center;">
+        <svg viewBox="0 0 1760 520" style="width: 100%; height: 100%;">
+          <defs>
+            <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1E3A8A"/>
+              <stop offset="100%" stop-color="#3B82F6"/>
+            </linearGradient>
+            <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0E7490"/>
+              <stop offset="100%" stop-color="#06B6D4"/>
+            </linearGradient>
+            <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#581C87"/>
+              <stop offset="100%" stop-color="#9333EA"/>
+            </linearGradient>
+            <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064E3B"/>
+              <stop offset="100%" stop-color="#10B981"/>
+            </linearGradient>
+            <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#78350F"/>
+              <stop offset="100%" stop-color="#F59E0B"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Step 1: Pafta & AI -->
+          <g transform="translate(40, 60)">
+            <rect width="250" height="400" rx="16" fill="rgba(15, 23, 42, 0.9)" stroke="#3B82F6" stroke-width="2"/>
+            <rect width="250" height="48" rx="16" fill="url(#blueGrad)"/>
+            <text x="125" y="32" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">1. DİJİTAL GİRDİ & AI</text>
+            
+            <circle cx="125" cy="110" r="32" fill="rgba(59, 130, 246, 0.2)" stroke="#3B82F6" stroke-width="2"/>
+            <text x="125" y="117" fill="#60A5FA" font-size="24" text-anchor="middle">📄</text>
+            
+            <text x="125" y="170" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">2D PDF & DWG Pafta</text>
+            <text x="125" y="195" fill="#94A3B8" font-size="13" text-anchor="middle">LibreDWG Vektör Ayrıştırma</text>
+
+            <rect x="25" y="225" width="200" height="70" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="125" y="250" fill="#38BDF8" font-size="12" font-weight="700" text-anchor="middle">GEMINI 2.0 VISION</text>
+            <text x="125" y="272" fill="#E2E8F0" font-size="12" text-anchor="middle">Oda, Duvar, Kolon Koordinat</text>
+
+            <rect x="25" y="310" width="200" height="65" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="125" y="335" fill="#10B981" font-size="12" font-weight="700" text-anchor="middle">OTOMATİK METRAJ / BoQ</text>
+            <text x="125" y="357" fill="#94A3B8" font-size="12" text-anchor="middle">Bakanlık Poz Eşleştirme</text>
+          </g>
+
+          <!-- Connector 1 -> 2 -->
+          <path d="M 290 260 L 370 260" stroke="#38BDF8" stroke-width="3" stroke-dasharray="6,6" marker-end="url(#arrow)"/>
+          <circle cx="330" cy="260" r="8" fill="#38BDF8" filter="url(#glow)"/>
+
+          <!-- Step 2: 3D BIM & X-Ray -->
+          <g transform="translate(370, 60)">
+            <rect width="260" height="400" rx="16" fill="rgba(15, 23, 42, 0.9)" stroke="#06B6D4" stroke-width="2"/>
+            <rect width="260" height="48" rx="16" fill="url(#cyanGrad)"/>
+            <text x="130" y="32" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">2. 3D FEDERATED BIM</text>
+
+            <circle cx="130" cy="110" r="32" fill="rgba(6, 182, 212, 0.2)" stroke="#06B6D4" stroke-width="2"/>
+            <text x="130" y="117" fill="#22D3EE" font-size="24" text-anchor="middle">🏛️</text>
+
+            <text x="130" y="170" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">IFC & Parametrik Model</text>
+            <text x="130" y="195" fill="#94A3B8" font-size="13" text-anchor="middle">Mimari + Statik + MEP Katmanları</text>
+
+            <rect x="25" y="225" width="210" height="70" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="130" y="250" fill="#22D3EE" font-size="12" font-weight="700" text-anchor="middle">X-RAY DUVAR ARKASI</text>
+            <text x="130" y="272" fill="#E2E8F0" font-size="12" text-anchor="middle">Sıva İçi Tesisat Görünürlüğü</text>
+
+            <rect x="25" y="310" width="210" height="65" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="130" y="335" fill="#F59E0B" font-size="12" font-weight="700" text-anchor="middle">CLASH DETECTION</text>
+            <text x="130" y="357" fill="#94A3B8" font-size="12" text-anchor="middle">Çakışma & BIM Sorun Kaydı</text>
+          </g>
+
+          <!-- Connector 2 -> 3 -->
+          <path d="M 630 260 L 710 260" stroke="#06B6D4" stroke-width="3" stroke-dasharray="6,6"/>
+          <circle cx="670" cy="260" r="8" fill="#06B6D4" filter="url(#glow)"/>
+
+          <!-- Step 3: Saha & IoT -->
+          <g transform="translate(710, 60)">
+            <rect width="260" height="400" rx="16" fill="rgba(15, 23, 42, 0.9)" stroke="#9333EA" stroke-width="2"/>
+            <rect width="260" height="48" rx="16" fill="url(#purpleGrad)"/>
+            <text x="130" y="32" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">3. SAHA & IoT TAKİBİ</text>
+
+            <circle cx="130" cy="110" r="32" fill="rgba(147, 51, 234, 0.2)" stroke="#9333EA" stroke-width="2"/>
+            <text x="130" y="117" fill="#C084FC" font-size="24" text-anchor="middle">📡</text>
+
+            <text x="130" y="170" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">Harita, Geofence & BLE</text>
+            <text x="130" y="195" fill="#94A3B8" font-size="13" text-anchor="middle">Canlı İşçi & Ekipman Lokasyonu</text>
+
+            <rect x="25" y="225" width="210" height="70" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="130" y="250" fill="#C084FC" font-size="12" font-weight="700" text-anchor="middle">MOBİL AR & QR KONTROL</text>
+            <text x="130" y="272" fill="#E2E8F0" font-size="12" text-anchor="middle">Telefon Kamerası ile AR İnceleme</text>
+
+            <rect x="25" y="310" width="210" height="65" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="130" y="335" fill="#EF4444" font-size="12" font-weight="700" text-anchor="middle">İSG RİSK ALANLARI</text>
+            <text x="130" y="357" fill="#94A3B8" font-size="12" text-anchor="middle">Sanal Çit İhlalinde Acil Alarm</text>
+          </g>
+
+          <!-- Connector 3 -> 4 -->
+          <path d="M 970 260 L 1050 260" stroke="#9333EA" stroke-width="3" stroke-dasharray="6,6"/>
+          <circle cx="1010" cy="260" r="8" fill="#9333EA" filter="url(#glow)"/>
+
+          <!-- Step 4: Yapı Denetim & YİBF -->
+          <g transform="translate(1050, 60)">
+            <rect width="260" height="400" rx="16" fill="rgba(15, 23, 42, 0.9)" stroke="#10B981" stroke-width="2"/>
+            <rect width="260" height="48" rx="16" fill="url(#emeraldGrad)"/>
+            <text x="130" y="32" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">4. YAPI DENETİM & YİBF</text>
+
+            <circle cx="130" cy="110" r="32" fill="rgba(16, 185, 129, 0.2)" stroke="#10B981" stroke-width="2"/>
+            <text x="130" y="117" fill="#34D399" font-size="24" text-anchor="middle">🛡️</text>
+
+            <text x="130" y="170" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">e-YİBF & Numune Takibi</text>
+            <text x="130" y="195" fill="#94A3B8" font-size="13" text-anchor="middle">T.C. ÇŞB Mevzuatına Tam Uyum</text>
+
+            <rect x="25" y="225" width="210" height="70" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="130" y="250" fill="#34D399" font-size="12" font-weight="700" text-anchor="middle">BETON KIRIM & KAROT</text>
+            <text x="130" y="272" fill="#E2E8F0" font-size="12" text-anchor="middle">7/28 Gün Mukavemet Eğrileri</text>
+
+            <rect x="25" y="310" width="210" height="65" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="130" y="335" fill="#38BDF8" font-size="12" font-weight="700" text-anchor="middle">DEMİR & KALIP VİZESİ</text>
+            <text x="130" y="357" fill="#94A3B8" font-size="12" text-anchor="middle">Fotoğraflı Dijital Tutanak</text>
+          </g>
+
+          <!-- Connector 4 -> 5 -->
+          <path d="M 1310 260 L 1390 260" stroke="#10B981" stroke-width="3" stroke-dasharray="6,6"/>
+          <circle cx="1350" cy="260" r="8" fill="#10B981" filter="url(#glow)"/>
+
+          <!-- Step 5: Taşeron & Hakediş -->
+          <g transform="translate(1390, 60)">
+            <rect width="320" height="400" rx="16" fill="rgba(15, 23, 42, 0.9)" stroke="#F59E0B" stroke-width="2"/>
+            <rect width="320" height="48" rx="16" fill="url(#amberGrad)"/>
+            <text x="160" y="32" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">5. TAŞERON & OTOMATİK HAKEDİŞ</text>
+
+            <circle cx="160" cy="110" r="32" fill="rgba(245, 158, 11, 0.2)" stroke="#F59E0B" stroke-width="2"/>
+            <text x="160" y="117" fill="#FBBF24" font-size="24" text-anchor="middle">💰</text>
+
+            <text x="160" y="170" fill="#FFFFFF" font-family="Outfit" font-size="16" font-weight="700" text-anchor="middle">İmalat Kanıtı -> Net Hakediş</text>
+            <text x="160" y="195" fill="#94A3B8" font-size="13" text-anchor="middle">Metraj Bazlı Sıfır İhtilaflı Ödeme</text>
+
+            <rect x="25" y="225" width="270" height="70" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="160" y="250" fill="#FBBF24" font-size="12" font-weight="700" text-anchor="middle">WORK PROOF & ONAY</text>
+            <text x="160" y="272" fill="#E2E8F0" font-size="12" text-anchor="middle">Saha Şefi Onaylar Onaylamaz Aktarım</text>
+
+            <rect x="25" y="310" width="270" height="65" rx="10" fill="rgba(30, 41, 59, 0.8)" stroke="rgba(255,255,255,0.1)"/>
+            <text x="160" y="335" fill="#10B981" font-size="12" font-weight="700" text-anchor="middle">KESİNTİLER & E-FATURA</text>
+            <text x="160" y="357" fill="#94A3B8" font-size="12" text-anchor="middle">Avans, Stopaj & Cari Mutabakat</text>
+          </g>
+        </svg>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; background: rgba(15, 23, 42, 0.6); padding: 14px 28px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+        <span style="font-size: 14px; color: #94A3B8;">🔄 <strong>Veri Bütünlüğü:</strong> Projede yüklenen tek bir PDF pafta; metrajı, 3D modeli, taşeron iş paketini ve dönemsel hakedişi aynı anda besler.</span>
+        <span class="chip chip-blue">Sıfır Manuel Giriş • %100 Veri Tutarlılığı</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Uçtan Uca Süreç Olay Örgüsü</span>
+      <span>Mimari Girdiden Finansal Kapamaya Entegre Mimari</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 4: ROLES & MULTI-TENANCY             -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Yetkilendirme & Kurumsal Mimarisi</span>
+          <h2 class="slide-title">28 Kullanıcı Rolü & Çok Kiracılı (Multi-Tenant) Güvenlik</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">04 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left Column: Role Categories -->
+      <div class="glass-card" style="flex: 1.2;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <div class="feature-icon-box">👥</div>
+          <div>
+            <h3 style="font-size: 20px; color: #FFFFFF;">Granüler Rol & İzin Matrisi (RBAC)</h3>
+            <p style="font-size: 13px; color: #94A3B8;">Şantiyedeki her aktör yalnızca kendi sorumluluk alanını görür</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+              <span class="chip chip-blue" style="padding: 2px 8px; font-size: 11px;">YÖNETİM</span>
+              <strong style="color: #FFFFFF; font-size: 14px;">Merkez & Proje</strong>
+            </div>
+            <ul style="list-style: none; font-size: 12.5px; color: #94A3B8; line-height: 1.8;">
+              <li>• <strong>SUPER_ADMIN:</strong> Tenant & Lisans Yönetimi</li>
+              <li>• <strong>ADMIN:</strong> Şirket Sahibi / Genel Müdür</li>
+              <li>• <strong>PROJECT_MANAGER:</strong> Proje Direktörü</li>
+              <li>• <strong>CLIENT / INVESTOR:</strong> Şeffaf Yatırımcı Portalı</li>
+            </ul>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+              <span class="chip chip-cyan" style="padding: 2px 8px; font-size: 11px;">SAHA TEKNİK</span>
+              <strong style="color: #FFFFFF; font-size: 14px;">Şantiye & Mühendislik</strong>
+            </div>
+            <ul style="list-style: none; font-size: 12.5px; color: #94A3B8; line-height: 1.8;">
+              <li>• <strong>SITE_MANAGER:</strong> Şantiye Şefi & Günlük Defter</li>
+              <li>• <strong>ENGINEER:</strong> Saha Mühendisi (BIM / Metraj)</li>
+              <li>• <strong>ISG_EXPERT:</strong> İSG Uzmanı & Risk Haritaları</li>
+              <li>• <strong>EQUIPMENT_MANAGER:</strong> İş Makinesi & Yakıt</li>
+            </ul>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+              <span class="chip chip-emerald" style="padding: 2px 8px; font-size: 11px;">DENETİM</span>
+              <strong style="color: #FFFFFF; font-size: 14px;">Yapı Denetim & Yasal</strong>
+            </div>
+            <ul style="list-style: none; font-size: 12.5px; color: #94A3B8; line-height: 1.8;">
+              <li>• <strong>INSPECTION_ADMIN:</strong> Denetim Şirketi Sahibi</li>
+              <li>• <strong>INSPECTOR:</strong> Saha Yapı Denetçisi (Vize/Tutanak)</li>
+              <li>• <strong>AUDITOR:</strong> Kalite & Bağımsız Denetçi</li>
+              <li>• <strong>LAB_TECH:</strong> Beton Kırım & Karot Operatörü</li>
+            </ul>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+              <span class="chip chip-purple" style="padding: 2px 8px; font-size: 11px;">DIŞ PAYDAŞ</span>
+              <strong style="color: #FFFFFF; font-size: 14px;">Taşeron, İK & Finans</strong>
+            </div>
+            <ul style="list-style: none; font-size: 12.5px; color: #94A3B8; line-height: 1.8;">
+              <li>• <strong>SUBCONTRACTOR:</strong> Taşeron Yetkilisi & Kanıt Girişi</li>
+              <li>• <strong>FINANCE / MUHASEBE:</strong> Hakediş & Fatura</li>
+              <li>• <strong>PROCUREMENT:</strong> Satın Alma & Teklif (RFQ)</li>
+              <li>• <strong>WORKER / DRIVER:</strong> Mobil QR Puantaj & Sevkiyat</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="metrics-row" style="margin-top: auto;">
+          <div class="metric-box">
+            <span class="metric-value">28</span>
+            <span class="metric-label">Özelleştirilmiş Kullanıcı Rolü</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">150+</span>
+            <span class="metric-label">Prisma Veritabanı Modeli</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">%100</span>
+            <span class="metric-label">Rol Bazlı Erişim Güvenliği</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Multi-Tenancy & White Labeling -->
+      <div class="glass-card glass-card-glow" style="flex: 0.8; justify-content: space-between;">
+        <div>
+          <span class="chip chip-cyan" style="margin-bottom: 16px;">SaaS Mimarisi</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Kurumsal Çok Kiracılık & White-Labeling</h3>
+          <p style="font-size: 14.5px; color: #94A3B8; line-height: 1.6; margin-bottom: 24px;">
+            Her müteahhitlik veya yapı denetim firması Nexa ERP üzerinde tamamen izole edilmiş bir kiracı (Tenant) olarak çalışır.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
+              <span style="font-size: 22px;">🏢</span>
+              <div>
+                <strong style="color: #FFFFFF; font-size: 14px;">Özel Kurumsal Domain</strong>
+                <p style="font-size: 12.5px; color: #94A3B8;">erp.sirketiniz.com üzerinden erişim</p>
+              </div>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
+              <span style="font-size: 22px;">🎨</span>
+              <div>
+                <strong style="color: #FFFFFF; font-size: 14px;">Dinamik Marka & Renk Paleti</strong>
+                <p style="font-size: 12.5px; color: #94A3B8;">Firma logosu, özel buton ve tema renkleri</p>
+              </div>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
+              <span style="font-size: 22px;">🔒</span>
+              <div>
+                <strong style="color: #FFFFFF; font-size: 14px;">Sıfır Veri Sızıntısı (Data Isolation)</strong>
+                <p style="font-size: 12.5px; color: #94A3B8;">Kiracılar birbirinin projelerini veya maliyetlerini asla göremez</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px; padding: 18px; text-align: center;">
+          <span style="font-size: 12px; font-weight: 700; color: #38BDF8; letter-spacing: 1px; text-transform: uppercase;">ENTERPRISE LİSANS AVANTAJI</span>
+          <p style="font-size: 13.5px; color: #E2E8F0; margin-top: 4px;">Kendi logoları ve arayüzleriyle taşeronlarına profesyonel bir portal sunun.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Yetkilendirme & Güvenlik</span>
+      <span>Enterprise Multi-Tenancy Mimarisi</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 5: AI BLUEPRINT VISION & BoQ         -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Yapay Zeka & Metraj İnovasyonu</span>
+          <h2 class="slide-title">AI Blueprint Vision & Otomatik Keşif / BoQ Motoru</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">05 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left: Screen Capture -->
+      <div class="screenshot-frame" style="flex: 1.35;">
+        <img src="./screenshots/05-ai-vision.png" alt="AI Blueprint Vision & BoQ" onerror="this.src='./screenshots/01-dashboard.png'">
+        <div class="screenshot-badge">GERÇEK SİSTEM EKRANI: AI VISION</div>
+      </div>
+
+      <!-- Right: Technical Details -->
+      <div class="glass-card" style="flex: 0.85; justify-content: space-between;">
+        <div>
+          <span class="chip chip-purple" style="margin-bottom: 16px;">Gemini 2.0 Multimodal API</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Paftadan Metraja Saniyeler İçinde</h3>
+          <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;">
+            Mimari paftaları (PDF/DWG) vektör düzeyinde okuyan Nexa Vision motoru, tüm duvarları, kolonları, kapı-pencereleri ve oda mahallerini otomatik tespit eder.
+          </p>
+
+          <ul class="feature-list" style="margin-top: 20px;">
+            <li class="feature-item">
+              <div class="feature-icon-box">📐</div>
+              <div class="feature-text">
+                <h4>Parametrik Koordinat Çıkarımı</h4>
+                <p>startX, startY, endX, endY ve yükseklik değerleri çıkarılarak 3D ekstrüzyon hazır hale getirilir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box">🏛️</div>
+              <div class="feature-text">
+                <h4>Bakanlık Resmi Poz Eşleşmesi</h4>
+                <p>Tespit edilen imalatlar Çevre ve Şehircilik Bakanlığı poz numaralarıyla (ör. 15.120.1001) otomatik eşleşir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box">📊</div>
+              <div class="feature-text">
+                <h4>Otomatik Metraj Cetveli (BoQ)</h4>
+                <p>Beton hacmi (m³), kalıp alanı (m²), sıva ve boya metrajları tek tıkla Excel/PDF keşif tablosuna dökülür.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box">
+            <span class="metric-value">~15 sn</span>
+            <span class="metric-label">Pafta Analiz Süresi</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">%98.4</span>
+            <span class="metric-label">Metraj Doğruluk Oranı</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">%90</span>
+            <span class="metric-label">Zaman Tasarrufu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • AI Blueprint Vision Engine</span>
+      <span>Gemini 2.0 Multimodal & LibreDWG Vektör Motoru</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 6: 3D FEDERATED BIM & X-RAY          -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">3D Dijital İkiz & Tesisat Görünürlüğü</span>
+          <h2 class="slide-title">3D Federated BIM & Sanal X-Ray Duvar İçi Görüş Motoru</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">06 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left: Screen Capture -->
+      <div class="screenshot-frame" style="flex: 1.35;">
+        <img src="./screenshots/04-bim-3d.png" alt="3D Federated BIM Engine" onerror="this.src='./screenshots/01-dashboard.png'">
+        <div class="screenshot-badge">GERÇEK SİSTEM EKRANI: 3D FEDERATED BIM</div>
+      </div>
+
+      <!-- Right: Technical Details -->
+      <div class="glass-card" style="flex: 0.85; justify-content: space-between;">
+        <div>
+          <span class="chip chip-cyan" style="margin-bottom: 16px;">Web-IFC & WebGL Canvas</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Disiplinleri Tek Ekranda Birleştirin</h3>
+          <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;">
+            Mimari, statik betonarme, mekanik havalandırma (HVAC) ve elektrik kablo tavalarını tek bir federated 3D modelde çakıştırın.
+          </p>
+
+          <ul class="feature-list" style="margin-top: 20px;">
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #06B6D4; background: rgba(6,182,212,0.15);">👁️</div>
+              <div class="feature-text">
+                <h4>X-Ray Tesisat Görüşü</h4>
+                <p>Tek tuşla dış duvarlar şeffaflaşır. Duvarın içinden geçen su boruları ve elektrik kanalları kristal netliğinde görünür.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #EAB308; background: rgba(234,179,8,0.15);">⚠️</div>
+              <div class="feature-text">
+                <h4>Erken Çakışma Tespiti (Clash)</h4>
+                <p>Mekanik boruların betonarme kirişleri kestiği kritik noktalar inşaattan önce yakalanır ve BIM Issue kaydı açılır.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #A855F7; background: rgba(168,85,247,0.15);">📱</div>
+              <div class="feature-text">
+                <h4>Sıfır Kurulum, Tarayıcı & Mobil</h4>
+                <p>Ekstra CAD/BIM yazılım lisansına ihtiyaç duymadan Chrome veya mobil tarayıcıda akıcı 60 FPS performans.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 8px;">
+            <span style="width: 12px; height: 12px; border-radius: 50%; background: #3B82F6;" title="Statik"></span>
+            <span style="font-size: 12px; color: #94A3B8;">Statik</span>
+            <span style="width: 12px; height: 12px; border-radius: 50%; background: #EAB308; margin-left: 8px;" title="Elektrik"></span>
+            <span style="font-size: 12px; color: #94A3B8;">Elektrik</span>
+            <span style="width: 12px; height: 12px; border-radius: 50%; background: #06B6D4; margin-left: 8px;" title="Mekanik"></span>
+            <span style="font-size: 12px; color: #94A3B8;">Mekanik</span>
+            <span style="width: 12px; height: 12px; border-radius: 50%; background: #F97316; margin-left: 8px;" title="Mimari"></span>
+            <span style="font-size: 12px; color: #94A3B8;">Mimari</span>
+          </div>
+          <span style="font-size: 12px; font-weight: 700; color: #38BDF8;">Canlı Renk Ayrımı</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • 3D BIM & X-Ray Engine</span>
+      <span>Three.js & React Three Fiber (R3F) WebGL Mimarisi</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 7: SITE MAP & BLE IOT TRACKING       -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">IoT & Saha Takip Mimarisi</span>
+          <h2 class="slide-title">Şantiye Haritası, Geofencing & BLE Personel / Ekipman Takibi</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">07 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left: Screen Capture -->
+      <div class="screenshot-frame" style="flex: 1.35;">
+        <img src="./screenshots/02-site-map.png" alt="Site Map & BLE Tracking" onerror="this.src='./screenshots/01-dashboard.png'">
+        <div class="screenshot-badge">GERÇEK SİSTEM EKRANI: HARİTA & IoT</div>
+      </div>
+
+      <!-- Right: Technical Details -->
+      <div class="glass-card" style="flex: 0.85; justify-content: space-between;">
+        <div>
+          <span class="chip chip-emerald" style="margin-bottom: 16px;">GIS, Leaflet & Bluetooth Low Energy</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Şantiyenizi Canlı Radarla İzleyin</h3>
+          <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;">
+            Hangi taşeron işçisi hangi blokta çalışıyor? Hangi kule vinç veya ekskavatör aktif? Tüm saha varlıkları harita üzerinde anlık konumlanır.
+          </p>
+
+          <ul class="feature-list" style="margin-top: 20px;">
+            <li class="feature-item">
+              <div class="feature-icon-box">📍</div>
+              <div class="feature-text">
+                <h4>Geofence Sanal Güvenlik Sınırları</h4>
+                <p>Şantiye sınırları ve tehlikeli bölgeler haritada poligonlarla çizilir. Giriş-çıkışlar otomatik puantaja işlenir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box">📡</div>
+              <div class="feature-text">
+                <h4>BLE Beacon & RFID Entegrasyonu</h4>
+                <p>Baretlere takılan BLE cihazları kat bazlı dikey konum takibi sağlayarak şantiye güvenliğini maksimize eder.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box">🛩️</div>
+              <div class="feature-text">
+                <h4>Drone Ortofoto & Kübaj Analizi</h4>
+                <p>İHA ile çekilen haritalar şantiye haritasına katman olarak eklenir; hafriyat dolgu-kazı hacimleri hesaplanır.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box">
+            <span class="metric-value">Canlı</span>
+            <span class="metric-label">İşçi Lokasyon Radarı</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">&lt; 1 sn</span>
+            <span class="metric-label">SOS Alarm İletim Hızı</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">%100</span>
+            <span class="metric-label">Otomatik Puantaj Doğruluğu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Saha Haritası & IoT Ekosistemi</span>
+      <span>Turf.js Geofencing & Real-Time Socket.io Motoru</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 8: EXECUTIVE COCKPIT & DASHBOARD     -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Yönetici Kokpiti & Karar Destek</span>
+          <h2 class="slide-title">Executive Dashboard & Portföy İlerleme Kontrol Merkezi</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">08 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left: Screen Capture -->
+      <div class="screenshot-frame" style="flex: 1.35;">
+        <img src="./screenshots/01-dashboard.png" alt="Executive Dashboard" onerror="this.src='./screenshots/03-projects.png'">
+        <div class="screenshot-badge">GERÇEK SİSTEM EKRANI: EXECUTIVE COCKPIT</div>
+      </div>
+
+      <!-- Right: Technical Details -->
+      <div class="glass-card" style="flex: 0.85; justify-content: space-between;">
+        <div>
+          <span class="chip chip-blue" style="margin-bottom: 16px;">Üst Düzey Yönetim Özeti</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Tek Bakışta Şirketinizin Nabzı</h3>
+          <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;">
+            Birden fazla şantiyeyi aynı anda yürüten yönetim kurulu üyeleri için geliştirilmiş anlık finansal ve operasyonel gösterge paneli.
+          </p>
+
+          <ul class="feature-list" style="margin-top: 20px;">
+            <li class="feature-item">
+              <div class="feature-icon-box">📈</div>
+              <div class="feature-text">
+                <h4>Fiziki vs Nakdi İlerleme Eğrisi</h4>
+                <p>Planlanan imalat hızı ile fiili ilerleme karşılaştırılır; gecikme riski olan şantiyeler kırmızı alarm verir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box">💳</div>
+              <div class="feature-text">
+                <h4>Kritik Nakit Akışı & Tahsilat Riski</h4>
+                <p>Gelecek 30/60/90 günlük hakediş ödemeleri ve malzeme vadeleri yapay zeka nakit projeksiyonuyla listelenir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box">⚡</div>
+              <div class="feature-text">
+                <h4>Günlük AI Şantiye Bülteni</h4>
+                <p>Şantiyedeki hava durumu, tamamlanan beton dökümleri ve taşeron performansları tek bir AI özette sunulur.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 13px; color: #94A3B8;">Ortalama Portföy Tamamlanma</span>
+            <strong style="color: #38BDF8; font-size: 14px;">%74.2</strong>
+          </div>
+          <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+            <div style="width: 74.2%; height: 100%; background: linear-gradient(90deg, #3B82F6, #10B981); border-radius: 4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Executive Dashboard</span>
+      <span>Gerçek Zamanlı BI & Karar Destek Mimarisi</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 9: FINANCE & AUTOMATED HAKEDIS       -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Finans & Taşeron Yönetimi</span>
+          <h2 class="slide-title">Otomatik Hakediş (Progress Billing) & Kesintisiz Muhasebe</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">09 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left: Screen Capture -->
+      <div class="screenshot-frame" style="flex: 1.35;">
+        <img src="./screenshots/06-finance.png" alt="Finance & Progress Billing" onerror="this.src='./screenshots/07-subcontractor.png'">
+        <div class="screenshot-badge">GERÇEK SİSTEM EKRANI: FİNANS & HAKEDİŞ</div>
+      </div>
+
+      <!-- Right: Technical Details -->
+      <div class="glass-card" style="flex: 0.85; justify-content: space-between;">
+        <div>
+          <span class="chip chip-amber" style="background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.4); margin-bottom: 16px;">Sıfır Hata • Otomatik Hesaplama</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Fotoğraflı Kanıttan Net Hakedişe</h3>
+          <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;">
+            Taşeron sahada bitirdiği imalatı fotoğraf kanıtıyla sisteme yükler. Şantiye şefi onayladığı an, metraj birim fiyatıyla çarpılarak hakediş tablosuna aktarılır.
+          </p>
+
+          <ul class="feature-list" style="margin-top: 20px;">
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #F59E0B; background: rgba(245,158,11,0.12);">✂️</div>
+              <div class="feature-text">
+                <h4>Otomatik Kesinti Motoru</h4>
+                <p>Verilen malzeme avansları, stopaj, şantiye elektrik/su kesintileri ve gecikme cezaları net tutardan anında düşülür.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #10B981; background: rgba(16,185,129,0.12);">📑</div>
+              <div class="feature-text">
+                <h4>E-Fatura & Cari Hesap Entegrasyonu</h4>
+                <p>Onaylanan hakediş tutarı otomatik cari hareket oluşturur; taşeron faturasıyla birebir kuruşu kuruşuna eşleşir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #38BDF8; background: rgba(56,189,248,0.12);">🤝</div>
+              <div class="feature-text">
+                <h4>Taşeron Portal Erişimi</h4>
+                <p>Taşeron kendi panelinden onaylanan metrajlarını, bekleyen ödemelerini ve kesinti detaylarını şeffafça takip eder.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box">
+            <span class="metric-value" style="color: #FBBF24;">%100</span>
+            <span class="metric-label">Kesinti Doğruluğu</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value" style="color: #10B981;">0 Gün</span>
+            <span class="metric-label">Hakediş İtiraz Süresi</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value" style="color: #38BDF8;">₺ 0</span>
+            <span class="metric-label">Çift Ödeme Kaçağı</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Finans & Hakediş Mimarisi</span>
+      <span>Otomatik Stopaj, Teminat & E-Fatura Entegrasyonu</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 10: INSPECTION & YİBF COMPLIANCE     -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Kalite Kontrol & Yasal Denetim</span>
+          <h2 class="slide-title">Akıllı Yapı Denetim, YİBF & Laboratuvar Beton/Karot Testleri</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">10 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left: Screen Capture -->
+      <div class="screenshot-frame" style="flex: 1.35;">
+        <img src="./screenshots/08-inspection.png" alt="Smart Inspection & YİBF" onerror="this.src='./screenshots/01-dashboard.png'">
+        <div class="screenshot-badge">GERÇEK SİSTEM EKRANI: YAPI DENETİM</div>
+      </div>
+
+      <!-- Right: Technical Details -->
+      <div class="glass-card" style="flex: 0.85; justify-content: space-between;">
+        <div>
+          <span class="chip chip-emerald" style="margin-bottom: 16px;">T.C. ÇŞB e-YİBF Mevzuat Uyumu</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Hatasız Ruhsat & Yasal Tutanaklar</h3>
+          <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;">
+            Yapı denetim kuruluşları ve şantiye kalite ekipleri için geliştirilmiş, şantiyede kağıt tutanak taşımayı tamamen tarihe gömen modül.
+          </p>
+
+          <ul class="feature-list" style="margin-top: 20px;">
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #10B981; background: rgba(16,185,129,0.15);">🧪</div>
+              <div class="feature-text">
+                <h4>7 ve 28 Günlük Beton Kırımları</h4>
+                <p>Çipli beton numuneleri laboratuvardan çıktığı an sisteme işlenir; basınç dayanım eğrileri standart altında kaldığında anında uyarı verilir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #38BDF8; background: rgba(56,189,248,0.15);">🔩</div>
+              <div class="feature-text">
+                <h4>Demir Donatı & Kalıp Vizesi</h4>
+                <p>Beton dökülmeden önce demir aralıkları sahada denetlenir, fotoğraflı GPS koordinatlı tutanak YİBF dosyasına kaydedilir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #EF4444; background: rgba(239,68,68,0.15);">⚠️</div>
+              <div class="feature-text">
+                <h4>Eksiklik (Deficiency) & DOF Takibi</h4>
+                <p>Tespit edilen uygunsuzluklar taşerona iş emri olarak atanır; düzeltme fotoğrafı yüklenmeden hakediş bloke edilir.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+          <span style="font-size: 24px;">🏛️</span>
+          <div>
+            <strong style="color: #FFFFFF; font-size: 14px;">Bakanlık Denetimlerine %100 Hazır</strong>
+            <p style="font-size: 12.5px; color: #94A3B8;">Tüm denetim kayıtları zaman damgalı ve silinemez dijital arşivde korunur.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Akıllı Yapı Denetim Modülü</span>
+      <span>Laboratuvar Numune Takibi & YİBF Entegrasyonu</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 11: OHS/ISG & MOBILE AR              -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">İş Güvenliği & Mobil Gelecek</span>
+          <h2 class="slide-title">İSG Risk Haritası, SOS Alarmı & Sahada Mobil AR (X-Ray)</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">11 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left: Screen Capture -->
+      <div class="screenshot-frame" style="flex: 1.35;">
+        <img src="./screenshots/09-ohs-isg.png" alt="OHS / ISG Safety & AR" onerror="this.src='./screenshots/02-site-map.png'">
+        <div class="screenshot-badge">GERÇEK SİSTEM EKRANI: İSG & RİSK HARİTASI</div>
+      </div>
+
+      <!-- Right: Technical Details -->
+      <div class="glass-card" style="flex: 0.85; justify-content: space-between;">
+        <div>
+          <span class="chip chip-purple" style="margin-bottom: 16px;">Sıfır İş Kazası Hedefi</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Sahada Can Güvenliği & AR İnovasyonu</h3>
+          <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;">
+            İSG uzmanları ve saha mühendisleri mobil uygulama üzerinden şantiyeyi hem güvenlik hem de teknik açıdan yönetir.
+          </p>
+
+          <ul class="feature-list" style="margin-top: 20px;">
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #A855F7; background: rgba(168,85,247,0.15);">📱</div>
+              <div class="feature-text">
+                <h4>Mobil AR ile Duvarın Arkasını Görün</h4>
+                <p>Mühendis telefon kamerasını duvara doğrulttuğunda; BIM modelindeki su boruları ve elektrik hatları gerçek duvar üzerine oturur.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #EF4444; background: rgba(239,68,68,0.15);">🚨</div>
+              <div class="feature-text">
+                <h4>Anlık SOS & Acil Durum Tahliyesi</h4>
+                <p>İşçinin telefonundan veya BLE butonundan tek tıkla SOS alarmı verilir; tüm şantiye şeflerine harita konumu anında düşer.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box" style="color: #38BDF8; background: rgba(56,189,248,0.15);">🦺</div>
+              <div class="feature-text">
+                <h4>KKD Zimmet & Ramak Kala Raporlama</h4>
+                <p>Baret, emniyet kemeri ve yelek teslim tutanakları QR ile imzalatılır; ramak kala olayları fotoğrafla anında arşivlenir.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box">
+            <span class="metric-value" style="color: #A855F7;">WebXR</span>
+            <span class="metric-label">Mobil AR Tesisat Görüşü</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value" style="color: #EF4444;">&lt; 3 sn</span>
+            <span class="metric-label">Acil Durum Bildirim Hızı</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value" style="color: #10B981;">0 Kaza</span>
+            <span class="metric-label">Önleyici İSG Hedefi</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • İSG & Mobil AR Teknolojisi</span>
+      <span>Kamera Tesisat Hizalama & Acil Durum Protokolleri</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 12: LOGISTICS, WAREHOUSE & HR        -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Saha Tedarik & Operasyon</span>
+          <h2 class="slide-title">Lojistik, Malzeme Kabul (QR İrsaliye) & Şantiye İK</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">12 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- Left: Screen Capture -->
+      <div class="screenshot-frame" style="flex: 1.35;">
+        <img src="./screenshots/10-logistics.png" alt="Logistics & Warehouse" onerror="this.src='./screenshots/11-personnel.png'">
+        <div class="screenshot-badge">GERÇEK SİSTEM EKRANI: LOJİSTİK & DEPO</div>
+      </div>
+
+      <!-- Right: Technical Details -->
+      <div class="glass-card" style="flex: 0.85; justify-content: space-between;">
+        <div>
+          <span class="chip chip-blue" style="margin-bottom: 16px;">Tedarik Zinciri Entegrasyonu</span>
+          <h3 style="font-size: 24px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">Şantiye Kapısından Depo Rafına</h3>
+          <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;">
+            Beton mikseri, demir tırları veya seramik paletleri... Şantiyeye giren her malzemenin irsaliyesi kapıda QR kodla kabul edilir.
+          </p>
+
+          <ul class="feature-list" style="margin-top: 20px;">
+            <li class="feature-item">
+              <div class="feature-icon-box">📦</div>
+              <div class="feature-text">
+                <h4>QR Kodlu Malzeme Kabul (Goods Receipt)</h4>
+                <p>Güvenlik veya depo sorumlusu gelen sevkiyatı telefon kamerasıyla okutur; sipariş fişiyle miktar kontrolü otomatik yapılır.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box">🏗️</div>
+              <div class="feature-text">
+                <h4>İş Makinesi & Yakıt Takibi</h4>
+                <p>Kule vinç, kepçe ve jeneratör yakıt tüketimleri sayaç bazında işlenir; anormal yakıt kayıpları anında tespit edilir.</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon-box">⏱️</div>
+              <div class="feature-text">
+                <h4>GPS Destekli Mobil Puantaj</h4>
+                <p>İşçiler şantiye sahasına girdiğinde QR okutarak mesaiye başlar. Şantiye dışından check-in denemeleri sistemce engellenir.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box">
+            <span class="metric-value">%100</span>
+            <span class="metric-label">Stok Görünürlüğü</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">0 Kaçak</span>
+            <span class="metric-label">İrsaliyesiz Malzeme Girişi</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">Tam</span>
+            <span class="metric-label">Puantaj Uyumluluğu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Lojistik & İK Modülleri</span>
+      <span>Uçtan Uca Saha Tedarik Zinciri Otomasyonu</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 13: TECH STACK & SECURITY            -->
+  <!-- ========================================== -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">Teknoloji & Güvenlik Altyapısı</span>
+          <h2 class="slide-title">Modern Teknoloji Yığını & Banka Seviyesinde Güvenlik</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">13 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <!-- 6 Technical Stack Cards Grid -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%;">
+        <div class="glass-card">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <span style="font-size: 26px;">⚡</span>
+            <div>
+              <h4 style="font-size: 18px; color: #FFFFFF;">Next.js 16 & React 19</h4>
+              <span style="font-size: 12px; color: #38BDF8;">Full-Stack Modern Mimari</span>
+            </div>
+          </div>
+          <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.6;">
+            App Router, React Server Components (RSC) ve Server Actions ile sıfır API gecikmesi. Tailwind CSS v4 ve Framer Motion ile ultra hızlı koyu kurumsal arayüz.
+          </p>
+          <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #64748B;">
+            SSR • Streaming • RSC Server Actions
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <span style="font-size: 26px;">🐘</span>
+            <div>
+              <h4 style="font-size: 18px; color: #FFFFFF;">PostgreSQL & Prisma ORM</h4>
+              <span style="font-size: 12px; color: #34D399;">ACID & İlişkisel Güvenilirlik</span>
+            </div>
+          </div>
+          <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.6;">
+            150+ ilişkisel tablo, connection pooling, katı veri tipleri ve multi-tenant kiracı ayrımı. Milyonlarca metraj ve finansal kayıtta sıfır kilitlenme garantisi.
+          </p>
+          <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #64748B;">
+            Prisma v6 • ACID Transactions • Migration Engine
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <span style="font-size: 26px;">🤖</span>
+            <div>
+              <h4 style="font-size: 18px; color: #FFFFFF;">Google Gemini Vision</h4>
+              <span style="font-size: 12px; color: #A855F7;">Multimodal AI & OCR</span>
+            </div>
+          </div>
+          <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.6;">
+            Gemini 2.0 Flash ve 1.5 Pro modelleri ile mimari çizimlerden doğrudan JSON formatında metraj, oda mahali ve duvar koordinatları çıkarımı.
+          </p>
+          <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #64748B;">
+            Structured JSON Schema • Multimodal OCR
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <span style="font-size: 26px;">🎮</span>
+            <div>
+              <h4 style="font-size: 18px; color: #FFFFFF;">Three.js & WebAssembly</h4>
+              <span style="font-size: 12px; color: #06B6D4;">GPU Hızlandırmalı 3D & CAD</span>
+            </div>
+          </div>
+          <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.6;">
+            @mlightcad/libredwg-converter ile C tabanlı LibreDWG motorunun WebAssembly derlemesi. Web-IFC ile tarayıcıda IFC model ayrıştırma ve X-Ray shader efektleri.
+          </p>
+          <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #64748B;">
+            WebGL 2.0 • Web-IFC • LibreDWG WASM
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <span style="font-size: 26px;">🔐</span>
+            <div>
+              <h4 style="font-size: 18px; color: #FFFFFF;">Banka Seviyesi Güvenlik</h4>
+              <span style="font-size: 12px; color: #EF4444;">AES-256 & Audit Logs</span>
+            </div>
+          </div>
+          <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.6;">
+            NextAuth v5 ile JWT tabanlı oturum yönetimi. Tüm metraj, hakediş ve doküman onaylarında kriptografik kullanıcı IP'si ve denetim izi (Audit Log) kaydı.
+          </p>
+          <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #64748B;">
+            AES-256 S3 Storage • RBAC • Immutability
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <span style="font-size: 26px;">📱</span>
+            <div>
+              <h4 style="font-size: 18px; color: #FFFFFF;">React Native & WebXR</h4>
+              <span style="font-size: 12px; color: #F59E0B;">Saha Mobil Uygulaması</span>
+            </div>
+          </div>
+          <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.6;">
+            iOS ve Android için offline-first çalışan mobil saha uygulaması. İnternet kesilse dahi numune kaydı ve fotoğraf kanıtı alıp şebeke gelince senkronize eder.
+          </p>
+          <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #64748B;">
+            Offline-First • Expo • WebXR AR Overlay
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>NEXA ERP • Teknoloji Yığını & Güvenlik</span>
+      <span>Yüksek Ölçeklenebilir Bulut Mimarisi</span>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 14: CLOSING & DEMO ACCESS            -->
+  <!-- ========================================== -->
+  <section class="slide" style="justify-content: space-between;">
+    <div class="slide-header">
+      <div class="slide-header-left">
+        <div class="brand-logo-pill">NX</div>
+        <div class="slide-title-wrap">
+          <span class="slide-category">NEXA ERP Canlı Erişim</span>
+          <h2 class="slide-title">İnşaatınızı Geleceğin Teknolojisiyle Bugünden Yönetin</h2>
+        </div>
+      </div>
+      <div class="slide-header-right">
+        <span class="slide-counter">14 / 14</span>
+      </div>
+    </div>
+
+    <div class="slide-body" style="align-items: center; justify-content: center;">
+      <div class="glass-card glass-card-glow" style="width: 1100px; padding: 48px; text-align: center; align-items: center;">
+        <div style="width: 72px; height: 72px; background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 900; color: white; margin-bottom: 24px; box-shadow: 0 0 45px rgba(59, 130, 246, 0.6);">
+          NX
+        </div>
+
+        <h3 style="font-size: 38px; color: #FFFFFF; font-weight: 800; margin-bottom: 12px;">
+          Nexa ERP Canlı Demo & Kurumsal İletişim
+        </h3>
+        <p style="font-size: 18px; color: #94A3B8; max-width: 750px; line-height: 1.6; margin-bottom: 36px;">
+          Türkiye'nin lider inşaat, taahhüt ve yapı denetim şirketleri arasına katılın. Projenizi 24 saat içinde 3D dijital ikizine kavuşturalım.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; margin-bottom: 36px;">
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 20px;">
+            <span style="font-size: 13px; color: #64748B; font-weight: 700; text-transform: uppercase;">Canlı Platform</span>
+            <h4 style="font-size: 20px; color: #38BDF8; margin-top: 6px;">nxerp.com.tr</h4>
+            <p style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Web & Bulut Erişimi</p>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 20px;">
+            <span style="font-size: 13px; color: #64748B; font-weight: 700; text-transform: uppercase;">Demo Hesabı</span>
+            <h4 style="font-size: 20px; color: #FFFFFF; margin-top: 6px;">admin@nexa.com</h4>
+            <p style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Super Admin Yetkili</p>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 20px;">
+            <span style="font-size: 13px; color: #64748B; font-weight: 700; text-transform: uppercase;">Mobil AR Desteği</span>
+            <h4 style="font-size: 20px; color: #10B981; margin-top: 6px;">iOS & Android</h4>
+            <p style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Kamera ile X-Ray Görüşü</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px;">
+          <div class="chip chip-blue" style="font-size: 13px; padding: 8px 18px;">
+            ★ Ücretsiz POC (Proof of Concept)
+          </div>
+          <div class="chip chip-purple" style="font-size: 13px; padding: 8px 18px;">
+            ★ 24 Saat İçinde Kurulum
+          </div>
+          <div class="chip chip-emerald" style="font-size: 13px; padding: 8px 18px;">
+            ★ YİBF ve Muhasebe Entegrasyonu
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>© 2026 NXA Software • Nexa ERP Enterprise</span>
+      <span>Geliştirici: Umut Erdoğan • nxerp.com.tr</span>
+      <span>Sunum Sonu</span>
+    </div>
+  </section>
+
+</body>
+</html>
+

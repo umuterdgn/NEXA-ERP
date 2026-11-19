@@ -158,6 +158,17 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={direction} className={`${inter.variable} antialiased`} suppressHydrationWarning>
       <head>
+        {/* Google Tag Manager (GTM-TX8QS94J) */}
+        <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-TX8QS94J" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+            `,
+          }}
+        />
         <link rel="alternate" hrefLang="tr" href="https://www.nxerp.com.tr/tr" />
         <link rel="alternate" hrefLang="en" href="https://www.nxerp.com.tr/en" />
         <link rel="alternate" hrefLang="de" href="https://www.nxerp.com.tr/de" />
