@@ -22,7 +22,7 @@
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^6.0.0",
     "@mlightcad/cad-simple-viewer": "^1.6.0",
-    "@mlightcad/data-model": "^1.13.0",
+    "@mlightcad/data-model": "^1.15.30",
     "@mlightcad/libredwg-converter": "^3.15.30",
     "@mlightcad/mtext-renderer": "^0.12.4",
     "@mlightcad/three-renderer": "^1.6.0",
