@@ -37,6 +37,7 @@ interface Blueprint2DViewerModalProps {
   fileUrl: string
   fileType: string
   discipline: string
+  projectId?: string
   onDisciplineChange?: (discipline: string) => void
   isAnalyzed?: boolean
   elementCount?: number
@@ -55,6 +56,7 @@ export default function Blueprint2DViewerModal({
   fileUrl,
   fileType,
   discipline,
+  projectId,
   onDisciplineChange,
   isAnalyzed = false,
   elementCount = 0,
@@ -110,11 +112,18 @@ export default function Blueprint2DViewerModal({
     setCadLoading(true)
     setCadError(null)
     try {
-      const res = await fetch("/api/cad/extract", {
+      let res = await fetch("/api/cad/parse-dwg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileUrl, fileName, fileType, discipline }),
+        body: JSON.stringify({ fileUrl, fileName, fileType, discipline, projectId }),
       })
+      if (!res.ok) {
+        res = await fetch("/api/cad/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileUrl, fileName, fileType, discipline }),
+        })
+      }
       const json: CadExtractionResult = await res.json()
       if (!res.ok || !json.success) {
         setCadError(json.error || "CAD/PDF vektörleri çözümlenemedi.")

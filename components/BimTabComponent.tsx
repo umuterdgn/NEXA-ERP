@@ -29,6 +29,7 @@ import AiBlueprintAnalysisModal from "@/components/bim/AiBlueprintAnalysisModal"
 import {
   analyzeBlueprintPdf,
   getProjectAnalyzedPdfs,
+  clearProjectAiBlueprintData,
   type Blueprint2DCoordinateElement,
 } from "@/actions/ai-blueprint-parser"
 
@@ -137,6 +138,13 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
     initialDocFiles[0]?.fileUrl ||
     null
 
+  const [viewMode, setViewMode] = useState<"MODEL_3D" | "EXTRUSION_2D_TO_3D">(() => {
+    if (initial3DFiles.length > 0 && initialActiveUrl && isValid3DModelFile(initialActiveUrl)) {
+      return "MODEL_3D"
+    }
+    return "EXTRUSION_2D_TO_3D"
+  })
+  const [isResettingAiData, setIsResettingAiData] = useState(false)
   const [bimUrl, setBimUrl] = useState<string | null>(initialActiveUrl)
   const [activeFileName, setActiveFileName] = useState<string | undefined>(undefined)
   const [bimFiles, setBimFiles] = useState<BimFileItem[]>(initial3DFiles)
@@ -163,6 +171,40 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
   const [isSwitchingModel, setIsSwitchingModel] = useState<string | null>(null)
   const [isDeletingModel, setIsDeletingModel] = useState<string | null>(null)
   const [isConvertingTo3DDocUrl, setIsConvertingTo3DDocUrl] = useState<string | null>(null)
+
+  // AI 3D Analiz Verilerini Sıfırlama: Eski mock ve pafta analizlerini temizler
+  const handleResetAiData = async () => {
+    const confirmed = window.confirm(
+      "Bu projeye ait tüm AI pafta analiz kayıtları ve eski 3D ekstrüzyon verileri veritabanından kalıcı olarak temizlenecektir. Devam etmek istiyor musunuz?"
+    )
+    if (!confirmed) return
+
+    setIsResettingAiData(true)
+    const toastId = toast.loading("AI 3D verileri temizleniyor...")
+    try {
+      const res = await clearProjectAiBlueprintData(project.id)
+      if (res.success) {
+        setAnalyzedPdfsMap({})
+        if (viewMode === "EXTRUSION_2D_TO_3D") {
+          if (bimFiles.length > 0) {
+            setViewMode("MODEL_3D")
+            setBimUrl(bimFiles[0].fileUrl)
+            setActiveFileName(bimFiles[0].fileName)
+          } else {
+            setBimUrl(null)
+          }
+        }
+        toast.success(res.message || "AI 3D analiz verileri sıfırlandı.", { id: toastId })
+        router.refresh()
+      } else {
+        toast.error(res.error || "Sıfırlama işlemi başarısız.", { id: toastId })
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Veriler sıfırlanırken hata oluştu.", { id: toastId })
+    } finally {
+      setIsResettingAiData(false)
+    }
+  }
 
   // Doğrudan "3D'ye Aktar" Motoru: Bekletme veya demo olmadan anında AI analizi yapıp 3D BIM sahnesine ekler
   const handleDirect3DConversion = async (doc: ProjectDocItem, overrideDiscipline?: string) => {
@@ -191,6 +233,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           ...prev,
           [doc.fileUrl]: res.selectedDiscipline || targetDiscipline,
         }))
+        setViewMode("EXTRUSION_2D_TO_3D")
         setBimUrl(doc.fileUrl)
         setActiveFileName(doc.fileName)
         setSelectedDiscipline(res.selectedDiscipline || targetDiscipline)
@@ -326,8 +369,10 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
 
   // Handle switching active model
   const handleSetActive = async (file: BimFileItem) => {
-    // 3D Canvas'ı anında aç ve yükleme ekranını gizle
+    // 3D Canvas'ı anında aç, viewMode'u MODEL_3D yap ve yükleme ekranını gizle
+    setViewMode("MODEL_3D")
     setBimUrl(file.fileUrl)
+    setActiveFileName(file.fileName)
     setShowUploader(false)
     setIsSwitchingModel(file.id)
 
@@ -633,57 +678,106 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           {/* Active Model Indicator Header Bar (Normal Flow above 3D Canvas) */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2.5 bg-slate-900/90 rounded-xl border border-slate-800 backdrop-blur-md shadow-lg">
             <div className="flex items-center gap-2 text-xs flex-wrap">
-              {/* Bütünleşik Model vs Tekil Model Toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !isFederatedMode
-                  setIsFederatedMode(next)
-                  if (next) {
-                    toast.success("🌐 Bütünleşik 3D Model: Tüm analiz edilmiş katmanlar (Mimari, Statik, MEP) birleştirildi!")
-                  } else {
-                    toast("📄 Tekil Pafta/Model görünümüne geçildi.")
-                  }
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                  isFederatedMode
-                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
-                    : "bg-slate-800/80 hover:bg-slate-800 text-slate-300 border-slate-700"
-                }`}
-                title="Tüm pafta ve modelleri tek bir 3D sahnede birleşik göster"
-              >
-                <span>🌐</span>
-                <span>{isFederatedMode ? "Bütünleşik Model (Tüm Katmanlar)" : "Tekil Model Modu"}</span>
-              </button>
+              {viewMode === "MODEL_3D" ? (
+                <>
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shrink-0">
+                    <span>🏛️</span>
+                    <span>3D BIM Modeli</span>
+                  </span>
 
-              <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-slate-400 font-medium">Açık:</span>
+                    <span className="text-white font-bold truncate max-w-[200px] sm:max-w-sm">
+                      {resolvedActiveFileName || bimUrl.split("/").pop() || "3D Model"}
+                    </span>
+                  </div>
 
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-slate-400 font-medium">Açık:</span>
-                <span className="text-white font-bold truncate max-w-[160px] sm:max-w-xs">
-                  {isFederatedMode
-                    ? `Bütünleşik Model (${federatedElements.length > 0 ? federatedElements.length : (analyzedPdfsMap[bimUrl]?.elements?.length || 0)} Yapısal Eleman)`
-                    : (resolvedActiveFileName || bimUrl.split("/").pop() || "3D Model")}
-                </span>
-              </div>
+                  {federatedElements.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("EXTRUSION_2D_TO_3D")
+                        toast.success("📐 2D→3D Ekstrüzyon görünümüne geçildi.")
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>📐 2D→3D Ekstrüzyona Geç ({federatedElements.length} Eleman)</span>
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Bütünleşik Model vs Tekil Model Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !isFederatedMode
+                      setIsFederatedMode(next)
+                      if (next) {
+                        toast.success("🌐 Bütünleşik 3D Model: Tüm analiz edilmiş katmanlar (Mimari, Statik, MEP) birleştirildi!")
+                      } else {
+                        toast("📄 Tekil Pafta görünümüne geçildi.")
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                      isFederatedMode
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+                        : "bg-slate-800/80 hover:bg-slate-800 text-slate-300 border-slate-700"
+                    }`}
+                    title="Tüm pafta ve modelleri tek bir 3D sahnede birleşik göster"
+                  >
+                    <span>🌐</span>
+                    <span>{isFederatedMode ? "Bütünleşik Model" : "Tekil Pafta Modu"}</span>
+                  </button>
 
-              {/* Katman İstatistik Rozetleri */}
-              {isFederatedMode && federatedElements.length > 0 && (
-                <div className="hidden xl:flex items-center gap-1 text-[10px]">
-                  <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 font-mono">
-                    Statik: {federatedCounts.statik}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono">
-                    Mimari: {federatedCounts.mimari}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
-                    Mekanik: {federatedCounts.mekanik}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 border border-yellow-500/30 font-mono">
-                    Elektrik: {federatedCounts.elektrik}
-                  </span>
-                </div>
+                  <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-slate-400 font-medium">Açık:</span>
+                    <span className="text-white font-bold truncate max-w-[160px] sm:max-w-xs">
+                      {isFederatedMode
+                        ? `Bütünleşik Model (${federatedElements.length > 0 ? federatedElements.length : (analyzedPdfsMap[bimUrl]?.elements?.length || 0)} Yapısal Eleman)`
+                        : (resolvedActiveFileName || bimUrl.split("/").pop() || "Pafta")}
+                    </span>
+                  </div>
+
+                  {bimFiles.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("MODEL_3D")
+                        if (bimFiles[0]) {
+                          setBimUrl(bimFiles[0].fileUrl)
+                          setActiveFileName(bimFiles[0].fileName)
+                        }
+                        toast.success("🏛️ 3D BIM Modeline geçildi.")
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>🏛️ 3D Modele Geç ({bimFiles.length})</span>
+                    </button>
+                  )}
+
+                  {/* Katman İstatistik Rozetleri */}
+                  {isFederatedMode && federatedElements.length > 0 && (
+                    <div className="hidden xl:flex items-center gap-1 text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 font-mono">
+                        Statik: {federatedCounts.statik}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono">
+                        Mimari: {federatedCounts.mimari}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
+                        Mekanik: {federatedCounts.mekanik}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 border border-yellow-500/30 font-mono">
+                        Elektrik: {federatedCounts.elektrik}
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -713,8 +807,12 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                 ifcUrl={bimUrl}
                 projectId={project.id}
                 fileName={resolvedActiveFileName}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
                 aiData={
-                  isFederatedMode && federatedElements.length > 0
+                  viewMode === "MODEL_3D"
+                    ? undefined
+                    : isFederatedMode && federatedElements.length > 0
                     ? federatedElements
                     : analyzedPdfsMap[bimUrl]?.elements
                 }
@@ -726,8 +824,10 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                       selectedDiscipline
                 }
                 hasAiAnalysis={
-                  (isFederatedMode && federatedElements.length > 0) ||
-                  Boolean(analyzedPdfsMap[bimUrl])
+                  viewMode === "MODEL_3D"
+                    ? false
+                    : (isFederatedMode && federatedElements.length > 0) ||
+                      Boolean(analyzedPdfsMap[bimUrl])
                 }
                 onTriggerAiAnalysis={() => {
                   const targetDoc = documentFiles.find((d) => d.fileUrl === bimUrl) || {
@@ -1022,9 +1122,31 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             </div>
           </div>
 
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-            {documentFiles.length} Evrak / Pafta
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={handleResetAiData}
+              disabled={isResettingAiData}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer disabled:opacity-50 shrink-0"
+              title="Bu projedeki tüm AI pafta analizlerini ve eski 3D verilerini veritabanından kalıcı siler ve temiz bir sahne açar"
+            >
+              {isResettingAiData ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-rose-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                  <span>Sıfırlanıyor...</span>
+                </>
+              ) : (
+                <>
+                  <span>🗑️</span>
+                  <span>AI 3D Verilerini Sıfırla</span>
+                </>
+              )}
+            </button>
+
+            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 shrink-0">
+              {documentFiles.length} Evrak / Pafta
+            </span>
+          </div>
         </div>
 
         {documentFiles.length === 0 ? (
@@ -1034,7 +1156,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             {documentFiles.map((doc) => {
               const ext = extractSafeExt(doc.fileName, doc.fileUrl, doc.fileType).toUpperCase()
               const currentDiscipline =
@@ -1139,6 +1261,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
                       <button
                         type="button"
                         onClick={() => {
+                          setViewMode("EXTRUSION_2D_TO_3D")
                           setBimUrl(doc.fileUrl)
                           setActiveFileName(doc.fileName)
                           setSelectedDiscipline(currentDiscipline)
@@ -1201,6 +1324,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
           fileName={selected2DModalDoc.fileName}
           fileUrl={selected2DModalDoc.fileUrl}
           fileType={selected2DModalDoc.fileType || "pdf"}
+          projectId={project.id}
           discipline={
             docDisciplines[selected2DModalDoc.fileUrl] ||
             analyzedPdfsMap[selected2DModalDoc.fileUrl]?.discipline ||
@@ -1223,6 +1347,7 @@ export function BimTabComponent({ project }: BimTabComponentProps) {
             const currentDisc =
               docDisciplines[selected2DModalDoc.fileUrl] ||
               inferDefaultDiscipline(selected2DModalDoc.fileName)
+            setViewMode("EXTRUSION_2D_TO_3D")
             setBimUrl(selected2DModalDoc.fileUrl)
             setActiveFileName(selected2DModalDoc.fileName)
             setSelectedDiscipline(currentDisc)

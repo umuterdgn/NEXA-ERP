@@ -1,0 +1,378 @@
+[
+  {
+    "id": "admin-dashboard",
+    "name": "Executive Dashboard & Ana Komuta",
+    "route": "/admin",
+    "screenshotFile": "01-executive-dashboard.png",
+    "status": "SUCCESS",
+    "sizeKB": 423.5
+  },
+  {
+    "id": "project-control-center",
+    "name": "Proje Kontrol Merkezi (Master)",
+    "route": "/admin/project-control-center",
+    "screenshotFile": "02-project-control-center.png",
+    "status": "SUCCESS",
+    "sizeKB": 556.4
+  },
+  {
+    "id": "portfolio-progress",
+    "name": "Fiziki & Nakdi İlerleyiş Takibi",
+    "route": "/admin/progress",
+    "screenshotFile": "03-portfolio-progress.png",
+    "status": "SUCCESS",
+    "sizeKB": 332.1
+  },
+  {
+    "id": "projects-portfolio",
+    "name": "Projeler Portföyü & Künye",
+    "route": "/admin/projects",
+    "screenshotFile": "04-projects-portfolio.png",
+    "status": "SUCCESS",
+    "sizeKB": 273.9
+  },
+  {
+    "id": "project-detail-hub",
+    "name": "Proje Detay Merkezi (Master Hub)",
+    "route": "/admin/projects/cmvzn2rfw000d9gugjwp2rf5v",
+    "screenshotFile": "05-project-detail-hub.png",
+    "status": "SUCCESS",
+    "sizeKB": 678.5
+  },
+  {
+    "id": "federated-bim-3d",
+    "name": "3D Federated BIM & Sanal X-Ray Motoru",
+    "route": "/admin/projects/store-korupark?tab=bim",
+    "screenshotFile": "06-federated-bim-3d.png",
+    "status": "SUCCESS",
+    "sizeKB": 33.6
+  },
+  {
+    "id": "drone-photogrammetry",
+    "name": "4D Drone Fotogrametri & Dijital İkiz",
+    "route": "/admin/projects/cmvzn2rfw000d9gugjwp2rf5v?tab=drone",
+    "screenshotFile": "07-drone-photogrammetry.png",
+    "status": "SUCCESS",
+    "sizeKB": 2064.9
+  },
+  {
+    "id": "cad-blueprints-drawings",
+    "name": "Dijital CAD Projeleri, DWG & Çizim Motoru",
+    "route": "/admin/blueprints",
+    "screenshotFile": "08-cad-blueprints-drawings.png",
+    "status": "SUCCESS",
+    "sizeKB": 205.5
+  },
+  {
+    "id": "project-revisions",
+    "name": "Proje Revizyonları & Karşılaştırmalı Fark (Diff)",
+    "route": "/admin/revisions",
+    "screenshotFile": "09-project-revisions.png",
+    "status": "SUCCESS",
+    "sizeKB": 481.1
+  },
+  {
+    "id": "ai-vision-analysis",
+    "name": "AI Görsel Analiz & Kusur Tespiti",
+    "route": "/admin/ai-vision",
+    "screenshotFile": "10-ai-vision-analysis.png",
+    "status": "SUCCESS",
+    "sizeKB": 227.3
+  },
+  {
+    "id": "boq-takeoff-engine",
+    "name": "Keşif & Metraj (BoQ) Yönetim Motoru",
+    "route": "/admin/boq",
+    "screenshotFile": "11-boq-takeoff-engine.png",
+    "status": "SUCCESS",
+    "sizeKB": 792.8
+  },
+  {
+    "id": "smart-documents-ocr",
+    "name": "Akıllı Evrak Denetimi (OCR) & Yapay Zeka",
+    "route": "/admin/smart-documents",
+    "screenshotFile": "12-smart-documents-ocr.png",
+    "status": "SUCCESS",
+    "sizeKB": 214.5
+  },
+  {
+    "id": "site-gis-map",
+    "name": "Şantiye Haritası, Geofence & Canlı Varlık Radarı",
+    "route": "/admin/map",
+    "screenshotFile": "13-site-gis-map.png",
+    "status": "SUCCESS",
+    "sizeKB": 1769.3
+  },
+  {
+    "id": "site-journal-diary",
+    "name": "Şantiye Jurnali (AI Günlük Defter)",
+    "route": "/admin/operations/journal",
+    "screenshotFile": "14-site-journal-diary.png",
+    "status": "SUCCESS",
+    "sizeKB": 586.9
+  },
+  {
+    "id": "tasks-work-orders",
+    "name": "İş Emirleri & Saha Görev Merkezi",
+    "route": "/admin/tasks",
+    "screenshotFile": "15-tasks-work-orders.png",
+    "status": "SUCCESS",
+    "sizeKB": 653.6
+  },
+  {
+    "id": "drone-flight-maps",
+    "name": "Hava & Drone Gözlem Haritası",
+    "route": "/admin/drone-maps",
+    "screenshotFile": "16-drone-flight-maps.png",
+    "status": "SUCCESS",
+    "sizeKB": 3244.5
+  },
+  {
+    "id": "finance-cash-management",
+    "name": "Kasa, Finans & Nakit Akışı",
+    "route": "/admin/finance",
+    "screenshotFile": "17-finance-cash-management.png",
+    "status": "SUCCESS",
+    "sizeKB": 518.3
+  },
+  {
+    "id": "progress-payments-billing",
+    "name": "Hakediş ve Metraj Yönetimi",
+    "route": "/admin/progress-payments",
+    "screenshotFile": "18-progress-payments-billing.png",
+    "status": "SUCCESS",
+    "sizeKB": 322.9
+  },
+  {
+    "id": "subcontractor-inspections",
+    "name": "Taşeron İş Kanıtı Denetimi (Work Proof)",
+    "route": "/admin/subcontractor-inspections",
+    "screenshotFile": "19-subcontractor-inspections.png",
+    "status": "SUCCESS",
+    "sizeKB": 347.4
+  },
+  {
+    "id": "subcontractor-contracts",
+    "name": "Taşeron Sözleşmeleri & Birim Fiyatlar",
+    "route": "/admin/subcontractors/contracts",
+    "screenshotFile": "20-subcontractor-contracts.png",
+    "status": "SUCCESS",
+    "sizeKB": 372.2
+  },
+  {
+    "id": "subcontractors-deductions",
+    "name": "Taşeron Kesintileri, Avanslar & Cezalar",
+    "route": "/admin/subcontractors/deductions",
+    "screenshotFile": "21-subcontractors-deductions.png",
+    "status": "SUCCESS",
+    "sizeKB": 310.6
+  },
+  {
+    "id": "finance-cheques-documents",
+    "name": "Çek / Senet & Teminat Mektubu Takibi",
+    "route": "/admin/finance/documents",
+    "screenshotFile": "22-finance-cheques-documents.png",
+    "status": "SUCCESS",
+    "sizeKB": 477.7
+  },
+  {
+    "id": "ai-collection-risk",
+    "name": "AI Tahsilat & Risk Asistanı",
+    "route": "/admin/collection-risk",
+    "screenshotFile": "23-ai-collection-risk.png",
+    "status": "SUCCESS",
+    "sizeKB": 433.9
+  },
+  {
+    "id": "inspection-records-list",
+    "name": "Yapı Denetim Kayıtları & Tutanaklar",
+    "route": "/admin/inspections",
+    "screenshotFile": "24-inspection-records-list.png",
+    "status": "SUCCESS",
+    "sizeKB": 280.3
+  },
+  {
+    "id": "concrete-core-samples",
+    "name": "Beton Kırım & Karot Numune Takip",
+    "route": "/admin/samples",
+    "screenshotFile": "25-concrete-core-samples.png",
+    "status": "SUCCESS",
+    "sizeKB": 601.1
+  },
+  {
+    "id": "reinforcement-formwork-check",
+    "name": "Demir Donatı & Kalıp Kontrol Vizesi",
+    "route": "/admin/inspection/reinforcement",
+    "screenshotFile": "26-reinforcement-formwork-check.png",
+    "status": "SUCCESS",
+    "sizeKB": 203.1
+  },
+  {
+    "id": "field-deficiencies-snags",
+    "name": "Saha Eksiklikleri & Kusur Takibi (Snagging)",
+    "route": "/admin/deficiencies",
+    "screenshotFile": "27-field-deficiencies-snags.png",
+    "status": "SUCCESS",
+    "sizeKB": 339.7
+  },
+  {
+    "id": "qa-qc-materials-approvals",
+    "name": "Kalite Güvence (QA/QC) & Malzeme Onayları",
+    "route": "/admin/qa-qc/materials",
+    "screenshotFile": "28-qa-qc-materials-approvals.png",
+    "status": "SUCCESS",
+    "sizeKB": 238.6
+  },
+  {
+    "id": "qa-qc-ncr-nonconformance",
+    "name": "Uygunsuzluk & Düzeltici Önleyici Faaliyet (NCR / DÖF)",
+    "route": "/admin/qa-qc/ncr",
+    "screenshotFile": "29-qa-qc-ncr-nonconformance.png",
+    "status": "SUCCESS",
+    "sizeKB": 239.2
+  },
+  {
+    "id": "dynamic-inspection-forms",
+    "name": "Dinamik Denetim Formları & Form Oluşturucu",
+    "route": "/admin/forms",
+    "screenshotFile": "30-dynamic-inspection-forms.png",
+    "status": "SUCCESS",
+    "sizeKB": 371.2
+  },
+  {
+    "id": "isg-dashboard-analytics",
+    "name": "İSG Dashboard & Kaza Risk Analizi",
+    "route": "/admin/isg",
+    "screenshotFile": "31-isg-dashboard-analytics.png",
+    "status": "SUCCESS",
+    "sizeKB": 427.4
+  },
+  {
+    "id": "isg-master-plan-risks",
+    "name": "Vaziyet ve Şantiye Risk Planı",
+    "route": "/admin/isg/master-plan",
+    "screenshotFile": "32-isg-master-plan-risks.png",
+    "status": "SUCCESS",
+    "sizeKB": 1581.8
+  },
+  {
+    "id": "isg-near-miss-reporting",
+    "name": "Ramak Kala Bildirimi & Kaza Önleme",
+    "route": "/admin/isg/near-miss",
+    "screenshotFile": "33-isg-near-miss-reporting.png",
+    "status": "SUCCESS",
+    "sizeKB": 279.1
+  },
+  {
+    "id": "isg-ppe-forms-inventory",
+    "name": "KKD Zimmet Formları & Baret/Yelek Takibi",
+    "route": "/admin/isg/ppe-forms",
+    "screenshotFile": "34-isg-ppe-forms-inventory.png",
+    "status": "SUCCESS",
+    "sizeKB": 334.6
+  },
+  {
+    "id": "procurement-purchasing-requests",
+    "name": "Satınalma, Malzeme Talepleri & RFQ İhale",
+    "route": "/admin/procurement",
+    "screenshotFile": "35-procurement-purchasing-requests.png",
+    "status": "SUCCESS",
+    "sizeKB": 400.8
+  },
+  {
+    "id": "procurement-logistics-gate",
+    "name": "Kapı Güvenlik, Lojistik & Araç Giriş-Çıkış",
+    "route": "/admin/procurement/logistics",
+    "screenshotFile": "36-procurement-logistics-gate.png",
+    "status": "SUCCESS",
+    "sizeKB": 602.4
+  },
+  {
+    "id": "procurement-receiving-tesellum",
+    "name": "Malzeme Kabul, Tesellüm & QR İrsaliye Eşleme",
+    "route": "/admin/procurement/receiving",
+    "screenshotFile": "37-procurement-receiving-tesellum.png",
+    "status": "SUCCESS",
+    "sizeKB": 338.1
+  },
+  {
+    "id": "inventory-warehouse-qr",
+    "name": "Ambar Depo, Stok & Karekod Takibi",
+    "route": "/admin/inventory",
+    "screenshotFile": "38-inventory-warehouse-qr.png",
+    "status": "SUCCESS",
+    "sizeKB": 446.8
+  },
+  {
+    "id": "equipments-machinery-fleet",
+    "name": "Demirbaş, İş Makineleri & Yakıt Sayaçları",
+    "route": "/admin/equipments",
+    "screenshotFile": "39-equipments-machinery-fleet.png",
+    "status": "SUCCESS",
+    "sizeKB": 281.8
+  },
+  {
+    "id": "hr-personnel-list",
+    "name": "Personeller & Özlük Dosyaları",
+    "route": "/admin/personel",
+    "screenshotFile": "40-hr-personnel-list.png",
+    "status": "SUCCESS",
+    "sizeKB": 477.9
+  },
+  {
+    "id": "attendance-timesheet-gps",
+    "name": "Puantaj, Mesai & GPS Doğrulamalı Giriş-Çıkış",
+    "route": "/admin/attendance",
+    "screenshotFile": "41-attendance-timesheet-gps.png",
+    "status": "SUCCESS",
+    "sizeKB": 319.7
+  },
+  {
+    "id": "payroll-salary-calculation",
+    "name": "Puantaj & Bordro Hesaplama Motoru",
+    "route": "/admin/payroll",
+    "screenshotFile": "42-payroll-salary-calculation.png",
+    "status": "SUCCESS",
+    "sizeKB": 289.6
+  },
+  {
+    "id": "hr-shifts-planning",
+    "name": "Vardiya Planlaması & Nöbet Çizelgesi",
+    "route": "/admin/shifts",
+    "screenshotFile": "43-hr-shifts-planning.png",
+    "status": "SUCCESS",
+    "sizeKB": 290.4
+  },
+  {
+    "id": "hr-approvals-center",
+    "name": "İzin, Avans & Onay Bekleyenler Merkezi",
+    "route": "/admin/approvals",
+    "screenshotFile": "44-hr-approvals-center.png",
+    "status": "SUCCESS",
+    "sizeKB": 401
+  },
+  {
+    "id": "system-health-checkup",
+    "name": "Sistem Sağlığı, CPU & Veritabanı Check-up",
+    "route": "/admin/system-health",
+    "screenshotFile": "45-system-health-checkup.png",
+    "status": "SUCCESS",
+    "sizeKB": 479.4
+  },
+  {
+    "id": "audit-logs-security",
+    "name": "Kriptografik İşlem Geçmişi (Audit Logs)",
+    "route": "/admin/audit-logs",
+    "screenshotFile": "46-audit-logs-security.png",
+    "status": "SUCCESS",
+    "sizeKB": 387
+  },
+  {
+    "id": "settings-offline-sync",
+    "name": "Cihaz ve Çevrimdışı Senkronizasyon (Offline Sync)",
+    "route": "/admin/settings/offline-sync",
+    "screenshotFile": "47-settings-offline-sync.png",
+    "status": "SUCCESS",
+    "sizeKB": 616.4
+  }
+]

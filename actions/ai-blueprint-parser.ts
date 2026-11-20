@@ -598,7 +598,7 @@ export async function analyzeBlueprintPdf(
               },
             },
             {
-              text: `${mandatoryDisciplinePrompt}\n\nBu proje paftasını (${docName}) analiz et. Tüm mahalleri (mahaller) ve ${activeDiscipline} disiplinine ait BOQ imalat metrajlarını (metraj_kalemleri) çıkar. Her yapısal elemanın 3D R3F sahnesinde çizilmesi için elemanTipi, startX, startY, endX, endY, yukseklik_z ve disiplin ('${activeDiscipline}') koordinatlarını metre cinsinden hesaplayarak zorunlu responseSchema JSON formatında döndür.`,
+              text: `${mandatoryDisciplinePrompt}\n\nBu mimari/statik/tesisat proje paftasını (${docName}) titizlikle incele. Görseldeki sınırları [0..1000] normalize koordinat sisteminde ele alarak binanın ana dış hatlarını ve iç bölmelerini analiz et. Gerçek bina ölçeğine göre (1 birim = gerçek inşaat metresi cinsinden, örn. 12m x 16m kat planı) startX, startY, endX, endY koordinatlarını merkez (0,0) etrafında metre cinsine ölçeklendir. Tüm mahalleri (mahaller) ve ${activeDiscipline} disiplinine ait gerçek BOQ metraj kalemlerini (metraj_kalemleri) çıkar. Her yapısal elemanın (Duvar, Kolon, Kiriş, Kablo Tavası, Boru) 3D ekstrüzyonu için startX, startY, endX, endY, yukseklik_z (kat yüksekliği, varsayılan 3.0m), thickness (duvar kalınlığı, varsayılan 0.20-0.25m) ve disiplin ('${activeDiscipline}') değerlerini kesinlikle gerçek mimari çizim hatlarına dayandırarak döndür. Asla uydurma veya rastgele eleman üretme.`,
             },
           ]);
 
@@ -1400,6 +1400,52 @@ export async function getProject2DExtrusionData(
       hasAiAnalysis: false,
       source: "EMPTY",
       elements: [],
+    };
+  }
+}
+
+/**
+ * Projeye ait tüm AI Pafta OCR ve 2D-to-3D analiz kayıtlarını sıfırlar / temizler.
+ * Zero-mock kuralı: Eski sahte veya hatalı 21-elemanlık verileri temizleyip temiz bir sahne sunar.
+ */
+export async function clearProjectAiBlueprintData(projectId: string): Promise<{
+  success: boolean;
+  deletedCount: number;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    if (!projectId) {
+      return { success: false, deletedCount: 0, error: "Geçersiz Proje ID" };
+    }
+
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, deletedCount: 0, error: "Yetkisiz işlem (Unauthorized)" };
+    }
+
+    const deleteResult = await prisma.aIAnalysis.deleteMany({
+      where: {
+        projectId,
+        type: "BLUEPRINT_OCR",
+      },
+    });
+
+    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${projectId}/boq`);
+    revalidatePath(`/admin/bim`);
+
+    return {
+      success: true,
+      deletedCount: deleteResult.count,
+      message: `${deleteResult.count} adet AI analiz kaydı temizlendi ve 3D tuval sıfırlandı.`,
+    };
+  } catch (err: any) {
+    console.error("[clearProjectAiBlueprintData Error]:", err);
+    return {
+      success: false,
+      deletedCount: 0,
+      error: err?.message || "AI analiz verileri sıfırlanırken hata oluştu.",
     };
   }
 }

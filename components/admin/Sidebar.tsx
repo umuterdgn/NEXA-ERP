@@ -405,7 +405,7 @@ export default function AdminSidebar({
 
   const effectiveProjectId = urlProjectId || activeProjectId
   const stageGateHref = effectiveProjectId ? `/franchise/stage-gates/${effectiveProjectId}` : "/franchise/stage-gates"
-  const bimHref = effectiveProjectId ? `/admin/projects/${effectiveProjectId}?tab=bim` : "/admin/projects"
+  const bimHref = "/admin/bim"
   const boqHref = effectiveProjectId ? `/admin/projects/${effectiveProjectId}/boq` : "/admin/boq"
 
   const userRole = (session?.user as any)?.role as string

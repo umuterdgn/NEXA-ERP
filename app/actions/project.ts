@@ -74,6 +74,10 @@ export async function updateProjectBimModel(projectId: string, modelUrl: string)
 
 export async function addBimFile(projectId: string, url: string, name: string) {
   try {
+    if (!url || url.startsWith("blob:")) {
+      throw new Error("Geçici blob URL'leri veritabanına kaydedilemez. Lütfen kalıcı bir dosya yükleyin.")
+    }
+
     const ext = name.split(".").pop()?.toLowerCase() || "ifc"
     const is3D = SUPPORTED_3D_EXTENSIONS.includes(ext) || is3DModelRecord(url, name, ext)
 
@@ -132,6 +136,13 @@ export async function addBimFileToProject(
   fileData: { fileName: string; fileUrl: string; fileType?: string | null }
 ) {
   try {
+    if (!fileData?.fileUrl || fileData.fileUrl.startsWith("blob:")) {
+      return {
+        success: false,
+        error: "Geçici blob URL'leri veritabanına kaydedilemez. Lütfen kalıcı bir dosya yükleyin.",
+      }
+    }
+
     const extension = (fileData.fileName.split(".").pop()?.toLowerCase() || fileData.fileType || "ifc")
       .toLowerCase()
       .replace(/^\./, "")

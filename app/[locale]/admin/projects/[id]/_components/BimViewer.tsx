@@ -249,6 +249,8 @@ interface BimViewerProps {
   bimUrl?: string | null
   projectId?: string
   fileName?: string
+  viewMode?: "MODEL_3D" | "EXTRUSION_2D_TO_3D"
+  onViewModeChange?: (mode: "MODEL_3D" | "EXTRUSION_2D_TO_3D") => void
   models?: FederatedModelItem[]
   boqData?: Blueprint2DCoordinateItem[]
   aiData?: Blueprint2DCoordinateItem[]
@@ -956,6 +958,8 @@ export default function BimViewer({
   bimUrl,
   projectId,
   fileName,
+  viewMode,
+  onViewModeChange,
   models,
   boqData,
   aiData,
@@ -1067,6 +1071,26 @@ export default function BimViewer({
     isPdfOrDwgUrl(activeModelUrl, fileName) ||
     !isValid3DModelUrl(activeModelUrl, fileName)
 
+  // Mutually exclusive View Mode state (3D Model vs 2D->3D Extrusion)
+  const [internalViewMode, setInternalViewMode] = useState<"MODEL_3D" | "EXTRUSION_2D_TO_3D">(() => {
+    if (viewMode) return viewMode
+    if (!isNon3DActiveFile && (isGltfUrlOrFile(effectiveUrl, fileName) || isIfcUrlOrFile(effectiveUrl, fileName))) {
+      return "MODEL_3D"
+    }
+    return "EXTRUSION_2D_TO_3D"
+  })
+
+  useEffect(() => {
+    if (viewMode) {
+      setInternalViewMode(viewMode)
+    }
+  }, [viewMode])
+
+  const handleSwitchViewMode = (mode: "MODEL_3D" | "EXTRUSION_2D_TO_3D") => {
+    setInternalViewMode(mode)
+    onViewModeChange?.(mode)
+  }
+
   useEffect(() => {
     if (!activeModelUrl || isNon3DActiveFile) {
       setSafeUrl(null)
@@ -1076,36 +1100,15 @@ export default function BimViewer({
       return
     }
 
-    let currentBlobUrl: string | null = null
-
-    // Sadece 3D (.ifc, .glb, .gltf) dış bağlantılarda CORS aşımı için /api/file-proxy -> Blob kullan
+    // CORS & Domain çakışmalarını önlemek için /api/bim/file-proxy endpoint'ini kalıcı URL olarak ver.
+    // ASLA geçici blob: URL'i oluşturup unmount'ta erken revokeObjectURL yapma (StrictMode cleanup hatasını kalıcı çözer).
     if (activeModelUrl.startsWith("http")) {
-      const proxyFetchUrl = `/api/file-proxy?url=${encodeURIComponent(activeModelUrl)}`
-      fetch(proxyFetchUrl)
-        .then((res) => {
-          if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`)
-          return res.blob()
-        })
-        .catch(() => fetch(activeModelUrl).then((res) => res.blob()))
-        .then((blob) => {
-          const blobUrl = URL.createObjectURL(blob)
-          currentBlobUrl = blobUrl
-          setSafeUrl(blobUrl)
-        })
-        .catch((err) => {
-          console.error("3D Model Fetch Error:", err)
-          setSafeUrl(activeModelUrl)
-        })
+      const proxied = `/api/bim/file-proxy?url=${encodeURIComponent(activeModelUrl)}`
+      setSafeUrl(proxied)
     } else {
       setSafeUrl(activeModelUrl)
     }
-
-    return () => {
-      if (currentBlobUrl && currentBlobUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(currentBlobUrl)
-      }
-    }
-  }, [activeModelUrl, fileName, isNon3DActiveFile])
+  }, [activeModelUrl, fileName, isNon3DActiveFile, engineMode])
 
   // --- X-RAY & LAYER FILTERING STATES ---
   const [uiOpacity, setUiOpacity] = useState(100) // Sadece Slider UI için (Hafif)
@@ -2094,6 +2097,36 @@ export default function BimViewer({
       {/* Non-Overlapping Top Workspace Header Bar (Normal Flex Flow) */}
       <div className="shrink-0 px-3 py-2 bg-slate-900/95 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-20">
         <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Mode Switcher: 3D Model vs 2D->3D Extrusion (Mutually Exclusive) */}
+          <div className="flex items-center bg-slate-800/90 rounded-lg p-0.5 border border-slate-700/80 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleSwitchViewMode("MODEL_3D")}
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                internalViewMode === "MODEL_3D"
+                  ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Kayıtlı 3D Model (.glb / .ifc)"
+            >
+              <span>🏛️ 3D Model</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSwitchViewMode("EXTRUSION_2D_TO_3D")}
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                internalViewMode === "EXTRUSION_2D_TO_3D"
+                  ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="2D Çizimden Üretilen 3D Ekstrüzyon"
+            >
+              <span>📐 2D→3D Ekstrüzyon</span>
+            </button>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700 mx-0.5 hidden sm:block" />
+
           <button
             type="button"
             onClick={() => setEngineMode("canvas")}
@@ -2578,39 +2611,77 @@ export default function BimViewer({
               <Suspense fallback={<CanvasLoader />}>
                 <Bounds clip fit margin={1.25} observe>
                   <Center>
-                    {/* 1. Gerçek Yüklenmiş 3D Model (.ifc / .glb / .gltf) */}
-                    {!isNon3DActiveFile && safeUrl && safeUrl.trim() !== "" && (
-                      isIfcUrlOrFile(activeModelUrl, fileName) ? (
-                        <IfcCanvasModel
-                          url={safeUrl}
-                          layerVisibility={layerVisibility}
-                          xRayOpacity={xRayOpacity}
-                          onClick={handleModelClick}
-                          onPointerDown={(e: any) => {
-                            const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
-                            const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
-                            pointerDownPosRef.current = { x, y }
-                          }}
-                        />
-                      ) : isGltfUrlOrFile(activeModelUrl, fileName) ? (
-                        <GltfModel
-                          url={safeUrl}
-                          layerVisibility={layerVisibility}
-                          xRayOpacity={xRayOpacity}
-                          completedElements={completedElements}
-                          onElementCounts={(counts) => setCategoryCounts(counts)}
-                          onClick={handleModelClick}
-                          onPointerDown={(e: any) => {
-                            const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
-                            const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
-                            pointerDownPosRef.current = { x, y }
-                          }}
-                        />
-                      ) : null
+                    {/* 1. MODEL_3D MODU: SADECE Yüklenmiş 3D Model (.ifc / .glb / .gltf) - Ekstrüzyon ASLA Render Edilmez! */}
+                    {internalViewMode === "MODEL_3D" && (
+                      <>
+                        {!isNon3DActiveFile && safeUrl && safeUrl.trim() !== "" ? (
+                          isIfcUrlOrFile(activeModelUrl, fileName) ? (
+                            <IfcCanvasModel
+                              url={safeUrl}
+                              layerVisibility={layerVisibility}
+                              xRayOpacity={xRayOpacity}
+                              onClick={handleModelClick}
+                              onPointerDown={(e: any) => {
+                                const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                                const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                                pointerDownPosRef.current = { x, y }
+                              }}
+                            />
+                          ) : isGltfUrlOrFile(activeModelUrl, fileName) ? (
+                            <GltfModel
+                              url={safeUrl}
+                              layerVisibility={layerVisibility}
+                              xRayOpacity={xRayOpacity}
+                              completedElements={completedElements}
+                              onElementCounts={(counts) => setCategoryCounts(counts)}
+                              onClick={handleModelClick}
+                              onPointerDown={(e: any) => {
+                                const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                                const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                                pointerDownPosRef.current = { x, y }
+                              }}
+                            />
+                          ) : null
+                        ) : federatedModels && federatedModels.length > 0 ? (
+                          federatedModels
+                            .filter((m) => m.visible && m.url && isValid3DModelUrl(m.url, m.name))
+                            .map((item) => (
+                              <group key={item.id || item.url}>
+                                {isIfcUrlOrFile(item.url, item.name) ? (
+                                  <IfcCanvasModel
+                                    url={item.url.startsWith("http") ? `/api/bim/file-proxy?url=${encodeURIComponent(item.url)}` : item.url}
+                                    layerVisibility={layerVisibility}
+                                    xRayOpacity={xRayOpacity}
+                                    onClick={handleModelClick}
+                                    onPointerDown={(e: any) => {
+                                      const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                                      const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                                      pointerDownPosRef.current = { x, y }
+                                    }}
+                                  />
+                                ) : (
+                                  <GltfModel
+                                    url={item.url.startsWith("http") ? `/api/bim/file-proxy?url=${encodeURIComponent(item.url)}` : item.url}
+                                    layerVisibility={layerVisibility}
+                                    xRayOpacity={xRayOpacity}
+                                    completedElements={completedElements}
+                                    onElementCounts={(counts) => setCategoryCounts(counts)}
+                                    onClick={handleModelClick}
+                                    onPointerDown={(e: any) => {
+                                      const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
+                                      const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
+                                      pointerDownPosRef.current = { x, y }
+                                    }}
+                                  />
+                                )}
+                              </group>
+                            ))
+                        ) : null}
+                      </>
                     )}
 
-                    {/* 2. Gerçek Metrik 2D->3D Çıkarılmış CAD / PDF Yapısal Elemanları (Bütünleşik Sahnede Birlikte!) */}
-                    {activeExtrusionData.length > 0 && (
+                    {/* 2. EXTRUSION_2D_TO_3D MODU: SADECE Gerçek Metrik 2D->3D Çıkarılmış CAD / PDF Geometrisi */}
+                    {internalViewMode === "EXTRUSION_2D_TO_3D" && activeExtrusionData.length > 0 && (
                       <GeometryEngine2Dto3D
                         data={activeExtrusionData}
                         discipline={selectedDiscipline}
@@ -2625,43 +2696,6 @@ export default function BimViewer({
                           pointerDownPosRef.current = { x, y }
                         }}
                       />
-                    )}
-
-                    {/* 3. Federated 3D Models fallback when no primary safeUrl & no extrusion yet */}
-                    {!safeUrl && activeExtrusionData.length === 0 && federatedModels && federatedModels.length > 0 && (
-                      federatedModels
-                        .filter((m) => m.visible && m.url && isValid3DModelUrl(m.url, m.name))
-                        .map((item) => (
-                          <group key={item.id || item.url}>
-                            {isIfcUrlOrFile(item.url, item.name) ? (
-                              <IfcCanvasModel
-                                url={item.url.startsWith("http") ? `/api/file-proxy?url=${encodeURIComponent(item.url)}` : item.url}
-                                layerVisibility={layerVisibility}
-                                xRayOpacity={xRayOpacity}
-                                onClick={handleModelClick}
-                                onPointerDown={(e: any) => {
-                                  const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
-                                  const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
-                                  pointerDownPosRef.current = { x, y }
-                                }}
-                              />
-                            ) : (
-                              <GltfModel
-                                url={item.url.startsWith("http") ? `/api/file-proxy?url=${encodeURIComponent(item.url)}` : item.url}
-                                layerVisibility={layerVisibility}
-                                xRayOpacity={xRayOpacity}
-                                completedElements={completedElements}
-                                onElementCounts={(counts) => setCategoryCounts(counts)}
-                                onClick={handleModelClick}
-                                onPointerDown={(e: any) => {
-                                  const x = e.clientX ?? (e.nativeEvent as any)?.clientX ?? 0
-                                  const y = e.clientY ?? (e.nativeEvent as any)?.clientY ?? 0
-                                  pointerDownPosRef.current = { x, y }
-                                }}
-                              />
-                            )}
-                          </group>
-                        ))
                     )}
                   </Center>
 

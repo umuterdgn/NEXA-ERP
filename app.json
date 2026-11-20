@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "3b609ff6-c5d1-4925-aafd-0d9d1a717a8c"
+      }
+    },
+    "android": {
+      "package": "com.nexaglobal.nexaerp"
+    }
+  }
+}

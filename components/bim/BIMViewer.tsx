@@ -366,6 +366,8 @@ export interface BIMViewerProps {
   bimUrl?: string | null
   projectId?: string
   fileName?: string
+  viewMode?: "MODEL_3D" | "EXTRUSION_2D_TO_3D"
+  onViewModeChange?: (mode: "MODEL_3D" | "EXTRUSION_2D_TO_3D") => void
   models?: FederatedModelItem[]
   boqData?: Blueprint2DCoordinateElement[]
   aiData?: Blueprint2DCoordinateElement[]
@@ -384,6 +386,8 @@ export default function BIMViewer(props: BIMViewerProps) {
   return (
     <InternalBimViewer
       {...props}
+      viewMode={props.viewMode}
+      onViewModeChange={props.onViewModeChange}
       aiData={props.aiData}
       boqData={props.aiData || props.boqData}
       discipline={props.discipline}

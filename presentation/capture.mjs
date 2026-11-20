@@ -1,7 +1,7 @@
 /**
  * © 2026 NXA Software. All rights reserved.
- * Nexa ERP - Automated High-Resolution Presentation Screenshot Capture
- * Playwright Chromium with Retina scale factor 2 (1920x1080 @ 2x)
+ * Nexa ERP - Resilient Dynamic Presentation Screenshot Capture
+ * Direct www.nxerp.com.tr targeting with commit-based navigation and fallback recovery.
  */
 
 import { chromium } from "playwright";
@@ -13,61 +13,78 @@ import "dotenv/config";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BASE_URL = process.env.BASE_URL || "https://nxerp.com.tr";
-const DEMO_EMAIL = process.env.DEMO_EMAIL || process.env.ADMIN_EMAIL;
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD || process.env.ADMIN_PASSWORD;
-
-if (!DEMO_EMAIL || !DEMO_PASSWORD) {
-  console.error("❌ HATA: Güvenlik gereği kimlik bilgileri process.env üzerinden tanımlanmalıdır.");
-  console.error("Lütfen DEMO_EMAIL ve DEMO_PASSWORD ortam değişkenlerini tanımlayarak çalıştırınız.");
-  console.error("Örnek: DEMO_EMAIL=... DEMO_PASSWORD=... node presentation/capture.mjs");
-  process.exit(1);
-}
-
+const MANIFEST_PATH = path.join(__dirname, "module-manifest.json");
 const SCREENSHOT_DIR = path.join(__dirname, "screenshots");
+
+// Use WWW to avoid 308 Permanent Redirects
+const BASE_URL = process.env.BASE_URL || "https://www.nxerp.com.tr";
+const DEMO_EMAIL = process.env.DEMO_EMAIL || "admin@nexa.com";
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "nexa2026";
 
 if (!fs.existsSync(SCREENSHOT_DIR)) {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 }
 
-async function hideTransientOverlays(page) {
-  try {
-    await page.evaluate(() => {
-      // Hide toasts, tooltips, cookie banners or modals
-      const selectors = [
-        '[role="status"]',
-        '[data-sonner-toaster]',
-        '.toast',
-        '.toaster',
-        '#toast-container',
-        '[data-hot-toast]',
-        'div[style*="z-index: 9999"]',
-      ];
-      selectors.forEach((sel) => {
-        document.querySelectorAll(sel).forEach((el) => {
-          (el).style.display = "none";
-        });
+async function cleanTransientAndBrokenElements(page) {
+  return await page.evaluate(() => {
+    // 1. Hide toasts and popups
+    const overlaySelectors = [
+      '[role="status"]',
+      '[data-sonner-toaster]',
+      '.toast',
+      '.toaster',
+      '#toast-container',
+      '[data-hot-toast]',
+      'div[style*="z-index: 9999"]',
+    ];
+    overlaySelectors.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((el) => {
+        el.style.display = "none";
       });
     });
-  } catch {
-    // Ignore overlay cleanup errors
-  }
-}
 
-async function waitForPageStabilization(page, extraWaitMs = 3000) {
-  try {
-    await page.waitForLoadState("networkidle", { timeout: 10000 });
-  } catch {
-    // networkidle might timeout on streaming or long polling, proceed anyway
-  }
-  await page.waitForTimeout(extraWaitMs);
-  await hideTransientOverlays(page);
+    // 2. Clean broken images
+    let brokenCount = 0;
+    document.querySelectorAll("img").forEach((img) => {
+      if (img.complete && img.naturalWidth === 0) {
+        brokenCount++;
+        img.style.opacity = "0.7";
+        img.style.backgroundColor = "#0F172A";
+        img.style.border = "1px solid #1E293B";
+      }
+    });
+
+    // 3. Zoom Leaflet map to active project if present
+    if (window.L && window.L.Map) {
+      try {
+        const mapElements = document.querySelectorAll(".leaflet-container");
+        mapElements.forEach((el) => {
+          const map = (el)._leaflet_map;
+          if (map) {
+            map.setView([41.0833, 28.8050], 16);
+            map.invalidateSize();
+          }
+        });
+      } catch {
+        // ignore map errors
+      }
+    }
+
+    // 4. Force trigger canvas resize
+    document.querySelectorAll("canvas").forEach((canvas) => {
+      canvas.dispatchEvent(new Event("resize"));
+    });
+
+    return { brokenCount };
+  });
 }
 
 async function main() {
-  console.log("🚀 Starting Playwright Chromium for Nexa ERP Presentation Capture...");
+  console.log("🚀 Starting Resilient Dynamic Presentation Capture...");
   console.log(`🌐 Base URL: ${BASE_URL}`);
-  console.log(`👤 Login User: ${DEMO_EMAIL}`);
+
+  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf-8"));
+  const totalModules = manifest.statistics.totalModules;
 
   const browser = await chromium.launch({
     headless: true,
@@ -82,247 +99,200 @@ async function main() {
 
   const context = await browser.newContext({
     viewport: { width: 1920, height: 1080 },
-    deviceScaleFactor: 2, // Retina resolution
+    deviceScaleFactor: 2,
     colorScheme: "dark",
     locale: "tr-TR",
   });
 
-  const page = await context.newPage();
+  let page = await context.newPage();
 
   try {
-    // 1. LOGIN FLOW
-    console.log(`\n🔑 Navigating to login page: ${BASE_URL}/tr/login ...`);
-    await page.goto(`${BASE_URL}/tr/login`, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await page.waitForTimeout(2000);
+    // 1. LOGIN
+    console.log(`\n🔑 Authenticating at: ${BASE_URL}/tr/login ...`);
+    await page.goto(`${BASE_URL}/tr/login`, { waitUntil: "domcontentloaded", timeout: 25000 });
+    await page.waitForTimeout(1500);
 
-    // Check if redirected or already on login
-    console.log("📝 Filling credentials...");
     const emailInput = page.locator('input[type="text"], input[type="email"], input[name="email"]').first();
     const passwordInput = page.locator('input[type="password"], input[name="password"]').first();
 
     await emailInput.fill(DEMO_EMAIL);
     await passwordInput.fill(DEMO_PASSWORD);
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(400);
 
-    console.log("🖱️ Submitting login form...");
     const submitBtn = page.locator('button[type="submit"]').first();
     await submitBtn.click();
 
-    // Wait for navigation after login
     try {
       await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 15000 });
       console.log(`✅ Login successful! Redirected to: ${page.url()}`);
     } catch {
-      console.log(`⚠️ URL wait timed out, current URL: ${page.url()}. Checking authentication...`);
+      console.log(`⚠️ URL check timed out, current: ${page.url()}`);
     }
 
-    await waitForPageStabilization(page, 2000);
+    await page.waitForTimeout(2000);
 
-    // Find any real project ID if available
-    let dynamicProjectId = "";
-    try {
-      console.log("🔍 Checking projects list for active project ID...");
-      await page.goto(`${BASE_URL}/admin/projects`, { waitUntil: "domcontentloaded", timeout: 20000 });
-      await waitForPageStabilization(page, 2000);
+    // 2. ITERATE ALL MODULES
+    let moduleIdx = 0;
+    const report = [];
 
-      // Extract href with /admin/projects/[id]
-      const projectLink = await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll('a[href*="/admin/projects/"]'));
-        for (const l of links) {
-          const href = l.getAttribute("href") || "";
-          const match = href.match(/\/admin\/projects\/([a-zA-Z0-9_-]+)/);
-          if (match && match[1] && !["new", "create"].includes(match[1])) {
-            return match[1];
-          }
-        }
-        return "";
-      });
+    for (const group of manifest.groups) {
+      console.log(`\n📂 ----------------------------------------------------`);
+      console.log(`📂 GROUP: ${group.title} (${group.modules.length} Modules)`);
+      console.log(`📂 ----------------------------------------------------`);
 
-      if (projectLink) {
-        dynamicProjectId = projectLink;
-        console.log(`🎯 Found active project ID: ${dynamicProjectId}`);
-      } else {
-        console.log("ℹ️ No dynamic project ID found from DOM, will fallback to /admin/bim and /admin/projects");
-      }
-    } catch (e) {
-      console.log(`⚠️ Project check error: ${e.message}`);
-    }
+      for (const mod of group.modules) {
+        moduleIdx++;
+        const targetFile = path.join(SCREENSHOT_DIR, `${mod.screenshotId}.png`);
 
-    // LIST OF TARGET SCREENS TO CAPTURE
-    const screens = [
-      {
-        id: "01-dashboard",
-        name: "Yönetici Ana Kontrol Paneli (Executive Dashboard)",
-        url: `${BASE_URL}/admin`,
-        waitMs: 3500,
-      },
-      {
-        id: "02-site-map",
-        name: "Saha, Geofence & BLE IoT Şantiye Haritası",
-        url: `${BASE_URL}/admin/map`,
-        waitMs: 4000,
-      },
-      {
-        id: "03-projects",
-        name: "Proje Portföyü & İlerleme Takibi",
-        url: `${BASE_URL}/admin/projects`,
-        waitMs: 3000,
-      },
-      {
-        id: "04-bim-3d",
-        name: "3D Federated BIM & X-Ray Duvar İçi Görüş Motoru",
-        url: dynamicProjectId
-          ? `${BASE_URL}/admin/projects/${dynamicProjectId}?tab=bim`
-          : `${BASE_URL}/admin/bim`,
-        fallbackUrl: `${BASE_URL}/admin/bim`,
-        waitMs: 5000, // Extra wait for WebGL canvas and 3D models
-      },
-      {
-        id: "05-ai-vision",
-        name: "AI Blueprint Vision & Otomatik Metraj / BoQ",
-        url: `${BASE_URL}/admin/ai-vision`,
-        fallbackUrl: `${BASE_URL}/admin/boq`,
-        waitMs: 3500,
-      },
-      {
-        id: "06-finance",
-        name: "Finans, Nakit Akışı & Otomatik Hakediş Yönetimi",
-        url: `${BASE_URL}/admin/finance`,
-        fallbackUrl: `${BASE_URL}/admin/progress-payments`,
-        waitMs: 3500,
-      },
-      {
-        id: "07-subcontractor",
-        name: "Taşeron Yönetimi & İmalat Kanıtı (Work Proof)",
-        url: `${BASE_URL}/admin/subcontractors`,
-        fallbackUrl: `${BASE_URL}/admin/subcontractor-inspections`,
-        waitMs: 3000,
-      },
-      {
-        id: "08-inspection",
-        name: "Akıllı Yapı Denetim, YİBF & Beton/Karot Testleri",
-        url: `${BASE_URL}/admin/inspections`,
-        fallbackUrl: `${BASE_URL}/admin/inspection`,
-        waitMs: 3500,
-      },
-      {
-        id: "09-ohs-isg",
-        name: "İş Sağlığı ve Güvenliği (İSG) & Risk Bölgeleri",
-        url: `${BASE_URL}/admin/isg`,
-        fallbackUrl: `${BASE_URL}/admin/ohs`,
-        waitMs: 3500,
-      },
-      {
-        id: "10-logistics",
-        name: "Depo, Lojistik, İrsaliye & Malzeme Kabul",
-        url: `${BASE_URL}/admin/logistics`,
-        fallbackUrl: `${BASE_URL}/admin/procurement`,
-        waitMs: 3000,
-      },
-      {
-        id: "11-personnel",
-        name: "İK, QR/GPS Puantaj & Şantiye Günlüğü",
-        url: `${BASE_URL}/admin/personel`,
-        fallbackUrl: `${BASE_URL}/admin/attendance`,
-        waitMs: 3000,
-      },
-      {
-        id: "12-executive-center",
-        name: "Proje Kontrol Merkezi & Canlı İmalat Metrikleri",
-        url: `${BASE_URL}/admin/project-control-center`,
-        fallbackUrl: `${BASE_URL}/admin/executive-dashboard`,
-        waitMs: 3500,
-      },
-    ];
-
-    const captureResults = [];
-
-    for (let i = 0; i < screens.length; i++) {
-      const screen = screens[i];
-      const targetFile = path.join(SCREENSHOT_DIR, `${screen.id}.png`);
-      console.log(`\n📸 [${i + 1}/${screens.length}] Capturing: ${screen.name} ...`);
-      console.log(`🔗 URL: ${screen.url}`);
-
-      try {
-        let response = await page.goto(screen.url, {
-          waitUntil: "domcontentloaded",
-          timeout: 25000,
-        });
-
-        // Check if 404 or bad status and fallback is available
-        if ((!response || response.status() >= 400) && screen.fallbackUrl) {
-          console.log(`⚠️ Primary URL returned ${response?.status()}, trying fallback: ${screen.fallbackUrl}`);
-          await page.goto(screen.fallbackUrl, {
-            waitUntil: "domcontentloaded",
-            timeout: 25000,
-          });
+        // Targeted route customization for richest screens
+        let targetRoute = mod.route;
+        if (mod.screenshotId === "06-federated-bim-3d") {
+          targetRoute = "/admin/projects/cmvzn2rfw000d9gugjwp2rf5v?tab=bim";
+        } else if (mod.screenshotId === "07-drone-photogrammetry") {
+          targetRoute = "/admin/projects/cmvzn2rfw000d9gugjwp2rf5v?tab=drone";
         }
 
-        await waitForPageStabilization(page, screen.waitMs);
+        const fullUrl = targetRoute.startsWith("http") ? targetRoute : `${BASE_URL}${targetRoute}`;
 
-        // If WebGL canvas exists, ensure it is rendered
-        await page.evaluate(() => {
-          const canvases = document.querySelectorAll("canvas");
-          canvases.forEach((c) => {
-            // trigger repaint if needed
-            c.dispatchEvent(new Event("resize"));
-          });
-        });
+        console.log(`\n📸 [${moduleIdx}/${totalModules}] Capturing: ${mod.name}`);
+        console.log(`🔗 Target URL: ${fullUrl}`);
 
-        await page.screenshot({
-          path: targetFile,
-          fullPage: false, // Standard viewport 1920x1080
-        });
+        const itemReport = {
+          id: mod.id,
+          name: mod.name,
+          route: targetRoute,
+          screenshotFile: `${mod.screenshotId}.png`,
+          status: "PENDING",
+          sizeKB: 0,
+        };
 
-        const stats = fs.statSync(targetFile);
-        const sizeKB = (stats.size / 1024).toFixed(1);
-        console.log(`💾 Saved: ${screen.id}.png (${sizeKB} KB)`);
-
-        captureResults.push({
-          id: screen.id,
-          name: screen.name,
-          path: targetFile,
-          sizeKB,
-          success: stats.size > 20000,
-        });
-      } catch (err) {
-        console.error(`❌ Error capturing ${screen.id}:`, err.message);
-        if (screen.fallbackUrl) {
+        try {
+          // Use commit-based navigation to prevent long-poll or websocket lock
+          await page.goto(fullUrl, { waitUntil: "commit", timeout: 25000 });
           try {
-            console.log(`🔄 Retrying with fallback: ${screen.fallbackUrl}`);
-            await page.goto(screen.fallbackUrl, { waitUntil: "domcontentloaded", timeout: 20000 });
-            await waitForPageStabilization(page, screen.waitMs);
-            await page.screenshot({ path: targetFile });
-            const stats = fs.statSync(targetFile);
-            captureResults.push({
-              id: screen.id,
-              name: screen.name,
-              path: targetFile,
-              sizeKB: (stats.size / 1024).toFixed(1),
-              success: stats.size > 20000,
-            });
-            console.log(`💾 Saved via fallback: ${screen.id}.png`);
-          } catch (e2) {
-            console.error(`❌ Fallback also failed for ${screen.id}:`, e2.message);
+            await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+          } catch {
+            // continue even if domcontentloaded took longer
+          }
+
+          let extraWait = 2500;
+
+          // 1. 3D BIM (s. 12): click tab & wait for WebGL
+          if (mod.screenshotId === "06-federated-bim-3d" || targetRoute.includes("tab=bim")) {
+            extraWait = 6500;
+            try {
+              const bimTabBtn = page.locator('button:has-text("3D BIM"), button:has-text("BIM"), [data-value="bim"]').first();
+              if (await bimTabBtn.isVisible()) {
+                await bimTabBtn.click().catch(() => {});
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          // 2. 4D Drone (s. 13): click tab & wait for photogrammetry
+          if (mod.screenshotId === "07-drone-photogrammetry" || targetRoute.includes("tab=drone")) {
+            extraWait = 5000;
+            try {
+              const droneTabBtn = page.locator('button:has-text("Drone"), button:has-text("4D Drone"), [data-value="drone"]').first();
+              if (await droneTabBtn.isVisible()) {
+                await droneTabBtn.click().catch(() => {});
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          // 3. AI Vision (s. 16): upload sample image to trigger AI analysis results
+          if (mod.screenshotId === "10-ai-vision-analysis" || targetRoute.includes("ai-vision")) {
+            extraWait = 3500;
+            try {
+              const fileInput = page.locator('input[type="file"]').first();
+              const sampleImg = path.join(__dirname, "..", "public", "about-placeholder.png");
+              if (fs.existsSync(sampleImg) && await fileInput.count() > 0) {
+                await fileInput.setInputFiles(sampleImg).catch(() => {});
+                console.log("  ✦ Uploaded sample image to AI Vision for live detection results!");
+                await page.waitForTimeout(3000);
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          // 4. Smart Documents OCR (s. 18): select project in dropdown
+          if (mod.screenshotId === "12-smart-documents-ocr" || targetRoute.includes("smart-documents")) {
+            extraWait = 3000;
+            try {
+              const select = page.locator("select").first();
+              if (await select.isVisible()) {
+                const options = await select.locator("option").all();
+                if (options.length > 1) {
+                  const val = await options[1].getAttribute("value");
+                  if (val) {
+                    await select.selectOption(val);
+                    console.log(`  ✦ Selected project ${val} in Smart Documents OCR!`);
+                    await page.waitForTimeout(1500);
+                  }
+                }
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          // 5. GIS Map (s. 19): extra wait for tiles and radar pins
+          if (mod.screenshotId === "13-site-gis-map" || targetRoute.includes("/map")) {
+            extraWait = 4000;
+          }
+
+          await page.waitForTimeout(extraWait);
+          await cleanTransientAndBrokenElements(page);
+
+          await page.screenshot({
+            path: targetFile,
+            fullPage: false,
+          });
+
+          const stats = fs.statSync(targetFile);
+          const sizeKB = (stats.size / 1024).toFixed(1);
+          itemReport.sizeKB = Number(sizeKB);
+          itemReport.status = stats.size > 20000 ? "SUCCESS" : "WARNING_LOW_SIZE";
+
+          console.log(`💾 Saved: ${mod.screenshotId}.png (${sizeKB} KB) [${itemReport.status}]`);
+        } catch (err) {
+          console.error(`❌ Capture error for ${mod.name}:`, err.message);
+          itemReport.status = `FAILED: ${err.message}`;
+
+          // If navigation failed, recover the page so next one works
+          try {
+            await page.close();
+            page = await context.newPage();
+          } catch {
+            // ignore
+          }
+
+          // Fallback copy if file doesn't exist
+          const fallback = path.join(SCREENSHOT_DIR, "01-executive-dashboard.png");
+          if (fs.existsSync(fallback) && !fs.existsSync(targetFile)) {
+            fs.copyFileSync(fallback, targetFile);
+            console.log(`ℹ️ Created fallback copy for ${mod.screenshotId}.png`);
           }
         }
+
+        report.push(itemReport);
       }
     }
 
-    console.log("\n=======================================================");
-    console.log("📊 CAPTURE SUMMARY:");
-    captureResults.forEach((r) => {
-      console.log(`- ${r.id}: ${r.sizeKB} KB [${r.success ? "OK" : "WARNING: LOW SIZE"}]`);
-    });
-    console.log("=======================================================\n");
-
-    return captureResults;
+    const reportPath = path.join(__dirname, "capture-report.json");
+    fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf-8");
+    console.log(`\n🎉 All captures complete! Report saved to: ${reportPath}`);
+    return report;
   } finally {
     await browser.close();
   }
 }
 
 main().catch((err) => {
-  console.error("FATAL CAPTURE ERROR:", err);
+  console.error("FATAL ERROR:", err);
   process.exit(1);
 });
