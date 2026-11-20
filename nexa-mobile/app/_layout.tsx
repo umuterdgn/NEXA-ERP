@@ -1,3 +1,8 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Nexa ERP Mobil - Kök Düzen (Root Layout)
+ */
+
 import "../global.css";
 import React, { useEffect } from "react";
 import { Stack, useRouter } from "expo-router";
@@ -5,80 +10,46 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Notifications from "expo-notifications";
-import { initializeBackgroundTasks } from "../src/tasks";
-
-/**
- * ADIM 3: Foreground (Ön Plan) Bildirim Yöneticisi
- * Uygulama açıkken gelen bildirimlerin ekranın üstünden sesli bir uyarı ile (Alert / Sound / Banner) düşmesini sağlar.
- */
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
-import { useNetworkSync } from "../src/hooks/useNetworkSync";
 import { MobileThemeProvider } from "../src/context/ThemeContext";
+import { AuthProvider } from "../src/context/AuthContext";
 
-/**
- * Nexa ERP Mobil - Kök Düzen (Root Layout)
- * Global stiller, Dark Mode, Push Bildirimler, Çevrimdışı Senkronizasyon ve Navigasyon Yığını
- */
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} catch {}
+
 export default function RootLayout() {
   const router = useRouter();
 
-  // ADIM 3: Global Ağ Durumu ve Otomatik Offline Kuyruk Senkronizasyonu
-  useNetworkSync();
-
-  // WorkDatabase / WorkManager açılış çökmesini önlemek için arka plan görevlerini güvenli başlatma
   useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        initializeBackgroundTasks();
-      } catch (err) {
-        console.warn("[RootLayout] Arka plan görevleri başlatma uyarısı:", err);
-      }
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    // ADIM 3: Bildirime tıklandığında (Response listener) ilgili sayfaya yönlendirme (Deep Link / Routing)
-    const subscription =
-      Notifications.addNotificationResponseReceivedListener((response) => {
+    let sub: { remove: () => void } | null = null;
+    try {
+      sub = Notifications.addNotificationResponseReceivedListener((response) => {
         try {
-          const data = response.notification.request.content.data;
-          console.log("[Notification Clicked] Bildirime tıklandı, hedef veri:", data);
-
+          const data = response.notification.request.content.data as any;
           if (data?.route && typeof data.route === "string") {
             router.push(data.route as any);
-          } else if (
-            data?.type === "TASK" ||
-            data?.type === "WORK_ORDER" ||
-            data?.screen === "tasks"
-          ) {
-            router.push("/(tabs)/tasks");
-          } else if (
-            data?.type === "JOURNAL" ||
-            data?.type === "SITE_DIARY" ||
-            data?.screen === "journal"
-          ) {
-            router.push("/(tabs)/journal");
+          } else if (data?.type === "TASK" || data?.type === "WORK_ORDER") {
+            router.push("/screen/tasks");
+          } else if (data?.type === "JOURNAL") {
+            router.push("/screen/journal");
+          } else if (data?.type === "SOS" || data?.type === "ISG") {
+            router.push("/screen/isg");
           } else {
             router.push("/(tabs)");
           }
-        } catch (routingErr) {
-          console.warn("[Notifications] Bildirim yönlendirme uyarısı:", routingErr);
-        }
+        } catch {}
       });
-
+    } catch {}
     return () => {
-      subscription.remove();
+      sub?.remove?.();
     };
   }, [router]);
 
@@ -86,30 +57,24 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <MobileThemeProvider>
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: "#090d16",
-              },
-              animation: "fade_from_bottom",
-            }}
-          >
-            <Stack.Screen
-              name="index"
-              options={{
+          <AuthProvider>
+            <StatusBar style="light" />
+            <Stack
+              screenOptions={{
                 headerShown: false,
-                title: "Nexa ERP Giriş",
+                contentStyle: { backgroundColor: "#0A0F1C" },
+                animation: "fade_from_bottom",
               }}
-            />
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                headerShown: false,
-              }}
-            />
-          </Stack>
+            >
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="screen/[moduleId]" options={{ headerShown: false }} />
+              <Stack.Screen name="sso" options={{ headerShown: false }} />
+              <Stack.Screen name="sync-queue" options={{ headerShown: false }} />
+              <Stack.Screen name="qr-id" options={{ headerShown: false }} />
+              <Stack.Screen name="profile" options={{ headerShown: false }} />
+            </Stack>
+          </AuthProvider>
         </MobileThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

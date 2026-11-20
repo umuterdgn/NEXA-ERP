@@ -1,13 +1,11 @@
-/**
- * © 2026 NXA Software. All rights reserved.
- * Developer: Umut Erdoğan
- * Nexa Mobile - Modüller (Tüm İşlemler) Tab Ekranı
- */
-
 import React from "react";
-import ModulesScreen from "../../src/screens/ModulesScreen";
+import { UnauthorizedGuard } from "../../src/components/ui/NexaUI";
+import ModulesCatalogScreen from "../../src/screens/ModulesCatalogScreen";
 
 export default function ModulesTabScreen() {
-  return <ModulesScreen />;
+  return (
+    <UnauthorizedGuard requiredModules={[]}>
+      <ModulesCatalogScreen />
+    </UnauthorizedGuard>
+  );
 }
-

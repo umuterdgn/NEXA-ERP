@@ -30,9 +30,6 @@
     },
     "android": {
       "package": "com.nexa.erp",
-      "build": {
-        "extraProguardRules": "./proguard-rules.pro"
-      },
       "adaptiveIcon": {
         "backgroundColor": "#090d16",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -57,7 +54,9 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -67,6 +66,12 @@
       "expo-router",
       "expo-status-bar",
       "react-native-nfc-manager",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Nexa ERP hesabınıza hızlı ve güvenli biyometrik giriş yapmak için Face ID izni gereklidir."
+        }
+      ],
       [
         "expo-camera",
         {
@@ -93,7 +98,8 @@
       "expo-audio",
       "./withWorkManagerDisable",
       "expo-secure-store",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-asset"
     ],
     "extra": {
       "router": {

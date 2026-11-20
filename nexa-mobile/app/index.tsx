@@ -1,143 +1,105 @@
-import React, { useState, useEffect, useCallback } from "react";
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Nexa ERP Mobil - Gerçek Kurumsal Giriş & Biyometrik Kilit Ekranı
+ * Yalnızca canlı POST /api/mobile/auth/login üzerinden kimlik doğrulaması yapar.
+ */
+
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import * as LocalAuthentication from "expo-local-authentication";
 import { Ionicons } from "@expo/vector-icons";
-import { setAuthSession, getAuthSession } from "../apiClient";
+import { useRouter } from "expo-router";
+import { useAuth } from "../src/context/AuthContext";
+import { API_BASE_URL, extractErrorMessage } from "../src/services/apiClient";
+import { iosColors } from "../src/theme/iosTheme";
 
-// Hızlı Demo Rolleri (Geliştirici ve test kolaylığı için)
-const DEMO_ACCOUNTS = [
-  { role: "ENGINEER", label: "Şantiye Şefi", email: "sefi@nxerp.com.tr", tenant: "nexa-franchise" },
-  { role: "SUBCONTRACTOR", label: "Taşeron", email: "taseron@nxerp.com.tr", tenant: "nexa-franchise" },
-  { role: "DRIVER", label: "Sürücü", email: "sofor@nxerp.com.tr", tenant: "nexa-franchise" },
-  { role: "INSPECTOR", label: "Yapı Denetim", email: "denetim@nxerp.com.tr", tenant: "nexa-franchise" },
-  { role: "FRANCHISE_OWNER", label: "Franchise", email: "erdgnumut20@gmail.com", tenant: "nexa-franchise" },
-];
-
-/**
- * Nexa ERP - Minimalist Apple iOS Cupertino Login Ekranı
- * Sadece Nexa Logosu, Çalışma Alanı (Tenant), E-posta, Şifre ve FaceID/TouchID Biyometrik Giriş
- */
 export default function LoginScreen() {
   const router = useRouter();
+  const {
+    isBootstrapping,
+    isAuthenticated,
+    hasSavedSession,
+    biometricAvailable,
+    biometricEnabled,
+    isOnline,
+    login,
+    unlockWithBiometrics,
+  } = useAuth();
 
-  const [tenant, setTenant] = useState("nexa-franchise");
-  const [email, setEmail] = useState("erdgnumut20@gmail.com");
-  const [password, setPassword] = useState("Password123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("FRANCHISE_OWNER");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Sayfa açıldığında kayıtlı oturum kontrolü
   useEffect(() => {
-    (async () => {
-      try {
-        const session = await getAuthSession();
-        if (session.tenantId) {
-          setTenant(session.tenantId);
-        }
-        if (session.user?.email) {
-          setEmail(session.user.email);
-        }
-        if (session.user?.role) {
-          setSelectedRole(session.user.role);
-        }
-      } catch (err) {
-        console.warn("[LoginScreen] Oturum okuma uyarısı:", err);
-      }
-    })();
-  }, []);
-
-  // Standart Giriş
-  const handleLogin = async () => {
-    if (!tenant.trim()) {
-      Alert.alert("Eksik Bilgi", "Lütfen çalışma alanı (tenant) kodunu girin.");
-      return;
-    }
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Eksik Bilgi", "Lütfen e-posta ve şifrenizi girin.");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-
-      const fakeToken = `nexa_jwt_${Date.now()}`;
-      const userPayload = {
-        id: "usr-" + Date.now().toString().slice(-5),
-        email: email.trim(),
-        name: email.split("@")[0].toUpperCase(),
-        role: selectedRole,
-        tenantId: tenant.trim(),
-      };
-
-      await setAuthSession(fakeToken, tenant.trim(), userPayload);
+    if (!isBootstrapping && isAuthenticated) {
       router.replace("/(tabs)");
-    } catch (err: any) {
-      Alert.alert("Giriş Başarısız", err.message || "Giriş yapılırken bir hata oluştu.");
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [isBootstrapping, isAuthenticated, router]);
 
-  // ADIM 1: FaceID / TouchID Biyometrik Giriş
-  const handleBiometricAuth = useCallback(async () => {
+  const handleLogin = async () => {
+    setErrorMsg(null);
+    if (!email.trim() || !password) {
+      setErrorMsg("Lütfen kurumsal e-posta / kullanıcı adı ve şifrenizi girin.");
+      return;
+    }
+
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-      if (!hasHardware || !isEnrolled) {
-        Alert.alert(
-          "Biyometrik Giriş Kullanılamıyor",
-          "Cihazınızda Face ID / Touch ID donanımı bulunamadı veya kayıtlı biyometrik veri yok."
-        );
-        return;
-      }
-
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Nexa ERP Güvenli Giriş",
-        fallbackLabel: "Şifre ile Devam Et",
-        cancelLabel: "Vazgeç",
-        disableDeviceFallback: false,
-      });
-
-      if (result.success) {
-        const fakeToken = `nexa_bio_token_${Date.now()}`;
-        const userPayload = {
-          id: "usr-bio",
-          email: email.trim() || "erdgnumut20@gmail.com",
-          name: "Umut Erdoğan",
-          role: selectedRole,
-          tenantId: tenant.trim() || "nexa-franchise",
-        };
-
-        await setAuthSession(fakeToken, tenant.trim() || "nexa-franchise", userPayload);
-        router.replace("/(tabs)");
-      }
+      setSubmitting(true);
+      await login(email.trim(), password);
     } catch (err: any) {
-      Alert.alert("Biyometrik Hata", err.message || "Biyometrik kimlik doğrulama yapılamadı.");
+      setErrorMsg(
+        extractErrorMessage(
+          err,
+          "Giriş başarısız. Lütfen bilgilerinizi kontrol edin."
+        )
+      );
+    } finally {
+      setSubmitting(false);
     }
-  }, [email, tenant, selectedRole, router]);
-
-  // Demo Rol Değiştirici
-  const handleSelectDemo = (item: (typeof DEMO_ACCOUNTS)[0]) => {
-    setEmail(item.email);
-    setTenant(item.tenant);
-    setSelectedRole(item.role);
   };
+
+  const handleBiometric = async () => {
+    setErrorMsg(null);
+    try {
+      setSubmitting(true);
+      await unlockWithBiometrics();
+    } catch (err: any) {
+      setErrorMsg(extractErrorMessage(err, "Biyometrik doğrulama tamamlanamadı."));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (isBootstrapping) {
+    return (
+      <SafeAreaView style={styles.bootContainer}>
+        <StatusBar style="light" />
+        <View style={styles.logoBadge}>
+          <Ionicons name="cube" size={38} color={iosColors.systemBlue} />
+        </View>
+        <Text style={styles.brandTitle}>NEXA ERP</Text>
+        <ActivityIndicator
+          size="small"
+          color={iosColors.systemBlue}
+          style={{ marginTop: 18 }}
+        />
+        <Text style={styles.bootSub}>Oturum ve RBAC yetkileri doğrulanıyor...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeContainer} edges={["top", "bottom"]}>
@@ -151,57 +113,78 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Nexa Logo & Başlık */}
+          {/* Logo ve Başlık */}
           <View style={styles.logoSection}>
             <View style={styles.logoBadge}>
-              <Ionicons name="cube" size={38} color="#0A7AFF" />
+              <Ionicons name="cube" size={38} color={iosColors.systemBlue} />
             </View>
             <Text style={styles.brandTitle}>NEXA ERP</Text>
-            <Text style={styles.brandSubtitle}>Kurumsal Saha & İnşaat Ekosistemi</Text>
+            <Text style={styles.brandSubtitle}>
+              Müteahhit • Yapı Denetim • Franchise Saha Terminali
+            </Text>
+
+            <View
+              style={[
+                styles.statusPill,
+                !isOnline && {
+                  backgroundColor: "rgba(255, 59, 48, 0.14)",
+                  borderColor: "rgba(255, 59, 48, 0.35)",
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: isOnline ? "#34C759" : "#FF453A" },
+                ]}
+              />
+              <Text style={styles.statusPillText}>
+                {isOnline ? `Sunucu Aktif • ${API_BASE_URL}` : "Çevrimdışı (İnternet Bekleniyor)"}
+              </Text>
+            </View>
           </View>
 
-          {/* Form Alanları */}
+          {/* Giriş Form Kartı */}
           <View style={styles.formContainer}>
-            {/* 1. Çalışma Alanı (Tenant) */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Çalışma Alanı (Tenant)</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="business-outline" size={19} color="#8E8E93" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInput}
-                  value={tenant}
-                  onChangeText={setTenant}
-                  placeholder="örn: nexa-franchise"
-                  placeholderTextColor="#636366"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
+            {errorMsg && (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle" size={18} color="#FF453A" />
+                <Text style={styles.errorText}>{errorMsg}</Text>
               </View>
-            </View>
+            )}
 
-            {/* 2. E-posta */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>E-posta</Text>
+              <Text style={styles.inputLabel}>Kurumsal E-posta veya Kullanıcı Adı</Text>
               <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={19} color="#8E8E93" style={styles.inputIcon} />
+                <Ionicons
+                  name="mail-outline"
+                  size={19}
+                  color="#8E8E93"
+                  style={styles.inputIcon}
+                />
                 <TextInput
                   style={styles.textInput}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="ad.soyad@nxerp.com.tr"
+                  placeholder="ornek@nxerp.com.tr"
                   placeholderTextColor="#636366"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  editable={!submitting}
                 />
               </View>
             </View>
 
-            {/* 3. Şifre */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Şifre</Text>
               <View style={styles.inputWrapper}>
-                <Ionicons name="lock-closed-outline" size={19} color="#8E8E93" style={styles.inputIcon} />
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={19}
+                  color="#8E8E93"
+                  style={styles.inputIcon}
+                />
                 <TextInput
                   style={[styles.textInput, { flex: 1 }]}
                   value={password}
@@ -210,6 +193,8 @@ export default function LoginScreen() {
                   placeholderTextColor="#636366"
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
+                  editable={!submitting}
+                  onSubmitEditing={handleLogin}
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword((prev) => !prev)}
@@ -224,53 +209,40 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Giriş Yap Butonu */}
             <TouchableOpacity
-              style={styles.loginButton}
+              style={[styles.loginButton, submitting && { opacity: 0.7 }]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={submitting}
               activeOpacity={0.85}
             >
-              {isLoading ? (
+              {submitting ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.loginButtonText}>Giriş Yap</Text>
+                <>
+                  <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.loginButtonText}>Güvenli Giriş Yap</Text>
+                </>
               )}
             </TouchableOpacity>
 
-            {/* Biyometrik Giriş (Face ID / Touch ID) */}
-            <TouchableOpacity
-              style={styles.biometricButton}
-              onPress={handleBiometricAuth}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="scan-outline" size={22} color="#0A7AFF" />
-              <Text style={styles.biometricButtonText}>Biyometrik Giriş (Face ID / Touch ID)</Text>
-            </TouchableOpacity>
+            {biometricAvailable && biometricEnabled && hasSavedSession && (
+              <TouchableOpacity
+                style={styles.biometricButton}
+                onPress={handleBiometric}
+                disabled={submitting}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="finger-print" size={21} color={iosColors.systemBlue} />
+                <Text style={styles.biometricButtonText}>
+                  Biyometrik Kilit Aç (Face ID / Parmak İzi)
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* Hızlı Rol Seçimi (Test Kolaylığı) */}
-          <View style={styles.demoSection}>
-            <Text style={styles.demoTitle}>HIZLI TEST ROLLERİ</Text>
-            <View style={styles.demoPillsRow}>
-              {DEMO_ACCOUNTS.map((item) => {
-                const isActive = selectedRole === item.role;
-                return (
-                  <TouchableOpacity
-                    key={item.role}
-                    style={[styles.demoPill, isActive && styles.demoPillActive]}
-                    onPress={() => handleSelectDemo(item)}
-                  >
-                    <Text
-                      style={[styles.demoPillText, isActive && styles.demoPillTextActive]}
-                    >
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+          <Text style={styles.footerInfo}>
+            İşletme tipi, rol yetkileri ve atanmış şantiyeler sunucu tarafından otomatik yüklenir.
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -280,66 +252,117 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
-    backgroundColor: "#0A0F1C",
+    backgroundColor: iosColors.background,
+  },
+  bootContainer: {
+    flex: 1,
+    backgroundColor: iosColors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  bootSub: {
+    fontSize: 12,
+    color: iosColors.labelMuted,
+    marginTop: 10,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     paddingVertical: 32,
   },
   logoSection: {
     alignItems: "center",
-    marginBottom: 36,
+    marginBottom: 28,
   },
   logoBadge: {
     width: 72,
     height: 72,
     borderRadius: 22,
-    backgroundColor: "rgba(10, 122, 255, 0.12)",
+    backgroundColor: "rgba(10, 122, 255, 0.14)",
     borderWidth: 1.5,
-    borderColor: "rgba(10, 122, 255, 0.35)",
+    borderColor: "rgba(10, 122, 255, 0.38)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 14,
   },
   brandTitle: {
-    fontSize: 26,
+    fontSize: 27,
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: 1.2,
   },
   brandSubtitle: {
-    fontSize: 13,
-    color: "#8E8E93",
+    fontSize: 12,
+    color: iosColors.labelMuted,
     marginTop: 4,
-    fontWeight: "500",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+    backgroundColor: "rgba(52, 199, 89, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(52, 199, 89, 0.25)",
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  statusPillText: {
+    fontSize: 11,
+    color: "#D1D5DB",
+    fontWeight: "600",
   },
   formContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: 20,
+    backgroundColor: iosColors.glassCard,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    padding: 22,
+    borderColor: iosColors.glassBorderLight,
+    padding: 20,
     gap: 16,
+  },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(255, 59, 48, 0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.38)",
+    borderRadius: 12,
+    padding: 12,
+  },
+  errorText: {
+    flex: 1,
+    color: "#FF6961",
+    fontSize: 12,
+    fontWeight: "600",
   },
   inputGroup: {
     gap: 6,
   },
   inputLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#8E8E93",
+    fontSize: 11,
+    fontWeight: "700",
+    color: iosColors.labelMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: iosColors.glassBorderLight,
     paddingHorizontal: 12,
     height: 48,
   },
@@ -353,75 +376,41 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   loginButton: {
-    backgroundColor: "#0A7AFF",
+    backgroundColor: iosColors.systemBlue,
     borderRadius: 14,
     height: 50,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 8,
-    shadowColor: "#0A7AFF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
+    gap: 8,
+    marginTop: 6,
   },
   loginButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "800",
   },
   biometricButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "rgba(10, 122, 255, 0.08)",
+    backgroundColor: "rgba(10, 122, 255, 0.1)",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(10, 122, 255, 0.25)",
-    height: 48,
+    borderColor: "rgba(10, 122, 255, 0.3)",
+    height: 46,
   },
   biometricButtonText: {
-    color: "#0A7AFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  demoSection: {
-    marginTop: 32,
-    alignItems: "center",
-  },
-  demoTitle: {
-    fontSize: 10,
+    color: "#58A6FF",
+    fontSize: 13,
     fontWeight: "700",
-    color: "#636366",
-    letterSpacing: 1,
-    marginBottom: 10,
   },
-  demoPillsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 8,
-  },
-  demoPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  demoPillActive: {
-    backgroundColor: "rgba(10, 122, 255, 0.2)",
-    borderColor: "#0A7AFF",
-  },
-  demoPillText: {
+  footerInfo: {
+    marginTop: 22,
+    textAlign: "center",
     fontSize: 11,
-    color: "#8E8E93",
-    fontWeight: "600",
-  },
-  demoPillTextActive: {
-    color: "#0A7AFF",
-    fontWeight: "700",
+    color: "#636366",
+    lineHeight: 16,
   },
 });

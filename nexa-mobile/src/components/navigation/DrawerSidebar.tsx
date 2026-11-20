@@ -1,26 +1,34 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Nexa ERP Mobil - Dinamik Sol Çekmece (DrawerSidebar)
+ * Gerçek oturum, işletme tipi rozeti, proje değiştirici ve çevrimdışı kuyruk sayacı içerir.
+ */
+
+import React, { createContext, useContext, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  Modal,
-  StyleSheet,
-  Dimensions,
-  Animated,
-  ScrollView,
-  Alert,
-  Linking,
-  ActivityIndicator,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { getAuthSession, clearAuthSession } from "../../../apiClient";
-import { OfflineQueue } from "../../services/OfflineQueue";
-import { useMobileTheme } from "../../context/ThemeContext";
+import { useAuth } from "../../context/AuthContext";
+import {
+  getAuthorizedModules,
+  getRoleDisplayTitle,
+  getTenantBusinessBadge,
+} from "../../config/navigationConfig";
+import { iosColors } from "../../theme/iosTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 340);
+const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.84, 340);
 
 interface DrawerContextType {
   isOpen: boolean;
@@ -40,163 +48,121 @@ export const useDrawer = () => useContext(DrawerContext);
 
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
-  const { theme, setTheme, language, setLanguage } = useMobileTheme();
-
   const [slideAnim] = useState(new Animated.Value(-DRAWER_WIDTH));
   const [fadeAnim] = useState(new Animated.Value(0));
-
-  const [userInfo, setUserInfo] = useState({
-    name: "Umut Erdoğan",
-    email: "erdgnumut20@gmail.com",
-    role: "FRANCHISE_OWNER",
-    tenantId: "nexa-franchise",
-  });
-
-  const [queuedCount, setQueuedCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Alt Modaller (Ayarlar & Destek)
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showSupportModal, setShowSupportModal] = useState(false);
+  const router = useRouter();
+  const {
+    user,
+    tenant,
+    tenantType,
+    role,
+    allowedModules,
+    activeProject,
+    isOnline,
+    offlineQueueCount,
+    hasModule,
+    syncOfflineNow,
+    logout,
+  } = useAuth();
 
-  // Oturum ve Offline Kuyruk verilerini yükle
-  useEffect(() => {
-    (async () => {
-      try {
-        const session = await getAuthSession();
-        if (session.user) {
-          setUserInfo({
-            name: session.user.name || session.user.email?.split("@")[0].toUpperCase() || "Kullanıcı",
-            email: session.user.email || "kullanici@nxerp.com.tr",
-            role: session.user.role || "ENGINEER",
-            tenantId: session.tenantId || "nexa-franchise",
-          });
-        }
-        const queue = await OfflineQueue.getQueue();
-        setQueuedCount(queue.length);
-      } catch (err) {
-        console.warn("[DrawerProvider] Bilgi yükleme uyarısı:", err);
-      }
-    })();
-  }, [isOpen]);
+  const authorizedCount = getAuthorizedModules(role, allowedModules).length;
+  const initials = (user?.name || "NX").slice(0, 2).toUpperCase();
 
   const openDrawer = () => {
     setIsOpen(true);
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 250,
+        duration: 240,
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 250,
+        duration: 240,
         useNativeDriver: true,
       }),
     ]).start();
   };
 
-  const closeDrawer = () => {
+  const closeDrawer = (callback?: () => void) => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: -DRAWER_WIDTH,
-        duration: 220,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 220,
+        duration: 200,
         useNativeDriver: true,
       }),
     ]).start(() => {
       setIsOpen(false);
+      callback?.();
     });
   };
 
   const toggleDrawer = () => {
-    if (isOpen) {
-      closeDrawer();
-    } else {
-      openDrawer();
-    }
+    if (isOpen) closeDrawer();
+    else openDrawer();
   };
 
-  // Çıkış Yap
-  const handleLogout = () => {
-    Alert.alert(
-      "Oturumu Kapat",
-      "Nexa ERP hesabınızdan çıkış yapmak istediğinize emin misiniz?",
-      [
-        { text: "Vazgeç", style: "cancel" },
-        {
-          text: "Çıkış Yap",
-          style: "destructive",
-          onPress: async () => {
-            closeDrawer();
-            await clearAuthSession();
-            router.replace("/");
-          },
-        },
-      ]
-    );
+  const navigateAndClose = (path: string, params?: Record<string, string>) => {
+    closeDrawer(() => {
+      if (params) {
+        router.push({ pathname: path as any, params });
+      } else {
+        router.push(path as any);
+      }
+    });
   };
 
-  // Manuel Çevrimdışı Senkronizasyon
   const handleSyncNow = async () => {
     try {
       setIsSyncing(true);
-      await OfflineQueue.processQueue();
-      const queue = await OfflineQueue.getQueue();
-      setQueuedCount(queue.length);
-      Alert.alert("Senkronizasyon", "Çevrimdışı kuyruktaki tüm veriler web sunucusuna iletildi.");
-    } catch (err: any) {
-      Alert.alert("Senkronizasyon", "Kuyruk işlenirken sunucuya erişilemedi. Otomatik tekrar denenecektir.");
+      const res = await syncOfflineNow();
+      Alert.alert(
+        "Senkronizasyon Tamamlandı",
+        res.total === 0
+          ? "Bekleyen çevrimdışı kayıt yok."
+          : `${res.synced} kayıt eşitlendi${res.conflicts > 0 ? `, ${res.conflicts} çakışma` : ""}${res.errors > 0 ? `, ${res.errors} hata` : ""}.`
+      );
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // Rol Etiketi
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case "ENGINEER":
-        return "Şantiye Şefi / Başmühendis";
-      case "SUBCONTRACTOR":
-      case "TASERON":
-        return "Taşeron Yüklenici";
-      case "DRIVER":
-        return "Lojistik / Mikser Sürücüsü";
-      case "INSPECTOR":
-        return "Bakanlık Yapı Denetçisi";
-      case "FRANCHISE_OWNER":
-      case "FRANCHISE":
-        return "Franchise Super Admin";
-      default:
-        return role;
-    }
+  const handleLogout = () => {
+    Alert.alert(
+      "Oturumu Kapat",
+      "Nexa ERP oturumunuzdan güvenli şekilde çıkış yapmak istiyor musunuz?",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Çıkış Yap",
+          style: "destructive",
+          onPress: () => closeDrawer(() => logout()),
+        },
+      ]
+    );
   };
 
   return (
     <DrawerContext.Provider value={{ isOpen, openDrawer, closeDrawer, toggleDrawer }}>
       {children}
 
-      {/* Drawer Overlay & Panel */}
       {isOpen && (
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-          {/* Karartma Backdrop */}
-          <Animated.View
-            style={[styles.backdrop, { opacity: fadeAnim }]}
-            pointerEvents="auto"
-          >
+          <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
             <TouchableOpacity
               style={StyleSheet.absoluteFill}
               activeOpacity={1}
-              onPress={closeDrawer}
+              onPress={() => closeDrawer()}
             />
           </Animated.View>
 
-          {/* Kayar Panel */}
           <Animated.View
             style={[
               styles.drawerContainer,
@@ -207,151 +173,172 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
               {/* Profil Başlığı */}
               <View style={styles.profileHeader}>
                 <View style={styles.avatarWrapper}>
-                  <Text style={styles.avatarInitials}>
-                    {userInfo.name.slice(0, 2).toUpperCase()}
-                  </Text>
+                  <Text style={styles.avatarInitials}>{initials}</Text>
                 </View>
                 <View style={styles.profileTextWrapper}>
                   <Text style={styles.profileName} numberOfLines={1}>
-                    {userInfo.name}
+                    {user?.name || "Kullanıcı"}
                   </Text>
                   <Text style={styles.profileEmail} numberOfLines={1}>
-                    {userInfo.email}
+                    {user?.email || ""}
                   </Text>
-                  <View style={styles.roleBadge}>
-                    <Text style={styles.roleBadgeText}>
-                      {getRoleLabel(userInfo.role)}
-                    </Text>
+                  <View style={styles.badgesRow}>
+                    <View style={styles.roleBadge}>
+                      <Text style={styles.roleBadgeText} numberOfLines={1}>
+                        {getRoleDisplayTitle(role)}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
 
-              {/* Tenant Bilgisi */}
-              <View style={styles.tenantInfoBox}>
-                <Ionicons name="business" size={14} color="#0A7AFF" />
-                <Text style={styles.tenantText}>
-                  Çalışma Alanı: <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>{userInfo.tenantId}</Text>
-                </Text>
+              {/* İşletme Tipi & Aktif Proje Özeti */}
+              <View style={styles.contextBox}>
+                <View style={styles.contextRow}>
+                  <Ionicons name="business" size={14} color="#0A7AFF" />
+                  <Text style={styles.contextText} numberOfLines={1}>
+                    {getTenantBusinessBadge(tenantType)} •{" "}
+                    <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>
+                      {tenant?.name || "Nexa Kurum"}
+                    </Text>
+                  </Text>
+                </View>
+                {activeProject && (
+                  <View style={styles.contextRow}>
+                    <Ionicons name="location" size={14} color="#34C759" />
+                    <Text style={styles.contextText} numberOfLines={1}>
+                      {activeProject.name}
+                    </Text>
+                  </View>
+                )}
               </View>
 
-              {/* Menü Maddeleri */}
               <ScrollView
                 style={styles.menuScroll}
-                contentContainerStyle={{ paddingVertical: 12, gap: 6 }}
+                contentContainerStyle={{ paddingVertical: 12, gap: 8 }}
                 showsVerticalScrollIndicator={false}
               >
-                {/* 1. Profilim */}
+                {/* Dijital QR Kimlik Kartım */}
                 <TouchableOpacity
                   style={styles.menuItem}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    closeDrawer();
-                    router.push("/(tabs)/profile");
-                  }}
+                  activeOpacity={0.75}
+                  onPress={() => navigateAndClose("/qr-id")}
                 >
-                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(10, 122, 255, 0.15)" }]}>
-                    <Ionicons name="person" size={18} color="#0A7AFF" />
+                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(10, 122, 255, 0.16)" }]}>
+                    <Ionicons name="qr-code" size={18} color="#0A7AFF" />
                   </View>
-                  <Text style={styles.menuItemText}>Profilim</Text>
+                  <Text style={styles.menuItemText}>Dijital QR Kimlik Kartım</Text>
                   <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
                 </TouchableOpacity>
 
-                {/* 2. Tüm Şantiye Modülleri (20 Mega Modül) */}
+                {/* Telsiz & Şantiye Chat */}
+                {hasModule("internal_comms", "ptt_chat") && (
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    activeOpacity={0.75}
+                    onPress={() => navigateAndClose("/screen/chat")}
+                  >
+                    <View style={[styles.menuIconCircle, { backgroundColor: "rgba(88, 86, 214, 0.16)" }]}>
+                      <Ionicons name="chatbubbles" size={18} color="#7A77FF" />
+                    </View>
+                    <Text style={styles.menuItemText}>Telsiz & Şantiye Chat</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                  </TouchableOpacity>
+                )}
+
+                {/* Yetkili Modüller Kataloğu */}
                 <TouchableOpacity
                   style={styles.menuItem}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    closeDrawer();
-                    router.push("/(tabs)/modules" as any);
-                  }}
+                  activeOpacity={0.75}
+                  onPress={() => navigateAndClose("/(tabs)/modules")}
                 >
-                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(0, 199, 190, 0.15)" }]}>
+                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(0, 199, 190, 0.16)" }]}>
                     <Ionicons name="grid" size={18} color="#00C7BE" />
                   </View>
-                  <Text style={styles.menuItemText}>Tüm Şantiye Modülleri (20)</Text>
+                  <Text style={styles.menuItemText}>
+                    Modüller ({authorizedCount})
+                  </Text>
                   <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
                 </TouchableOpacity>
 
-                {/* 3. 3D BIM & AR Navigasyon (Duvarın Arkasını Gör) */}
+                {/* Çevrimdışı Senkronizasyon Kuyruğu */}
                 <TouchableOpacity
                   style={styles.menuItem}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    closeDrawer();
-                    router.push("/(tabs)/bim" as any);
-                  }}
+                  activeOpacity={0.75}
+                  onPress={() => navigateAndClose("/sync-queue")}
                 >
-                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(0, 255, 255, 0.15)" }]}>
-                    <Ionicons name="cube" size={18} color="#00FFFF" />
+                  <View
+                    style={[
+                      styles.menuIconCircle,
+                      {
+                        backgroundColor:
+                          offlineQueueCount > 0
+                            ? "rgba(255, 149, 0, 0.18)"
+                            : "rgba(52, 199, 89, 0.16)",
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={offlineQueueCount > 0 ? "cloud-upload" : "cloud-done"}
+                      size={18}
+                      color={offlineQueueCount > 0 ? "#FF9F0A" : "#34C759"}
+                    />
                   </View>
-                  <Text style={styles.menuItemText}>3D BIM & AR (Duvarın Arkası)</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                  <Text style={styles.menuItemText}>Çevrimdışı Kuyruk</Text>
+                  {offlineQueueCount > 0 ? (
+                    <View style={styles.countBadge}>
+                      <Text style={styles.countBadgeText}>{offlineQueueCount}</Text>
+                    </View>
+                  ) : (
+                    <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                  )}
                 </TouchableOpacity>
 
-                {/* 4. Ayarlar */}
+                {/* Kırmızı Acil SOS Butonu */}
+                {hasModule("sos_alarm") && (
+                  <TouchableOpacity
+                    style={[styles.menuItem, styles.sosMenuItem]}
+                    activeOpacity={0.8}
+                    onPress={() => navigateAndClose("/screen/isg", { tab: "sos" })}
+                  >
+                    <View style={[styles.menuIconCircle, { backgroundColor: "rgba(255, 59, 48, 0.22)" }]}>
+                      <Ionicons name="medkit" size={18} color="#FF453A" />
+                    </View>
+                    <Text style={[styles.menuItemText, { color: "#FF6961" }]}>
+                      ACİL DURUM SOS
+                    </Text>
+                    <Ionicons name="warning" size={16} color="#FF453A" />
+                  </TouchableOpacity>
+                )}
+
+                {/* Profil & Ayarlar */}
                 <TouchableOpacity
                   style={styles.menuItem}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    setShowSettingsModal(true);
-                  }}
+                  activeOpacity={0.75}
+                  onPress={() => navigateAndClose("/profile")}
                 >
-                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(175, 82, 222, 0.15)" }]}>
+                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(175, 82, 222, 0.16)" }]}>
                     <Ionicons name="settings" size={18} color="#AF52DE" />
                   </View>
-                  <Text style={styles.menuItemText}>Ayarlar</Text>
+                  <Text style={styles.menuItemText}>Profil & Ayarlar</Text>
                   <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
                 </TouchableOpacity>
 
-                {/* 3. Destek / Yardım Merkezi */}
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    setShowSupportModal(true);
-                  }}
-                >
-                  <View style={[styles.menuIconCircle, { backgroundColor: "rgba(52, 199, 89, 0.15)" }]}>
-                    <Ionicons name="help-buoy" size={18} color="#34C759" />
-                  </View>
-                  <Text style={styles.menuItemText}>Destek / Yardım Merkezi</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
-                </TouchableOpacity>
-
-                {/* 4. Çevrimdışı Senkronizasyon Durumu */}
+                {/* Hızlı Sync Kartı */}
                 <View style={styles.syncCard}>
                   <View style={styles.syncHeaderRow}>
-                    <View style={styles.syncTitleRow}>
-                      <Ionicons
-                        name={queuedCount === 0 ? "checkmark-circle" : "cloud-upload"}
-                        size={18}
-                        color={queuedCount === 0 ? "#34C759" : "#FF9500"}
-                      />
-                      <Text style={styles.syncCardTitle}>Çevrimdışı Senkronizasyon</Text>
-                    </View>
-                    <View
+                    <Text style={styles.syncTitle}>
+                      {isOnline ? "Sunucu Bağlı" : "Çevrimdışı Mod"}
+                    </Text>
+                    <Text
                       style={[
-                        styles.syncBadge,
-                        queuedCount === 0 ? styles.syncBadgeGreen : styles.syncBadgeOrange,
+                        styles.syncStateBadge,
+                        { color: offlineQueueCount === 0 ? "#34C759" : "#FF9F0A" },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.syncBadgeText,
-                          queuedCount === 0 ? { color: "#34C759" } : { color: "#FF9500" },
-                        ]}
-                      >
-                        {queuedCount === 0 ? "GÜNCEL" : `${queuedCount} BEKLİYOR`}
-                      </Text>
-                    </View>
+                      {offlineQueueCount === 0 ? "GÜNCEL" : `${offlineQueueCount} BEKLİYOR`}
+                    </Text>
                   </View>
-
-                  <Text style={styles.syncCardDesc}>
-                    {queuedCount === 0
-                      ? "Tüm saha kayıtları, jurnaller ve fotoğraflar sunucu ile eşitlendi."
-                      : "İnternet koptuğunda kaydedilen taslaklar kuyrukta bekletiliyor."}
-                  </Text>
-
                   <TouchableOpacity
                     style={styles.syncNowButton}
                     onPress={handleSyncNow}
@@ -362,202 +349,40 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
                     ) : (
                       <>
                         <Ionicons name="sync" size={14} color="#FFFFFF" />
-                        <Text style={styles.syncNowText}>Şimdi Senkronize Et</Text>
+                        <Text style={styles.syncNowText}>Şimdi Eşitle</Text>
                       </>
                     )}
                   </TouchableOpacity>
                 </View>
               </ScrollView>
 
-              {/* Alt Çıkış Yap Butonu */}
+              {/* Çıkış */}
               <View style={styles.footerSection}>
                 <TouchableOpacity
                   style={styles.logoutButton}
                   activeOpacity={0.8}
                   onPress={handleLogout}
                 >
-                  <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+                  <Ionicons name="log-out-outline" size={20} color="#FF453A" />
                   <Text style={styles.logoutText}>Çıkış Yap</Text>
                 </TouchableOpacity>
-                <Text style={styles.appVersionText}>Nexa ERP Mobil v1.0.4 (Build 88)</Text>
+                <Text style={styles.appVersionText}>Nexa ERP Mobile • RBAC v2.0</Text>
               </View>
             </SafeAreaView>
           </Animated.View>
         </View>
       )}
-
-      {/* AYARLAR MODALI */}
-      <Modal visible={showSettingsModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Uygulama Ayarları</Text>
-              <TouchableOpacity onPress={() => setShowSettingsModal(false)}>
-                <Ionicons name="close-circle" size={26} color="#8E8E93" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Görünüm / Tema Seçimi */}
-            <View style={{ marginBottom: 18 }}>
-              <Text style={styles.settingSectionTitle}>Görünüm Modu (Tema)</Text>
-              <View style={styles.themeSelectorRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.themeOptionPill,
-                    theme === "dark" && styles.themeOptionActive,
-                  ]}
-                  onPress={() => setTheme("dark")}
-                >
-                  <Ionicons name="moon" size={14} color={theme === "dark" ? "#FFF" : "#8E8E93"} />
-                  <Text style={[styles.themeOptionText, theme === "dark" && styles.themeOptionTextActive]}>
-                    Koyu
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.themeOptionPill,
-                    theme === "light" && styles.themeOptionActiveLight,
-                  ]}
-                  onPress={() => setTheme("light")}
-                >
-                  <Ionicons name="sunny" size={14} color={theme === "light" ? "#0F172A" : "#8E8E93"} />
-                  <Text style={[styles.themeOptionText, theme === "light" && styles.themeOptionTextActiveLight]}>
-                    Açık
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.themeOptionPill,
-                    theme === "monochrome" && styles.themeOptionActiveMono,
-                  ]}
-                  onPress={() => setTheme("monochrome")}
-                >
-                  <Ionicons name="contrast" size={14} color={theme === "monochrome" ? "#000" : "#8E8E93"} />
-                  <Text style={[styles.themeOptionText, theme === "monochrome" && styles.themeOptionTextActiveMono]}>
-                    Siyah-Beyaz
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.settingHelpText}>
-                {theme === "monochrome"
-                  ? "☀️ Güneş altı yüksek kontrast & WCAG uyumlu mod"
-                  : theme === "light"
-                  ? "🏢 Ferah ve net ofis görünümü"
-                  : "🌙 Standart lacivert/siyah karanlık arayüz"}
-              </Text>
-            </View>
-
-            {/* Dil Seçimi */}
-            <View style={{ marginBottom: 18 }}>
-              <Text style={styles.settingSectionTitle}>Dil / Language</Text>
-              <View style={styles.themeSelectorRow}>
-                <TouchableOpacity
-                  style={[styles.langOptionPill, language === "tr" && styles.langOptionActive]}
-                  onPress={() => setLanguage("tr")}
-                >
-                  <Text style={[styles.langOptionText, language === "tr" && styles.langOptionTextActive]}>
-                    🇹🇷 TR
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.langOptionPill, language === "en" && styles.langOptionActive]}
-                  onPress={() => setLanguage("en")}
-                >
-                  <Text style={[styles.langOptionText, language === "en" && styles.langOptionTextActive]}>
-                    🇬🇧 EN
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.langOptionPill, language === "de" && styles.langOptionActive]}
-                  onPress={() => setLanguage("de")}
-                >
-                  <Text style={[styles.langOptionText, language === "de" && styles.langOptionTextActive]}>
-                    🇩🇪 DE
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>GPS Yüksek Hassasiyet</Text>
-              <Text style={styles.settingValueGreen}>Anti-Spoof Doğrulamalı</Text>
-            </View>
-
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Önbellek (Offline Cache)</Text>
-              <TouchableOpacity
-                onPress={() => Alert.alert("Önbellek", "Geçici veriler başarıyla temizlendi.")}
-              >
-                <Text style={{ color: "#0A7AFF", fontWeight: "600" }}>Temizle</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.modalDoneButton}
-              onPress={() => setShowSettingsModal(false)}
-            >
-              <Text style={styles.modalDoneText}>Kapat</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* DESTEK & YARDIM MODALI */}
-      <Modal visible={showSupportModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Destek & Yardım Merkezi</Text>
-              <TouchableOpacity onPress={() => setShowSupportModal(false)}>
-                <Ionicons name="close-circle" size={26} color="#8E8E93" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.supportDesc}>
-              Şantiye saha koşullarında veya sistem kullanımında teknik bir sorun yaşarsanız
-              7/24 Nexa Operasyon Merkezi ile irtibata geçebilirsiniz:
-            </Text>
-
-            <TouchableOpacity
-              style={styles.supportContactRow}
-              onPress={() => Linking.openURL("mailto:destek@nxerp.com.tr")}
-            >
-              <Ionicons name="mail" size={20} color="#0A7AFF" />
-              <View>
-                <Text style={styles.contactTitle}>E-posta Destek</Text>
-                <Text style={styles.contactSub}>destek@nxerp.com.tr</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.supportContactRow}
-              onPress={() => Linking.openURL("tel:08503004455")}
-            >
-              <Ionicons name="call" size={20} color="#34C759" />
-              <View>
-                <Text style={styles.contactTitle}>Şantiye Acil Çağrı Hattı</Text>
-                <Text style={styles.contactSub}>0850 300 44 55</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalDoneButton}
-              onPress={() => setShowSupportModal(false)}
-            >
-              <Text style={styles.modalDoneText}>Tamam</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </DrawerContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: {
-    ...StyleSheet.absoluteFill,
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: "rgba(0, 0, 0, 0.72)",
   },
   drawerContainer: {
@@ -566,14 +391,9 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: DRAWER_WIDTH,
-    backgroundColor: "#0A0F1C",
+    backgroundColor: iosColors.background,
     borderRightWidth: 1,
     borderRightColor: "rgba(255, 255, 255, 0.1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 16,
   },
   safeArea: {
     flex: 1,
@@ -583,26 +403,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 18,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomColor: iosColors.separator,
     gap: 12,
   },
   avatarWrapper: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(10, 122, 255, 0.15)",
+    backgroundColor: "rgba(10, 122, 255, 0.16)",
     borderWidth: 1.5,
-    borderColor: "#0A7AFF",
+    borderColor: iosColors.systemBlue,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarInitials: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "800",
-    color: "#0A7AFF",
+    color: "#58A6FF",
   },
   profileTextWrapper: {
     flex: 1,
@@ -614,55 +434,64 @@ const styles = StyleSheet.create({
   },
   profileEmail: {
     fontSize: 11,
-    color: "#8E8E93",
+    color: iosColors.labelMuted,
     marginTop: 1,
   },
+  badgesRow: {
+    flexDirection: "row",
+    marginTop: 5,
+  },
   roleBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(10, 122, 255, 0.12)",
+    backgroundColor: "rgba(10, 122, 255, 0.14)",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
-    marginTop: 4,
     borderWidth: 1,
-    borderColor: "rgba(10, 122, 255, 0.25)",
+    borderColor: "rgba(10, 122, 255, 0.3)",
   },
   roleBadgeText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#0A7AFF",
+    color: "#58A6FF",
   },
-  tenantInfoBox: {
+  contextBox: {
+    marginHorizontal: 14,
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.07)",
+    gap: 6,
+  },
+  contextRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    marginHorizontal: 16,
-    marginTop: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
     gap: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
   },
-  tenantText: {
+  contextText: {
+    flex: 1,
     fontSize: 11,
-    color: "#8E8E93",
+    color: iosColors.labelMuted,
   },
   menuScroll: {
     flex: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.035)",
+    paddingVertical: 11,
+    paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    gap: 12,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    gap: 11,
+  },
+  sosMenuItem: {
+    backgroundColor: "rgba(255, 59, 48, 0.09)",
+    borderColor: "rgba(255, 59, 48, 0.3)",
   },
   menuIconCircle: {
     width: 32,
@@ -673,63 +502,52 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
     color: "#FFFFFF",
   },
+  countBadge: {
+    backgroundColor: "#FF9500",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  countBadgeText: {
+    color: "#0A0F1C",
+    fontSize: 11,
+    fontWeight: "900",
+  },
   syncCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    marginTop: 6,
+    padding: 12,
     borderRadius: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.06)",
-    padding: 14,
-    marginTop: 8,
     gap: 8,
   },
   syncHeaderRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-  },
-  syncTitleRow: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 6,
   },
-  syncCardTitle: {
+  syncTitle: {
     fontSize: 12,
     fontWeight: "700",
     color: "#FFFFFF",
   },
-  syncBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  syncBadgeGreen: {
-    backgroundColor: "rgba(52, 199, 89, 0.15)",
-  },
-  syncBadgeOrange: {
-    backgroundColor: "rgba(255, 149, 0, 0.15)",
-  },
-  syncBadgeText: {
-    fontSize: 9,
+  syncStateBadge: {
+    fontSize: 10,
     fontWeight: "800",
-  },
-  syncCardDesc: {
-    fontSize: 11,
-    color: "#8E8E93",
-    lineHeight: 15,
   },
   syncNowButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0A7AFF",
+    backgroundColor: iosColors.systemBlue,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 9,
     gap: 6,
-    marginTop: 4,
   },
   syncNowText: {
     color: "#FFFFFF",
@@ -737,11 +555,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   footerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    borderTopColor: iosColors.separator,
   },
   logoutButton: {
     flexDirection: "row",
@@ -749,13 +567,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255, 59, 48, 0.1)",
     borderWidth: 1,
-    borderColor: "rgba(255, 59, 48, 0.25)",
-    paddingVertical: 12,
+    borderColor: "rgba(255, 59, 48, 0.3)",
+    paddingVertical: 11,
     borderRadius: 12,
     gap: 8,
   },
   logoutText: {
-    color: "#FF3B30",
+    color: "#FF453A",
     fontSize: 14,
     fontWeight: "700",
   },
@@ -763,170 +581,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 10,
     color: "#636366",
-    marginTop: 10,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  modalContent: {
-    backgroundColor: "#121826",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    padding: 22,
-    gap: 14,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  settingRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
-  },
-  settingLabel: {
-    fontSize: 13,
-    color: "#8E8E93",
-  },
-  settingValue: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  settingValueGreen: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#34C759",
-  },
-  supportDesc: {
-    fontSize: 13,
-    color: "#8E8E93",
-    lineHeight: 18,
-  },
-  supportContactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    padding: 12,
-    borderRadius: 12,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  contactTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  contactSub: {
-    fontSize: 12,
-    color: "#8E8E93",
-  },
-  modalDoneButton: {
-    backgroundColor: "#0A7AFF",
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 6,
-  },
-  modalDoneText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  settingSectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#E2E8F0",
-    marginBottom: 8,
-  },
-  themeSelectorRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  themeOptionPill: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    borderRadius: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 4,
-  },
-  themeOptionActive: {
-    backgroundColor: "#0A7AFF",
-    borderColor: "#0A7AFF",
-  },
-  themeOptionActiveLight: {
-    backgroundColor: "#F8FAFC",
-    borderColor: "#CBD5E1",
-  },
-  themeOptionActiveMono: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#FFFFFF",
-  },
-  themeOptionText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#8E8E93",
-  },
-  themeOptionTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  themeOptionTextActiveLight: {
-    color: "#0F172A",
-    fontWeight: "700",
-  },
-  themeOptionTextActiveMono: {
-    color: "#000000",
-    fontWeight: "800",
-  },
-  settingHelpText: {
-    fontSize: 11,
-    color: "#8E8E93",
-    marginTop: 6,
-    fontStyle: "italic",
-  },
-  langOptionPill: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    borderRadius: 10,
-    paddingVertical: 8,
-  },
-  langOptionActive: {
-    backgroundColor: "rgba(10, 122, 255, 0.25)",
-    borderColor: "#0A7AFF",
-  },
-  langOptionText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#8E8E93",
-  },
-  langOptionTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "700",
+    marginTop: 8,
   },
 });
