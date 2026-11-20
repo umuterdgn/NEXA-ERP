@@ -44,6 +44,8 @@ export const authConfig: NextAuthConfig = {
         token.id = user.id
         token.role = (user as any).role
         token.tenantId = (user as any).tenantId || null
+        token.tenantType = (user as any).tenantType || "CONTRACTOR"
+        token.assignedProjectIds = (user as any).assignedProjectIds || []
       }
       return token
     },
@@ -52,6 +54,8 @@ export const authConfig: NextAuthConfig = {
         session.user.id = (token.id as string) || token.sub!
         ;(session.user as any).role = token.role as any
         ;(session.user as any).tenantId = (token as any).tenantId as string || null
+        ;(session.user as any).tenantType = (token as any).tenantType || "CONTRACTOR"
+        ;(session.user as any).assignedProjectIds = (token as any).assignedProjectIds || []
       }
       return session
     },

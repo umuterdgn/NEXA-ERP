@@ -8,6 +8,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { authConfig } from "./auth.config"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { normalizeTenantType } from "@/lib/rbac/permissions"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -84,12 +85,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         const effectiveCompanyType =
+          user.tenant?.type ? String(user.tenant.type) :
           user.company?.companyType ||
           (user.companyType ? String(user.companyType) : null) ||
           (user.company ? String(user.company.type) : null) ||
           null
 
-        console.log("✅ User authenticated:", user.email, "Role:", user.role, "CompanyId:", user.companyId, "CompanyType:", effectiveCompanyType)
+        const tenantType = normalizeTenantType(effectiveCompanyType)
+        let assignedProjectIds = (user as any).assignedProjectIds || []
+        if (assignedProjectIds.length === 0) {
+          const linkedPersonel = await prisma.personel.findFirst({
+            where: { userId: user.id },
+            select: { projectId: true, assignedProjectIds: true },
+          }).catch(() => null)
+          if (linkedPersonel) {
+            assignedProjectIds =
+              linkedPersonel.assignedProjectIds && linkedPersonel.assignedProjectIds.length > 0
+                ? linkedPersonel.assignedProjectIds
+                : linkedPersonel.projectId
+                ? [linkedPersonel.projectId]
+                : []
+          }
+        }
+
+        console.log("✅ User authenticated:", user.email, "Role:", user.role, "TenantType:", tenantType)
 
         return {
           id: user.id,
@@ -97,6 +116,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           role: user.role,
           tenantId: user.tenantId || null,
+          tenantType,
+          assignedProjectIds,
         }
       }
     })
@@ -108,6 +129,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id
         token.role = user.role
         token.tenantId = (user as any).tenantId || null
+        token.tenantType = (user as any).tenantType || "CONTRACTOR"
+        token.assignedProjectIds = (user as any).assignedProjectIds || []
       }
       return token
     },
@@ -116,6 +139,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string
         session.user.role = token.role as any
         ;(session.user as any).tenantId = (token as any).tenantId as string || null
+        ;(session.user as any).tenantType = (token as any).tenantType || "CONTRACTOR"
+        ;(session.user as any).assignedProjectIds = (token as any).assignedProjectIds || []
       }
       return session
     }

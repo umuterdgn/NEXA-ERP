@@ -1,4 +1,6 @@
 "use client"
+import GrantAccessModal from "@/components/personnel/GrantAccessModal"
+import { getAssignableRolesForTenant } from "@/lib/rbac/permissions"
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
@@ -205,6 +207,8 @@ export default function AdminPersonelPage() {
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
                         <button
+                          type="button"
+                          data-testid="open-grant-access-btn"
                           onClick={() => {
                             setSelectedPersonForLogin(person)
                             setIsGrantLoginOpen(true)
@@ -329,7 +333,7 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
   const [loginData, setLoginData] = useState({
     username: "",
     password: "",
-    role: "STAFF"
+    role: "INSPECTOR"
   })
 
   useEffect(() => {
@@ -757,13 +761,11 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
                   onChange={(e) => setLoginData({ ...loginData, role: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm"
                 >
-                  <option value="STAFF">Personel (STAFF) - (/personnel)</option>
-                  <option value="WORKER">Saha Çalışanı (WORKER) - (/personnel)</option>
-                  <option value="DRIVER">Lojistik Sürücüsü (DRIVER)</option>
-                  <option value="SECURITY">Kapı Güvenlik Görevlisi (SECURITY)</option>
-                  <option value="SITE_MANAGER">Şantiye Şefi (SITE_MANAGER) - (/admin)</option>
-                  <option value="ENGINEER">Sorumlu Mühendis (ENGINEER) - (/admin)</option>
-                  <option value="ADMIN">Yönetici (ADMIN) - (/admin)</option>
+                  {getAssignableRolesForTenant("INSPECTION").map((r) => (
+                    <option key={r.role} value={r.role}>
+                      {r.title} ({r.role})
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -791,150 +793,6 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
   )
 }
 
-function PersonelLoginGrantModal({
-  person,
-  onClose,
-  onSuccess
-}: {
-  person: PersonnelRecord
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  const [formData, setFormData] = useState({
-    username: person.username || person.personnelNo?.toLowerCase() || "",
-    password: "",
-    role: "STAFF"
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.username || !formData.password) {
-      toast.error("Kullanıcı adı ve şifre zorunludur")
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      const email = formData.username.includes("@") ? formData.username : `${formData.username}@nexa.local`
-      const res = await fetch(`/api/admin/personnel/${person.id}/grant-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          role: formData.role,
-          email
-        })
-      })
-
-      if (res.ok) {
-        toast.success(`"${person.name}" için giriş hesabı başarıyla tanımlandı!`, { icon: "🔑" })
-        onSuccess()
-      } else {
-        const err = await res.json()
-        toast.error(err.error || "Giriş yetkisi tanımlanamadı.")
-      }
-    } catch {
-      toast.error("Bir hata oluştu.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-        <div className="bg-gradient-to-r from-amber-950/60 to-slate-900 border-b border-slate-800 p-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/30">
-              <Key className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white">Giriş Yetkisi / Şifre Belirle</h3>
-              <p className="text-xs text-amber-400">{person.name} ({person.department || "Saha"})</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              Kullanıcı Adı veya E-posta *
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                placeholder="Örn: ahmet.yilmaz"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              Giriş Şifresi *
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="En az 6 karakter"
-                minLength={6}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              Sistem Rolü *
-            </label>
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-            >
-              <option value="STAFF">Personel (/personnel)</option>
-              <option value="SITE_MANAGER">Şantiye Şefi (/admin)</option>
-              <option value="WORKER">Saha Çalışanı (/personnel)</option>
-              <option value="ENGINEER">Sorumlu Mühendis (/admin)</option>
-              <option value="ADMIN">Yönetici (/admin)</option>
-            </select>
-          </div>
-
-          <div className="flex gap-3 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
-              disabled={isSubmitting}
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-amber-600/30 disabled:opacity-50 cursor-pointer"
-            >
-              {isSubmitting ? "Kaydediliyor..." : "Hesabı Tanımla"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
+function PersonelLoginGrantModal(props: any) {
+  return <GrantAccessModal {...props} tenantType="INSPECTION" />
 }

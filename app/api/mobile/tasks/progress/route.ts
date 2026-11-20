@@ -9,11 +9,26 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { getMobileAuth } from "@/lib/mobile-auth"
+import {
+  assertRecordTenantScope,
+  assertTenantAndProjectAccess,
+  requireAnyModule,
+} from "@/lib/api-rbac"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: Request) {
   try {
+    const auth = await getMobileAuth(request)
+    if (!auth) {
+      return NextResponse.json({ error: "Yetkisiz oturum." }, { status: 401 })
+    }
+
+    const denied = requireAnyModule(auth, ["tasks_work_orders", "boq", "work_proofs"])
+    if (denied) return denied
+
+    const { tenantId } = auth
     const body = await request.json()
     const {
       taskId,
@@ -31,6 +46,11 @@ export async function POST(request: Request) {
       subcontractorId,
       projectId: incomingProjectId,
     } = body
+
+    if (incomingProjectId) {
+      const accessErr = await assertTenantAndProjectAccess(auth, incomingProjectId)
+      if (accessErr) return accessErr
+    }
 
     const qty = Number(quantityAdded)
     if (isNaN(qty) || qty <= 0) {
@@ -64,6 +84,10 @@ export async function POST(request: Request) {
       targetTask = await prisma.task.findUnique({
         where: { id: taskId },
       })
+      if (targetTask) {
+        const taskScopeErr = assertRecordTenantScope(auth, targetTask)
+        if (taskScopeErr) return taskScopeErr
+      }
       if (targetTask?.boqItemId) {
         targetBoqItem = await prisma.boqItem.findUnique({
           where: { id: targetTask.boqItemId },
@@ -93,6 +117,9 @@ export async function POST(request: Request) {
       )
     }
 
+    const scopeErr = assertRecordTenantScope(auth, targetBoqItem)
+    if (scopeErr) return scopeErr
+
     // 2. BoqItem'ın actualQuantity (mevcut gerçekleşen) değerini toplayarak güncelle
     const updatedBoqItem = await prisma.boqItem.update({
       where: { id: targetBoqItem.id },
@@ -104,6 +131,7 @@ export async function POST(request: Request) {
     // 3. BoqProgressLog tablosuna sahadan giriş kanıtını kaydet (GPS, Kat/Mahal ve Taşeron Bağlantılı)
     const progressLog = await prisma.boqProgressLog.create({
       data: {
+        tenantId: tenantId || targetBoqItem.tenantId || null,
         boqItemId: targetBoqItem.id,
         quantityAdded: qty,
         notes: notes || "Mobil uygulamadan sahadan ilerleme girişi yapıldı.",
@@ -190,6 +218,7 @@ export async function POST(request: Request) {
         } else {
           await prisma.progressPayment.create({
             data: {
+              tenantId: tenantId || targetBoqItem.tenantId || null,
               projectId: targetBoqItem.projectId,
               subcontractorCompanyId: effectiveSubId || null,
               title: `${currentPeriod} Dönemi Taşeron Hakedişi (${targetBoqItem.pozNo} - ${zoneName || "Mobil İlerleme"})`,

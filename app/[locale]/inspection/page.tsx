@@ -1,11 +1,7 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Inspection Portal Entry & Redirection
+ * Inspection Portal Entry (Doğrudan /inspection rotasında ana paneli sunar)
  */
 
-import { redirect } from "next/navigation";
-
-export default function InspectionRootPage() {
-  redirect("/inspection/dashboard");
-}
+export { default, dynamic } from "./dashboard/page"

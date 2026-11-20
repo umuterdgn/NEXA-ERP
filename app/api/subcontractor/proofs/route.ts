@@ -6,20 +6,21 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { resolveApiAuth, requireAnyModule, resolveSubcontractorForUser } from "@/lib/api-rbac"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    const session = await auth()
-    const userRole = session?.user?.role
-    const isSuperAdmin = userRole === "SUPER_ADMIN"
-    const tenantId = (session?.user as any)?.tenantId as string | undefined
-
-    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const denied = requireAnyModule(caller, ["work_proofs"])
+    if (denied) return denied
+
+    const isSuperAdmin = caller.role === "SUPER_ADMIN"
+    const tenantId = caller.tenantId
 
     const { searchParams } = new URL(request.url)
     const contractId = searchParams.get("contractId")
@@ -27,7 +28,18 @@ export async function GET(request: Request) {
 
     const where: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
     if (contractId) where.contractId = contractId
-    if (subcontractorId) where.subcontractorId = subcontractorId
+    if (caller.role === "SUBCONTRACTOR") {
+      const ownSub = await resolveSubcontractorForUser(caller)
+      if (!ownSub) {
+        return NextResponse.json({ proofs: [] })
+      }
+      if (subcontractorId && subcontractorId !== ownSub.id) {
+        return NextResponse.json({ error: "Başka bir taşeronun iş kanıtlarını görüntüleyemezsiniz." }, { status: 403 })
+      }
+      where.subcontractorId = ownSub.id
+    } else if (subcontractorId) {
+      where.subcontractorId = subcontractorId
+    }
 
     const proofs = await prisma.workProof.findMany({
       where,
@@ -63,14 +75,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await auth()
-    const userRole = session?.user?.role
-    const isSuperAdmin = userRole === "SUPER_ADMIN"
-    const tenantId = (session?.user as any)?.tenantId as string | undefined
-
-    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const denied = requireAnyModule(caller, ["work_proofs"])
+    if (denied) return denied
+
+    const tenantId = caller.tenantId
 
     const body = await request.json()
     const { contractId, title, description, imageUrl, subcontractorId: providedSubId } = body

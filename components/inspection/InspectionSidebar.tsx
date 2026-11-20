@@ -1,4 +1,5 @@
 "use client"
+import { getAllowedModules, type ModuleKey } from "@/lib/rbac/permissions"
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
@@ -12,7 +13,8 @@ import NotificationBell from "@/components/NotificationBell"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { isMenuItemAllowed } from "@/lib/utils/module-permissions"
 import { 
-  LayoutDashboard, 
+  LayoutDashboard,
+  Compass, 
   Archive, 
   DollarSign, 
   Building2, 
@@ -54,53 +56,55 @@ interface MenuItem {
   label: string
   icon: any
   category: string
+  moduleKey?: ModuleKey
 }
 
 const menuItems: MenuItem[] = [
   // ANA MENÜ
-  { href: "/inspection/dashboard", label: "Dashboard", icon: LayoutDashboard, category: "ANA MENÜ" },
+  { href: "/inspection/dashboard", label: "Dashboard", icon: LayoutDashboard, category: "ANA MENÜ", moduleKey: "dashboard" },
+  { href: "/inspection/field", label: "Saha Terminali", icon: Compass, category: "ANA MENÜ", moduleKey: "inspections" },
 
   // PERSONEL YÖNETİMİ
-  { href: "/inspection/personnel", label: "Personeller", icon: Users, category: "PERSONEL YÖNETİMİ" },
+  { href: "/inspection/personnel", label: "Personeller", icon: Users, category: "PERSONEL YÖNETİMİ", moduleKey: "personnel" },
 
   // FİNANS & TEDARİK
-  { href: "/inspection/finance", label: "Kasa & Finans", icon: DollarSign, category: "FİNANS & TEDARİK" },
-  { href: "/inspection/finance/expenses", label: "Masraf & Fiş Onayı", icon: Receipt, category: "FİNANS & TEDARİK" },
-  { href: "/inspection/finance/cheques", label: "Çek / Senet & Teminat", icon: Landmark, category: "FİNANS & TEDARİK" },
+  { href: "/inspection/finance", label: "Kasa & Finans", icon: DollarSign, category: "FİNANS & TEDARİK", moduleKey: "finance_cash" },
+  { href: "/inspection/finance/expenses", label: "Masraf & Fiş Onayı", icon: Receipt, category: "FİNANS & TEDARİK", moduleKey: "expense_approvals" },
+  { href: "/inspection/finance/cheques", label: "Çek / Senet & Teminat", icon: Landmark, category: "FİNANS & TEDARİK", moduleKey: "checks_notes" },
 
   // PROJE YÖNETİMİ
-  { href: "/inspection/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
-  { href: "/inspection/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ" },
-  { href: "/inspection/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ" },
-  { href: "/inspection/boq", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ" },
+  { href: "/inspection/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ", moduleKey: "projects" },
+  { href: "/inspection/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ", moduleKey: "crm" },
+  { href: "/inspection/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ", moduleKey: "bim_3d" },
+  { href: "/inspection/boq", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ", moduleKey: "boq" },
 
   // YAPI DENETİM & KONTROL
-  { href: "/inspection/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/form-builder", label: "Dinamik Form Oluşturucu", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/inspection/reports/create", label: "Hasar Tespit & Rapor", icon: FileWarning, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/samples", label: "Numune & Karot Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: Paperclip, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/documents", label: "Ruhsat & Evrak Arşivi", icon: Archive, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/archive", label: "Dijital Evrak Arşivi", icon: Files, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/ocr", label: "Akıllı Evrak Denetimi (OCR)", icon: ScanText, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/reports", label: "Saha Raporları", icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/ai-vision", label: "AI Görsel Analiz", icon: ImagePlus, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/revisions", label: "Proje Revizyonları", icon: History, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/routes", label: "Rota Optimizasyonu", icon: Map, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/drone", label: "Hava & Drone Gözlem", icon: Plane, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/blueprints", label: "Dijital Projeler / Çizimler", icon: PenTool, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/sketch", label: "Serbest Çizim / Plan", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/inspections", label: "Denetim Kayıtları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
-  { href: "/inspection/deficiencies", label: "Saha Kusur & Eksiklikleri", icon: AlertTriangle, category: "YAPI DENETİM & KONTROL" },
+  { href: "/inspection/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL", moduleKey: "dynamic_forms" },
+  { href: "/inspection/form-builder", label: "Dinamik Form Oluşturucu", icon: PencilRuler, category: "YAPI DENETİM & KONTROL", moduleKey: "form_builder" },
+  { href: "/inspection/inspection/reports/create", label: "Hasar Tespit & Rapor", icon: FileWarning, category: "YAPI DENETİM & KONTROL", moduleKey: "damage_assessment" },
+  { href: "/inspection/samples", label: "Numune & Karot Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL", moduleKey: "samples_core" },
+  { href: "/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Construction, category: "YAPI DENETİM & KONTROL", moduleKey: "reinforcement_check" },
+  { href: "/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: Paperclip, category: "YAPI DENETİM & KONTROL", moduleKey: "attachments_evidence" },
+  { href: "/inspection/documents", label: "Ruhsat & Evrak Arşivi", icon: Archive, category: "YAPI DENETİM & KONTROL", moduleKey: "license_archive" },
+  { href: "/inspection/archive", label: "Dijital Evrak Arşivi", icon: Files, category: "YAPI DENETİM & KONTROL", moduleKey: "digital_archive" },
+  { href: "/inspection/ocr", label: "Akıllı Evrak Denetimi (OCR)", icon: ScanText, category: "YAPI DENETİM & KONTROL", moduleKey: "smart_ocr" },
+  { href: "/inspection/reports", label: "Saha Raporları", icon: ClipboardList, category: "YAPI DENETİM & KONTROL", moduleKey: "field_reports" },
+  { href: "/inspection/ai-vision", label: "AI Görsel Analiz", icon: ImagePlus, category: "YAPI DENETİM & KONTROL", moduleKey: "ai_vision" },
+  { href: "/inspection/revisions", label: "Proje Revizyonları", icon: History, category: "YAPI DENETİM & KONTROL", moduleKey: "revisions" },
+  { href: "/inspection/routes", label: "Rota Optimizasyonu", icon: Map, category: "YAPI DENETİM & KONTROL", moduleKey: "route_optimization" },
+  { href: "/inspection/drone", label: "Hava & Drone Gözlem", icon: Plane, category: "YAPI DENETİM & KONTROL", moduleKey: "drone_maps" },
+  { href: "/inspection/blueprints", label: "Dijital Projeler / Çizimler", icon: PenTool, category: "YAPI DENETİM & KONTROL", moduleKey: "digital_drawings" },
+  { href: "/inspection/sketch", label: "Serbest Çizim / Plan", icon: PencilRuler, category: "YAPI DENETİM & KONTROL", moduleKey: "free_drawing" },
+  { href: "/inspection/inspections", label: "Denetim Kayıtları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL", moduleKey: "inspections" },
+  { href: "/inspection/deficiencies", label: "Saha Kusur & Eksiklikleri", icon: AlertTriangle, category: "YAPI DENETİM & KONTROL", moduleKey: "deficiencies" },
 
   // KALİTE & KURULUŞ
-  { href: "/inspection/materials", label: "Malzeme Onayları", icon: CheckSquare, category: "KALİTE & KURULUŞ" },
-  { href: "/inspection/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: XCircle, category: "KALİTE & KURULUŞ" },
-  { href: "/inspection/contracts", label: "Sözleşmeler", icon: FileSignature, category: "KALİTE & KURULUŞ" },
+  { href: "/inspection/materials", label: "Malzeme Onayları", icon: CheckSquare, category: "KALİTE & KURULUŞ", moduleKey: "material_approvals" },
+  { href: "/inspection/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: XCircle, category: "KALİTE & KURULUŞ", moduleKey: "ncr_dof" },
+  { href: "/inspection/contracts", label: "Sözleşmeler", icon: FileSignature, category: "KALİTE & KURULUŞ", moduleKey: "contracts" },
 
   // SİSTEM & AYARLAR
-  { href: "/inspection/settings", label: "Kurumsal Marka & Ayarlar", icon: Settings, category: "SİSTEM & AYARLAR" },
+  { href: "/inspection/settings", label: "Kurumsal Marka & Ayarlar", icon: Settings, category: "SİSTEM & AYARLAR", moduleKey: "settings_branding" },
 ]
 
 export default function InspectionSidebar({
@@ -159,14 +163,12 @@ export default function InspectionSidebar({
   const isInspectionAdmin = userRole === "INSPECTION_ADMIN" || userRole === "SUPER_ADMIN" || userRole === "ADMIN"
 
   // Saha denetçisi (INSPECTOR/AUDITOR) için Finans, CRM, Personeller ve Sözleşmeler gizlenir
-  const roleFilteredMenuItems = menuItems.filter((item) => {
+  const allowedModules = getAllowedModules(userRole, "INSPECTION")
+  const roleFilteredMenuItems = menuItems.filter((item: any) => {
     if (isInspectionAdmin) return true
-
-    if (item.category === "FİNANS & TEDARİK") return false
-    if (item.category === "PERSONEL YÖNETİMİ") return false
-    if (item.href === "/inspection/crm" || item.label.includes("CRM")) return false
-    if (item.href === "/inspection/contracts" || item.label.includes("Sözleşme")) return false
-
+    if (item.moduleKey && !allowedModules.includes(item.moduleKey)) return false
+    if (item.category === "FİNANS & TEDARİK" && !allowedModules.includes("finance_cash")) return false
+    if (item.category === "PERSONEL YÖNETİMİ" && !allowedModules.includes("personnel")) return false
     return true
   })
 

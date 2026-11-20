@@ -460,7 +460,7 @@ export default function CoreSamplesPage() {
 
               {/* Rota ve Harita linkleri */}
               <Link
-                href="/dispatch"
+                href="/inspection/routes"
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition-all hover:text-white"
               >
                 <span>Saha Rota Haritası</span>

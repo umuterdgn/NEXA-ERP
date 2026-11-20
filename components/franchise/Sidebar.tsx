@@ -11,6 +11,7 @@ import { Link, usePathname } from "@/i18n/routing"
 import { signOut, useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import NotificationBell from "@/components/NotificationBell"
+import { getAllowedModules, type ModuleKey, type SystemRole } from "@/lib/rbac/permissions"
 import {
   LayoutDashboard,
   MapPin,
@@ -45,50 +46,53 @@ import {
 interface MenuItem {
   href: string
   labelKey: string
+  fallbackLabel?: string
   icon: any
   categoryKey: string
   hasBadge?: boolean
+  moduleKey: ModuleKey
+  allowedRoles?: SystemRole[]
 }
 
 const franchiseNavigation: MenuItem[] = [
   // ANA MENÜ
-  { href: "/franchise/dashboard", labelKey: "dashboard", icon: LayoutDashboard, categoryKey: "mainMenu" },
-  { href: "/franchise/rollout-map", labelKey: "locations", icon: MapPin, categoryKey: "mainMenu" },
+  { href: "/franchise/dashboard", labelKey: "dashboard", icon: LayoutDashboard, categoryKey: "mainMenu", moduleKey: "dashboard", allowedRoles: ["FRANCHISE_ADMIN", "REGIONAL_MANAGER", "SUPER_ADMIN", "ADMIN"] },
+  { href: "/franchise/branch", labelKey: "branchHome", fallbackLabel: "Şubem", icon: Store, categoryKey: "mainMenu", moduleKey: "projects", allowedRoles: ["FRANCHISEE", "BRANCH_MANAGER"] },
 
   // FRANCHISE & ROLLOUT (Core)
-  { href: "/franchise/rollout/board", labelKey: "rolloutBoard", icon: Kanban, categoryKey: "core" },
-  { href: "/franchise/rollout/ffe", labelKey: "rolloutFfe", icon: Box, categoryKey: "core" },
-  { href: "/franchise/rollout/legal", labelKey: "rolloutLegal", icon: FileCheck2, categoryKey: "core" },
-  { href: "/franchise/rollout/punch-list", labelKey: "punchList", icon: ClipboardCheck, categoryKey: "core" },
-  { href: "/franchise/rollout-map", labelKey: "rolloutMap", icon: Map, categoryKey: "core" },
-  { href: "/franchise/stage-gates", labelKey: "stageGates", icon: ShieldCheck, categoryKey: "core" },
-  { href: "/franchise/templates", labelKey: "templates", icon: Boxes, categoryKey: "core" },
+  { href: "/franchise/rollout/board", labelKey: "rolloutBoard", icon: Kanban, categoryKey: "core", moduleKey: "progress", allowedRoles: ["FRANCHISE_ADMIN", "REGIONAL_MANAGER", "FITOUT_SUPERVISOR", "SUPER_ADMIN", "ADMIN"] },
+  { href: "/franchise/rollout/ffe", labelKey: "rolloutFfe", icon: Box, categoryKey: "core", moduleKey: "equipments", allowedRoles: ["FRANCHISE_ADMIN", "REGIONAL_MANAGER", "FITOUT_SUPERVISOR", "SUPER_ADMIN", "ADMIN"] },
+  { href: "/franchise/rollout/legal", labelKey: "rolloutLegal", icon: FileCheck2, categoryKey: "core", moduleKey: "contracts", allowedRoles: ["FRANCHISE_ADMIN", "REGIONAL_MANAGER", "SUPER_ADMIN", "ADMIN"] },
+  { href: "/franchise/rollout/punch-list", labelKey: "punchList", icon: ClipboardCheck, categoryKey: "core", moduleKey: "deficiencies" },
+  { href: "/franchise/rollout-map", labelKey: "rolloutMap", icon: Map, categoryKey: "core", moduleKey: "progress", allowedRoles: ["FRANCHISE_ADMIN", "REGIONAL_MANAGER", "SUPER_ADMIN", "ADMIN"] },
+  { href: "/franchise/stage-gates", labelKey: "stageGates", icon: ShieldCheck, categoryKey: "core", moduleKey: "approvals", allowedRoles: ["FRANCHISE_ADMIN", "REGIONAL_MANAGER", "SUPER_ADMIN", "ADMIN"] },
+  { href: "/franchise/templates", labelKey: "templates", icon: Boxes, categoryKey: "core", moduleKey: "dynamic_forms", allowedRoles: ["FRANCHISE_ADMIN", "REGIONAL_MANAGER", "SUPER_ADMIN", "ADMIN"] },
 
   // PROJE & TASARIM
-  { href: "/franchise/bim", labelKey: "bim", icon: Boxes, categoryKey: "projectDesign" },
-  { href: "/franchise/contracts", labelKey: "contracts", icon: FileSignature, categoryKey: "projectDesign" },
-  { href: "/franchise/progress-payments", labelKey: "progressPayments", icon: Receipt, categoryKey: "projectDesign" },
-  { href: "/franchise/subcontractor-audits", labelKey: "subcontractorAudits", icon: ShieldCheck, categoryKey: "projectDesign" },
+  { href: "/franchise/bim", labelKey: "bim", icon: Boxes, categoryKey: "projectDesign", moduleKey: "bim_3d" },
+  { href: "/franchise/contracts", labelKey: "contracts", icon: FileSignature, categoryKey: "projectDesign", moduleKey: "contracts" },
+  { href: "/franchise/progress-payments", labelKey: "progressPayments", icon: Receipt, categoryKey: "projectDesign", moduleKey: "finance_cash" },
+  { href: "/franchise/subcontractor-audits", labelKey: "subcontractorAudits", icon: ShieldCheck, categoryKey: "projectDesign", moduleKey: "field_reports" },
 
   // FİNANS & TEDARİK
-  { href: "/franchise/finance", labelKey: "finance", icon: DollarSign, categoryKey: "financeProcurement" },
-  { href: "/franchise/procurement/consolidated", labelKey: "consolidatedProcurement", icon: ShoppingCart, categoryKey: "financeProcurement" },
-  { href: "/franchise/logistics/rma", labelKey: "rma", icon: AlertTriangle, categoryKey: "financeProcurement" },
-  { href: "/franchise/crm", labelKey: "crm", icon: Building2, categoryKey: "financeProcurement" },
+  { href: "/franchise/finance", labelKey: "finance", icon: DollarSign, categoryKey: "financeProcurement", moduleKey: "finance_cash" },
+  { href: "/franchise/procurement/consolidated", labelKey: "consolidatedProcurement", icon: ShoppingCart, categoryKey: "financeProcurement", moduleKey: "procurement" },
+  { href: "/franchise/logistics/rma", labelKey: "rma", icon: AlertTriangle, categoryKey: "financeProcurement", moduleKey: "warehouse_inventory" },
+  { href: "/franchise/crm", labelKey: "crm", icon: Building2, categoryKey: "financeProcurement", moduleKey: "crm" },
 
   // MAĞAZA YÖNETİMİ
-  { href: "/franchise/stores/royalty", labelKey: "storeRoyalty", icon: TrendingUp, categoryKey: "storeManagement", hasBadge: true },
-  { href: "/franchise/stores/audits", labelKey: "storeAudits", icon: Store, categoryKey: "storeManagement", hasBadge: true },
-  { href: "/franchise/stores/helpdesk", labelKey: "helpdesk", icon: Headphones, categoryKey: "storeManagement", hasBadge: true },
+  { href: "/franchise/stores/royalty", labelKey: "storeRoyalty", icon: TrendingUp, categoryKey: "storeManagement", hasBadge: true, moduleKey: "finance_cash" },
+  { href: "/franchise/stores/audits", labelKey: "storeAudits", icon: Store, categoryKey: "storeManagement", hasBadge: true, moduleKey: "field_reports" },
+  { href: "/franchise/stores/helpdesk", labelKey: "helpdesk", icon: Headphones, categoryKey: "storeManagement", hasBadge: true, moduleKey: "notifications" },
 
   // ARŞİV & İK
-  { href: "/franchise/documents", labelKey: "documents", icon: Archive, categoryKey: "archiveHr" },
-  { href: "/franchise/personnel", labelKey: "personnel", icon: Users, categoryKey: "archiveHr" },
-  { href: "/franchise/tasks", labelKey: "tasks", icon: Calendar, categoryKey: "archiveHr" },
+  { href: "/franchise/documents", labelKey: "documents", icon: Archive, categoryKey: "archiveHr", moduleKey: "digital_archive", allowedRoles: ["FRANCHISE_ADMIN", "REGIONAL_MANAGER", "FRANCHISEE", "BRANCH_MANAGER", "SUPER_ADMIN", "ADMIN"] },
+  { href: "/franchise/personnel", labelKey: "personnel", icon: Users, categoryKey: "archiveHr", moduleKey: "personnel" },
+  { href: "/franchise/tasks", labelKey: "tasks", icon: Calendar, categoryKey: "archiveHr", moduleKey: "tasks_work_orders" },
 
   // AYARLAR
-  { href: "/franchise/settings", labelKey: "companySettings", icon: Settings, categoryKey: "settings" },
-  { href: "/franchise/users", labelKey: "users", icon: Users, categoryKey: "settings" },
+  { href: "/franchise/settings", labelKey: "companySettings", icon: Settings, categoryKey: "settings", moduleKey: "settings_branding" },
+  { href: "/franchise/users", labelKey: "users", icon: Users, categoryKey: "settings", moduleKey: "users_management" },
 ]
 
 export default function FranchiseSidebar({
@@ -105,16 +109,24 @@ export default function FranchiseSidebar({
 
   // Oturum açan kullanıcının firma / marka bilgisi
   const user = session?.user as any
+  const userRole = String(user?.role || "FRANCHISEE").toUpperCase() as SystemRole
   const tenantName = user?.companyName || user?.name || "Franchise Portalı"
   const tenantLogo = user?.logoUrl || null
 
-  const categoryKeys = Array.from(new Set(franchiseNavigation.map((i) => i.categoryKey)))
+  const allowedModules = getAllowedModules(userRole, "FRANCHISE")
+  const visibleNavigation = franchiseNavigation.filter((item) => {
+    if (userRole === "SUPER_ADMIN") return true
+    if (item.allowedRoles && !item.allowedRoles.includes(userRole)) return false
+    return allowedModules.includes(item.moduleKey)
+  })
+
+  const categoryKeys = Array.from(new Set(visibleNavigation.map((i) => i.categoryKey)))
 
   // Aktif sayfanın bulunduğu kategoriyi tespit et
-  const activeNavItem = franchiseNavigation.find(
+  const activeNavItem = visibleNavigation.find(
     (item) => pathname === item.href || (item.href !== "/franchise/dashboard" && pathname?.startsWith(item.href))
   )
-  const initialActiveCategory = activeNavItem?.categoryKey || "core"
+  const initialActiveCategory = activeNavItem?.categoryKey || categoryKeys[0] || "core"
 
   // Akordiyon (Collapsible) State: Sadece aktif sayfanın kategorisi varsayılan olarak açık
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
@@ -219,7 +231,7 @@ export default function FranchiseSidebar({
         {/* Scrollable Navigation Menu (Accordion Layout) */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
           {categoryKeys.map((catKey) => {
-            const items = franchiseNavigation.filter((i) => i.categoryKey === catKey)
+            const items = visibleNavigation.filter((i) => i.categoryKey === catKey)
             const isOpen = !!openCategories[catKey]
             const hasActivePage = items.some(
               (i) => pathname === i.href || (i.href !== "/franchise/dashboard" && pathname?.startsWith(i.href))
@@ -264,7 +276,7 @@ export default function FranchiseSidebar({
                   <div className={`space-y-1 mt-1 ${!isCollapsed ? "pl-1" : ""}`}>
                     {items.map((item, idx) => {
                       const Icon = item.icon
-                      const label = t(item.labelKey)
+                      const label = item.fallbackLabel || t(item.labelKey)
                       const isActive =
                         pathname === item.href ||
                         (item.href !== "/franchise/dashboard" && pathname?.startsWith(item.href))

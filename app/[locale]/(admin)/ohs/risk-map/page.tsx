@@ -13,6 +13,8 @@ import { getLivePersonnelLocations, getRiskZones } from "@/app/actions/ohs";
 import { prisma } from "@/lib/prisma";
 import { ShieldAlert, Users, MapPin, Radio, Activity, AlertOctagon } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Vaziyet ve İSG Risk Planı | Nexa ERP",
   description: "Şantiye personellerinin canlı GPS konumları ve dinamik tehlike çemberleri",

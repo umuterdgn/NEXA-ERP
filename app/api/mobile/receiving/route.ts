@@ -1,17 +1,27 @@
 /**
  * © 2026 NXA Software. All rights reserved.
- * Nexa Mobile - Goods Receipt & Waybill OCR API
- * Saves verified waybill data into Prisma Inventory & InventoryTransaction
+ * Nexa Mobile - Goods Receipt & Waybill OCR API (Auth & Tenant Isolated)
  */
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getMobileAuth } from "@/lib/mobile-auth"
+import { assertTenantAndProjectAccess, requireAnyModule } from "@/lib/api-rbac"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const auth = await getMobileAuth(request)
+    if (!auth) {
+      return NextResponse.json({ error: "Yetkisiz oturum." }, { status: 401 })
+    }
+
+    const denied = requireAnyModule(auth, ["goods_receiving"])
+    if (denied) return denied
+
+    const { tenantId, assignedProjectIds } = auth
+    const body = await request.json().catch(() => ({}))
     const {
       waybillNo,
       supplierName,
@@ -26,32 +36,31 @@ export async function POST(request: Request) {
     } = body
 
     if (!materialName || !quantity) {
-      return NextResponse.json(
-        { error: "Malzeme adı ve miktar zorunludur" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Malzeme adı ve miktar zorunludur" }, { status: 400 })
     }
 
     const qty = Number(quantity)
     if (isNaN(qty) || qty <= 0) {
-      return NextResponse.json(
-        { error: "Geçerli bir miktar girilmelidir" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Geçerli bir miktar girilmelidir" }, { status: 400 })
     }
 
-    // 1. Proje tespiti
-    let project = incomingProjectId
-      ? await prisma.project.findUnique({ where: { id: incomingProjectId } })
-      : await prisma.project.findFirst()
+    if (incomingProjectId) {
+      const accessErr = await assertTenantAndProjectAccess(auth, incomingProjectId)
+      if (accessErr) return accessErr
+    }
 
-    const projectId = project?.id
+    const targetProjId = incomingProjectId || assignedProjectIds[0]
+    const project = targetProjId
+      ? await prisma.project.findFirst({ where: { id: targetProjId, ...(tenantId ? { tenantId } : {}) } })
+      : await prisma.project.findFirst({ where: { ...(tenantId ? { tenantId } : {}), deletedAt: null } })
 
-    // 2. Envanterde aynı malzeme var mı kontrol et veya yeni envanter kalemi aç
+    const projectId = project?.id || null
+
     let inventoryItem = await prisma.inventoryItem.findFirst({
       where: {
         materialName: { equals: materialName, mode: "insensitive" },
-        projectId: projectId || undefined,
+        ...(tenantId ? { tenantId } : {}),
+        ...(projectId ? { projectId } : {}),
       },
     })
 
@@ -70,6 +79,7 @@ export async function POST(request: Request) {
     } else {
       inventoryItem = await prisma.inventoryItem.create({
         data: {
+          tenantId,
           materialName,
           name: materialName,
           quantity: qty,
@@ -83,9 +93,9 @@ export async function POST(request: Request) {
       })
     }
 
-    // 3. Giriş İşlemi (Transaction IN)
     const transaction = await prisma.inventoryTransaction.create({
       data: {
+        tenantId,
         inventoryItemId: inventoryItem.id,
         type: "IN",
         quantity: qty,
@@ -106,10 +116,6 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     console.error("[API_MOBILE_RECEIVING] Error:", error)
-    return NextResponse.json(
-      { error: error.message || "İrsaliye kaydı başarısız oldu" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || "İrsaliye kaydı başarısız oldu" }, { status: 500 })
   }
 }
-

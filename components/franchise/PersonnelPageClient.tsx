@@ -19,11 +19,13 @@ import {
   ArrowRight,
   ShieldCheck,
   Award,
-  UserCheck
+  UserCheck,
+  Key
 } from "lucide-react"
 import { toast } from "react-hot-toast"
 import CreatePersonnelModal from "@/components/franchise/CreatePersonnelModal"
 import PersonnelSlideOver from "@/components/franchise/PersonnelSlideOver"
+import GrantAccessModal from "@/components/personnel/GrantAccessModal"
 
 interface PersonnelPageClientProps {
   initialPersonnel: any[]
@@ -34,6 +36,8 @@ export default function PersonnelPageClient({ initialPersonnel }: PersonnelPageC
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [selectedPerson, setSelectedPerson] = useState<any | null>(null)
   const [isSlideOverOpen, setIsSlideOverOpen] = useState(false)
+  const [isGrantLoginOpen, setIsGrantLoginOpen] = useState(false)
+  const [selectedPersonForLogin, setSelectedPersonForLogin] = useState<any | null>(null)
 
   const handleOpenDetail = (person: any) => {
     setSelectedPerson(person)
@@ -101,33 +105,33 @@ export default function PersonnelPageClient({ initialPersonnel }: PersonnelPageC
             <UserCheck className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-black text-emerald-400 mt-2">
-            {personnelList.length} <span className="text-xs text-slate-500 font-normal">kişi</span>
+            {personnelList.filter((p: any) => p.status === "ACTIVE" || !p.status).length} <span className="text-xs text-slate-500 font-normal">kişi</span>
           </div>
           <div className="text-[11px] text-emerald-500/80 mt-1">
-            %100 vardiya uyumu
+            {personnelList.length > 0 ? "Canlı şube atamaları" : "Kayıt bekleniyor"}
           </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-xl">
           <div className="text-xs text-blue-400 font-medium flex items-center justify-between">
-            <span>Sertifikalı Personel</span>
+            <span>Sisteme Giriş Yetkili</span>
             <Award className="w-4 h-4 text-blue-400" />
           </div>
           <div className="text-2xl font-black text-blue-400 mt-2">
-            %95 <span className="text-xs text-slate-500 font-normal">oran</span>
+            {personnelList.filter((p: any) => Boolean(p.username || p.email)).length} <span className="text-xs text-slate-500 font-normal">hesap</span>
           </div>
           <div className="text-[11px] text-blue-400/80 mt-1">
-            İSG & barista sertifikalı
+            RBAC doğrulanmış kullanıcı
           </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-xl">
           <div className="text-xs text-amber-400 font-medium flex items-center justify-between">
-            <span>Saha Mimarları</span>
+            <span>Saha & Kurulum Ekibi</span>
             <ShieldCheck className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl font-black text-white mt-2">
-            6 <span className="text-xs text-slate-500 font-normal">mimar</span>
+            {personnelList.filter((p: any) => ["FITOUT_SUPERVISOR", "FITOUT_TECH", "REGIONAL_MANAGER"].includes(String(p.role || "").toUpperCase())).length} <span className="text-xs text-slate-500 font-normal">kişi</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             Rollout şantiye süpervizyonu
@@ -186,12 +190,27 @@ export default function PersonnelPageClient({ initialPersonnel }: PersonnelPageC
                   <CheckCircle2 className="w-3 h-3" />
                   AKTİF
                 </span>
-                <button
-                  onClick={() => handleOpenDetail(p)}
-                  className="text-amber-400 hover:text-amber-300 font-semibold text-xs cursor-pointer px-2 py-1 rounded-md hover:bg-amber-500/10 transition-colors"
-                >
-                  Detay
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    data-testid="open-grant-access-btn"
+                    onClick={() => {
+                      setSelectedPersonForLogin(p)
+                      setIsGrantLoginOpen(true)
+                    }}
+                    className="text-amber-400 hover:text-amber-300 font-semibold text-xs cursor-pointer px-2 py-1 rounded-md hover:bg-amber-500/10 transition-colors flex items-center gap-1"
+                    title="Giriş Yetkisi / Şifre Belirle"
+                  >
+                    <Key className="w-3 h-3" />
+                    <span>Yetki</span>
+                  </button>
+                  <button
+                    onClick={() => handleOpenDetail(p)}
+                    className="text-slate-300 hover:text-white font-semibold text-xs cursor-pointer px-2 py-1 rounded-md hover:bg-slate-800 transition-colors"
+                  >
+                    Detay
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -214,6 +233,22 @@ export default function PersonnelPageClient({ initialPersonnel }: PersonnelPageC
           setSelectedPerson(null)
         }}
       />
+
+      {/* Giriş Yetkisi / Şifre Belirle Modalı */}
+      {isGrantLoginOpen && selectedPersonForLogin && (
+        <GrantAccessModal
+          person={selectedPersonForLogin}
+          tenantType="FRANCHISE"
+          onClose={() => {
+            setIsGrantLoginOpen(false)
+            setSelectedPersonForLogin(null)
+          }}
+          onSuccess={() => {
+            setIsGrantLoginOpen(false)
+            setSelectedPersonForLogin(null)
+          }}
+        />
+      )}
     </div>
   )
 }

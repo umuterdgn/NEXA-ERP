@@ -3,14 +3,13 @@
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
- * Nexa ERP - Kurumsal B2B Enterprise Giriş Terminali (White-Label Destekli)
+ * Nexa ERP - Kurumsal B2B Enterprise Giriş Terminali (White-Label & 3-İşletme RBAC Destekli)
  */
 
 import React, { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Building2,
   ShieldCheck,
@@ -25,7 +24,18 @@ import {
   AlertCircle,
   Briefcase,
   Users,
+  Store,
+  Truck,
+  FlaskConical,
+  KeyRound,
 } from "lucide-react";
+import { getDefaultWebRoute, type SystemRole, type TenantType } from "@/lib/rbac/permissions";
+import {
+  DEMO_ACCOUNT_PASSWORD,
+  DEMO_TABS,
+  getDemoAccountsByTenantType,
+  type DemoAccountDefinition,
+} from "@/lib/demo-accounts";
 
 export interface TenantData {
   id: string;
@@ -48,6 +58,35 @@ function getInitials(name: string) {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+function renderRoleIcon(role: SystemRole) {
+  switch (role) {
+    case "ADMIN":
+      return <Building2 className="w-4 h-4 text-blue-400 shrink-0" />;
+    case "SITE_MANAGER":
+      return <HardHat className="w-4 h-4 text-amber-400 shrink-0" />;
+    case "ENGINEER":
+      return <HardHat className="w-4 h-4 text-orange-400 shrink-0" />;
+    case "WORKER":
+      return <Users className="w-4 h-4 text-emerald-400 shrink-0" />;
+    case "DRIVER":
+      return <Truck className="w-4 h-4 text-cyan-400 shrink-0" />;
+    case "SUBCONTRACTOR":
+      return <Briefcase className="w-4 h-4 text-indigo-400 shrink-0" />;
+    case "INSPECTION_ADMIN":
+      return <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />;
+    case "INSPECTOR":
+      return <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />;
+    case "LAB_TECH":
+      return <FlaskConical className="w-4 h-4 text-teal-400 shrink-0" />;
+    case "FRANCHISE_ADMIN":
+      return <Store className="w-4 h-4 text-rose-400 shrink-0" />;
+    case "FRANCHISEE":
+      return <Store className="w-4 h-4 text-amber-400 shrink-0" />;
+    default:
+      return <Users className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+}
+
 export default function LoginForm({ tenant }: LoginFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,15 +99,29 @@ export default function LoginForm({ tenant }: LoginFormProps) {
     tenant?.type === "MAIN_CONTRACTOR" ||
     tenant?.type === "MUTEAHHIT" ||
     tenant?.type === "CONTRACTOR";
-  const isFranchiseTenant =
-    tenant?.type === "FRANCHISE";
+  const isFranchiseTenant = tenant?.type === "FRANCHISE";
 
   // Eğer belirli bir tenant tipi varsa sekmeleri gizle
-  const shouldHideTabs = isInspectionTenant || isContractorTenant || isFranchiseTenant;
+  const shouldHideTabs =
+    isInspectionTenant || isContractorTenant || isFranchiseTenant;
 
-  const [loginMode, setLoginMode] = useState<"contractor" | "inspection" | "franchise">(
-    isFranchiseTenant ? "franchise" : isInspectionTenant ? "inspection" : "contractor"
+  const initialTenantType: TenantType = isFranchiseTenant
+    ? "FRANCHISE"
+    : isInspectionTenant
+    ? "INSPECTION"
+    : "CONTRACTOR";
+
+  const [loginMode, setLoginMode] = useState<
+    "contractor" | "inspection" | "franchise"
+  >(
+    initialTenantType === "FRANCHISE"
+      ? "franchise"
+      : initialTenantType === "INSPECTION"
+      ? "inspection"
+      : "contractor"
   );
+  const [demoTab, setDemoTab] = useState<TenantType>(initialTenantType);
+  const [activeDemoKey, setActiveDemoKey] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -78,77 +131,56 @@ export default function LoginForm({ tenant }: LoginFormProps) {
 
   const primaryColor = tenant?.primaryColor || "#2563eb";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
+  const authenticateAndRedirect = async (
+    loginEmail: string,
+    loginPassword: string
+  ) => {
+    if (!loginEmail || !loginPassword) {
       setError("Lütfen e-posta / kullanıcı adı ve şifrenizi giriniz.");
       return;
     }
 
     setIsLoading(true);
     setError("");
+    setLoginSuccess(false);
 
     try {
       const result = await signIn("credentials", {
-        email: email.trim(),
-        password: password,
+        email: loginEmail.trim(),
+        password: loginPassword,
         redirect: false,
       });
 
-      if (result?.error) {
-        setError("Geçersiz e-posta veya şifre. Lütfen bilgilerinizi kontrol ediniz.");
+      if (!result || result.error) {
+        setError(
+          "Geçersiz e-posta veya şifre. Lütfen bilgilerinizi kontrol ediniz."
+        );
         setIsLoading(false);
+        setActiveDemoKey(null);
         return;
       }
 
       setLoginSuccess(true);
 
       // Kullanıcı oturumundaki role ve tenant bilgisine göre KESİN DİNAMİK YÖNLENDİRME
-      let targetPath = isFranchiseTenant || tenant?.type === "FRANCHISE" ? "/franchise/dashboard" : "/admin";
+      let targetPath =
+        isFranchiseTenant || tenant?.type === "FRANCHISE"
+          ? "/franchise"
+          : isInspectionTenant
+          ? "/inspection"
+          : "/admin";
       try {
-        const sessionRes = await fetch("/api/auth/session");
+        const sessionRes = await fetch("/api/auth/session", {
+          cache: "no-store",
+        });
         if (sessionRes.ok) {
           const sessionData = await sessionRes.json();
           const role = (sessionData?.user?.role as string)?.toUpperCase() || "";
+          const sessionTenantType = sessionData?.user?.tenantType as
+            | string
+            | undefined;
 
-          if (isFranchiseTenant || tenant?.type === "FRANCHISE") {
-            targetPath = "/franchise/dashboard";
-          } else if (role === "DRIVER") {
-            targetPath = "/personnel";
-          } else if (role === "SECURITY") {
-            targetPath = "/admin/procurement/logistics";
-          } else if (role === "WORKER") {
-            targetPath = "/personnel";
-          } else if (role === "INSPECTION_ADMIN" || role === "INSPECTOR" || role === "AUDITOR") {
-            targetPath = "/inspection/dashboard";
-          } else if (role === "SUBCONTRACTOR") {
-            targetPath = "/subcontractor";
-          } else if (role === "SUPPLIER") {
-            targetPath = "/supplier";
-          } else if (
-            role === "ENGINEER" ||
-            role === "SITE_MANAGER" ||
-            role === "PERSONNEL" ||
-            role === "STAFF"
-          ) {
-            targetPath = "/personnel/dashboard";
-          } else if (role === "INVESTOR" || role === "CLIENT") {
-            targetPath = "/investor/dashboard";
-          } else if (role === "HR_MANAGER") {
-            targetPath = "/admin/personel";
-          } else if (role === "FINANCE_MANAGER") {
-            targetPath = "/admin/finance";
-          } else if (role === "PROCUREMENT_MANAGER") {
-            targetPath = "/admin/procurement";
-          } else if (role === "EQUIPMENT_MANAGER") {
-            targetPath = "/admin/equipments";
-          } else if (role === "ISG_EXPERT") {
-            targetPath = "/admin/personel/alerts";
-          } else if (role === "SUPER_ADMIN" || role === "ADMIN") {
-            targetPath = "/admin";
-          } else {
-            targetPath = "/admin";
-          }
+          targetPath = getDefaultWebRoute(role, sessionTenantType || tenant?.type);
         }
       } catch (err) {
         console.error("Session sorgulama hatası:", err);
@@ -160,57 +192,41 @@ export default function LoginForm({ tenant }: LoginFormProps) {
       console.error("Giriş işlemi hatası:", err);
       setError("Giriş yapılırken bir sunucu hatası oluştu.");
       setIsLoading(false);
+      setActiveDemoKey(null);
     }
   };
 
-  const handleQuickDemo = (
-    demoType:
-      | "admin"
-      | "site_manager"
-      | "engineer"
-      | "subcontractor"
-      | "worker"
-      | "inspector"
-      | "inspection_admin"
-  ) => {
-    setError("");
-    if (demoType === "admin") {
-      setLoginMode("contractor");
-      setEmail("admin@nexa.com");
-      setPassword("nexa2026");
-    } else if (demoType === "site_manager") {
-      setLoginMode("contractor");
-      setEmail("sefi@nexa.com");
-      setPassword("nexa2026");
-    } else if (demoType === "engineer") {
-      setLoginMode("contractor");
-      setEmail("muhendis@nexa.com");
-      setPassword("nexa2026");
-    } else if (demoType === "subcontractor") {
-      setLoginMode("contractor");
-      setEmail("taseron@nexa.com");
-      setPassword("nexa2026");
-    } else if (demoType === "worker") {
-      setLoginMode("contractor");
-      setEmail("sofor@nexa.com");
-      setPassword("nexa2026");
-    } else if (demoType === "inspector") {
-      setLoginMode("inspection");
-      setEmail("denetim@nexa.com");
-      setPassword("nexa2026");
-    } else if (demoType === "inspection_admin") {
-      setLoginMode("inspection");
-      setEmail("denetim@nexa.com");
-      setPassword("nexa2026");
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActiveDemoKey(null);
+    await authenticateAndRedirect(email, password);
   };
+
+  const handleQuickDemoLogin = async (acc: DemoAccountDefinition) => {
+    if (isLoading || loginSuccess) return;
+    setActiveDemoKey(acc.key);
+    setDemoTab(acc.tenantType);
+    setLoginMode(
+      acc.tenantType === "FRANCHISE"
+        ? "franchise"
+        : acc.tenantType === "INSPECTION"
+        ? "inspection"
+        : "contractor"
+    );
+    setEmail(acc.email);
+    setPassword(acc.password);
+    await authenticateAndRedirect(acc.email, acc.password);
+  };
+
+  const visibleDemoAccounts = getDemoAccountsByTenantType(demoTab);
+  const activeTabMeta = DEMO_TABS.find((t) => t.type === demoTab);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 py-10 selection:bg-blue-600 selection:text-white">
       {/* Ana Form Konteyneri */}
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-[480px]">
         {/* Kurumsal Logo & Başlık (White-Label Dinamik Header) */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-7">
           {tenant ? (
             /* Tenant Özel White-Label Başlığı */
             <div className="flex flex-col items-center">
@@ -253,7 +269,11 @@ export default function LoginForm({ tenant }: LoginFormProps) {
                   style={{ backgroundColor: primaryColor }}
                 />
                 <span>
-                  {isFranchiseTenant ? "Franchise & Zincir Mağaza Portalı: " : "Kurumsal Giriş Portalı: "}
+                  {isFranchiseTenant
+                    ? "Franchise & Zincir Mağaza Portalı: "
+                    : isInspectionTenant
+                    ? "Yapı Denetim Portalı: "
+                    : "Kurumsal Giriş Portalı: "}
                   <strong className="text-white">{tenant.name}</strong>
                 </span>
               </div>
@@ -272,7 +292,7 @@ export default function LoginForm({ tenant }: LoginFormProps) {
                   </span>
                 </span>
                 <p className="text-xs text-slate-400 font-medium">
-                  İnşaat & Yapı Denetim Yönetim Sistemi
+                  Müteahhit, Yapı Denetim & Franchise İşletim Sistemi
                 </p>
               </div>
             </Link>
@@ -281,37 +301,56 @@ export default function LoginForm({ tenant }: LoginFormProps) {
 
         {/* Portal Modu Seçici Sekmeler (Eğer Tenant Belirtilmişse TAMAMEN GİZLENİR) */}
         {!shouldHideTabs && (
-          <div className="grid grid-cols-2 p-1 bg-slate-900 rounded-xl border border-slate-800 mb-5">
+          <div className="grid grid-cols-3 p-1 bg-slate-900 rounded-xl border border-slate-800 mb-5 gap-1">
             <button
               type="button"
               onClick={() => {
                 setLoginMode("contractor");
+                setDemoTab("CONTRACTOR");
                 setError("");
               }}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 loginMode === "contractor"
                   ? "bg-slate-800 text-white shadow-sm border border-slate-700/60"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Müteahhit / Şantiye</span>
+              <Building2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Müteahhit</span>
             </button>
 
             <button
               type="button"
               onClick={() => {
                 setLoginMode("inspection");
+                setDemoTab("INSPECTION");
                 setError("");
               }}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 loginMode === "inspection"
                   ? "bg-slate-800 text-white shadow-sm border border-slate-700/60"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Yapı Denetim Portalı</span>
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Yapı Denetim</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode("franchise");
+                setDemoTab("FRANCHISE");
+                setError("");
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                loginMode === "franchise"
+                  ? "bg-slate-800 text-white shadow-sm border border-slate-700/60"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Store className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Franchise</span>
             </button>
           </div>
         )}
@@ -322,23 +361,27 @@ export default function LoginForm({ tenant }: LoginFormProps) {
           <div className="mb-5 pb-4 border-b border-slate-800">
             <h2 className="text-base font-semibold text-white">
               {isFranchiseTenant || loginMode === "franchise"
-                ? "Franchise Merkez Portalı Girişi"
+                ? "Franchise Merkez & Şube Portalı"
                 : loginMode === "contractor"
-                ? "Müteahhit Girişi"
-                : "Yapı Denetim Girişi"}
+                ? "Müteahhit & Şantiye Portalı"
+                : "Yapı Denetim & Laboratuvar Portalı"}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               {isFranchiseTenant || loginMode === "franchise"
-                ? "Rollout takibi, mağaza konseptleri, punch list ve satınalma yönetimi"
+                ? "Rollout takibi, mağaza kurulumu, şube paneli ve punch list yönetimi"
                 : loginMode === "contractor"
-                ? "Yönetim, şantiye şefliği, taşeron ve saha personeli erişimi"
-                : "Bakanlık e-YİBF, numune denetimi ve hakediş kontrolü"}
+                ? "Yönetim, şantiye şefliği, mühendislik, taşeron ve saha personeli erişimi"
+                : "Bakanlık e-YİBF, saha denetimi, karot/numune ve hakediş kontrolü"}
             </p>
           </div>
 
           {/* Hata Bildirimi */}
           {error && (
-            <div className="mb-4 p-3 bg-rose-950/40 border border-rose-800/60 rounded-lg text-rose-300 text-xs flex items-center gap-2">
+            <div
+              role="alert"
+              data-testid="login-error-alert"
+              className="mb-4 p-3 bg-rose-950/40 border border-rose-800/60 rounded-lg text-rose-300 text-xs flex items-center gap-2"
+            >
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
               <span>{error}</span>
             </div>
@@ -359,10 +402,10 @@ export default function LoginForm({ tenant }: LoginFormProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={
                     isFranchiseTenant || loginMode === "franchise"
-                      ? "franchise@nexa.com veya kullanici.adi"
+                      ? "demo.franchise@nxerp.com.tr"
                       : loginMode === "contractor"
-                      ? "admin@nexa.com veya kullanici.adi"
-                      : "denetim@nexa.com veya denetim.patron@nexa.com"
+                      ? "demo.admin@nxerp.com.tr"
+                      : "demo.denetim@nxerp.com.tr"
                   }
                   className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 text-xs transition-colors"
                   required
@@ -422,9 +465,11 @@ export default function LoginForm({ tenant }: LoginFormProps) {
               ) : (
                 <>
                   <span>
-                    {loginMode === "contractor"
-                      ? "Müteahhit Portalına Giriş Yap"
-                      : "Yapı Denetim Portalına Giriş Yap"}
+                    {loginMode === "franchise"
+                      ? "Franchise Portalına Giriş Yap"
+                      : loginMode === "inspection"
+                      ? "Yapı Denetim Portalına Giriş Yap"
+                      : "Müteahhit Portalına Giriş Yap"}
                   </span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
@@ -432,95 +477,105 @@ export default function LoginForm({ tenant }: LoginFormProps) {
             </button>
           </form>
 
-          {/* Hızlı Demo Hesapları - Tenant parametresi içeren sayfalarda tamamen gizlenir */}
+          {/* 3 Sekmeli Demo Hızlı Giriş Paneli - Tenant parametresi içeren sayfalarda tamamen gizlenir */}
           {!tenantParam && !tenant && (
-            <div className="mt-6 pt-4 border-t border-slate-800 kurumsal-test-hesaplari">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-2.5 text-center">
-                Kurumsal Test Hesapları
-              </span>
+            <div
+              data-testid="demo-quick-login-panel"
+              className="mt-6 pt-5 border-t border-slate-800/90"
+            >
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+                  Demo Hızlı Giriş
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 font-mono">
+                  <KeyRound className="w-3 h-3 text-blue-400" />
+                  {DEMO_ACCOUNT_PASSWORD}
+                </span>
+              </div>
 
-              {loginMode === "contractor" ? (
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("admin")}
-                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
-                  >
-                    <Building2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                    <span className="truncate">Yönetici (Admin)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("engineer")}
-                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
-                  >
-                    <HardHat className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                    <span className="truncate">Saha Mühendisi</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("site_manager")}
-                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
-                  >
-                    <HardHat className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="truncate">Şantiye Şefi</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("subcontractor")}
-                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2"
-                  >
-                    <Briefcase className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <span className="truncate">Taşeron Portalı</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("worker")}
-                    className="p-2 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors text-left flex items-center gap-2 col-span-2 sm:col-span-1"
-                  >
-                    <Users className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span className="truncate">Saha Personeli</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("inspection_admin")}
-                    className="p-2.5 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-200 hover:text-white transition-colors flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
-                      <div>
-                        <span className="font-semibold block">Yapı Denetim Patronu</span>
-                        <span className="text-[10px] text-slate-400">
-                          denetim@nexa.com
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono border border-slate-700/50">
-                      nexa2026
-                    </span>
-                  </button>
+              {/* 3 İşletme Tipi Sekmesi */}
+              <div
+                role="tablist"
+                aria-label="Demo İşletme Tipi Sekmeleri"
+                className="grid grid-cols-3 gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800 mb-2.5"
+              >
+                {DEMO_TABS.map((tab) => {
+                  const isActive = demoTab === tab.type;
+                  return (
+                    <button
+                      key={tab.type}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      data-testid={`demo-tab-${tab.type}`}
+                      onClick={() => {
+                        setDemoTab(tab.type);
+                        setLoginMode(
+                          tab.type === "FRANCHISE"
+                            ? "franchise"
+                            : tab.type === "INSPECTION"
+                            ? "inspection"
+                            : "contractor"
+                        );
+                        setError("");
+                      }}
+                      className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer truncate ${
+                        isActive
+                          ? "bg-blue-600/20 text-blue-300 border border-blue-500/40 shadow-sm"
+                          : "text-slate-400 hover:text-slate-200 border border-transparent"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("inspector")}
-                    className="p-2.5 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-200 hover:text-white transition-colors flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
-                      <div>
-                        <span className="font-semibold block">Saha Denetçisi</span>
-                        <span className="text-[10px] text-slate-400">denetim@nexa.com</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono border border-slate-700/50">
-                      nexa2026
-                    </span>
-                  </button>
-                </div>
+              {activeTabMeta && (
+                <p className="text-[11px] text-slate-400 mb-2.5 px-0.5">
+                  {activeTabMeta.description} • Rol seçtiğinizde otomatik giriş yapılır
+                </p>
               )}
+
+              {/* Seçili İşletme Tipi Rolleri */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {visibleDemoAccounts.map((acc) => {
+                  const isBtnLoading = isLoading && activeDemoKey === acc.key;
+                  return (
+                    <button
+                      key={acc.key}
+                      type="button"
+                      data-testid={`demo-login-${acc.key}`}
+                      disabled={isLoading || loginSuccess}
+                      onClick={() => handleQuickDemoLogin(acc)}
+                      className="group p-2.5 bg-slate-950/80 hover:bg-slate-800/90 border border-slate-800 hover:border-slate-700 rounded-xl text-left transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-start justify-between gap-2"
+                    >
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div className="mt-0.5 p-1.5 rounded-lg bg-slate-900 border border-slate-800 group-hover:border-slate-700">
+                          {isBtnLoading ? (
+                            <Loader2 className="w-4 h-4 text-blue-400 animate-spin shrink-0" />
+                          ) : (
+                            renderRoleIcon(acc.role)
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs font-semibold text-slate-100 block truncate">
+                            {acc.label}
+                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800 font-medium truncate">
+                              {acc.shortBadge}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono truncate">
+                              {acc.defaultWebRoute}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

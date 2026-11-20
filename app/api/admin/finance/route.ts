@@ -6,28 +6,23 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
 import { logFinancialAction } from "@/lib/logger"
+import { resolveApiAuth, requireAnyModule } from "@/lib/api-rbac"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const session = await auth()
-    if (!session?.user) {
-      console.error("Finance GET: No session found")
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    const userRole = session.user.role
-    const userId = session.user.id
-    let userTenantId = (session.user as any)?.tenantId as string | null | undefined
-
-    if (!userTenantId && userId) {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { tenantId: true }
-      })
-      userTenantId = dbUser?.tenantId || null
+    const denied = requireAnyModule(caller, ["finance_cash"])
+    if (denied) return denied
+    if (caller.role !== "SUPER_ADMIN" && caller.tenantType === "INSPECTION") {
+      return NextResponse.json({ error: "Yapı denetim rolleri müteahhit kasa ucuna erişemez." }, { status: 403 })
     }
+
+    const userRole = caller.role
+    const userTenantId = caller.tenantId
 
     const isSuperAdmin = userRole === "SUPER_ADMIN"
     const whereClause: any = !isSuperAdmin
@@ -64,23 +59,19 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await auth()
-    if (!session?.user) {
-      console.error("Finance POST: No session found")
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    let userTenantId = (session.user as any)?.tenantId as string | null | undefined
-    if (!userTenantId && session.user.id) {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { tenantId: true }
-      })
-      userTenantId = dbUser?.tenantId || null
+    const denied = requireAnyModule(caller, ["finance_cash"])
+    if (denied) return denied
+    if (caller.role !== "SUPER_ADMIN" && caller.tenantType === "INSPECTION") {
+      return NextResponse.json({ error: "Yapı denetim rolleri müteahhit kasa ucuna erişemez." }, { status: 403 })
     }
 
+    const userTenantId = caller.tenantId
     const data = await request.json()
-    const userName = session.user.name || "Bilinmeyen Kullanıcı"
+    const userName = caller.name || "Bilinmeyen Kullanıcı"
     
     const transaction = await prisma.transaction.create({
       data: {

@@ -1,23 +1,35 @@
 /**
  * © 2026 NXA Software. All rights reserved.
- * Nexa Mobile - QR Material Consumption API
- * Reads stock by QR Code, decrements stock in Prisma DB and logs task material consumption.
+ * Nexa Mobile - QR Material Consumption API (Auth & Tenant Isolated)
  */
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getMobileAuth } from "@/lib/mobile-auth"
+import { assertRecordTenantScope, requireAnyModule } from "@/lib/api-rbac"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   try {
+    const auth = await getMobileAuth(request)
+    if (!auth) {
+      return NextResponse.json({ error: "Yetkisiz oturum." }, { status: 401 })
+    }
+
+    const denied = requireAnyModule(auth, ["qr_micro_consumption", "warehouse_inventory"])
+    if (denied) return denied
+
+    const { tenantId } = auth
     const { searchParams } = new URL(request.url)
     const qrCode = searchParams.get("qrCode")
 
     if (!qrCode) {
-      // Barkod/QR olmadan tüm stoktaki malzemeleri döndür
       const items = await prisma.inventoryItem.findMany({
-        where: { quantity: { gt: 0 } },
+        where: {
+          quantity: { gt: 0 },
+          ...(tenantId ? { tenantId } : {}),
+        },
         take: 30,
         orderBy: { createdAt: "desc" },
       })
@@ -26,11 +38,8 @@ export async function GET(request: Request) {
 
     const item = await prisma.inventoryItem.findFirst({
       where: {
-        OR: [
-          { qrCode },
-          { barcode: qrCode },
-          { id: qrCode },
-        ],
+        ...(tenantId ? { tenantId } : {}),
+        OR: [{ qrCode }, { barcode: qrCode }, { id: qrCode }],
       },
       include: {
         project: {
@@ -40,59 +49,51 @@ export async function GET(request: Request) {
     })
 
     if (!item) {
-      return NextResponse.json(
-        { error: "Bu QR koda ait malzeme bulunamadı" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Bu QR koda ait malzeme bulunamadı" }, { status: 404 })
     }
 
     return NextResponse.json({ success: true, item })
   } catch (error: any) {
     console.error("[API_MOBILE_INVENTORY_CONSUME_GET] Error:", error)
-    return NextResponse.json(
-      { error: error.message || "Stok bilgisi sorgulanamadı" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || "Stok bilgisi sorgulanamadı" }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const auth = await getMobileAuth(request)
+    if (!auth) {
+      return NextResponse.json({ error: "Yetkisiz oturum." }, { status: 401 })
+    }
+
+    const denied = requireAnyModule(auth, ["qr_micro_consumption", "warehouse_inventory"])
+    if (denied) return denied
+
+    const { tenantId } = auth
+    const body = await request.json().catch(() => ({}))
     const { qrCode, quantity, taskId, notes, zoneName } = body
 
     if (!qrCode || !quantity) {
-      return NextResponse.json(
-        { error: "QR Kod ve tüketim miktarı zorunludur" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "QR Kod ve tüketim miktarı zorunludur" }, { status: 400 })
     }
 
     const consumeQty = Number(quantity)
     if (isNaN(consumeQty) || consumeQty <= 0) {
-      return NextResponse.json(
-        { error: "Geçerli bir tüketim miktarı giriniz" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Geçerli bir tüketim miktarı giriniz" }, { status: 400 })
     }
 
-    // 1. Malzemeyi bul
     const item = await prisma.inventoryItem.findFirst({
       where: {
-        OR: [
-          { qrCode },
-          { barcode: qrCode },
-          { id: qrCode },
-        ],
+        OR: [{ qrCode }, { barcode: qrCode }, { id: qrCode }],
       },
     })
 
     if (!item) {
-      return NextResponse.json(
-        { error: "Karekod ile eşleşen ambar malzemesi bulunamadı" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Karekod ile eşleşen ambar malzemesi bulunamadı" }, { status: 404 })
     }
+
+    const scopeErr = assertRecordTenantScope(auth, item)
+    if (scopeErr) return scopeErr
 
     if (item.quantity < consumeQty) {
       return NextResponse.json(
@@ -103,7 +104,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // 2. Stoktan düş
     const remainingQty = item.quantity - consumeQty
     const updatedItem = await prisma.inventoryItem.update({
       where: { id: item.id },
@@ -114,9 +114,9 @@ export async function POST(request: Request) {
       },
     })
 
-    // 3. Stok çıkış hareketi (Transaction OUT)
     const transaction = await prisma.inventoryTransaction.create({
       data: {
+        tenantId: tenantId || item.tenantId,
         inventoryItemId: item.id,
         type: "OUT",
         quantity: consumeQty,
@@ -129,16 +129,15 @@ export async function POST(request: Request) {
       },
     })
 
-    // 4. Eğer bir Task'a bağlanmışsa, task açıklamasına veya ilerlemesine not düş
     if (taskId) {
-      await prisma.task.update({
-        where: { id: taskId },
-        data: {
-          description: {
-            set: `${item.materialName} sarfiyatı yapıldı: ${consumeQty} ${item.unit || "Adet"}.`,
+      await prisma.task
+        .updateMany({
+          where: { id: taskId, ...(tenantId ? { tenantId } : {}) },
+          data: {
+            description: `${item.materialName} sarfiyatı yapıldı: ${consumeQty} ${item.unit || "Adet"}.`,
           },
-        },
-      }).catch(() => null)
+        })
+        .catch(() => null)
     }
 
     return NextResponse.json({
@@ -150,10 +149,6 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     console.error("[API_MOBILE_INVENTORY_CONSUME_POST] Error:", error)
-    return NextResponse.json(
-      { error: error.message || "Malzeme tüketim kaydı oluşturulamadı" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || "Malzeme tüketim kaydı oluşturulamadı" }, { status: 500 })
   }
 }
-

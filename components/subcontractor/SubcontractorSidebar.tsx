@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
+import { getAllowedModules, type ModuleKey } from "@/lib/rbac/permissions"
 import {
   Home,
   ClipboardList,
@@ -34,14 +35,21 @@ export default function SubcontractorSidebar({
   const status = sessionContext?.status
   const { isInstallable, promptInstall } = usePwaInstall()
 
-  const navItems = [
+  const userRole = ((session?.user?.role as string) || "SUBCONTRACTOR").toUpperCase()
+  const allowedModules = getAllowedModules(userRole, "CONTRACTOR")
+
+  const rawNavItems: Array<{ href: string; label: string; icon: any; moduleKey?: ModuleKey }> = [
     { href: "/subcontractor", label: "Ana Sayfa", icon: Home },
-    { href: "/subcontractor/proofs/new", label: "İş Kanıtı Yükle", icon: Camera },
-    { href: "/subcontractor/tasks", label: "Görevlerim", icon: ClipboardList },
-    { href: "/subcontractor/report", label: "Günlük Rapor Gir", icon: FileText },
-    { href: "/subcontractor/billing", label: "Hakedişlerim", icon: DollarSign },
-    { href: "/subcontractor/audits", label: "Denetim Sonuçlarım", icon: ShieldAlert },
+    { href: "/subcontractor/proofs/new", label: "İş Kanıtı Yükle", icon: Camera, moduleKey: "work_proofs" },
+    { href: "/subcontractor/tasks", label: "Görevlerim", icon: ClipboardList, moduleKey: "tasks_work_orders" },
+    { href: "/subcontractor/report", label: "Günlük Rapor Gir", icon: FileText, moduleKey: "work_proofs" },
+    { href: "/subcontractor/billing", label: "Hakedişlerim", icon: DollarSign, moduleKey: "progress_payments" },
+    { href: "/subcontractor/audits", label: "Denetim Sonuçlarım", icon: ShieldAlert, moduleKey: "deficiencies" },
   ]
+
+  const navItems = rawNavItems.filter(
+    (item) => !item.moduleKey || userRole === "SUPER_ADMIN" || allowedModules.includes(item.moduleKey)
+  )
 
   return (
     <>

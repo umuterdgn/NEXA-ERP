@@ -27,6 +27,8 @@ model User {
   currentLat               Float?                    // Canlı İSG/Puantaj GPS Enlemi
   currentLng               Float?                    // Canlı İSG/Puantaj GPS Boylamı
   lastLocationUpdate       DateTime?                 // Son GPS güncelleme zamanı
+  locationTrackingMode     String                    @default("SITE_LIVE") // SITE_LIVE | ROUTE_LIVE | OFF
+  assignedProjectIds       String[]                  @default([])
   companyType              CompanyType?              @default(MAIN_CONTRACTOR) // SaaS: Firma türü
   companyId                String? // SaaS: Firma / Organizasyon ID
   company                  Company?                  @relation(fields: [companyId], references: [id], onDelete: SetNull)
@@ -89,18 +91,24 @@ enum UserRole {
   MUHASEBE
   STAFF
   ENGINEER
+  ARCHITECT
   SUBCONTRACTOR
   CLIENT
   INVESTOR
   MUTEAHHIT
   INSPECTION_ADMIN
+  PROJECT_AUDITOR
   INSPECTOR
+  LAB_TECH
+  INSPECTION_OFFICE
+  INSPECTION_FINANCE
   AUDITOR
   WORKER
   SUPPLIER
   HR_MANAGER
   FINANCE_MANAGER
   PROCUREMENT_MANAGER
+  WAREHOUSE_MANAGER
   EQUIPMENT_MANAGER
   ISG_EXPERT
   DRIVER
@@ -109,15 +117,26 @@ enum UserRole {
   HR_STAFF
   PURCHASING_STAFF
   PROJECT_MANAGER
+  FRANCHISE_ADMIN
   REGIONAL_MANAGER
   BRANCH_MANAGER
+  FRANCHISEE
+  FITOUT_SUPERVISOR
+  FITOUT_TECH
 }
 
 enum CompanyType {
   MAIN_CONTRACTOR
+  CONTRACTOR
   SUBCONTRACTOR
   SUPPLIER
   CLIENT
+  INSPECTION
+  FRANCHISE
+}
+
+enum TenantType {
+  CONTRACTOR
   INSPECTION
   FRANCHISE
 }
@@ -713,17 +732,27 @@ model Equipment {
 // ============================================================================
 
 model LocationLog {
-  id        String   @id @default(cuid())
-  tenantId     String?   // SaaS: Kiracı ID
-  userId    String
-  latitude  Float
-  longitude Float
-  accuracy  Float?
-  timestamp DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  id               String   @id @default(cuid())
+  tenantId         String?  // SaaS: Kiracı ID
+  userId           String
+  projectId        String?  // Şantiye / Proje ID
+  latitude         Float
+  longitude        Float
+  lat              Float?   // Enlem alias
+  lng              Float?   // Boylam alias
+  speed            Float?   // Hız (km/h)
+  heading          Float?   // Yön/Pusula
+  accuracy         Float?   // GPS Hassasiyeti (metre)
+  source           String   @default("GPS") // GPS | BLE | QR
+  batteryLevel     Float?   // Batarya yüzdesi
+  isInsideGeofence Boolean  @default(true) // Şantiye sınırları içinde mi?
+  recordedAt       DateTime @default(now())
+  timestamp        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id])
 
   @@index([userId, timestamp])
   @@index([tenantId])
+  @@index([projectId])
 }
 
 // ============================================================================
@@ -1132,6 +1161,8 @@ model Personel {
   userId                   String?                   @unique // AdminUser ile eşleşme (opsiyonel)
   projectId                String? // Atandığı Şantiye / Proje
   project                  Project?                  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  assignedProjectIds       String[]                  @default([]) // Çoklu şantiye erişim yetkisi
+  locationTrackingMode     String                    @default("SITE_LIVE") // SITE_LIVE | ROUTE_LIVE | OFF
   username                 String? // Kullanıcı adı (login için)
   role                     UserRole                  @default(STAFF) // Rol bazlı yetkilendirme
   companyId                String? // Firma ID (Taşeron izolasyonu için)

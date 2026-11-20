@@ -6,20 +6,33 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import {
+  resolveApiAuth,
+  requireAnyModule,
+  resolveSubcontractorCompanyIdForUser,
+} from "@/lib/api-rbac"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-    const userRole = session?.user?.role
-    const isSuperAdmin = userRole === "SUPER_ADMIN"
-    const tenantId = (session?.user as any)?.tenantId as string | undefined
-
-    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const denied = requireAnyModule(caller, ["subcontractor_contracts", "contracts"])
+    if (denied) return denied
+
+    const isSuperAdmin = caller.role === "SUPER_ADMIN"
+    const tenantId = caller.tenantId
 
     const whereClause: any = !isSuperAdmin ? (tenantId ? { tenantId } : { tenantId: "non-existent" }) : {}
+
+    if (caller.role === "SUBCONTRACTOR") {
+      const ownCompanyId = await resolveSubcontractorCompanyIdForUser(caller)
+      if (!ownCompanyId) {
+        return NextResponse.json([])
+      }
+      whereClause.subcontractorId = ownCompanyId
+    }
 
     const contracts = await prisma.contract.findMany({
       where: whereClause,
@@ -46,14 +59,17 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    const userRole = session?.user?.role
-    const isSuperAdmin = userRole === "SUPER_ADMIN"
-    const tenantId = (session?.user as any)?.tenantId as string | undefined
-
-    if (!session?.user || (!tenantId && !isSuperAdmin)) {
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const denied = requireAnyModule(caller, ["subcontractor_contracts", "contracts"])
+    if (denied) return denied
+    if (caller.role === "SUBCONTRACTOR") {
+      return NextResponse.json({ error: "Taşeron yeni sözleşme oluşturamaz" }, { status: 403 })
+    }
+
+    const tenantId = caller.tenantId
 
     const body = await request.json()
     const { title, subcontractorId, projectId, totalAmount, startDate, endDate, status } = body

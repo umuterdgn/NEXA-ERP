@@ -6,19 +6,24 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { resolveApiAuth, requireAnyModule } from "@/lib/api-rbac"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   try {
-    const session = await auth()
-    if (!session?.user) {
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
+    const denied = requireAnyModule(caller, ["payroll"])
+    if (denied) return denied
+    if (caller.role !== "SUPER_ADMIN" && caller.tenantType === "INSPECTION") {
+      return NextResponse.json({ error: "Yapı denetim rolleri müteahhit bordro ucuna erişemez." }, { status: 403 })
+    }
 
-    const isSuperAdmin = session.user.role === "SUPER_ADMIN"
-    const tenantId = (session.user as any)?.tenantId
+    const isSuperAdmin = caller.role === "SUPER_ADMIN"
+    const tenantId = caller.tenantId
 
     const tenantWhere: any = {}
     if (!isSuperAdmin) {

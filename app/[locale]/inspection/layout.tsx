@@ -9,6 +9,7 @@ import { redirect } from "next/navigation"
 import InspectionLayoutShell from "@/components/inspection/InspectionLayoutShell"
 import NextAuthSessionProvider from "@/components/providers/SessionProvider"
 import { Toaster } from "react-hot-toast"
+import { getDefaultWebRoute, normalizeTenantType } from "@/lib/rbac/permissions"
 
 export const dynamic = "force-dynamic"
 
@@ -23,22 +24,26 @@ export default async function InspectionLayout({
     redirect("/login")
   }
 
-  const role = session.user?.role as string
-  const allowedRoles = ["INSPECTION_ADMIN", "INSPECTOR", "AUDITOR", "ADMIN", "SUPER_ADMIN"]
+  const sessionUser = session.user as any
+  const role = String(sessionUser?.role || "").toUpperCase()
+  const sessionTenantType = normalizeTenantType(sessionUser?.tenantType)
+  const allowedRoles = [
+    "INSPECTION_ADMIN",
+    "PROJECT_AUDITOR",
+    "INSPECTOR",
+    "LAB_TECH",
+    "INSPECTION_OFFICE",
+    "INSPECTION_FINANCE",
+    "AUDITOR",
+    "ADMIN",
+    "SUPER_ADMIN",
+  ]
 
-  if (role && !allowedRoles.includes(role)) {
-    // Diğer roller kendi portallarına yönlendirilsin
-    if (role === "SUBCONTRACTOR") {
-      redirect("/subcontractor")
-    } else if (role === "STAFF" || role === "WORKER") {
-      redirect("/personnel")
-    } else {
-      redirect("/admin")
-    }
+  if (role && (!allowedRoles.includes(role) || (role === "ADMIN" && sessionTenantType !== "INSPECTION"))) {
+    redirect(getDefaultWebRoute(role, sessionTenantType))
   }
 
-  const sessionUser = session.user as any
-  const isSuperAdmin = sessionUser?.role === "SUPER_ADMIN"
+  const isSuperAdmin = role === "SUPER_ADMIN"
   let primaryColor = "#3B82F6"
 
   // ============================================================================
@@ -82,7 +87,7 @@ export default async function InspectionLayout({
   }
 
   return (
-    <NextAuthSessionProvider>
+    <NextAuthSessionProvider session={session}>
       <div 
         className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col"
         style={{

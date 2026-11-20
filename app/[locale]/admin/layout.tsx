@@ -10,6 +10,7 @@ import AdminLayoutShell from "@/components/admin/AdminLayoutShell"
 import GlobalSosBanner from "@/components/admin/GlobalSosBanner"
 import { Toaster } from "react-hot-toast"
 import NextAuthSessionProvider from "@/components/providers/SessionProvider"
+import { getDefaultWebRoute, normalizeTenantType } from "@/lib/rbac/permissions"
 
 import { prisma } from "@/lib/prisma"
 
@@ -27,8 +28,19 @@ export default async function AdminLayout({
   }
 
   const sessionUser = session.user as any
-  const isSuperAdmin = sessionUser?.role === "SUPER_ADMIN"
+  const userRole = String(sessionUser?.role || "").toUpperCase()
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
+  const sessionTenantType = normalizeTenantType(sessionUser?.tenantType)
   let primaryColor = "#3B82F6"
+
+  const forbiddenAdminRoles = [
+    "INSPECTION_ADMIN", "PROJECT_AUDITOR", "INSPECTOR", "LAB_TECH", "INSPECTION_OFFICE", "INSPECTION_FINANCE", "AUDITOR",
+    "FRANCHISE_ADMIN", "REGIONAL_MANAGER", "FRANCHISEE", "FITOUT_SUPERVISOR", "FITOUT_TECH", "BRANCH_MANAGER",
+    "SUBCONTRACTOR", "WORKER", "DRIVER", "SECURITY", "WAREHOUSE_MANAGER", "STAFF", "INVESTOR", "CLIENT",
+  ]
+  if (!isSuperAdmin && forbiddenAdminRoles.includes(userRole)) {
+    redirect(getDefaultWebRoute(userRole, sessionTenantType))
+  }
 
   // ============================================================================
   // LİSANS VE 14 GÜNLÜK DEMO KONTROLCÜSÜ (SAAS BILLING GATEWAY)
@@ -50,8 +62,11 @@ export default async function AdminLayout({
     }).catch(() => null)
 
     if (tenant) {
-      if (tenant.type === "FRANCHISE") {
-        redirect("/franchise/dashboard")
+      if (String(tenant.type) === "FRANCHISE") {
+        redirect(getDefaultWebRoute(userRole, "FRANCHISE"))
+      }
+      if (String(tenant.type) === "INSPECTION") {
+        redirect(getDefaultWebRoute(userRole, "INSPECTION"))
       }
 
       const isTrialExpired = Boolean(
@@ -75,7 +90,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <NextAuthSessionProvider>
+    <NextAuthSessionProvider session={session}>
       <div 
         className="h-screen w-full overflow-hidden bg-slate-50 dark:bg-[#0A0F1C] text-slate-900 dark:text-white flex flex-col"
         style={{

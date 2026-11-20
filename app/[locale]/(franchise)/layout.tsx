@@ -11,6 +11,7 @@ import FranchiseLayoutShell from "@/components/franchise/FranchiseLayoutShell"
 import NextAuthSessionProvider from "@/components/providers/SessionProvider"
 import { Toaster } from "react-hot-toast"
 import { prisma } from "@/lib/prisma"
+import { getDefaultWebRoute, normalizeTenantType } from "@/lib/rbac/permissions"
 
 export const dynamic = "force-dynamic"
 
@@ -26,8 +27,24 @@ export default async function FranchisePortalLayout({
   }
 
   const sessionUser = session.user as any
-  const isSuperAdmin = sessionUser?.role === "SUPER_ADMIN"
+  const userRole = String(sessionUser?.role || "").toUpperCase()
+  const sessionTenantType = normalizeTenantType(sessionUser?.tenantType)
+  const isSuperAdmin = userRole === "SUPER_ADMIN"
   let primaryColor = "#F59E0B" // Amber-500 default for Franchise Hub
+
+  const allowedFranchiseRoles = [
+    "FRANCHISE_ADMIN",
+    "REGIONAL_MANAGER",
+    "FRANCHISEE",
+    "FITOUT_SUPERVISOR",
+    "FITOUT_TECH",
+    "BRANCH_MANAGER",
+    "ADMIN",
+    "SUPER_ADMIN",
+  ]
+  if (!isSuperAdmin && (!allowedFranchiseRoles.includes(userRole) || (userRole === "ADMIN" && sessionTenantType !== "FRANCHISE"))) {
+    redirect(getDefaultWebRoute(userRole, sessionTenantType))
+  }
 
   // ============================================================================
   // LİSANS VE 14 GÜNLÜK DEMO KONTROLCÜSÜ (SAAS BILLING GATEWAY)
@@ -70,7 +87,7 @@ export default async function FranchisePortalLayout({
   }
 
   return (
-    <NextAuthSessionProvider>
+    <NextAuthSessionProvider session={session}>
       <div 
         className="h-screen overflow-hidden bg-slate-950 text-white flex flex-col selection:bg-amber-500 selection:text-white"
         style={{

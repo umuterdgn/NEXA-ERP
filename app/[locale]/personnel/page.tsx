@@ -9,6 +9,7 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { PersonnelDashboard } from "./components/PersonnelDashboard"
 import DriverDashboard from "@/components/personnel/DriverDashboard"
+import { getDefaultWebRoute, normalizeTenantType } from "@/lib/rbac/permissions"
 
 export default async function PersonnelPage() {
   const session = await auth()
@@ -18,28 +19,28 @@ export default async function PersonnelPage() {
   }
 
   const userRole = ((session.user?.role as string) || "").toUpperCase()
+  const tenantType = normalizeTenantType((session.user as any)?.tenantType)
   const isPersonnel = [
     "STAFF",
     "WORKER",
     "PERSONNEL",
     "ENGINEER",
+    "ARCHITECT",
+    "WAREHOUSE_MANAGER",
+    "SECURITY",
+    "EQUIPMENT_MANAGER",
     "SITE_MANAGER",
+    "PROJECT_MANAGER",
+    "ISG_EXPERT",
+    "FITOUT_SUPERVISOR",
+    "FITOUT_TECH",
     "ADMIN",
     "SUPER_ADMIN",
-    "DRIVER"
+    "DRIVER",
   ].includes(userRole)
 
   if (!isPersonnel) {
-    if (userRole === "INSPECTION_ADMIN" || userRole === "INSPECTOR" || userRole === "AUDITOR") {
-      redirect("/inspection/dashboard")
-    }
-    if (userRole === "SUBCONTRACTOR") {
-      redirect("/subcontractor")
-    }
-    if (userRole === "SUPPLIER") {
-      redirect("/supplier")
-    }
-    redirect("/admin")
+    redirect(getDefaultWebRoute(userRole, tenantType))
   }
 
   // ADIM 5: Sürücü (Driver) Özel Görünümü

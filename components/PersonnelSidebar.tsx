@@ -1,4 +1,5 @@
 "use client"
+import { getAllowedModules, type ModuleKey } from "@/lib/rbac/permissions"
 /**
  * © 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
@@ -59,10 +60,11 @@ export default function PersonnelSidebar({
     !userRole || ["ENGINEER", "SITE_MANAGER", "STAFF", "ADMIN", "SUPER_ADMIN", "PROJECT_MANAGER"].includes(userRole)
 
   interface NavItem {
-    href: string
-    label: string
-    icon: React.ComponentType<{ className?: string }>
-  }
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  moduleKey?: ModuleKey
+}
 
   interface NavGroup {
     id: string
@@ -71,96 +73,76 @@ export default function PersonnelSidebar({
     items: NavItem[]
   }
 
-  const isDriver = userRole === "DRIVER"
+  const tenantType = ((session?.user as any)?.tenantType as string) || "CONTRACTOR"
+  const allowedModules = getAllowedModules(userRole, tenantType)
 
-  const navGroups: NavGroup[] = isDriver
-    ? [
-        {
-          id: "driver-ops",
-          title: "Sefer & Operasyon",
-          emoji: "🚚",
-          items: [
-            { href: "/personnel", label: "Aktif Seferlerim (GPS)", icon: Truck },
-            { href: "/personnel/chat", label: "Şantiye Chat / İletişim", icon: MessageSquare },
-            { href: "/personnel/expenses", label: "Yakıt & Masraflar", icon: Receipt },
-          ],
-        },
-        {
-          id: "account",
-          title: "Hesap",
-          emoji: "⚙️",
-          items: [
-            { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
-          ],
-        },
-      ]
-    : [
-        {
-          id: "field-ops",
-          title: "Saha Operasyonları",
-          emoji: "🏗️",
-          items: [
-            ...(isEngineerOrManager
-              ? [{ href: "/personnel/bim-viewer", label: "3D BIM & AR Navigasyon", icon: Box }]
-              : []),
-            ...(isEngineerOrManager
-              ? [{ href: "/personnel/daily-journal", label: "Şantiye Günlüğü (Jurnal)", icon: BookOpen }]
-              : []),
-            { href: "/personnel/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck },
-            ...(isEngineerOrManager
-              ? [{ href: "/personnel/ncr-request", label: "Saha Revizyon (DÖF) Aç", icon: AlertTriangle }]
-              : []),
-            ...(isEngineerOrManager
-              ? [{ href: "/personnel/subcontractor-approvals", label: "Taşeron İş Kabulleri", icon: CheckSquare }]
-              : []),
-            { href: "/personnel/camera", label: "Saha Kamerası (İlerleme)", icon: Camera },
-          ],
-        },
-        {
-          id: "logistics",
-          title: "Lojistik & Malzeme",
-          emoji: "📦",
-          items: [
-            { href: "/personnel/deliveries", label: "Malzeme Kabul & Teslimat", icon: Truck },
-            { href: "/personnel/qr-consume", label: "Malzeme Tüketimi (QR)", icon: QrCode },
-            { href: "/personnel/requests", label: "Malzeme Talepleri", icon: ShoppingCart },
-            { href: "/personnel/equipment", label: "Zimmetli Ekipmanlar", icon: Package },
-          ],
-        },
-        {
-          id: "hr-finance",
-          title: "İK & Finans",
-          emoji: "💰",
-          items: [
-            { href: "/personnel/qr-checkin", label: "QR Giriş/Çıkış", icon: QrCode },
-            { href: "/personnel/attendance", label: "Mesai Geçmişi", icon: Clock },
-            { href: "/personnel/leave", label: "İzin Yönetimi", icon: Calendar },
-            { href: "/personnel/salary", label: "Maaş ve Avans", icon: Wallet },
-            { href: "/personnel/expenses", label: "Masraf & Fiş Bildirimi", icon: Receipt },
-          ],
-        },
-        {
-          id: "communication-safety",
-          title: "İletişim & İSG",
-          emoji: "⚠️",
-          items: [
-            { href: "/personnel/chat", label: "Mesajlar / Şantiye Chat", icon: MessageSquare },
-            { href: "/personnel/isg", label: "İSG Bildirimleri", icon: ShieldAlert },
-            { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList },
-            { href: "/personnel/audits", label: "Denetim Raporları", icon: ClipboardCheck },
-            { href: "/personnel/announcements", label: "Duyurular ve Belgeler", icon: Bell },
-          ],
-        },
-        {
-          id: "account",
-          title: "Hesap",
-          emoji: "⚙️",
-          items: [
-            { href: "/personnel", label: "Ana Sayfa", icon: Home },
-            { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
-          ],
-        },
-      ]
+  const rawNavGroups: NavGroup[] = [
+    {
+      id: "field-ops",
+      title: "Saha Operasyonları",
+      emoji: "🏗️",
+      items: [
+        { href: "/personnel/bim-viewer", label: "3D BIM & AR Navigasyon", icon: Box, moduleKey: "bim_3d" },
+        { href: "/personnel/daily-journal", label: "Şantiye Günlüğü (Jurnal)", icon: BookOpen, moduleKey: "site_journal" },
+        { href: "/personnel/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, moduleKey: "dynamic_forms" },
+        { href: "/personnel/ncr-request", label: "Saha Revizyon (DÖF) Aç", icon: AlertTriangle, moduleKey: "ncr_dof" },
+        { href: "/personnel/subcontractor-approvals", label: "Taşeron İş Kabulleri", icon: CheckSquare, moduleKey: "work_proofs" },
+        { href: "/personnel/camera", label: "Saha Kamerası (İlerleme)", icon: Camera, moduleKey: "site_camera" },
+      ],
+    },
+    {
+      id: "logistics",
+      title: "Lojistik & Malzeme",
+      emoji: "📦",
+      items: [
+        { href: "/personnel/deliveries", label: userRole === "DRIVER" ? "Sevkiyat Görevlerim" : "Malzeme Kabul & Teslimat", icon: Truck, moduleKey: userRole === "DRIVER" ? "driver_deliveries" : "goods_receiving" },
+        { href: "/personnel/qr-consume", label: "Malzeme Tüketimi (QR)", icon: QrCode, moduleKey: "qr_micro_consumption" },
+        { href: "/personnel/requests", label: "Malzeme Talepleri", icon: ShoppingCart, moduleKey: "material_requests" },
+        { href: "/personnel/equipment", label: "Zimmetli Ekipmanlar", icon: Package, moduleKey: "my_assigned_equipments" },
+      ],
+    },
+    {
+      id: "hr-finance",
+      title: "İK & Finans",
+      emoji: "💰",
+      items: [
+        { href: "/personnel/qr-checkin", label: "QR Giriş/Çıkış", icon: QrCode, moduleKey: "my_attendance_qr" },
+        { href: "/personnel/attendance", label: "Mesai Geçmişi", icon: Clock, moduleKey: "my_shifts_history" },
+        { href: "/personnel/leave", label: "İzin Yönetimi", icon: Calendar, moduleKey: "my_leaves" },
+        { href: "/personnel/salary", label: "Maaş ve Avans", icon: Wallet, moduleKey: "my_salary_advances" },
+        { href: "/personnel/expenses", label: "Masraf & Fiş Bildirimi", icon: Receipt, moduleKey: "my_expenses" },
+      ],
+    },
+    {
+      id: "communication-safety",
+      title: "İletişim & İSG",
+      emoji: "⚠️",
+      items: [
+        { href: "/personnel/chat", label: "Mesajlar / Şantiye Chat", icon: MessageSquare, moduleKey: "internal_comms" },
+        { href: "/personnel/isg", label: "İSG Bildirimleri", icon: ShieldAlert, moduleKey: "near_miss" },
+        { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList, moduleKey: "tasks_work_orders" },
+        { href: "/personnel/audits", label: "Denetim Raporları", icon: ClipboardCheck, moduleKey: "field_reports" },
+        { href: "/personnel/announcements", label: "Duyurular ve Belgeler", icon: Bell, moduleKey: "my_announcements" },
+      ],
+    },
+    {
+      id: "account",
+      title: "Hesap",
+      emoji: "⚙️",
+      items: [
+        { href: "/personnel", label: "Ana Sayfa", icon: Home },
+        { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User, moduleKey: "my_profile" },
+      ],
+    },
+  ]
+
+  // Filter groups and items dynamically according to allowedModules
+  const navGroups: NavGroup[] = rawNavGroups
+    .map((grp) => ({
+      ...grp,
+      items: grp.items.filter((item) => !item.moduleKey || allowedModules.includes(item.moduleKey)),
+    }))
+    .filter((grp) => grp.items.length > 0)
 
   return (
     <>

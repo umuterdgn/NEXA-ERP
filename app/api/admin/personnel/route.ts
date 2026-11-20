@@ -6,24 +6,21 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
 import { logPersonnelAction } from "@/lib/logger"
+import { resolveApiAuth, requireAnyModule } from "@/lib/api-rbac"
+import { getAssignableRolesForTenant, type SystemRole } from "@/lib/rbac/permissions"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const session = await auth()
-    const userRole = session?.user?.role
-    let userTenantId = (session?.user as any)?.tenantId as string | null | undefined
-
-    if (!userTenantId && session?.user?.id) {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { tenantId: true }
-      })
-      userTenantId = dbUser?.tenantId || null
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
+    const denied = requireAnyModule(caller, ["personnel", "personnel_tracking"])
+    if (denied) return denied
 
-    const isSuperAdmin = userRole === "SUPER_ADMIN"
+    const isSuperAdmin = caller.role === "SUPER_ADMIN"
+    const userTenantId = caller.tenantId
     const tenantFilter = !isSuperAdmin
       ? userTenantId
         ? { tenantId: userTenantId }
@@ -54,17 +51,16 @@ import bcrypt from "bcryptjs"
 
 export async function POST(request: Request) {
   try {
-    const session = await auth()
-    const userName = session?.user?.name || "Bilinmeyen Kullanıcı"
-    let userTenantId = (session?.user as any)?.tenantId as string | null | undefined
-
-    if (!userTenantId && session?.user?.id) {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { tenantId: true }
-      })
-      userTenantId = dbUser?.tenantId || null
+    const caller = await resolveApiAuth(request)
+    if (!caller) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
+    const denied = requireAnyModule(caller, ["personnel", "personnel_tracking"])
+    if (denied) return denied
+
+    const userName = caller.name || "Bilinmeyen Kullanıcı"
+    const userTenantId = caller.tenantId
+    const isSuperAdmin = caller.role === "SUPER_ADMIN"
     
     const body = await request.json()
     
@@ -75,7 +71,14 @@ export async function POST(request: Request) {
     if (shouldCreateAccount) {
       const email = body.username.includes("@") ? body.username : `${body.username}@nexa.local`
       const hashedPassword = await bcrypt.hash(body.password, 10)
-      const userRole = body.role || "STAFF"
+      const userRole = String(body.role || "STAFF").toUpperCase() as SystemRole
+      const assignableRoles = getAssignableRolesForTenant(caller.tenantType).map((r) => r.role)
+      if (!isSuperAdmin && !assignableRoles.includes(userRole)) {
+        return NextResponse.json(
+          { error: `Bu işletme tipi (${caller.tenantType}) için '${userRole}' rolü atanamaz` },
+          { status: 403 }
+        )
+      }
 
       const existingUser = await prisma.user.findUnique({
         where: { email }

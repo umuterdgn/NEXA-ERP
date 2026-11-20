@@ -14,6 +14,7 @@ import NotificationBell from "@/components/NotificationBell"
 import ThemeToggle from "@/components/ThemeToggle"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { isMenuItemAllowed } from "@/lib/utils/module-permissions"
+import { getAllowedModules, normalizeTenantType, type ModuleKey } from "@/lib/rbac/permissions"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -104,6 +105,7 @@ interface MenuItem {
   label: string
   icon: any
   category: string
+  moduleKey: ModuleKey
 }
 
 // Kategori İkon Haritası
@@ -143,143 +145,103 @@ const getCategoryIcon = (category: string) => {
   }
 }
 
-// Taşeron Kısıtlı Menü Listesi (Finans, Kasa, Sözleşmeler, Satınalma tamamen gizlenir)
-const subcontractorMenuItems: MenuItem[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, category: "TAŞERON PORTALI" },
-  { href: "/admin/map", label: "Şantiye Haritası", icon: Map, category: "TAŞERON PORTALI" },
-  { href: "/admin/bim", label: "3D Modeller (Kusurlar)", icon: Box, category: "TAŞERON PORTALI" },
-  { href: "/admin/subcontractor-inspections", label: "İş Kanıtı / Hakediş", icon: ShieldCheck, category: "TAŞERON PORTALI" },
-]
-
-// Yapı Denetim Yalıtılmış Menü Listesi (Kasa, Finans, İK, Bordro, Hakediş GİZLENİR!)
-const inspectorMenuItems: MenuItem[] = [
-  { href: "/dashboard", label: "Yapı Denetim Dashboard", icon: LayoutDashboard, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/projects", label: "Denetlenen Yapılar", icon: Building2, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/samples", label: "Karot / Numune Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
-  { href: "/yibf", label: "Bakanlık e-YİBF Sistemi", icon: Building2, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Hammer, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/timelapse", label: "Saha Kamerası (Timelapse)", icon: Camera, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/attachment", label: "Ataşman & Delil Kayıtları", icon: FileCheck, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/qa-qc/materials", label: "Malzeme Onayları (QA)", icon: CheckSquare, category: "KALİTE GÜVENCE (QA/QC)" },
-  { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF (NCR)", icon: XCircle, category: "KALİTE GÜVENCE (QA/QC)" },
-  { href: "/admin/deficiencies", label: "Saha Eksiklikleri", icon: AlertTriangle, category: "KALİTE GÜVENCE (QA/QC)" },
-  { href: "/map", label: "Denetim Haritası", icon: Map, category: "SAHA & RAPORLAMA" },
-  { href: "/dispatch", label: "Mühendis Görev Dağıtımı", icon: Users, category: "SAHA & RAPORLAMA" },
-  { href: "/admin/reports", label: "Saha Denetim Raporları", icon: ClipboardList, category: "SAHA & RAPORLAMA" },
-]
-
-// Franchise / Rollout Menü Listesi (companyType === 'FRANCHISE')
-const franchiseMenuItems: MenuItem[] = [
-  { href: "/franchise/dashboard", label: "AI Risk Radarı & Özet", icon: Bot, category: "FRANCHISE & ROLLOUT" },
-  { href: "/franchise/rollout-map", label: "Rollout Haritası", icon: Map, category: "FRANCHISE & ROLLOUT" },
-  { href: "/franchise/rollout", label: "Rollout Takip (Kanban)", icon: FolderKanban, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/projects", label: "Mağazalar (Projeler)", icon: Building2, category: "FRANCHISE & ROLLOUT" },
-  { href: "/franchise/templates", label: "Konsept Şablonları", icon: Box, category: "FRANCHISE & ROLLOUT" },
-  { href: "/franchise/stage-gates", label: "İdari İzinler", icon: ShieldCheck, category: "FRANCHISE & ROLLOUT" },
-  { href: "/franchise/procurement/consolidated", label: "Konsolide Satınalma", icon: ShoppingCart, category: "FRANCHISE & ROLLOUT" },
-  { href: "/admin/procurement/logistics", label: "OFCI Lojistik", icon: Truck, category: "FRANCHISE & ROLLOUT" },
-  { href: "/franchise/logistics/rma", label: "Hasarlı Teslimat (RMA)", icon: AlertTriangle, category: "FRANCHISE & ROLLOUT" },
-  { href: "/franchise/punch-list", label: "Punch List (QA)", icon: ClipboardCheck, category: "FRANCHISE & ROLLOUT" },
-]
-
 const menuItems: MenuItem[] = [
   // ANA MENÜ
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, category: "ANA MENÜ" },
-  { href: "/admin/map", label: "Şantiye Haritası", icon: Map, category: "ANA MENÜ" },
-  
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, category: "ANA MENÜ", moduleKey: "dashboard" },
+  { href: "/admin/map", label: "Şantiye Haritası", icon: Map, category: "ANA MENÜ", moduleKey: "site_map" },
+
   // İNSAN KAYNAKLARI
-  { href: "/admin/personel", label: "Personeller", icon: Users, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/personnel", label: "Personel Takibi", icon: UserCheck, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/personel/alerts", label: "Süreli Evrak & İSG Alarmı", icon: AlertTriangle, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/attendance", label: "Puantaj & Mesai", icon: Clock, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/payroll", label: "Puantaj & Bordro", icon: Calculator, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/shifts", label: "Vardiya Planlaması", icon: CalendarClock, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/approvals", label: "Onay Bekleyenler", icon: CheckSquare, category: "İNSAN KAYNAKLARI" },
-  { href: "/admin/food-menu", label: "Yemek Menüsü", icon: Utensils, category: "İNSAN KAYNAKLARI" },
-  
+  { href: "/admin/personel", label: "Personeller", icon: Users, category: "İNSAN KAYNAKLARI", moduleKey: "personnel" },
+  { href: "/admin/personnel", label: "Personel Takibi", icon: UserCheck, category: "İNSAN KAYNAKLARI", moduleKey: "personnel_tracking" },
+  { href: "/admin/personel/alerts", label: "Süreli Evrak & İSG Alarmı", icon: AlertTriangle, category: "İNSAN KAYNAKLARI", moduleKey: "isg_doc_alerts" },
+  { href: "/admin/attendance", label: "Puantaj & Mesai", icon: Clock, category: "İNSAN KAYNAKLARI", moduleKey: "attendance" },
+  { href: "/admin/payroll", label: "Puantaj & Bordro", icon: Calculator, category: "İNSAN KAYNAKLARI", moduleKey: "payroll" },
+  { href: "/admin/shifts", label: "Vardiya Planlaması", icon: CalendarClock, category: "İNSAN KAYNAKLARI", moduleKey: "shifts" },
+  { href: "/admin/approvals", label: "Onay Bekleyenler", icon: CheckSquare, category: "İNSAN KAYNAKLARI", moduleKey: "approvals" },
+  { href: "/admin/food-menu", label: "Yemek Menüsü", icon: Utensils, category: "İNSAN KAYNAKLARI", moduleKey: "food_menu" },
+
   // TAŞERON YÖNETİMİ
-  { href: "/admin/subcontractor-inspections", label: "İş Kanıtı Denetimi", icon: ShieldCheck, category: "TAŞERON YÖNETİMİ" },
-  { href: "/admin/audits", label: "Taşeron Denetimleri", icon: ShieldAlert, category: "TAŞERON YÖNETİMİ" },
-  { href: "/admin/billing", label: "Hakediş Yönetimi", icon: Wallet, category: "TAŞERON YÖNETİMİ" },
-  { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", icon: FileSignature, category: "TAŞERON YÖNETİMİ" },
-  { href: "/admin/subcontractors/documents", label: "İSG ve Evrak Takibi", icon: ShieldCheck, category: "TAŞERON YÖNETİMİ" },
-  { href: "/admin/subcontractors/deductions", label: "Kesintiler ve Cezalar", icon: TrendingDown, category: "TAŞERON YÖNETİMİ" },
-  
+  { href: "/admin/subcontractor-inspections", label: "İş Kanıtı Denetimi", icon: ShieldCheck, category: "TAŞERON YÖNETİMİ", moduleKey: "subcontractor_inspections" },
+  { href: "/admin/audits", label: "Taşeron Denetimleri", icon: ShieldAlert, category: "TAŞERON YÖNETİMİ", moduleKey: "work_proofs" },
+  { href: "/admin/billing", label: "Hakediş Yönetimi", icon: Wallet, category: "TAŞERON YÖNETİMİ", moduleKey: "progress_payments" },
+  { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", icon: FileSignature, category: "TAŞERON YÖNETİMİ", moduleKey: "subcontractor_contracts" },
+  { href: "/admin/subcontractors/documents", label: "İSG ve Evrak Takibi", icon: ShieldCheck, category: "TAŞERON YÖNETİMİ", moduleKey: "subcontractor_isg" },
+  { href: "/admin/subcontractors/deductions", label: "Kesintiler ve Cezalar", icon: TrendingDown, category: "TAŞERON YÖNETİMİ", moduleKey: "deductions" },
+
   // FİNANS & TEDARİK
-  { href: "/admin/finance", label: "Kasa & Finans", icon: DollarSign, category: "FİNANS & TEDARİK" },
-  { href: "/admin/finance/expenses", label: "Masraf & Fiş Onayı", icon: Receipt, category: "FİNANS & TEDARİK" },
-  { href: "/admin/finance/documents", label: "Çek / Senet & Teminat", icon: Landmark, category: "FİNANS & TEDARİK" },
-  { href: "/admin/inventory", label: "Ambar & Karekod", icon: PackageSearch, category: "FİNANS & TEDARİK" },
-  { href: "/admin/equipments", label: "Demirbaş", icon: Wrench, category: "FİNANS & TEDARİK" },
-  { href: "/admin/contracts", label: "Sözleşmeler", icon: FileSignature, category: "FİNANS & TEDARİK" },
-  { href: "/admin/progress-payments", label: "Hakediş ve Metraj", icon: Calculator, category: "FİNANS & TEDARİK" },
-  { href: "/admin/procurement", label: "Satınalma & Talepler", icon: ShoppingCart, category: "FİNANS & TEDARİK" },
-  { href: "/admin/procurement/logistics", label: "Kapı Güvenlik & Lojistik", icon: Truck, category: "FİNANS & TEDARİK" },
-  { href: "/admin/procurement/receiving", label: "Malzeme Kabul & Tesellüm", icon: PackageCheck, category: "FİNANS & TEDARİK" },
-  { href: "/admin/logistics/map", label: "Lojistik Canlı Harita", icon: Navigation, category: "FİNANS & TEDARİK" },
-  { href: "/admin/inventory/qr-scanner", label: "QR Mikro Tüketim", icon: QrCode, category: "FİNANS & TEDARİK" },
-  { href: "/admin/ai-assistant", label: "AI Tahsilat & Risk Asistanı", icon: Bot, category: "FİNANS & TEDARİK" },
-  { href: "/admin/collection-risk", label: "Tahsilat Risk AI", icon: PieChart, category: "FİNANS & TEDARİK" },
-  
+  { href: "/admin/finance", label: "Kasa & Finans", icon: DollarSign, category: "FİNANS & TEDARİK", moduleKey: "finance_cash" },
+  { href: "/admin/finance/expenses", label: "Masraf & Fiş Onayı", icon: Receipt, category: "FİNANS & TEDARİK", moduleKey: "expense_approvals" },
+  { href: "/admin/finance/documents", label: "Çek / Senet & Teminat", icon: Landmark, category: "FİNANS & TEDARİK", moduleKey: "checks_notes" },
+  { href: "/admin/inventory", label: "Ambar & Karekod", icon: PackageSearch, category: "FİNANS & TEDARİK", moduleKey: "warehouse_inventory" },
+  { href: "/admin/equipments", label: "Demirbaş", icon: Wrench, category: "FİNANS & TEDARİK", moduleKey: "equipments" },
+  { href: "/admin/contracts", label: "Sözleşmeler", icon: FileSignature, category: "FİNANS & TEDARİK", moduleKey: "contracts" },
+  { href: "/admin/progress-payments", label: "Hakediş ve Metraj", icon: Calculator, category: "FİNANS & TEDARİK", moduleKey: "progress_payments" },
+  { href: "/admin/procurement", label: "Satınalma & Talepler", icon: ShoppingCart, category: "FİNANS & TEDARİK", moduleKey: "procurement" },
+  { href: "/admin/procurement/logistics", label: "Kapı Güvenlik & Lojistik", icon: Truck, category: "FİNANS & TEDARİK", moduleKey: "logistics_appointments" },
+  { href: "/admin/procurement/receiving", label: "Malzeme Kabul & Tesellüm", icon: PackageCheck, category: "FİNANS & TEDARİK", moduleKey: "goods_receiving" },
+  { href: "/admin/logistics/map", label: "Lojistik Canlı Harita", icon: Navigation, category: "FİNANS & TEDARİK", moduleKey: "logistics_map" },
+  { href: "/admin/inventory/qr-scanner", label: "QR Mikro Tüketim", icon: QrCode, category: "FİNANS & TEDARİK", moduleKey: "qr_micro_consumption" },
+  { href: "/admin/ai-assistant", label: "AI Tahsilat & Risk Asistanı", icon: Bot, category: "FİNANS & TEDARİK", moduleKey: "collection_risk" },
+  { href: "/admin/collection-risk", label: "Tahsilat Risk AI", icon: PieChart, category: "FİNANS & TEDARİK", moduleKey: "collection_risk" },
+
   // PROJE YÖNETİMİ
-  { href: "/admin/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
-  { href: "/admin/progress", label: "İlerleyiş", icon: TrendingUp, category: "PROJE YÖNETİMİ" },
-  { href: "/admin/project-control-center", label: "Proje Kontrol Merkezi (Master)", icon: Layers, category: "PROJE YÖNETİMİ" },
-  { href: "/admin/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ" },
-  { href: "/admin/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ" },
-  { href: "/admin/boq", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ" },
-  
+  { href: "/admin/projects", label: "Projeler", icon: FolderKanban, category: "PROJE YÖNETİMİ", moduleKey: "projects" },
+  { href: "/admin/progress", label: "İlerleyiş", icon: TrendingUp, category: "PROJE YÖNETİMİ", moduleKey: "progress" },
+  { href: "/admin/project-control-center", label: "Proje Kontrol Merkezi (Master)", icon: Layers, category: "PROJE YÖNETİMİ", moduleKey: "control_center" },
+  { href: "/admin/crm", label: "CRM / Firmalar", icon: Building2, category: "PROJE YÖNETİMİ", moduleKey: "crm" },
+  { href: "/admin/bim", label: "BIM & 3D Modeller", icon: Box, category: "PROJE YÖNETİMİ", moduleKey: "bim_3d" },
+  { href: "/admin/boq", label: "Keşif & Metraj (BoQ)", icon: Calculator, category: "PROJE YÖNETİMİ", moduleKey: "boq" },
+
   // YAPI DENETİM & KONTROL
-  { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/forms/builder", label: "Dinamik Form Oluşturucu", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", icon: FileWarning, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/samples", label: "Numune & Karot Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Hammer, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/timelapse", label: "Saha Kamerası (Timelapse)", icon: Camera, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/attachment", label: "Ataşman & Delil", icon: Paperclip, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", icon: Archive, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/documents", label: "Dijital Evrak Arşivi", icon: Files, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", icon: ScanText, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/reports", label: "Saha Raporları", icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/ai-vision", label: "AI Görsel Analiz", icon: ImagePlus, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/revisions", label: "Proje Revizyonları", icon: History, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/routes", label: "Rota Optimizasyonu", icon: Navigation, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/drone-maps", label: "Hava & Drone Gözlem", icon: Plane, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", icon: PenTool, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", icon: PencilRuler, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/inspections", label: "Denetim Kayıtları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
-  { href: "/admin/deficiencies", label: "Saha Eksiklikleri", icon: AlertTriangle, category: "YAPI DENETİM & KONTROL" },
-  
+  { href: "/admin/forms", label: "Dinamik Denetim Formları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL", moduleKey: "dynamic_forms" },
+  { href: "/admin/forms/builder", label: "Dinamik Form Oluşturucu", icon: PencilRuler, category: "YAPI DENETİM & KONTROL", moduleKey: "form_builder" },
+  { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", icon: FileWarning, category: "YAPI DENETİM & KONTROL", moduleKey: "damage_assessment" },
+  { href: "/admin/samples", label: "Numune & Karot Takip", icon: TestTube, category: "YAPI DENETİM & KONTROL", moduleKey: "samples_core" },
+  { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", icon: Hammer, category: "YAPI DENETİM & KONTROL", moduleKey: "reinforcement_check" },
+  { href: "/admin/inspection/timelapse", label: "Saha Kamerası (Timelapse)", icon: Camera, category: "YAPI DENETİM & KONTROL", moduleKey: "site_camera" },
+  { href: "/admin/inspection/attachment", label: "Ataşman & Delil", icon: Paperclip, category: "YAPI DENETİM & KONTROL", moduleKey: "attachments_evidence" },
+  { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", icon: Archive, category: "YAPI DENETİM & KONTROL", moduleKey: "license_archive" },
+  { href: "/admin/documents", label: "Dijital Evrak Arşivi", icon: Files, category: "YAPI DENETİM & KONTROL", moduleKey: "digital_archive" },
+  { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", icon: ScanText, category: "YAPI DENETİM & KONTROL", moduleKey: "smart_ocr" },
+  { href: "/admin/reports", label: "Saha Raporları", icon: ClipboardList, category: "YAPI DENETİM & KONTROL", moduleKey: "field_reports" },
+  { href: "/admin/ai-vision", label: "AI Görsel Analiz", icon: ImagePlus, category: "YAPI DENETİM & KONTROL", moduleKey: "ai_vision" },
+  { href: "/admin/revisions", label: "Proje Revizyonları", icon: History, category: "YAPI DENETİM & KONTROL", moduleKey: "revisions" },
+  { href: "/admin/routes", label: "Rota Optimizasyonu", icon: Navigation, category: "YAPI DENETİM & KONTROL", moduleKey: "route_optimization" },
+  { href: "/admin/drone-maps", label: "Hava & Drone Gözlem", icon: Plane, category: "YAPI DENETİM & KONTROL", moduleKey: "drone_maps" },
+  { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", icon: PenTool, category: "YAPI DENETİM & KONTROL", moduleKey: "digital_drawings" },
+  { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", icon: PencilRuler, category: "YAPI DENETİM & KONTROL", moduleKey: "free_drawing" },
+  { href: "/admin/inspections", label: "Denetim Kayıtları", icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL", moduleKey: "inspections" },
+  { href: "/admin/deficiencies", label: "Saha Eksiklikleri", icon: AlertTriangle, category: "YAPI DENETİM & KONTROL", moduleKey: "deficiencies" },
+
   // YAPI DENETİM & KALİTE
-  { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", icon: CheckSquare, category: "YAPI DENETİM & KALİTE" },
-  { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", icon: XCircle, category: "YAPI DENETİM & KALİTE" },
-  { href: "/admin/qa-qc/concrete-casting", label: "Beton Döküm Tutanağı (QA)", icon: TestTube2, category: "YAPI DENETİM & KALİTE" },
-  
+  { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", icon: CheckSquare, category: "YAPI DENETİM & KALİTE", moduleKey: "material_approvals" },
+  { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", icon: XCircle, category: "YAPI DENETİM & KALİTE", moduleKey: "ncr_dof" },
+  { href: "/admin/qa-qc/concrete-casting", label: "Beton Döküm Tutanağı (QA)", icon: TestTube2, category: "YAPI DENETİM & KALİTE", moduleKey: "concrete_pouring_qa" },
+
   // İSG & RİSK YÖNETİMİ
-  { href: "/admin/isg", label: "İSG Dashboard & Analiz", icon: Activity, category: "İSG & RİSK YÖNETİMİ" },
-  { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", icon: MapPin, category: "İSG & RİSK YÖNETİMİ" },
-  { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", icon: FileBadge, category: "İSG & RİSK YÖNETİMİ" },
-  { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", icon: AlertOctagon, category: "İSG & RİSK YÖNETİMİ" },
-  { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", icon: UserCheck, category: "İSG & RİSK YÖNETİMİ" },
-  
+  { href: "/admin/isg", label: "İSG Dashboard & Analiz", icon: Activity, category: "İSG & RİSK YÖNETİMİ", moduleKey: "isg_dashboard" },
+  { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", icon: MapPin, category: "İSG & RİSK YÖNETİMİ", moduleKey: "isg_risk_plan" },
+  { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", icon: FileBadge, category: "İSG & RİSK YÖNETİMİ", moduleKey: "isg_certificates" },
+  { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", icon: AlertOctagon, category: "İSG & RİSK YÖNETİMİ", moduleKey: "near_miss" },
+  { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", icon: UserCheck, category: "İSG & RİSK YÖNETİMİ", moduleKey: "ppe_forms" },
+
   // SAHA & OPERASYON
-  { href: "/admin/tasks", label: "İş Emirleri Merkezi", icon: ClipboardList, category: "SAHA & OPERASYON" },
-  { href: "/admin/operations/journal", label: "Şantiye Jurnali (AI)", icon: BookOpen, category: "SAHA & OPERASYON" },
-  { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "SAHA & OPERASYON" },
-  { href: "/admin/communication/walkie-talkie", label: "Telsiz (PTT) & Şantiye Chat", icon: Radio, category: "SAHA & OPERASYON" },
-  { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "SAHA & OPERASYON" },
+  { href: "/admin/tasks", label: "İş Emirleri Merkezi", icon: ClipboardList, category: "SAHA & OPERASYON", moduleKey: "tasks_work_orders" },
+  { href: "/admin/operations/journal", label: "Şantiye Jurnali (AI)", icon: BookOpen, category: "SAHA & OPERASYON", moduleKey: "site_journal" },
+  { href: "/admin/communication/chat", label: "İç Haberleşme", icon: MessageSquare, category: "SAHA & OPERASYON", moduleKey: "internal_comms" },
+  { href: "/admin/communication/walkie-talkie", label: "Telsiz (PTT) & Şantiye Chat", icon: Radio, category: "SAHA & OPERASYON", moduleKey: "ptt_chat" },
+  { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", icon: Truck, category: "SAHA & OPERASYON", moduleKey: "logistics_appointments" },
 
   // SİSTEM & AYARLAR
-  { href: "/admin/system-health", label: "Sistem Sağlığı & Check-up", icon: Activity, category: "SİSTEM & AYARLAR" },
-  { href: "/admin/users", label: "Kullanıcılar", icon: Users, category: "SİSTEM & AYARLAR" },
-  { href: "/admin/settings/offline-sync", label: "Cihaz ve Çevrimdışı Senkronizasyon (Offline Sync)", icon: RefreshCw, category: "SİSTEM & AYARLAR" },
-  { href: "/admin/logs", label: "Sistem Logları", icon: FileLogIcon, category: "SİSTEM & AYARLAR" },
-  { href: "/admin/audit-logs", label: "İşlem Geçmişi", icon: History, category: "SİSTEM & AYARLAR" },
-  { href: "/admin/notifications", label: "Bildirimler", icon: Bell, category: "SİSTEM & AYARLAR" },
-  { href: "/admin/announcements", label: "Duyuru Yönetimi", icon: Megaphone, category: "SİSTEM & AYARLAR" },
-  { href: "/admin/ayarlar", label: "Ayarlar", icon: Settings, category: "SİSTEM & AYARLAR" },
-  { href: "/admin/settings/integrations", label: "Bakanlık (YİBF) Entegrasyonu", icon: Bot, category: "SİSTEM & AYARLAR" },
+  { href: "/admin/system-health", label: "Sistem Sağlığı & Check-up", icon: Activity, category: "SİSTEM & AYARLAR", moduleKey: "system_health" },
+  { href: "/admin/users", label: "Kullanıcılar", icon: Users, category: "SİSTEM & AYARLAR", moduleKey: "users_management" },
+  { href: "/admin/settings/offline-sync", label: "Cihaz ve Çevrimdışı Senkronizasyon (Offline Sync)", icon: RefreshCw, category: "SİSTEM & AYARLAR", moduleKey: "offline_sync" },
+  { href: "/admin/logs", label: "Sistem Logları", icon: FileLogIcon, category: "SİSTEM & AYARLAR", moduleKey: "system_logs" },
+  { href: "/admin/audit-logs", label: "İşlem Geçmişi", icon: History, category: "SİSTEM & AYARLAR", moduleKey: "audit_logs" },
+  { href: "/admin/notifications", label: "Bildirimler", icon: Bell, category: "SİSTEM & AYARLAR", moduleKey: "notifications" },
+  { href: "/admin/announcements", label: "Duyuru Yönetimi", icon: Megaphone, category: "SİSTEM & AYARLAR", moduleKey: "announcements_admin" },
+  { href: "/admin/ayarlar", label: "Ayarlar", icon: Settings, category: "SİSTEM & AYARLAR", moduleKey: "settings_branding" },
+  { href: "/admin/settings/integrations", label: "Bakanlık (YİBF) Entegrasyonu", icon: Bot, category: "SİSTEM & AYARLAR", moduleKey: "yibf_integration" },
 ]
 
 export default function AdminSidebar({
@@ -404,109 +366,24 @@ export default function AdminSidebar({
   }, [pathname, urlProjectId])
 
   const effectiveProjectId = urlProjectId || activeProjectId
-  const stageGateHref = effectiveProjectId ? `/franchise/stage-gates/${effectiveProjectId}` : "/franchise/stage-gates"
   const bimHref = "/admin/bim"
   const boqHref = effectiveProjectId ? `/admin/projects/${effectiveProjectId}/boq` : "/admin/boq"
 
-  const userRole = (session?.user as any)?.role as string
-  const userCompanyType = propCompanyType || (session?.user as any)?.companyType as string | undefined
-  const isFranchise = userCompanyType === "FRANCHISE"
+  const userRole = ((session?.user as any)?.role as string || "").toUpperCase()
   const isSubcontractor = userRole === "SUBCONTRACTOR"
-  const isInspector = userRole === "INSPECTOR" || userRole === "AUDITOR"
+  const rawTenantType = propCompanyType || (session?.user as any)?.tenantType || (session?.user as any)?.companyType as string | undefined
+  const userTenantType = normalizeTenantType(rawTenantType)
+  const allowedModules = getAllowedModules(userRole, userTenantType)
 
   const isWhiteLabelActive = Boolean((session?.user as any)?.isWhiteLabelActive)
   const tenantLogoUrl = (session?.user as any)?.logoUrl as string | undefined
   const tenantCompanyName = (session?.user as any)?.companyName || (session?.user as any)?.name
 
-  let rawMenuItems = menuItems
-  if (isFranchise) {
-    rawMenuItems = franchiseMenuItems
-  } else if (isSubcontractor) {
-    rawMenuItems = subcontractorMenuItems
-  } else if (isInspector) {
-    rawMenuItems = inspectorMenuItems
-  } else if (userRole === "ACCOUNTANT") {
-    rawMenuItems = menuItems.filter(item =>
-      item.href === "/admin" ||
-      item.href === "/admin/finance" ||
-      item.href === "/admin/finance/expenses" ||
-      item.href === "/admin/finance/documents" ||
-      item.href === "/admin/billing" ||
-      item.href === "/admin/progress-payments"
-    )
-  } else if (userRole === "HR_STAFF") {
-    rawMenuItems = menuItems.filter(item =>
-      item.href === "/admin" ||
-      item.href === "/admin/personel" ||
-      item.href === "/admin/attendance" ||
-      item.href === "/admin/leave" ||
-      item.href === "/admin/personnel-documents" ||
-      item.href === "/admin/shifts"
-    )
-  } else if (userRole === "PURCHASING_STAFF") {
-    rawMenuItems = menuItems.filter(item =>
-      item.href === "/admin" ||
-      item.href === "/admin/procurement" ||
-      item.href === "/franchise/procurement/consolidated" ||
-      item.href === "/admin/contracts" ||
-      item.href === "/admin/inventory" ||
-      item.href === "/admin/inventory/qr-scanner" ||
-      item.href === "/admin/procurement/logistics"
-    )
-  } else if (userRole === "HR_MANAGER") {
-    rawMenuItems = menuItems.filter(item => 
-      item.category === "İNSAN KAYNAKLARI" || 
-      (item.category === "ANA MENÜ" && item.href === "/admin")
-    )
-  } else if (userRole === "FINANCE_MANAGER") {
-    rawMenuItems = menuItems.filter(item =>
-      item.category === "FİNANS & TEDARİK" ||
-      item.href === "/admin/billing" ||
-      item.href === "/admin/progress-payments" ||
-      (item.category === "ANA MENÜ" && item.href === "/admin")
-    )
-  } else if (userRole === "PROCUREMENT_MANAGER") {
-    rawMenuItems = menuItems.filter(item =>
-      item.href === "/admin/procurement" ||
-      item.href === "/admin/procurement/logistics" ||
-      item.href === "/admin/logistics/map" ||
-      item.href === "/admin/inventory/qr-scanner" ||
-      item.href === "/admin/inventory" ||
-      item.href === "/admin/inventory/qr-scanner" ||
-      item.href === "/admin/equipments" ||
-      item.href === "/admin/contracts" ||
-      (item.category === "ANA MENÜ" && item.href === "/admin")
-    )
-  } else if (userRole === "EQUIPMENT_MANAGER") {
-    rawMenuItems = menuItems.filter(item =>
-      item.href === "/admin/equipments" ||
-      item.href === "/admin/procurement/logistics" ||
-      item.href === "/admin/logistics/map" ||
-      item.href === "/admin/inventory/qr-scanner" ||
-      item.href === "/admin/inventory" ||
-      item.href === "/admin/map" ||
-      (item.category === "ANA MENÜ" && item.href === "/admin")
-    )
-  } else if (userRole === "ISG_EXPERT") {
-    rawMenuItems = menuItems.filter(item =>
-      item.href === "/admin/personel/alerts" ||
-      item.href === "/admin/subcontractors/documents" ||
-      item.href === "/admin/audits" ||
-      item.href === "/admin/deficiencies" ||
-      item.href === "/admin/samples" ||
-      item.href === "/admin/map" ||
-      (item.category === "ANA MENÜ" && item.href === "/admin")
-    )
-  } else if (userRole === "SECURITY") {
-    rawMenuItems = [
-      {
-        href: "/admin/procurement/logistics",
-        label: "Kapı Güvenlik & Lojistik Takvimi",
-        icon: Truck,
-        category: "KAPI GÜVENLİK",
-      },
-    ]
-  }
+  const rawMenuItems = menuItems.filter((item) => {
+    if (userRole === "SUPER_ADMIN" || userRole === "ADMIN") return true
+    if (!userRole) return false
+    return allowedModules.includes(item.moduleKey)
+  })
 
   const sessionEnabledModules = (session?.user as any)?.enabledModules as string[] | undefined
 
@@ -515,13 +392,9 @@ export default function AdminSidebar({
   )
 
   const effectiveMenuItems = moduleFilteredItems.map((item) => {
-    if (item.label === "İdari İzinler" && effectiveProjectId) {
-      return { ...item, href: stageGateHref }
-    }
     if (
       item.href === "/admin/bim" ||
-      item.label === "BIM & 3D Modeller" ||
-      item.label === "3D Modeller (Kusurlar)"
+      item.label === "BIM & 3D Modeller"
     ) {
       return { ...item, href: bimHref }
     }
