@@ -91,7 +91,9 @@
       ],
       "expo-font",
       "expo-audio",
-      "./withWorkManagerDisable"
+      "./withWorkManagerDisable",
+      "expo-secure-store",
+      "expo-sqlite"
     ],
     "extra": {
       "router": {
