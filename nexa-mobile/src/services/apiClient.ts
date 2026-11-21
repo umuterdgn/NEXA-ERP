@@ -22,6 +22,7 @@ import type {
   AuthLoginRequest,
   AuthLoginResponse,
   AuthMeResponse,
+  BleDevicesResponse,
   ChatMessageItem,
   CoreSampleItem,
   CreateDeficiencyPayload,
@@ -47,6 +48,8 @@ import type {
   PatchHrRequestPayload,
   PatchSamplePayload,
   ReviewWorkProofPayload,
+  RouteCheckinPayload,
+  RouteCheckinResponse,
   RoutesResponse,
   SendChatPayload,
   SsoTokenResponse,
@@ -379,10 +382,21 @@ export const mobileApi = {
         method: "POST",
         url: "/api/mobile/telemetry/location",
         data: payload,
-        label: "Canlı GPS Konum Telemetrisi",
+        label: payload.bleDeviceId
+          ? `BLE Konum & Telemetri (${payload.bleEventType || "HEARTBEAT"})`
+          : "Canlı GPS Konum Telemetrisi",
         batchAction: "LOCATION_LOG",
         silentOfflineAlert: true,
       });
+    },
+  },
+
+  ble: {
+    listDevices: async (projectId?: string): Promise<BleDevicesResponse> => {
+      const res = await httpClient.get<BleDevicesResponse>("/api/mobile/ble/devices", {
+        params: projectId ? { projectId } : undefined,
+      });
+      return res.data;
     },
   },
 
@@ -390,6 +404,16 @@ export const mobileApi = {
     list: async (): Promise<RoutesResponse> => {
       const res = await httpClient.get<RoutesResponse>("/api/mobile/routes");
       return res.data;
+    },
+    checkin: async (
+      payload: RouteCheckinPayload
+    ): Promise<RouteCheckinResponse> => {
+      return await mutateWithOfflineQueue<RouteCheckinResponse>({
+        method: "POST",
+        url: "/api/mobile/routes/checkin",
+        data: payload,
+        label: `Durak Check-In (${payload.action})`,
+      });
     },
   },
 

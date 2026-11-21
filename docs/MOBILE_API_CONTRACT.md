@@ -218,10 +218,10 @@ Kullanıcının rolüne ve projelerine göre filtrelenmiş canlı şantiye dashb
 
 ---
 
-### 4.3 Telemetri, GPS ve Rota Takibi
+### 4.3 Telemetri, GPS, Güzergah ve Zimmetli BLE Yakınlık Radarı
 
 #### `POST /api/mobile/telemetry/location`
-Saha ekibinin arka plan veya ön plan GPS koordinatlarını doğrular ve `LocationLog` tablosuna işler.
+Saha ekibi ve yol personelinin arka plan/ön plan GPS koordinatlarını ve opsiyonel zimmetli BLE etiket telemetrisini `LocationLog` ve `BleDevice` / `Equipment` tablolarına işler. `bleEventType: "LOST_ALERT"` durumunda şantiye yöneticilerine acil bildirim ve İSG ihlali kaydı açar.
 - **Header:** `Authorization: Bearer <token>`
 - **Request Body:**
 ```json
@@ -230,32 +230,78 @@ Saha ekibinin arka plan veya ön plan GPS koordinatlarını doğrular ve `Locati
   "longitude": 28.9765,
   "speed": 0.4,
   "heading": 180,
+  "accuracy": 8,
   "batteryLevel": 88,
-  "source": "GPS_FOREGROUND",
-  "projectId": "cuid_proj_1"
+  "source": "GPS",
+  "projectId": "cuid_proj_1",
+  "bleDeviceId": "cuid_ble_1",
+  "rssi": -72,
+  "estimatedDistanceMeters": 3.8,
+  "proximityZone": "NEAR",
+  "bleEventType": "HEARTBEAT"
 }
 ```
 - **Response (200 OK):**
 ```json
 {
   "success": true,
+  "logId": "cuid_loc_1",
   "isInsideGeofence": true,
-  "distanceToCenterMeters": 45,
-  "trackingMode": "GEOFENCE_STATIONARY"
+  "recordedAt": "2026-11-20T14:30:00.000Z",
+  "bleUpdated": true,
+  "alertTriggered": false
+}
+```
+
+#### `GET /api/mobile/ble/devices`
+`ble_radar` modül yetkisine sahip kullanıcılara yalnızca **PostgreSQL'deki canlı zimmetli** BLE kart/baret/ekipman etiketlerini döner (yetkisiz rollerde `403`, sıfır mock cihaz):
+- `WORKER`, `DRIVER`, `STAFF`, `FITOUT_TECH`: Yalnızca kendisine zimmetli cihazlar (`scope: "PERSONAL"`).
+- `SITE_MANAGER`, `ENGINEER`, `ISG_EXPERT`, `EQUIPMENT_MANAGER`, `WAREHOUSE_MANAGER`, `ADMIN`, `PROJECT_MANAGER`: Atandığı şantiyedeki (`projectId`) tüm personel ve ekipman etiketleri (`scope: "PROJECT"`).
+- **Header:** `Authorization: Bearer <token>`
+- **Query Params:** `projectId` (opsiyonel, yönetici kapsamı için)
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "scope": "PERSONAL",
+  "count": 1,
+  "devices": [
+    {
+      "id": "cuid_ble_1",
+      "sourceType": "BLE_DEVICE",
+      "name": "Baret BLE-01 (Ahmet Yılmaz)",
+      "macAddress": "AA:BB:CC:11:22:33",
+      "uuid": "0000feaa-0000-1000-8000-00805f9b34fb",
+      "txPower": -59,
+      "type": "BARET",
+      "status": "ACTIVE",
+      "batteryLevel": 92,
+      "lastSeenAt": "2026-11-20T14:25:00.000Z",
+      "lastLat": 41.0122,
+      "lastLng": 28.9765,
+      "lastRssi": -64,
+      "proximityZone": "NEAR",
+      "assignedToName": "Ahmet Yılmaz",
+      "projectId": "cuid_proj_1"
+    }
+  ]
 }
 ```
 
 #### `GET /api/mobile/routes`
-Şoför, Yapı Denetçi veya Saha Şeflerinin günlük sıralı durak listesini optimize koordinatlarla döner.
+Yalnızca rota görevi olan rollere (`route_optimization` / `driver_deliveries`) veritabanındaki gerçek `lat`/`lng` koordinatlarıyla sıralı durak listesini döner (koordinatı girilmemiş projelerde `null` döner, sabit mock koordinat üretmez).
 - **Header:** `Authorization: Bearer <token>`
 - **Response (200 OK):**
 ```json
 {
   "success": true,
-  "count": 3,
+  "count": 1,
   "stops": [
     {
       "id": "cuid_sched_1",
+      "stopId": "cuid_sched_1",
+      "projectId": "cuid_proj_1",
+      "recordModel": "LOGISTICS_SCHEDULE",
       "order": 1,
       "title": "Vadi Evleri 3. Etap Şantiyesi",
       "description": "BETON - C35/45 Dökümü",
@@ -265,9 +311,41 @@ Saha ekibinin arka plan veya ön plan GPS koordinatlarını doğrular ve `Locati
       "lng": 28.9765,
       "address": "Sarıyer, İstanbul",
       "eta": "2026-11-20T14:30:00.000Z",
+      "stopType": "DELIVERY",
       "type": "DELIVERY"
     }
   ]
+}
+```
+
+#### `POST /api/mobile/routes/checkin`
+Durağa varıldığında veya teslimat/denetim tamamlandığında GPS mesafe doğrulamasıyla durak statüsünü (`ARRIVED` | `COMPLETED`) canlı veritabanında (`LogisticsSchedule`, `LogisticsAppointment` veya `Inspection`) günceller.
+- **Header:** `Authorization: Bearer <token>`
+- **Request Body:**
+```json
+{
+  "stopId": "cuid_sched_1",
+  "projectId": "cuid_proj_1",
+  "action": "COMPLETED",
+  "stopType": "DELIVERY",
+  "lat": 41.0122,
+  "lng": 28.9765,
+  "qrCode": "IRS-2026-0041",
+  "photoUrl": "https://storage.nexa.com/proofs/tesellum.jpg",
+  "notes": "Malzeme eksiksiz indirildi."
+}
+```
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "stopId": "cuid_sched_1",
+  "status": "COMPLETED",
+  "distanceMeters": 32,
+  "gpsVerified": true,
+  "checkedInAt": "2026-11-20T14:38:00.000Z",
+  "updatedRecordId": "cuid_sched_1",
+  "message": "Durak işlemi tamamlandı ve web paneline yansıtıldı."
 }
 ```
 

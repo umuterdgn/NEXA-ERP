@@ -140,6 +140,7 @@ export type ModuleKey =
   | "internal_comms"
   | "ptt_chat"
   | "sos_alarm"
+  | "ble_radar"
   | "offline_sync"
   // Sistem
   | "system_health"
@@ -334,6 +335,9 @@ export interface DashboardResponse {
   }[];
 }
 
+export type BleProximityZone = "IMMEDIATE" | "NEAR" | "FAR" | "LOST";
+export type BleEventType = "HEARTBEAT" | "LOST_ALERT" | "FOUND";
+
 export interface TelemetryLocationPayload {
   lat: number;
   lng: number;
@@ -345,6 +349,11 @@ export interface TelemetryLocationPayload {
   batteryLevel?: number | null;
   source?: string;
   projectId?: string;
+  bleDeviceId?: string;
+  rssi?: number | null;
+  estimatedDistanceMeters?: number | null;
+  proximityZone?: BleProximityZone | string | null;
+  bleEventType?: BleEventType | null;
 }
 
 export interface TelemetryLocationResponse {
@@ -352,27 +361,83 @@ export interface TelemetryLocationResponse {
   logId?: string;
   isInsideGeofence: boolean;
   recordedAt?: string;
+  bleUpdated?: boolean;
+  alertTriggered?: boolean;
   offlineQueued?: boolean;
+}
+
+export interface BleDeviceItem {
+  id: string;
+  sourceType: "BLE_DEVICE" | "EQUIPMENT" | string;
+  name: string;
+  macAddress: string;
+  uuid?: string | null;
+  txPower: number;
+  type: string;
+  status: "ACTIVE" | "LOST" | "INACTIVE" | string;
+  batteryLevel?: number | null;
+  lastSeenAt?: string | null;
+  lastLat?: number | null;
+  lastLng?: number | null;
+  lastRssi?: number | null;
+  proximityZone?: BleProximityZone | string | null;
+  assignedToName?: string | null;
+  projectId?: string | null;
+}
+
+export interface BleDevicesResponse {
+  success: boolean;
+  scope: "PERSONAL" | "PROJECT";
+  count: number;
+  devices: BleDeviceItem[];
 }
 
 export interface RouteStop {
   id: string;
+  stopId?: string;
+  projectId?: string | null;
+  recordModel?: string;
   order: number;
   title: string;
   description: string;
   plateNumber?: string | null;
   status: string;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   address?: string;
-  eta?: string;
-  type: "DELIVERY" | "INSPECTION" | "SITE" | string;
+  eta?: string | null;
+  stopType?: "DELIVERY" | "INSPECTION" | "BRANCH_AUDIT" | "SAMPLE_PICKUP" | string;
+  type: "DELIVERY" | "INSPECTION" | "BRANCH_AUDIT" | "SAMPLE_PICKUP" | "SITE" | string;
 }
 
 export interface RoutesResponse {
   success: boolean;
   count: number;
   stops: RouteStop[];
+}
+
+export interface RouteCheckinPayload {
+  stopId: string;
+  projectId?: string | null;
+  action: "ARRIVED" | "COMPLETED";
+  stopType?: string;
+  lat: number;
+  lng: number;
+  notes?: string;
+  qrCode?: string;
+  photoUrl?: string;
+}
+
+export interface RouteCheckinResponse {
+  success: boolean;
+  stopId: string;
+  status: "ARRIVED" | "COMPLETED" | string;
+  distanceMeters?: number | null;
+  gpsVerified: boolean;
+  checkedInAt?: string;
+  updatedRecordId?: string | null;
+  message?: string;
+  offlineQueued?: boolean;
 }
 
 // ============================================================================

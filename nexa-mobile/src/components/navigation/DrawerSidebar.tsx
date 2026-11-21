@@ -246,6 +246,36 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
                   </TouchableOpacity>
                 )}
 
+                {/* Canlı Güzergah Haritası */}
+                {hasModule("route_optimization", "driver_deliveries") && (
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    activeOpacity={0.75}
+                    onPress={() => navigateAndClose("/screen/routes")}
+                  >
+                    <View style={[styles.menuIconCircle, { backgroundColor: "rgba(10, 122, 255, 0.16)" }]}>
+                      <Ionicons name="navigate" size={18} color="#0A7AFF" />
+                    </View>
+                    <Text style={styles.menuItemText}>Canlı Güzergah Haritası</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                  </TouchableOpacity>
+                )}
+
+                {/* Zimmetli BLE Yakınlık Radarı */}
+                {hasModule("ble_radar") && (
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    activeOpacity={0.75}
+                    onPress={() => navigateAndClose("/screen/ble_radar")}
+                  >
+                    <View style={[styles.menuIconCircle, { backgroundColor: "rgba(0, 199, 190, 0.16)" }]}>
+                      <Ionicons name="bluetooth" size={18} color="#00C7BE" />
+                    </View>
+                    <Text style={styles.menuItemText}>BLE Yakınlık Radarı</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                  </TouchableOpacity>
+                )}
+
                 {/* Yetkili Modüller Kataloğu */}
                 <TouchableOpacity
                   style={styles.menuItem}

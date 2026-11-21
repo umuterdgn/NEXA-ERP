@@ -92,21 +92,54 @@ export async function POST(request: Request) {
             continue
           }
         } else if (item.action === "LOCATION_LOG") {
-          const { lat, lng, speed, accuracy, source } = item.payload
-          if (lat != null && lng != null) {
+          const {
+            lat,
+            lng,
+            latitude,
+            longitude,
+            speed,
+            heading,
+            accuracy,
+            batteryLevel,
+            projectId,
+            source,
+            bleDeviceId,
+            rssi,
+            estimatedDistanceMeters,
+            proximityZone,
+            bleEventType,
+          } = item.payload
+          const resolvedLat = Number(lat ?? latitude)
+          const resolvedLng = Number(lng ?? longitude)
+          if (!isNaN(resolvedLat) && !isNaN(resolvedLng)) {
+            const recordedAt = new Date(item.clientTimestamp || Date.now())
             await prisma.locationLog.create({
               data: {
                 userId,
                 tenantId,
-                latitude: Number(lat),
-                longitude: Number(lng),
-                lat: Number(lat),
-                lng: Number(lng),
-                speed: speed != null ? Number(speed) : null,
-                accuracy: accuracy != null ? Number(accuracy) : null,
-                source: source || "OFFLINE_GPS",
-                recordedAt: new Date(item.clientTimestamp || Date.now()),
-                timestamp: new Date(item.clientTimestamp || Date.now()),
+                projectId: projectId || null,
+                latitude: resolvedLat,
+                longitude: resolvedLng,
+                lat: resolvedLat,
+                lng: resolvedLng,
+                speed: speed != null && !isNaN(Number(speed)) ? Number(speed) : null,
+                heading: heading != null && !isNaN(Number(heading)) ? Number(heading) : null,
+                accuracy: accuracy != null && !isNaN(Number(accuracy)) ? Number(accuracy) : null,
+                batteryLevel:
+                  batteryLevel != null && !isNaN(Number(batteryLevel))
+                    ? Number(batteryLevel)
+                    : null,
+                source: source || (bleDeviceId ? "OFFLINE_BLE" : "OFFLINE_GPS"),
+                bleDeviceId: bleDeviceId ? String(bleDeviceId) : null,
+                rssi: rssi != null && !isNaN(Number(rssi)) ? Math.round(Number(rssi)) : null,
+                estimatedDistanceMeters:
+                  estimatedDistanceMeters != null && !isNaN(Number(estimatedDistanceMeters))
+                    ? Number(estimatedDistanceMeters)
+                    : null,
+                proximityZone: proximityZone ? String(proximityZone) : null,
+                bleEventType: bleEventType ? String(bleEventType) : null,
+                recordedAt,
+                timestamp: recordedAt,
               },
             })
             results.push({ id: item.id, status: "SYNCED" })

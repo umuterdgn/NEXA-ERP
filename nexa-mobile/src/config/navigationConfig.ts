@@ -28,6 +28,7 @@ export type NativeScreenId =
   | "logistics_qr"
   | "routes"
   | "isg"
+  | "ble_radar"
   | "ai_vision"
   | "chat";
 
@@ -226,14 +227,25 @@ export const MOBILE_MODULES: MobileModuleItem[] = [
   },
   {
     id: "routes",
-    title: "Akıllı Güzergah & Duraklar",
-    subtitle: "Sürücü, denetçi ve bölge müdürü durak rotası",
+    title: "Akıllı Güzergah & Harita",
+    subtitle: "Sürücü, denetçi, lab ve bölge müdürü durak haritası",
     category: "PROCUREMENT_LOGISTICS",
     icon: "navigate-outline",
     color: "#0A7AFF",
-    requiredModules: ["route_optimization", "driver_deliveries", "inspections", "samples_core"],
+    requiredModules: ["route_optimization", "driver_deliveries"],
     kind: "NATIVE",
     screenId: "routes",
+  },
+  {
+    id: "ble_radar",
+    title: "Zimmetli BLE Yakınlık Radarı",
+    subtitle: "Akıllı baret, kart ve ekipman canlı Bluetooth takibi",
+    category: "HSE_FIELD_OPS",
+    icon: "bluetooth-outline",
+    color: "#0A7AFF",
+    requiredModules: ["ble_radar"],
+    kind: "NATIVE",
+    screenId: "ble_radar",
   },
   {
     id: "isg",
@@ -522,7 +534,14 @@ const SCREEN_TO_TAB_META: Record<
     icon: "navigate-outline",
     activeIcon: "navigate",
     screenId: "routes",
-    requiredModules: ["route_optimization", "driver_deliveries", "inspections", "samples_core"],
+    requiredModules: ["route_optimization", "driver_deliveries"],
+  },
+  ble_radar: {
+    label: "BLE Radar",
+    icon: "bluetooth-outline",
+    activeIcon: "bluetooth",
+    screenId: "ble_radar",
+    requiredModules: ["ble_radar"],
   },
   isg: {
     label: "İSG",
@@ -807,6 +826,16 @@ export function getFabActions(
       screenId: "isg",
       params: { tab: "near_miss" },
       requiredModules: ["near_miss", "isg_dashboard"],
+    },
+    {
+      id: "fab_ble_radar",
+      title: "BLE Yakınlık Radarı",
+      subtitle: "Zimmetli baret / ekipman sinyal ara",
+      icon: "bluetooth",
+      color: "#0A7AFF",
+      bgColor: "rgba(10, 122, 255, 0.16)",
+      screenId: "ble_radar",
+      requiredModules: ["ble_radar"],
     },
     {
       id: "fab_sos",

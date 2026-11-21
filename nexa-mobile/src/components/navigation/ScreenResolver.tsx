@@ -25,6 +25,7 @@ import HrSelfScreen from "../../screens/HrSelfScreen";
 import LogisticsScreen from "../../screens/LogisticsScreen";
 import RoutesScreen from "../../screens/RoutesScreen";
 import SafetyScreen from "../../screens/SafetyScreen";
+import BleRadarScreen from "../../screens/BleRadarScreen";
 import AiVisionScreen from "../../screens/AiVisionScreen";
 import ChatScreen from "../../screens/ChatScreen";
 import type { ModuleKey } from "../../types/api";
@@ -48,8 +49,9 @@ const SCREEN_REQUIRED_MODULES: Record<NativeScreenId, ModuleKey[]> = {
     "driver_deliveries",
   ],
   logistics_qr: ["qr_micro_consumption", "warehouse_inventory", "material_requests"],
-  routes: ["route_optimization", "driver_deliveries", "inspections", "samples_core"],
+  routes: ["route_optimization", "driver_deliveries"],
   isg: ["near_miss", "sos_alarm", "isg_dashboard"],
+  ble_radar: ["ble_radar"],
   ai_vision: ["ai_vision", "site_camera"],
   chat: ["internal_comms", "ptt_chat"],
 };
@@ -119,6 +121,8 @@ export function ScreenResolver({
             initialTab={initialTab === "sos" ? "sos" : "near_miss"}
           />
         );
+      case "ble_radar":
+        return <BleRadarScreen embeddedInTab={embeddedInTab} />;
       case "ai_vision":
         return <AiVisionScreen />;
       case "chat":

@@ -58,7 +58,13 @@ export type SystemRole =
   | "INVESTOR"
   | "SUPPLIER"
 
-export type LocationTrackingMode = "SITE_LIVE" | "ROUTE_LIVE" | "OFF"
+export type LocationTrackingMode =
+  | "SITE_LIVE"
+  | "ROUTE_LIVE"
+  | "OFF"
+  | "GEOFENCE_STATIONARY"
+  | "OFFSITE_DISPATCH"
+  | "PRIVACY_RESTRICTED"
 
 // ============================================================================
 // 2. MODÜL HAVUZU (MODULE KEYS)
@@ -158,6 +164,7 @@ export type ModuleKey =
   | "internal_comms"
   | "ptt_chat"
   | "sos_alarm"
+  | "ble_radar"
   | "offline_sync"
   // Sistem
   | "system_health"
@@ -649,6 +656,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "isg_certificates",
     "near_miss",
     "ppe_forms",
+    "ble_radar",
     "tasks_work_orders",
     "site_journal",
     ...ALL_SYSTEM_MODULES,
@@ -717,6 +725,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "isg_certificates",
     "near_miss",
     "ppe_forms",
+    "ble_radar",
     "tasks_work_orders",
     "site_journal",
     "users_management",
@@ -769,6 +778,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "isg_risk_plan",
     "near_miss",
     "ppe_forms",
+    "ble_radar",
     "tasks_work_orders",
     "site_journal",
     "notifications",
@@ -812,6 +822,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "isg_risk_plan",
     "near_miss",
     "ppe_forms",
+    "ble_radar",
     "tasks_work_orders",
     "site_journal",
   ],
@@ -843,6 +854,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "ncr_dof",
     "near_miss",
     "ppe_forms",
+    "ble_radar",
     "tasks_work_orders",
     "site_journal",
   ],
@@ -887,6 +899,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "isg_certificates",
     "near_miss",
     "ppe_forms",
+    "ble_radar",
     "tasks_work_orders",
   ],
 
@@ -950,6 +963,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "equipments",
     "my_assigned_equipments",
     "logistics_appointments",
+    "ble_radar",
     "tasks_work_orders",
   ],
 
@@ -971,6 +985,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "driver_deliveries",
     "my_assigned_equipments",
     "goods_receiving",
+    "ble_radar",
     "tasks_work_orders",
   ],
 
@@ -979,6 +994,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     ...COMMON_PERSONAL_MODULES,
     "my_assigned_equipments",
     "near_miss",
+    "ble_radar",
     "tasks_work_orders",
   ],
 
@@ -1048,6 +1064,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "bim_3d",
     "boq",
     ...COMMON_PERSONAL_MODULES,
+    "route_optimization",
     "damage_assessment",
     "samples_core",
     "reinforcement_check",
@@ -1216,9 +1233,11 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
 
   FITOUT_TECH: [
     ...COMMON_PERSONAL_MODULES,
+    "route_optimization",
     "goods_receiving",
     "my_assigned_equipments",
     "attachments_evidence",
+    "ble_radar",
     "tasks_work_orders",
   ],
 
@@ -1228,6 +1247,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
 
   STAFF: [
     ...COMMON_PERSONAL_MODULES,
+    "ble_radar",
     "tasks_work_orders",
   ],
 
@@ -1276,6 +1296,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "warehouse_inventory",
     "equipments",
     "my_assigned_equipments",
+    "ble_radar",
   ],
 
   MUTEAHHIT: [
@@ -1295,6 +1316,7 @@ export const ROLE_PERMISSION_MATRIX: Record<SystemRole, ModuleKey[]> = {
     "projects",
     "bim_3d",
     ...COMMON_PERSONAL_MODULES,
+    "route_optimization",
     "samples_core",
     "reinforcement_check",
     "site_camera",
@@ -1574,6 +1596,7 @@ export function getMobileNavigationProfile(
     { key: "my_assigned_equipments", title: "Zimmetli Ekipman & KKD", icon: "Shield", category: "HR_PERSONAL" },
     { key: "near_miss", title: "Ramak Kala İSG Bildirimi", icon: "AlertOctagon", category: "HSE_FIELD_OPS" },
     { key: "sos_alarm", title: "Acil Durum SOS Butonu", icon: "Bell", category: "HSE_FIELD_OPS" },
+    { key: "ble_radar", title: "Zimmetli BLE Yakınlık Radarı", icon: "Bluetooth", category: "HSE_FIELD_OPS" },
     { key: "ptt_chat", title: "Şantiye Telsiz (PTT) & Chat", icon: "Radio", category: "HSE_FIELD_OPS" },
     { key: "route_optimization", title: "Akıllı Güzergah & Rota", icon: "Navigation", category: "PROCUREMENT_LOGISTICS" },
     { key: "driver_deliveries", title: "Sevkiyat Teslimatı", icon: "Truck", category: "PROCUREMENT_LOGISTICS" },

@@ -30,10 +30,10 @@ import {
 } from "../services/apiClient";
 import { offlineSync } from "../services/offlineSync";
 import {
-  startLocationTracking,
-  stopLocationTracking,
-  type GeofenceStatus,
-} from "../services/locationTracker";
+  startAdaptiveLocationTracking,
+  stopAdaptiveLocationTracking,
+} from "../services/backgroundLocation";
+import type { GeofenceStatus } from "../services/locationTracker";
 import type {
   AssignedProject,
   LocationTrackingMode,
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const role: SystemRole = (user?.role || "WORKER") as SystemRole;
 
   const clearLocalSession = useCallback(async () => {
-    stopLocationTracking();
+    stopAdaptiveLocationTracking().catch(() => {});
     await clearSecureTokens();
     await setActiveProjectHeader(null);
     await AsyncStorage.removeItem(SESSION_SNAPSHOT_KEY).catch(() => {});
@@ -163,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHasSavedSession(true);
       setIsAuthenticated(true);
 
-      startLocationTracking({
+      startAdaptiveLocationTracking({
         mode: snapshot.locationTrackingMode || "OFF",
         project: matched,
         onGeofenceChange: (status) => {
@@ -291,7 +291,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubQueue();
       unsubAutoSync();
       unsubNet();
-      stopLocationTracking();
+      stopAdaptiveLocationTracking().catch(() => {});
     };
   }, [applySessionSnapshot, clearLocalSession, refreshSession, router]);
 
@@ -389,7 +389,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (project: AssignedProject) => {
       setActiveProjectState(project);
       await setActiveProjectHeader(project.id);
-      startLocationTracking({
+      startAdaptiveLocationTracking({
         mode: locationTrackingMode,
         project,
         onGeofenceChange: (status) => {

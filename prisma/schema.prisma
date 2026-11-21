@@ -732,27 +732,33 @@ model Equipment {
 // ============================================================================
 
 model LocationLog {
-  id               String   @id @default(cuid())
-  tenantId         String?  // SaaS: Kiracı ID
-  userId           String
-  projectId        String?  // Şantiye / Proje ID
-  latitude         Float
-  longitude        Float
-  lat              Float?   // Enlem alias
-  lng              Float?   // Boylam alias
-  speed            Float?   // Hız (km/h)
-  heading          Float?   // Yön/Pusula
-  accuracy         Float?   // GPS Hassasiyeti (metre)
-  source           String   @default("GPS") // GPS | BLE | QR
-  batteryLevel     Float?   // Batarya yüzdesi
-  isInsideGeofence Boolean  @default(true) // Şantiye sınırları içinde mi?
-  recordedAt       DateTime @default(now())
-  timestamp        DateTime @default(now())
-  user             User     @relation(fields: [userId], references: [id])
+  id                      String   @id @default(cuid())
+  tenantId                String?  // SaaS: Kiracı ID
+  userId                  String
+  projectId               String?  // Şantiye / Proje ID
+  latitude                Float
+  longitude               Float
+  lat                     Float?   // Enlem alias
+  lng                     Float?   // Boylam alias
+  speed                   Float?   // Hız (km/h)
+  heading                 Float?   // Yön/Pusula
+  accuracy                Float?   // GPS Hassasiyeti (metre)
+  source                  String   @default("GPS") // GPS | BLE | QR | ROUTE_CHECKIN
+  batteryLevel            Float?   // Batarya yüzdesi
+  isInsideGeofence        Boolean  @default(true) // Şantiye sınırları içinde mi?
+  bleDeviceId             String?
+  rssi                    Int?
+  estimatedDistanceMeters Float?
+  proximityZone           String?  // IMMEDIATE | NEAR | FAR | LOST
+  bleEventType            String?  // HEARTBEAT | LOST_ALERT | FOUND
+  recordedAt              DateTime @default(now())
+  timestamp               DateTime @default(now())
+  user                    User     @relation(fields: [userId], references: [id])
 
   @@index([userId, timestamp])
   @@index([tenantId])
   @@index([projectId])
+  @@index([bleDeviceId])
 }
 
 // ============================================================================
@@ -4362,21 +4368,30 @@ model DroneCapture {
 // ============================================================================
 
 model BleDevice {
-  id           String    @id @default(cuid())
-  tenantId     String?   // SaaS: Kiracı ID
-  macAddress   String    @unique
-  deviceType   String // "BARET", "YELEK", "AYAKKABI", "YAKA_KARTI"
-  assignedTo   String? // Personel ID
-  userId       String?   @unique // Bir personelin 1 aktif bareti/yeleği olur
-  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  batteryLevel Int       @default(100)
-  lastSeenAt   DateTime?
-  projectId    String
+  id            String    @id @default(cuid())
+  tenantId      String?   // SaaS: Kiracı ID
+  name          String?
+  macAddress    String    @unique
+  uuid          String?
+  txPower       Int       @default(-59)
+  deviceType    String // "BARET", "YELEK", "AYAKKABI", "YAKA_KARTI"
+  status        String    @default("ACTIVE") // ACTIVE, LOST, INACTIVE
+  assignedTo    String? // Personel ID
+  userId        String?   @unique // Bir personelin 1 aktif bareti/yeleği olur
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  batteryLevel  Int       @default(100)
+  lastSeenAt    DateTime?
+  lastLat       Float?
+  lastLng       Float?
+  lastRssi      Int?
+  proximityZone String? // IMMEDIATE, NEAR, FAR, LOST
+  projectId     String
 
   @@index([projectId])
   @@index([assignedTo])
   @@index([userId])
   @@index([tenantId])
+  @@index([status])
 }
 
 model RiskZone {

@@ -23,8 +23,11 @@
         "NFCReaderUsageDescription": "Nexa ERP akıllı puantaj, personel yaka kartı ve baret etiketi okutmak için NFC erişimi gereklidir.",
         "NSMicrophoneUsageDescription": "Nexa ERP telsiz ve sesli mesaj iletişimi için mikrofon izni gereklidir.",
         "NSFaceIDUsageDescription": "Nexa ERP hesabınıza hızlı ve güvenli biyometrik giriş yapmak için Face ID izni gereklidir.",
+        "NSBluetoothAlwaysUsageDescription": "Nexa ERP zimmetli akıllı baret ve ekipman BLE etiketlerini taramak için Bluetooth izni gereklidir.",
+        "NSBluetoothPeripheralUsageDescription": "Nexa ERP zimmetli Bluetooth yakınlık radarı için izin gereklidir.",
         "UIBackgroundModes": [
-          "location"
+          "location",
+          "bluetooth-central"
         ]
       }
     },
@@ -56,7 +59,13 @@
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT"
       ]
     },
     "web": {
@@ -99,7 +108,17 @@
       "./withWorkManagerDisable",
       "expo-secure-store",
       "expo-sqlite",
-      "expo-asset"
+      "expo-asset",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": [
+            "central"
+          ],
+          "bluetoothAlwaysPermission": "Nexa ERP zimmetli akıllı baret ve ekipman BLE etiketlerini yakında taramak için Bluetooth izni gereklidir."
+        }
+      ]
     ],
     "extra": {
       "router": {
